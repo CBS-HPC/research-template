@@ -1,0 +1,7 @@
+{
+    "project_name": "Cbs_researcher_template Project",
+    "repo_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
+    "author_name": "Your Name",
+    "description": "A short description of the cbs_researcher_template project.",
+    "version": "0.1.0"
+}

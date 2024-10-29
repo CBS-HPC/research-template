@@ -1,7 +1,0 @@
-{
-    "project_name": "Ml_pipeline_template Project",
-    "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
-    "author_name": "Your Name",
-    "description": "A short description of the ml_pipeline_template project.",
-    "version": "0.1.0"
-}

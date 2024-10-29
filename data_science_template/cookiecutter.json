@@ -1,7 +1,0 @@
-{
-    "project_name": "Data_science_template Project",
-    "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
-    "author_name": "Your Name",
-    "description": "A short description of the data_science_template project.",
-    "version": "0.1.0"
-}
