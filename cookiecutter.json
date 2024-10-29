@@ -1,7 +1,8 @@
 {
-    "project_name": "Cbs_researcher_template Project",
+    "project_name": "Data_science_template Project",
     "repo_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
     "author_name": "Your Name",
-    "description": "A short description of the cbs_researcher_template project.",
+    "description": "A short description of the data_science_template project.",
+	"open_source_license": ["MIT", "BSD-3-Clause", "No license file"],
     "version": "0.1.0"
 }
