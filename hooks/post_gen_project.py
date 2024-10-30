@@ -1,9 +1,38 @@
 import os
 import subprocess
 
-# Import login functions from GitHub and GitLab login scripts
-from gh_login import github_login
-from glab_login import gitlab_login
+def github_login(username):
+    
+    repo_name = "{{ cookiecutter.repo_name }}"
+    description = "{{ cookiecutter.description }}"
+
+    # Login if necessary
+    login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
+    if "You are not logged into any GitHub hosts" in login_status.stderr:
+        print("Not logged into GitHub. Attempting login...")
+        subprocess.run(["gh", "auth", "login"], check=True)
+
+    # Create the GitHub repository
+    subprocess.run([
+        "gh", "repo", "create", f"{username}/{repo_name}",
+        "--private", "--description", description, "--source", ".", "--push"
+    ])
+
+def gitlab_login(username):
+    repo_name = "{{ cookiecutter.repo_name }}"
+    description = "{{ cookiecutter.description }}"
+
+    # Login if necessary
+    login_status = subprocess.run(["glab", "auth", "status"], capture_output=True, text=True)
+    if "Not logged in" in login_status.stderr:
+        print("Not logged into GitLab. Attempting login...")
+        subprocess.run(["glab", "auth", "login"], check=True)
+
+    # Create the GitLab repository
+    subprocess.run([
+        "glab", "repo", "create", f"{username}/{repo_name}",
+        "--private", "--description", description, "--source", ".", "--push"
+    ])
 
 def install_requirements():
     """Install the required packages from requirements.txt."""
