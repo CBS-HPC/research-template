@@ -18,6 +18,22 @@ def github_login(username):
         "--private", "--description", description, "--source", ".", "--push"
     ])
 
+def git_init():
+    # Initialize a Git repository if one does not already exist
+    if not os.path.isdir(".git"):
+        subprocess.run(["git", "init"], check=True)
+        print("Initialized a new Git repository.")
+
+
+    # Create an initial commit to ensure there’s content to push
+    with open(".gitkeep", "w") as f:
+        f.write("")  # Add an empty file as a placeholder
+    subprocess.run(["git", "add", ".gitkeep"], check=True)
+    subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
+    print("Created an initial commit.")
+
+
+
 def gitlab_login(username):
     repo_name = "{{ cookiecutter.repo_name }}"
     description = "{{ cookiecutter.description }}"
@@ -54,10 +70,8 @@ def handle_repo_creation():
     platform = "{{ cookiecutter.repository_platform }}"
     if platform in ["GitHub", "GitLab"]:
         
-        # Initialize a Git repository if one does not already exist
-        if not os.path.isdir(".git"):
-            subprocess.run(["git", "init"], check=True)
-            print("Initialized a new Git repository.")
+        git_init()
+
 
         username = input(f"Enter your {platform} username: ").strip()
         if platform == "GitHub":
