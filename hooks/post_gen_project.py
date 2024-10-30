@@ -28,7 +28,8 @@ def git_init():
     # Create an initial commit to ensure there’s content to push
     with open(".gitkeep", "w") as f:
         f.write("")  # Add an empty file as a placeholder
-    subprocess.run(["git", "add", ".gitkeep"], check=True)
+
+    subprocess.run(["git", "add", "."], check=True)    
     subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
     print("Created an initial commit.")
 
