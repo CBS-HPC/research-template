@@ -10,8 +10,5 @@
         "No",
         "GitHub",
         "GitLab"
-    ],
-    
-    "github_username": "{{ cookiecutter.repository_platform == 'GitHub' and cookiecutter._prompt('Enter your GitHub username') or '' }}",
-    "gitlab_username": "{{ cookiecutter.repository_platform == 'GitLab' and cookiecutter._prompt('Enter your GitLab username') or '' }}"
+    ]
 }
