@@ -30,7 +30,7 @@ def handle_repo_creation():
         print("No repository platform selected; skipping repository creation.")
 
 # Install requirements
-install_requirements()
+#nstall_requirements()
 
 # Handle repository creation
 handle_repo_creation()
