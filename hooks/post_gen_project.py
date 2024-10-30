@@ -53,6 +53,12 @@ def handle_repo_creation():
     """Handle repository creation and log-in based on selected platform."""
     platform = "{{ cookiecutter.repository_platform }}"
     if platform in ["GitHub", "GitLab"]:
+        
+        # Initialize a Git repository if one does not already exist
+        if not os.path.isdir(".git"):
+            subprocess.run(["git", "init"], check=True)
+            print("Initialized a new Git repository.")
+
         username = input(f"Enter your {platform} username: ").strip()
         if platform == "GitHub":
             github_login(username)
