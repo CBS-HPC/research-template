@@ -1,15 +1,12 @@
 import os
-from dotenv import load_dotenv
 import subprocess
 
-load_dotenv()
 
-platform = os.getenv("REPOSITORY_PLATFORM")
-username = os.getenv("GIT_USERNAME")
-repo_name = "{{ cookiecutter.repo_name }}"
-description = "{{ cookiecutter.description }}"
+def github_login(username):
+    
+    repo_name = "{{ cookiecutter.repo_name }}"
+    description = "{{ cookiecutter.description }}"
 
-if platform == "GitHub" and username:
     # Login if necessary
     login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
     if "You are not logged into any GitHub hosts" in login_status.stderr:
