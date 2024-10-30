@@ -1,8 +1,18 @@
 {
     "project_name": "Data_science_template Project",
-    "repo_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
+    "repo_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",	"github_username": "your-github-username",
     "author_name": "Your Name",
     "description": "A short description of the data_science_template project.",
 	"open_source_license": ["MIT", "BSD-3-Clause", "No license file"],
     "version": "0.1.0"
+	    
+    "repository_platform": [
+        "No",
+        "GitHub",
+        "GitLab"
+    ],
+    
+    "github_username": "{{ cookiecutter.repository_platform == 'GitHub' and cookiecutter._prompt('Enter your GitHub username') or '' }}",
+    "gitlab_username": "{{ cookiecutter.repository_platform == 'GitLab' and cookiecutter._prompt('Enter your GitLab username') or '' }}"
+
 }
