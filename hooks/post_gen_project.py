@@ -45,11 +45,22 @@ def gitlab_login(username):
         print("Not logged into GitLab. Attempting login...")
         subprocess.run(["glab", "auth", "login"], check=True)
 
+
+    # Create the GitHub repository
+    subprocess.run(["gh", "repo", "create", repo_name, "--private"], check=True)
+    print(f"GitHub repository '{repo_name}' created successfully and linked to local repo.")
+        
+    # Link and push to the GitHub repository
+    subprocess.run(["git", "remote", "add", "origin", f"https://github.com/{username}/{repo_name}.git"], check=True)
+    subprocess.run(["git", "push", "-u", "origin", "main"], check=True)
+    print("Pushed initial commit to GitHub on main branch.")
+
+
     # Create the GitLab repository
-    subprocess.run([
-        "glab", "repo", "create", f"{username}/{repo_name}",
-        "--private", "--description", description, "--source", ".", "--push"
-    ])
+    #subprocess.run([
+    #    "glab", "repo", "create", f"{username}/{repo_name}",
+    #    "--private", "--description", description, "--source", ".", "--push"
+    #])
 
 def install_requirements():
     """Install the required packages from requirements.txt."""
