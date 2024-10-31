@@ -32,6 +32,16 @@ def create_virtual_environment():
 
     repo_name = "{{ cookiecutter.repo_name }}"
     programming_language = "{{ cookiecutter.programming_language}}"
+
+    if programming_language.lower() not in ['python','r']:
+        return
+    
+    # Ask for user confirmation
+    confirm = input(f"Do you want to create a virtual environment named '{repo_name}' for {programming_language}? (yes/no): ").strip().lower()
+    
+    if confirm != 'yes':
+        print("Virtual environment creation canceled.")
+        return
     
     if programming_language.lower() == 'r':
         if check_conda():
@@ -110,7 +120,6 @@ def gitlab_login(username,privacy_setting):
         f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
     ])
 
-
 def install_requirements():
     """Install the required packages from requirements.txt."""
     # Get the directory of the current script (which is in hooks)
@@ -135,16 +144,12 @@ def handle_repo_creation():
 
         username = input(f"Enter your {platform} username: ").strip()
 
-        choice = input("Select the repository visibility [1 = Private, 2 = Public]: ").strip()
-        if choice == "1":
-            privacy_setting = "private"
-        elif choice == "2":
-            privacy_setting = "public"
-        else:
+        privacy_setting = input("Select the repository visibility(private/public): ").strip().lower()
+        
+        if privacy_setting not in ["private", "public"]:
             print("Invalid choice. Defaulting to 'private'.")
             privacy_setting = "private"
 
-    
         if platform == "GitHub":
             github_login(username,privacy_setting)
         elif platform == "GitLab":

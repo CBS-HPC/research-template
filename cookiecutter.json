@@ -5,16 +5,6 @@
     "description": "A short description of the data_science_template project.",
     "open_source_license": ["MIT", "BSD-3-Clause", "No license file"],
     "version": "0.1.0",
-
-    "repository_platform": [
-        "No",
-        "GitHub",
-        "GitLab"
-    ]
-	"programming_language":[
-		"Python",
-		"R",
-		"Stata",
-		"Other"		
-	]
+    "repository_platform": ["No","GitHub","GitLab"],
+	"virtual_environment":["Python","R","Other"]
 }
