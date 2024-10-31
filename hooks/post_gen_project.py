@@ -1,6 +1,40 @@
 import os
 import subprocess
 import sys
+import platform
+
+
+
+def get_hardware_info():
+    """
+    Extract hardware information and save it to a file.
+    Works on Windows, Linux, and macOS.
+    """
+    system = platform.system()
+    command = ""
+
+    if system == "Windows":
+        command = "systeminfo"
+    elif system == "Linux":
+        command = "lshw -short"  # Alternative: "dmidecode"
+    elif system == "Darwin":  # macOS
+        command = "system_profiler SPHardwareDataType"
+    else:
+        print("Unsupported operating system.")
+        return
+
+    try:
+        # Execute the command and capture the output
+        hardware_info = subprocess.check_output(command, shell=True, text=True)
+
+        # Save the hardware information to a file
+        with open("hardware_information.txt", "w") as file:
+            file.write(hardware_info)
+
+        print("Hardware information saved to hardware_information.txt")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error retrieving hardware information: {e}")
 
 def create_virtual_environment():
     """
@@ -160,9 +194,12 @@ def handle_repo_creation():
 # Install requirements
 #nstall_requirements()
 
+
+# Get Hardware information
+get_hardware_info()
+
 # Handle repository creation
 handle_repo_creation()
-
 
 # Create Virtual Environment
 create_virtual_environment()
