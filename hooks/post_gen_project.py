@@ -162,3 +162,7 @@ def handle_repo_creation():
 
 # Handle repository creation
 handle_repo_creation()
+
+
+# Create Virtual Environment
+create_virtual_environment()
