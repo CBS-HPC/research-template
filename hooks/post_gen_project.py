@@ -144,7 +144,7 @@ def create_virtual_environment():
     repo_name = "{{ cookiecutter.repo_name }}"
     virtual_environment = "{{ cookiecutter.virtual_environment}}"
 
-    if virtual_environment.lower() not in ['python','r']:
+    if virtual_environment.lower() not in ['python','r','environment.yaml','requirements.txt']:
         return
     
     # Ask for user confirmation
