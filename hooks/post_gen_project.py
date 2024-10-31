@@ -1,22 +1,55 @@
 import os
 import subprocess
+import sys
 
-def github_login(username):
+def create_virtual_environment():
+    """
+    Create a virtual environment for Python or R based on the specified programming language.
     
+    Parameters:
+    - repo_name: str, name of the virtual environment.
+    - programming_language: str, 'python' or 'R' to specify the language for the environment.
+    """
+    def check_conda():
+        """Check if conda is installed."""
+        try:
+            subprocess.run(['conda', '--version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
+    def create_conda_env():
+        """Create a conda environment."""
+        subprocess.run(['conda', 'create', '--name', repo_name, programming_language, '--yes'], check=True)
+
+    def create_venv_env():
+        """Create a Python virtual environment using venv."""
+        subprocess.run([sys.executable, '-m', 'venv', repo_name], check=True)
+
+    def create_virtualenv_env():
+        """Create a Python virtual environment using virtualenv."""
+        subprocess.run(['virtualenv', repo_name], check=True)
+
     repo_name = "{{ cookiecutter.repo_name }}"
-    description = "{{ cookiecutter.description }}"
-
-    # Login if necessary
-    login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
-    if "You are not logged into any GitHub hosts" in login_status.stderr:
-        print("Not logged into GitHub. Attempting login...")
-        subprocess.run(["gh", "auth", "login"], check=True)
-
-    # Create the GitHub repository
-    subprocess.run([
-        "gh", "repo", "create", f"{username}/{repo_name}",
-        "--private", "--description", description, "--source", ".", "--push"
-    ])
+    programming_language = "{{ cookiecutter.programming_language}}"
+    
+    if programming_language.lower() == 'r':
+        if check_conda():
+            create_conda_env()
+            print(f'Conda environment "{repo_name}" for R created successfully.')
+        else:
+            print('Conda is not installed. Please install it to create an R environment.')
+    elif programming_language.lower() == 'python':
+        if check_conda():
+            create_conda_env()
+            print(f'Conda environment "{repo_name}" for Python created successfully.')
+        else:
+            if subprocess.call(['which', 'virtualenv']) == 0:
+                create_virtualenv_env()
+                print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
+            else:
+                create_venv_env()
+                print(f'Venv environment "{repo_name}" for Python created successfully.')
 
 def git_init(platform):
     # Initialize a Git repository if one does not already exist
@@ -32,9 +65,24 @@ def git_init(platform):
     subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
     print("Created an initial commit.")
 
+def github_login(username,privacy_setting):
+    
+    repo_name = "{{ cookiecutter.repo_name }}"
+    description = "{{ cookiecutter.description }}"
 
+    # Login if necessary
+    login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
+    if "You are not logged into any GitHub hosts" in login_status.stderr:
+        print("Not logged into GitHub. Attempting login...")
+        subprocess.run(["gh", "auth", "login"], check=True)
 
-def gitlab_login(username):
+    # Create the GitHub repository
+    subprocess.run([
+        "gh", "repo", "create", f"{username}/{repo_name}",
+        f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
+    ])
+
+def gitlab_login(username,privacy_setting):
     repo_name = "{{ cookiecutter.repo_name }}"
     description = "{{ cookiecutter.description }}"
 
@@ -59,8 +107,9 @@ def gitlab_login(username):
     # Create the GitLab repository
     subprocess.run([
         "glab", "repo", "create", f"{username}/{repo_name}",
-        "--private", "--description", description, "--source", ".", "--push"
+        f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
     ])
+
 
 def install_requirements():
     """Install the required packages from requirements.txt."""
@@ -81,14 +130,25 @@ def handle_repo_creation():
     """Handle repository creation and log-in based on selected platform."""
     platform = "{{ cookiecutter.repository_platform }}"
     if platform in ["GitHub", "GitLab"]:
-                
+
         git_init(platform)
 
         username = input(f"Enter your {platform} username: ").strip()
+
+        choice = input("Select the repository visibility [1 = Private, 2 = Public]: ").strip()
+        if choice == "1":
+            privacy_setting = "private"
+        elif choice == "2":
+            privacy_setting = "public"
+        else:
+            print("Invalid choice. Defaulting to 'private'.")
+            privacy_setting = "private"
+
+    
         if platform == "GitHub":
-            github_login(username)
+            github_login(username,privacy_setting)
         elif platform == "GitLab":
-            gitlab_login(username)
+            gitlab_login(username,privacy_setting)
     else:
         print("No repository platform selected; skipping repository creation.")
 
