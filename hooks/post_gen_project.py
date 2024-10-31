@@ -3,8 +3,6 @@ import subprocess
 import sys
 import platform
 
-
-
 def get_hardware_info():
     """
     Extract hardware information and save it to a file.
@@ -83,7 +81,7 @@ def create_virtual_environment():
         subprocess.run(['conda', 'create', '--name', env_name, programming_language, '--yes'], check=True)
         print(f'Conda environment "{env_name}" for {programming_language} created successfully.')
 
-    def create_conda_env_from_yml(env_name=None,yml_file='environment.yml'):
+    def create_from_yml(env_name=None,yml_file='environment.yml'):
         """
         Create a conda environment from an environment.yml file with a specified name.
         
@@ -107,6 +105,23 @@ def create_virtual_environment():
             print("Conda is not installed or not found in the system path.")
         except Exception as e:
             print(f"An error occurred: {e}")
+
+    def generate_yml(env_name,requirements_path):
+        """Generate an environment.yml file using a requirements.txt file."""
+        yml_content = f"""
+            name: {env_name}
+            channels:
+            - conda-forge
+            dependencies:
+            - python>=3.5
+            - anaconda
+            - pip
+            - pip:
+                - -r file:{requirements_path}
+            """
+        with open('environment.yml', 'w') as yml_file:
+            yml_file.write(yml_content)
+        print(f"Generated environment.yml file using {requirements_path}.")
 
     def create_venv_env(env_name):
         """Create a Python virtual environment using venv."""
@@ -163,8 +178,11 @@ def create_virtual_environment():
         if check_conda():
             if virtual_environment.lower() in ['python','r']:
                 create_conda_env(repo_name,virtual_environment)
-            elif virtual_environment.lower() in ['environment.yaml','requirements.txt']:
-                create_conda_env_from_yml(repo_name,env_file)
+            elif virtual_environment.lower() in ['environment.yaml']:
+                create_from_yml(repo_name,env_file)
+            elif virtual_environment.lower() in ['requirements.txt']:
+                generate_yml(repo_name,env_file)
+                create_from_yml(repo_name,env_file)
             export_conda_env(repo_name)
         elif virtual_environment.lower() == 'python':
             if subprocess.call(['which', 'virtualenv']) == 0:
@@ -173,7 +191,6 @@ def create_virtual_environment():
                 create_venv_env(repo_name)
         elif virtual_environment.lower() == 'r': 
             print('Conda is not installed. Please install it to create an {programming_language}  environment.')
-
 
 def git_init(platform):
     # Initialize a Git repository if one does not already exist
@@ -217,17 +234,6 @@ def gitlab_login(username,privacy_setting):
         print("Not logged into GitLab. Attempting login...")
         subprocess.run(["glab", "auth", "login"], check=True)
 
-
-    # Create the GitHub repository
-   # subprocess.run(["gh", "repo", "create", repo_name, "--private"], check=True)
-    #print(f"GitHub repository '{repo_name}' created successfully and linked to local repo.")
-        
-    # Link and push to the GitHub repository
-    #subprocess.run(["git", "remote", "add", "origin", f"https://github.com/{username}/{repo_name}.git"], check=True)
-    #subprocess.run(["git", "push", "-u", "origin", "main"], check=True)
-    #print("Pushed initial commit to GitHub on main branch.")
-
-
     # Create the GitLab repository
     subprocess.run([
         "glab", "repo", "create", f"{username}/{repo_name}",
@@ -258,7 +264,7 @@ def handle_repo_creation():
 
         username = input(f"Enter your {platform} username: ").strip()
 
-        privacy_setting = input("Select the repository visibility(private/public): ").strip().lower()
+        privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
         
         if privacy_setting not in ["private", "public"]:
             print("Invalid choice. Defaulting to 'private'.")
@@ -274,11 +280,11 @@ def handle_repo_creation():
 # Install requirements
 #nstall_requirements()
 
-# Get Hardware information
-get_hardware_info()
-
 # Create Virtual Environment
 create_virtual_environment()
+
+# Get Hardware information
+get_hardware_info()
 
 # Handle repository creation
 handle_repo_creation()
