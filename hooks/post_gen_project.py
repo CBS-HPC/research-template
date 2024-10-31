@@ -52,17 +52,43 @@ def create_virtual_environment():
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
-    def create_conda_env():
+    def create_conda_env(env_name, programming_language):
         """Create a conda environment."""
-        subprocess.run(['conda', 'create', '--name', repo_name, programming_language, '--yes'], check=True)
+        subprocess.run(['conda', 'create', '--name', env_name, programming_language, '--yes'], check=True)
+        print(f'Conda environment "{env_name}" for {programming_language} created successfully.')
 
-    def create_venv_env():
+    def create_venv_env(env_name):
         """Create a Python virtual environment using venv."""
-        subprocess.run([sys.executable, '-m', 'venv', repo_name], check=True)
+        subprocess.run([sys.executable, '-m', 'venv', env_name], check=True)
+        print(f'Venv environment "{repo_name}" for Python created successfully.')
 
-    def create_virtualenv_env():
+    def create_virtualenv_env(env_name):
         """Create a Python virtual environment using virtualenv."""
-        subprocess.run(['virtualenv', repo_name], check=True)
+        subprocess.run(['virtualenv', env_name], check=True)
+        print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
+
+    def export_conda_env(env_name, output_file='environment.yml'):
+        """
+        Export the details of a conda environment to a YAML file.
+        
+        Parameters:
+        - env_name: str, name of the conda environment to export.
+        - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
+        """
+        try:
+            # Use subprocess to run the conda export command
+            with open(output_file, 'w') as f:
+                subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)
+            
+            print(f"Conda environment '{env_name}' exported to {output_file}.")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to export conda environment: {e}")
+        except FileNotFoundError:
+            print("Conda is not installed or not found in the system path.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+                
 
     repo_name = "{{ cookiecutter.repo_name }}"
     programming_language = "{{ cookiecutter.virtual_environment}}"
@@ -77,23 +103,18 @@ def create_virtual_environment():
         print("Virtual environment creation canceled.")
         return
     
-    if programming_language.lower() == 'r':
+    if programming_language.lower() not in ['python','r']:
         if check_conda():
-            create_conda_env()
-            print(f'Conda environment "{repo_name}" for R created successfully.')
-        else:
-            print('Conda is not installed. Please install it to create an R environment.')
-    elif programming_language.lower() == 'python':
-        if check_conda():
-            create_conda_env()
-            print(f'Conda environment "{repo_name}" for Python created successfully.')
-        else:
+            create_conda_env(repo_name,programming_language)
+            export_conda_env(repo_name)
+        elif programming_language.lower() == 'python':
             if subprocess.call(['which', 'virtualenv']) == 0:
-                create_virtualenv_env()
-                print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
+                create_virtualenv_env(repo_name)
             else:
-                create_venv_env()
-                print(f'Venv environment "{repo_name}" for Python created successfully.')
+                create_venv_env(repo_name)
+        elif programming_language.lower() == 'r': 
+            print('Conda is not installed. Please install it to create an {programming_language}  environment.')
+
 
 def git_init(platform):
     # Initialize a Git repository if one does not already exist
@@ -194,12 +215,11 @@ def handle_repo_creation():
 # Install requirements
 #nstall_requirements()
 
-
 # Get Hardware information
 get_hardware_info()
 
-# Handle repository creation
-handle_repo_creation()
-
 # Create Virtual Environment
 create_virtual_environment()
+
+# Handle repository creation
+handle_repo_creation()
