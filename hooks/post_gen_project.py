@@ -44,6 +44,32 @@ def create_virtual_environment():
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """
+
+    def get_file_path():
+        """
+        Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
+        
+        Returns:
+        - str: Validated file path if the file exists and has the correct extension.
+        """
+
+        # Prompt the user for the file path
+        file_path = input("Please enter the path to a .yml or .txt file: ").strip()
+            
+        # Check if the file exists
+        if not os.path.isfile(file_path):
+            print("The file does not exist. Please try again.")
+            return None
+            
+        # Check the file extension
+        _, file_extension = os.path.splitext(file_path)
+        if file_extension.lower() not in {'.yml', '.txt'}:
+            print("Invalid file format. The file must be a .yml or .txt file.")
+            return None
+        
+        # If both checks pass, return the valid file path
+        return file_path
+        
     def check_conda():
         """Check if conda is installed."""
         try:
@@ -56,6 +82,31 @@ def create_virtual_environment():
         """Create a conda environment."""
         subprocess.run(['conda', 'create', '--name', env_name, programming_language, '--yes'], check=True)
         print(f'Conda environment "{env_name}" for {programming_language} created successfully.')
+
+    def create_conda_env_from_yml(env_name=None,yml_file='environment.yml'):
+        """
+        Create a conda environment from an environment.yml file with a specified name.
+        
+        Parameters:
+        - env_file: str, path to the environment YAML file. Defaults to 'environment.yml'.
+        - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
+        """
+        try:
+            # Construct the command
+            command = ['conda', 'env', 'create', '-f', yml_file]
+            if env_name:
+                command.extend(['--name', env_name])  # Add the specified name
+
+            # Run the command
+            subprocess.run(command, check=True)
+            print(f"Conda environment '{env_name or 'default name in YAML'}' created successfully from {yml_file}.")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to create conda environment: {e}")
+        except FileNotFoundError:
+            print("Conda is not installed or not found in the system path.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     def create_venv_env(env_name):
         """Create a Python virtual environment using venv."""
@@ -91,28 +142,36 @@ def create_virtual_environment():
                 
 
     repo_name = "{{ cookiecutter.repo_name }}"
-    programming_language = "{{ cookiecutter.virtual_environment}}"
+    virtual_environment = "{{ cookiecutter.virtual_environment}}"
 
-    if programming_language.lower() not in ['python','r']:
+    if virtual_environment.lower() not in ['python','r']:
         return
     
     # Ask for user confirmation
-    confirm = input(f"Do you want to create a virtual environment named '{repo_name}' for {programming_language}? (yes/no): ").strip().lower()
+    confirm = input(f"Do you want to create a virtual environment named '{repo_name}' for/from {virtual_environment}? (yes/no): ").strip().lower()
     
     if confirm != 'yes':
         print("Virtual environment creation canceled.")
         return
     
-    if programming_language.lower() in ['python','r']:
+    if virtual_environment.lower() in ['environment.yaml','requirements.txt']:
+        file = get_file_path()
+        if file is None:
+            return
+
+    if virtual_environment.lower() in ['python','r','environment.yaml','requirements.txt']:
         if check_conda():
-            create_conda_env(repo_name,programming_language)
+            if virtual_environment.lower() in ['python','r']:
+                create_conda_env(repo_name,virtual_environment)
+            elif virtual_environment.lower() in ['environment.yaml','requirements.txt']:
+                create_conda_env_from_yml(repo_name)
             export_conda_env(repo_name)
-        elif programming_language.lower() == 'python':
+        elif virtual_environment.lower() == 'python':
             if subprocess.call(['which', 'virtualenv']) == 0:
                 create_virtualenv_env(repo_name)
             else:
                 create_venv_env(repo_name)
-        elif programming_language.lower() == 'r': 
+        elif virtual_environment.lower() == 'r': 
             print('Conda is not installed. Please install it to create an {programming_language}  environment.')
 
 

@@ -6,5 +6,5 @@
     "open_source_license": ["MIT", "BSD-3-Clause", "No license file"],
     "version": "0.1.0",
     "repository_platform": ["No","GitHub","GitLab"],
-	"virtual_environment":["Python","R","Other"]
+	"virtual_environment":["Python","R","environment.yaml","requirements.txt","Other"]
 }
