@@ -103,7 +103,7 @@ def create_virtual_environment():
         print("Virtual environment creation canceled.")
         return
     
-    if programming_language.lower() not in ['python','r']:
+    if programming_language.lower() in ['python','r']:
         if check_conda():
             create_conda_env(repo_name,programming_language)
             export_conda_env(repo_name)
