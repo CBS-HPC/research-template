@@ -155,8 +155,8 @@ def create_virtual_environment():
         return
     
     if virtual_environment.lower() in ['environment.yaml','requirements.txt']:
-        file = get_file_path()
-        if file is None:
+        env_file = get_file_path()
+        if env_file is None:
             return
 
     if virtual_environment.lower() in ['python','r','environment.yaml','requirements.txt']:
@@ -164,7 +164,7 @@ def create_virtual_environment():
             if virtual_environment.lower() in ['python','r']:
                 create_conda_env(repo_name,virtual_environment)
             elif virtual_environment.lower() in ['environment.yaml','requirements.txt']:
-                create_conda_env_from_yml(repo_name)
+                create_conda_env_from_yml(repo_name,env_file)
             export_conda_env(repo_name)
         elif virtual_environment.lower() == 'python':
             if subprocess.call(['which', 'virtualenv']) == 0:
