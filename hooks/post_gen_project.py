@@ -31,7 +31,7 @@ def create_virtual_environment():
         subprocess.run(['virtualenv', repo_name], check=True)
 
     repo_name = "{{ cookiecutter.repo_name }}"
-    programming_language = "{{ cookiecutter.programming_language}}"
+    programming_language = "{{ cookiecutter.virtual_environment}}"
 
     if programming_language.lower() not in ['python','r']:
         return
