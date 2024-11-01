@@ -373,10 +373,10 @@ def handle_repo_creation():
     if version_control == None or git_check is False:
         return
     
-    if version_control ["Git", "Datalad"]:
+    if version_control == "Git":
         git_init(platform)
 
-    if version_control == "Datalad":
+    elif version_control == "Datalad":
         datalad_check = is_datalad_installed()
         if datalad_check is False:
             install_datalad()
