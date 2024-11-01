@@ -290,7 +290,7 @@ def datalad_create():
     if not os.path.isdir(".datalad"):
         files_to_backup = ["README.md", "LICENSE", "hardware_information.txt"]
         backup_dir = "backup_files"
-        create_backup((files_to_backup,backup_dir))
+        create_backup(files_to_backup,backup_dir)
         subprocess.run(["datalad", "create","--force"], check=True)
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         print("Created an initial commit.")
