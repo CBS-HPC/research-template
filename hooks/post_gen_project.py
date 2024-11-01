@@ -256,7 +256,7 @@ def install_datalad():
 def datalad_create():
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        subprocess.run(["datalad", "create"], check=True)
+        subprocess.run(["datalad", "create","--force"], check=True)
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         print("Created an initial commit.")
 
