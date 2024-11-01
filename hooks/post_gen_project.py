@@ -255,39 +255,46 @@ def install_datalad():
 
 def datalad_create():
 
-    def create_backup():
-       # Define paths for README.md and LICENSE
-        readme_path = "README.md"
-        license_path = "LICENSE"
-        backup_dir = "backup_files"
+    def create_backup(files_to_backup,backup_dir):
 
         # Check if backup directory exists, create it if not
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
 
-        # Backup the README.md and LICENSE files
-        if os.path.exists(readme_path):
-            shutil.copy(readme_path, os.path.join(backup_dir, "README.md"))
-        if os.path.exists(license_path):
-            shutil.copy(license_path, os.path.join(backup_dir, "LICENSE"))
-        return readme_path,license_path,backup_dir
+         # Backup the specified files
+        for file in files_to_backup:
+            if os.path.exists(file):
+                shutil.copy(file, os.path.join(backup_dir, file))
+                #print(f"Backed up {file}.")
 
-    def remove_backup(readme_path,license_path,backup_dir):
-        # Restore the README.md and LICENSE files from the backup
-        if os.path.exists(os.path.join(backup_dir, "README.md")):
-            shutil.copy(os.path.join(backup_dir, "README.md"), readme_path)
-        if os.path.exists(os.path.join(backup_dir, "LICENSE")):
-            shutil.copy(os.path.join(backup_dir, "LICENSE"), license_path)
+    def remove_backup(files_to_backup,backup_dir):
+        
+        # Prevent git-annex from handling specific files
+        for file in files_to_backup:
+            if os.path.exists(file):
+                # Use git annex add with --skip option to ignore these files
+                subprocess.run(["git", "annex", "add", "--skip", file], check=True)
+                print(f"Prevented {file} from being managed by git-annex.")
+
+        # Restore the backed-up files
+        for file in files_to_backup:
+            backup_file_path = os.path.join(backup_dir, file)
+            if os.path.exists(backup_file_path):
+                shutil.copy(backup_file_path, file)
 
         # Remove the backup files
         shutil.rmtree(backup_dir)
+   
+   
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        readme_path,license_path,backup_dir = create_backup()
+        files_to_backup = ["README.md", "LICENSE", "hardware_information.txt"]
+        backup_dir = "backup_files"
+        create_backup((files_to_backup,backup_dir))
         subprocess.run(["datalad", "create","--force"], check=True)
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         print("Created an initial commit.")
-        remove_backup(readme_path,license_path,backup_dir)
+        remove_backup(files_to_backup,backup_dir)
 
 def github_login(username,privacy_setting):
     
