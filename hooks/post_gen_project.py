@@ -285,9 +285,9 @@ def datalad_create():
     if not os.path.isdir(".datalad"):
         readme_path,license_path,backup_dir = create_backup()
         subprocess.run(["datalad", "create","--force"], check=True)
-        remove_backup(readme_path,license_path,backup_dir)
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         print("Created an initial commit.")
+        remove_backup(readme_path,license_path,backup_dir)
 
 def github_login(username,privacy_setting):
     
