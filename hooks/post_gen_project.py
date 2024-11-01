@@ -380,7 +380,7 @@ def handle_repo_creation():
         datalad_check = is_datalad_installed()
         if datalad_check is False:
             install_datalad()
-        #datalad_create()
+        datalad_create()
 
     if platform in ["GitHub", "GitLab"]:
 
