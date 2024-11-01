@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import shutil
 import platform
 
 def get_hardware_info():
@@ -192,7 +193,6 @@ def create_virtual_environment():
         elif virtual_environment.lower() == 'r': 
             print('Conda is not installed. Please install it to create an {programming_language}  environment.')
 
-
 def is_git_installed():
     try:
         # Run 'git --version' and capture the output
@@ -254,12 +254,40 @@ def install_datalad():
         print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
 
 def datalad_create():
+
+    def create_backup():
+       # Define paths for README.md and LICENSE
+        readme_path = "README.md"
+        license_path = "LICENSE"
+        backup_dir = "backup_files"
+
+        # Check if backup directory exists, create it if not
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+
+        # Backup the README.md and LICENSE files
+        if os.path.exists(readme_path):
+            shutil.copy(readme_path, os.path.join(backup_dir, "README.md"))
+        if os.path.exists(license_path):
+            shutil.copy(license_path, os.path.join(backup_dir, "LICENSE"))
+        return backup_dir
+
+    def remove_backup(backup_dir):
+        # Restore the README.md and LICENSE files from the backup
+        if os.path.exists(os.path.join(backup_dir, "README.md")):
+            shutil.copy(os.path.join(backup_dir, "README.md"), readme_path)
+        if os.path.exists(os.path.join(backup_dir, "LICENSE")):
+            shutil.copy(os.path.join(backup_dir, "LICENSE"), license_path)
+
+        # Remove the backup files
+        shutil.rmtree(backup_dir)
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
+        backup_dir = create_backup()
         subprocess.run(["datalad", "create","--force"], check=True)
+        remove_backup(backup_dir)
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         print("Created an initial commit.")
-
 
 def github_login(username,privacy_setting):
     
