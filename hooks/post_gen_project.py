@@ -286,9 +286,10 @@ def datalad_create():
         shutil.rmtree(backup_dir)
    
     def unlock_files(files_to_unlock):
-        for file in files_to_unlock:
-            command = ["git", "annex", "set-largefiles=nothing", file]
-            subprocess.run(command, check=True)
+        attributes_file = ".gitattributes"
+        with open(attributes_file, "a") as f:
+            for file in files_to_unlock:
+                f.write(f"{file} annex.largefiles=nothing\n")
 
 
     # Initialize a Git repository if one does not already exist
