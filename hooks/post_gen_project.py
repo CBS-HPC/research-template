@@ -310,9 +310,9 @@ def datalad_create():
 
         subprocess.run(["datalad", "create","--force"], check=True)
         #unlock_files(files_to_unlock )
-        subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
+       # subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         #subprocess.run(["git", "push", "--all"], check=True)
-        print("Created an initial commit.")
+        #print("Created an initial commit.")
         #remove_backup(files_to_backup,backup_dir)
 
 def github_login(username,privacy_setting):
@@ -373,14 +373,14 @@ def handle_repo_creation():
     if version_control == None or git_check is False:
         return
     
-    elif version_control == "Git":
+    if version_control ["Git", "Datalad"]:
         git_init(platform)
-    elif version_control == "Datalad":
+
+    if version_control == "Datalad":
         datalad_check = is_datalad_installed()
         if datalad_check is False:
             install_datalad()
-        datalad_create()
-
+        #datalad_create()
 
     if platform in ["GitHub", "GitLab"]:
 
