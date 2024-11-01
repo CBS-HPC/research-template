@@ -285,32 +285,20 @@ def datalad_create():
         # Remove the backup files
         shutil.rmtree(backup_dir)
    
-    def unlock_files(filenames):
-        """
-        Unlock multiple files using git annex.
-
-        Parameters:
-        filenames (list): A list of filenames to unlock.
-        """
-        for filename in filenames:
-            try:
-                # Run the git annex unlock command for each file
-                subprocess.run(["git", "annex", "unlock", filename], check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"Error unlocking {filename}: {e}")
-            except FileNotFoundError:
-                print("git annex is not found. Please ensure it is installed and available in PATH.")
+    def unlock_files(files_to_unlock):
+        for file in files_to_unlock:
+            command = ["git", "annex", "set-largefiles=nothing", file]
+            subprocess.run(command, check=True)
 
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        #files_to_unlock = ["README.md", "LICENSE", "hardware_information.txt"]
+        files_to_unlock = ["README.md", "LICENSE", "hardware_information.txt"]
         #backup_dir = "backup_files"
         #create_backup(files_to_backup,backup_dir)
-
         subprocess.run(["datalad", "create","--force"], check=True)
-        #unlock_files(files_to_unlock )
-       # subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
+        unlock_files(files_to_unlock )
+        subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         #subprocess.run(["git", "push", "--all"], check=True)
         #print("Created an initial commit.")
         #remove_backup(files_to_backup,backup_dir)
