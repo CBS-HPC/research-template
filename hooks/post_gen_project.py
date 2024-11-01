@@ -192,6 +192,20 @@ def create_virtual_environment():
         elif virtual_environment.lower() == 'r': 
             print('Conda is not installed. Please install it to create an {programming_language}  environment.')
 
+
+def is_git_installed():
+    try:
+        # Run 'git --version' and capture the output
+        output = subprocess.check_output(['git', '--version'], stderr=subprocess.STDOUT)
+        # Decode the output from bytes to string and check if it contains 'git version'
+        if 'git version' in output.decode('utf-8'):
+            return True
+    except FileNotFoundError:
+        print("Git is not installed or not in the system PATH.")
+    except subprocess.CalledProcessError:
+        print("An error occurred while checking Git version.")
+    return False
+
 def git_init(platform):
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".git"):
@@ -205,6 +219,47 @@ def git_init(platform):
     subprocess.run(["git", "add", "."], check=True)    
     subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
     print("Created an initial commit.")
+
+def is_datalad_installed():
+    try:
+        # Run 'datalad --version' and capture the output
+        output = subprocess.check_output(['datalad', '--version'], stderr=subprocess.STDOUT)
+        # Decode the output from bytes to string and check if it contains 'datalad'
+        if 'datalad' in output.decode('utf-8'):
+            print("DataLad is installed.")
+            return True
+    except FileNotFoundError:
+        print("DataLad is not installed or not in the system PATH.")
+    except subprocess.CalledProcessError:
+        print("An error occurred while checking DataLad version.")
+    return False
+
+def install_datalad():
+    try:
+        # Step 1: Install datalad-installer via pip
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
+
+        # Step 2: Install git-annex using datalad-installer
+        subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
+
+        # Step 3: Set recommended git-annex configuration for performance improvement
+        subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
+
+        # Step 4: Install DataLad with pip
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad'])
+
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
+    except FileNotFoundError:
+        print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
+
+def datalad_create():
+    # Initialize a Git repository if one does not already exist
+    if not os.path.isdir(".datalad"):
+        subprocess.run(["datalad", "create"], check=True)
+        subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
+        print("Created an initial commit.")
+
 
 def github_login(username,privacy_setting):
     
@@ -223,7 +278,7 @@ def github_login(username,privacy_setting):
         f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
     ])
 
-def gitlab_login(username,privacy_setting):
+def gitlab_login(username,privacy_setting):  # FIX ME !! Not working
     repo_name = "{{ cookiecutter.repo_name }}"
     description = "{{ cookiecutter.description }}"
 
@@ -258,9 +313,22 @@ def install_requirements():
 def handle_repo_creation():
     """Handle repository creation and log-in based on selected platform."""
     platform = "{{ cookiecutter.repository_platform }}"
-    if platform in ["GitHub", "GitLab"]:
-
+    version_control = "{{cookiecutter.version_control}}"
+    git_check = is_git_installed()
+    
+    if version_control == None or git_check is False:
+        return
+    
+    elif version_control == "Git":
         git_init(platform)
+    elif version_control == "Datalad":
+        datalad_check = is_datalad_installed()
+        if datalad_check is False:
+            install_datalad()
+        datalad_create()
+
+
+    if platform in ["GitHub", "GitLab"]:
 
         username = input(f"Enter your {platform} username: ").strip()
 
