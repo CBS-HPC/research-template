@@ -270,9 +270,9 @@ def datalad_create():
             shutil.copy(readme_path, os.path.join(backup_dir, "README.md"))
         if os.path.exists(license_path):
             shutil.copy(license_path, os.path.join(backup_dir, "LICENSE"))
-        return backup_dir
+        return readme_path,license_path,backup_dir
 
-    def remove_backup(backup_dir):
+    def remove_backup(readme_path,license_path,backup_dir):
         # Restore the README.md and LICENSE files from the backup
         if os.path.exists(os.path.join(backup_dir, "README.md")):
             shutil.copy(os.path.join(backup_dir, "README.md"), readme_path)
@@ -283,9 +283,9 @@ def datalad_create():
         shutil.rmtree(backup_dir)
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        backup_dir = create_backup()
+        readme_path,license_path,backup_dir = create_backup()
         subprocess.run(["datalad", "create","--force"], check=True)
-        remove_backup(backup_dir)
+        remove_backup(readme_path,license_path,backup_dir)
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
         print("Created an initial commit.")
 
