@@ -193,150 +193,156 @@ def create_virtual_environment():
         elif virtual_environment.lower() == 'r': 
             print('Conda is not installed. Please install it to create an {programming_language}  environment.')
 
-def is_git_installed():
-    try:
-        # Run 'git --version' and capture the output
-        output = subprocess.check_output(['git', '--version'], stderr=subprocess.STDOUT)
-        # Decode the output from bytes to string and check if it contains 'git version'
-        if 'git version' in output.decode('utf-8'):
+def is_vc_installed(software_name):
+
+    def is_git_installed():
+        try:
+            # Run 'git --version' and capture the output
+            output = subprocess.check_output(['git', '--version'], stderr=subprocess.STDOUT)
+            # Decode the output from bytes to string and check if it contains 'git version'
+            if 'git version' in output.decode('utf-8'):
+                return True
+        except FileNotFoundError:
+            print("Git is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking Git version.")
+        return False
+
+    def is_datalad_installed():
+        try:
+            # Run 'datalad --version' and capture the output
+            output = subprocess.check_output(['datalad', '--version'], stderr=subprocess.STDOUT)
+            # Decode the output from bytes to string and check if it contains 'datalad'
+            if 'datalad' in output.decode('utf-8'):
+                return True
+        except FileNotFoundError:
+            print("DataLad is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking DataLad version.")
+        return False
+
+    def is_dvc_installed():
+        """
+        Check if DVC is installed on the system and return its version.
+
+        Returns:
+        str: DVC version if installed, otherwise an empty string.
+        """
+        try:
+            # Run 'dvc --version' and capture the output
+            output = subprocess.check_output(['dvc', '--version'], stderr=subprocess.STDOUT)
             return True
-    except FileNotFoundError:
-        print("Git is not installed or not in the system PATH.")
-    except subprocess.CalledProcessError:
-        print("An error occurred while checking Git version.")
-    return False
+        except FileNotFoundError:
+            print("DVC is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking DVC version.")
+        return False
 
-def git_init(platform):
-    # Initialize a Git repository if one does not already exist
-    if not os.path.isdir(".git"):
-        subprocess.run(["git", "init"], check=True)
-        print("Initialized a new Git repository.")
+    if software_name == 'Git':
+        check = is_git_installed()
+    elif software_name == 'Datalab':
+        check = is_datalad_installed()
+    elif software_name == 'DVC':
+        check = is_dvc_installed()
 
-    if platform == "GitHub":
-        # Rename branch to 'main' if it was initialized as 'master'
-        subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
+    return check
 
-    subprocess.run(["git", "add", "."], check=True)    
-    subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
-    print("Created an initial commit.")
-
-def is_datalad_installed():
-    try:
-        # Run 'datalad --version' and capture the output
-        output = subprocess.check_output(['datalad', '--version'], stderr=subprocess.STDOUT)
-        # Decode the output from bytes to string and check if it contains 'datalad'
-        if 'datalad' in output.decode('utf-8'):
-            print("DataLad is installed.")
-            return True
-    except FileNotFoundError:
-        print("DataLad is not installed or not in the system PATH.")
-    except subprocess.CalledProcessError:
-        print("An error occurred while checking DataLad version.")
-    return False
-
-def install_datalad():
-    try:
-        # Step 1: Install datalad-installer via pip
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
-
-        # Step 2: Install git-annex using datalad-installer
-        subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
-
-        # Step 3: Set recommended git-annex configuration for performance improvement
-        subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
-
-        # Step 4: Install DataLad with pip
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad'])
-
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
-    except FileNotFoundError:
-        print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
-
-def datalad_create():
-
-    def create_backup(files_to_backup,backup_dir):
-
-        # Check if backup directory exists, create it if not
-        if not os.path.exists(backup_dir):
-            os.makedirs(backup_dir)
-
-         # Backup the specified files
-        for file in files_to_backup:
-            if os.path.exists(file):
-                shutil.copy(file, os.path.join(backup_dir, file))
-                #print(f"Backed up {file}.")
-
-    def remove_backup(files_to_backup,backup_dir):
-        
-        # Prevent git-annex from handling specific files
-        for file in files_to_backup:
-            if os.path.exists(file):
-                # Use git annex add with --skip option to ignore these files
-                subprocess.run(["git", "annex", "add", "--skip", file], check=True)
-                print(f"Prevented {file} from being managed by git-annex.")
-
-        # Restore the backed-up files
-        for file in files_to_backup:
-            backup_file_path = os.path.join(backup_dir, file)
-            if os.path.exists(backup_file_path):
-                shutil.copy(backup_file_path, file)
-
-        # Remove the backup files
-        shutil.rmtree(backup_dir)
-   
-    def unlock_files(files_to_unlock):
-        attributes_file = ".gitattributes"
-        with open(attributes_file, "a") as f:
-            for file in files_to_unlock:
-                f.write(f"{file} annex.largefiles=nothing\n")
-
-
-    # Initialize a Git repository if one does not already exist
-    if not os.path.isdir(".datalad"):
-        files_to_unlock = ["README.md", "LICENSE", "hardware_information.txt"]
-        #backup_dir = "backup_files"
-        #create_backup(files_to_backup,backup_dir)
-        subprocess.run(["datalad", "create","--force"], check=True)
-        unlock_files(files_to_unlock )
-        subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
-        #subprocess.run(["git", "push", "--all"], check=True)
-        #print("Created an initial commit.")
-        #remove_backup(files_to_backup,backup_dir)
-
-def github_login(username,privacy_setting):
+def install_vc(software_name):
     
-    repo_name = "{{ cookiecutter.repo_name }}"
-    description = "{{ cookiecutter.description }}"
+    def install_datalad():
+        try:
+            # Step 1: Install datalad-installer via pip
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
 
-    # Login if necessary
-    login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
-    if "You are not logged into any GitHub hosts" in login_status.stderr:
-        print("Not logged into GitHub. Attempting login...")
-        subprocess.run(["gh", "auth", "login"], check=True)
+            # Step 2: Install git-annex using datalad-installer
+            subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
 
-    # Create the GitHub repository
-    subprocess.run([
-        "gh", "repo", "create", f"{username}/{repo_name}",
-        f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
-    ])
+            # Step 3: Set recommended git-annex configuration for performance improvement
+            subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
 
-def gitlab_login(username,privacy_setting):  # FIX ME !! Not working
-    repo_name = "{{ cookiecutter.repo_name }}"
-    description = "{{ cookiecutter.description }}"
+            # Step 4: Install DataLad with pip
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad'])
 
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred: {e}")
+        except FileNotFoundError:
+            print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
 
-    # Login if necessary
-    login_status = subprocess.run(["glab", "auth", "status"], capture_output=True, text=True)
-    if "Not logged in" in login_status.stderr:
-        print("Not logged into GitLab. Attempting login...")
-        subprocess.run(["glab", "auth", "login"], check=True)
+    def install_dvc():
+        """
+        Install DVC using pip.
+        """
+        try:
+            # Install DVC via pip
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc'])
+            print("DVC has been installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred during DVC installation: {e}")
+        except FileNotFoundError:
+            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
 
-    # Create the GitLab repository
-    subprocess.run([
-        "glab", "repo", "create", f"{username}/{repo_name}",
-        f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
-    ])
+    if software_name == 'Datalab':
+        install_datalad()
+    elif software_name == 'DVC':
+        install_dvc()
+
+def vc_init(version_control,platform):
+
+    def git_init(platform):
+        # Initialize a Git repository if one does not already exist
+        if not os.path.isdir(".git"):
+            subprocess.run(["git", "init"], check=True)
+            print("Initialized a new Git repository.")
+
+        if platform == "GitHub":
+            # Rename branch to 'main' if it was initialized as 'master'
+            subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
+
+        subprocess.run(["git", "add", "."], check=True)    
+        subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
+        print("Created an initial commit.")
+
+    def datalad_create():
+        def unlock_files(files_to_unlock):
+            attributes_file = ".gitattributes"
+            with open(attributes_file, "a") as f:
+                for file in files_to_unlock:
+                    f.write(f"{file} annex.largefiles=nothing\n")
+
+        # Initialize a Git repository if one does not already exist
+        if not os.path.isdir(".datalad"):
+            files_to_unlock = ["README.md", "LICENSE", "hardware_information.txt"]
+            subprocess.run(["datalad", "create","--force"], check=True)
+            unlock_files(files_to_unlock )
+            subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
+
+    def dvc_init(platform):
+        
+        # Initialize a Git repository if one does not already exist
+        if not os.path.isdir(".git"):
+            subprocess.run(["git", "init"], check=True)
+
+        if not os.path.isdir(".dvc"):
+            subprocess.run(["dvc", "init"], check=True)
+
+        folders = ["data","reports"]
+        for folder in folders:
+            subprocess.run(["dvc", "add",folder], check=True)
+        
+        if platform == "GitHub":
+            # Rename branch to 'main' if it was initialized as 'master'
+            subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
+
+        subprocess.run(["git", "add", "."], check=True)    
+        subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
+        print("Created an initial commit.")
+        
+    if version_control == "Git":
+        git_init(platform)
+    elif version_control == "Datalab":
+        datalad_create()
+    elif version_control == "DVC":
+        dvc_init(platform)
 
 def install_requirements():
     """Install the required packages from requirements.txt."""
@@ -353,28 +359,70 @@ def install_requirements():
         print(f"An error occurred while trying to install requirements: {e}")
         exit(1)
 
-def handle_repo_creation():
+def setup_version_control():
     """Handle repository creation and log-in based on selected platform."""
+    
     platform = "{{ cookiecutter.repository_platform }}"
     version_control = "{{cookiecutter.version_control}}"
-    git_check = is_git_installed()
     
-    if version_control == None or git_check is False:
+    check = is_vc_installed("Git")
+    
+    if version_control == None or check is False:
         return
     
-    if version_control == "Git":
-        git_init(platform)
+    if version_control in ["Datalad","DVC"]:
+        check = is_vc_installed(version_control)
+        if check is False:
+            install_vc(version_control)
+    
+    vc_init(version_control,platform)
+    
+def create_repository():
+    """Handle repository creation and log-in based on selected platform."""
+     
+    def github_login(username,privacy_setting):
+        
+        repo_name = "{{ cookiecutter.repo_name }}"
+        description = "{{ cookiecutter.description }}"
 
-    elif version_control == "Datalad":
-        datalad_check = is_datalad_installed()
-        if datalad_check is False:
-            install_datalad()
-        datalad_create()
+        # Login if necessary
+        login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
+        if "You are not logged into any GitHub hosts" in login_status.stderr:
+            print("Not logged into GitHub. Attempting login...")
+            subprocess.run(["gh", "auth", "login"], check=True)
 
-    if platform in ["GitHub", "GitLab"]:
+        # Create the GitHub repository
+        subprocess.run([
+            "gh", "repo", "create", f"{username}/{repo_name}",
+            f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
+        ])
 
+    def gitlab_login(username,privacy_setting):  # FIX ME !! Not working
+        repo_name = "{{ cookiecutter.repo_name }}"
+        description = "{{ cookiecutter.description }}"
+
+
+        # Login if necessary
+        login_status = subprocess.run(["glab", "auth", "status"], capture_output=True, text=True)
+        if "Not logged in" in login_status.stderr:
+            print("Not logged into GitLab. Attempting login...")
+            subprocess.run(["glab", "auth", "login"], check=True)
+
+        # Create the GitLab repository
+        subprocess.run([
+            "glab", "repo", "create", f"{username}/{repo_name}",
+            f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
+        ])
+
+    platform = "{{ cookiecutter.repository_platform }}"
+    version_control = "{{cookiecutter.version_control}}"
+
+    
+    if version_control == None or not os.path.isdir(".git"):
+        return
+    
+    elif platform in ["GitHub", "GitLab"]:
         username = input(f"Enter your {platform} username: ").strip()
-
         privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
         
         if privacy_setting not in ["private", "public"]:
@@ -385,8 +433,7 @@ def handle_repo_creation():
             github_login(username,privacy_setting)
         elif platform == "GitLab":
             gitlab_login(username,privacy_setting)
-    else:
-        print("No repository platform selected; skipping repository creation.")
+
 
 # Install requirements
 #nstall_requirements()
@@ -397,5 +444,8 @@ create_virtual_environment()
 # Get Hardware information
 get_hardware_info()
 
-# Handle repository creation
-handle_repo_creation()
+# Setup Version Control
+setup_version_control()
+
+# Create Remote Repository
+create_repository()
