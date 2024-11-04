@@ -10,25 +10,45 @@ import zipfile
 def setup_rclone(bin_folder):
     """Download and extract rclone to the specified bin folder."""
 
-    def set_path_rclone(bin_folder, rclone_executable):
-        """Set the rclone executable to the system PATH."""
+    def set_to_path(path_to_set):
+        """Set the rclone executable to the user-level PATH based on the operating system."""
+       
         if platform.system() == "Windows":
-            path_variable = os.getenv("PATH")
-            rclone_path = os.path.abspath(os.path.join(bin_folder, rclone_executable))
-            if rclone_path not in path_variable.split(os.pathsep):
-                os.environ["PATH"] += os.pathsep + rclone_path
-                print(f"Added rclone to PATH: {rclone_path}")
+            import winreg  # Only available on Windows
+            # Set PATH for Windows
+            try:
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_SET_VALUE)
+                current_path = winreg.QueryValueEx(key, "Path")[0]
+                
+                if path_to_set not in current_path.split(os.pathsep):
+                    new_path = current_path + os.pathsep + path_to_set
+                    winreg.SetValueEx(key, "Path", 0, winreg.REG_EXPAND_SZ, new_path)
+                    print(f"Added rclone to user PATH: {path_to_set}")
+                else:
+                    print("rclone is already in user PATH.")
+                winreg.CloseKey(key)
+            except Exception as e:
+                print(f"Failed to update PATH in Windows: {e}")
+        
+        elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
+            # Set PATH for Unix-like systems
+            shell_config_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc for Zsh users
+            if os.path.exists(os.path.expanduser("~/.zshrc")):
+                shell_config_file = os.path.expanduser("~/.zshrc")
+            
+            # Check if the PATH is already set
+            with open(shell_config_file, "r") as file:
+                lines = file.readlines()
+            
+            if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
+                with open(shell_config_file, "a") as file:
+                    file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
+                print(f"Added rclone to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
             else:
-                print("rclone is already in the PATH.")
-        elif platform.system() in ["Linux", "Darwin"]:
-            rclone_path = os.path.abspath(os.path.join(bin_folder, rclone_executable))
-            # Add rclone to the PATH for Linux/Mac
-            print(f"Please add the following to your PATH to use rclone: {rclone_path}")
-            print("You can add this to your shell's configuration file (e.g., .bashrc, .bash_profile, .zshrc):")
-            print(f'export PATH="$PATH:{bin_folder}"')
+                print("rclone is already in user PATH in the shell configuration file.")
         else:
-            print("Unsupported operating system. Please add rclone to your PATH manually.")
-
+            print("Unsupported operating system. PATH not modified.")
+        
     def download_rclone(bin_folder):
         system = platform.system()
         
@@ -67,7 +87,9 @@ def setup_rclone(bin_folder):
         os.remove(local_zip)
         print(f"rclone installed successfully at {os.path.join(bin_folder, rclone_executable)}.")
 
-        return rclone_executable
+        rclone_path = os.path.abspath(os.path.join(bin_folder, rclone_executable))
+
+        return rclone_path
 
     def clone_git_annex_remote_rclone(bin_folder):
         """Clone the git-annex-remote-rclone repository to the specified bin folder."""
@@ -85,36 +107,21 @@ def setup_rclone(bin_folder):
             print(f"Cloning {repo_url} into {repo_path}...")
             subprocess.run(["git", "clone", repo_url, repo_path], check=True)
             print(f"Repository cloned successfully to {repo_path}.")
-        
+
+        repo_path = os.path.abspath(repo_path)  # Convert to absolute path
         return repo_path
 
-    def set_path_git_annex_remote_rclone(repo_path):
-            """Add the cloned repository to the PATH."""
-            if platform.system() == "Windows":
-                path_variable = os.getenv("PATH")
-                if repo_path not in path_variable.split(os.pathsep):
-                    os.environ["PATH"] += os.pathsep + repo_path
-                    print(f"Added {repo_path} to PATH.")
-                else:
-                    print("The repository is already in the PATH.")
-            elif platform.system() in ["Linux", "Darwin"]:
-                print(f"Please add the following to your PATH to use executables from the cloned repository: {repo_path}")
-                print("You can add this to your shell's configuration file (e.g., .bashrc, .bash_profile, .zshrc):")
-                print(f'export PATH="$PATH:{repo_path}"')
 
     # Download, Extract and Copy rclone
-    rclone_executable = download_rclone(bin_folder)
+    rclone_path = download_rclone(bin_folder)
     # Set rclone to PATH
-    set_path_rclone(bin_folder, rclone_executable)
+    set_to_path(rclone_path)
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     repo_path = clone_git_annex_remote_rclone(bin_folder)
     
     # Set to path
-    set_path_git_annex_remote_rclone(repo_path)
-
-
-
+    set_to_path(repo_path)
 
 def get_hardware_info():
     """
@@ -359,7 +366,7 @@ def is_vc_installed(software_name):
 
     return check
 
-def install_vc(software_name):
+def install_vc(software_name,remote_storage):
     
     def install_datalad():
         try:
@@ -393,9 +400,12 @@ def install_vc(software_name):
         except FileNotFoundError:
             print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
 
+    
+
     if software_name == 'Datalab':
         install_datalad()
-        setup_rclone("bins")
+        if remote_storage in ["Dropbox", "Diec Storage"]:
+            setup_rclone("bin")
     elif software_name == 'DVC':
         install_dvc()
 
@@ -514,7 +524,7 @@ def setup_version_control():
     if version_control in ["Datalad","DVC"]:
         check = is_vc_installed(version_control)
         if check is False:
-            install_vc(version_control)
+            install_vc(version_control,remote_storage)
     
     vc_init(version_control,platform)
     
@@ -574,7 +584,7 @@ def create_repository():
             gitlab_login(username,privacy_setting)
 
 
-setup_rclone("bins")
+#setup_rclone("bin")
 
 # Install requirements
 #nstall_requirements()
