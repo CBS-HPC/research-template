@@ -288,6 +288,7 @@ def install_vc(software_name):
 
 def vc_init(version_control,platform):
 
+
     def git_init(platform):
         # Initialize a Git repository if one does not already exist
         if not os.path.isdir(".git"):
@@ -318,16 +319,42 @@ def vc_init(version_control,platform):
 
     def dvc_init(platform):
         
+        def get_remote_path():
+            """
+            Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
+            
+            Returns:
+            - str: Validated file path if the file exists and has the correct extension.
+            """
+
+            # Prompt the user for the file path
+            folder_path = input("Please enter the path to DVC remote storage: ").strip()
+                
+            # Check if the file exists
+            if not os.path.isdir(folder_path):
+                print("The local path does not exist")
+                return None
+        
+            # If both checks pass, return the valid file path
+            return folder_path
+            
         # Initialize a Git repository if one does not already exist
         if not os.path.isdir(".git"):
             subprocess.run(["git", "init"], check=True)
 
+        # Init dvc
         if not os.path.isdir(".dvc"):
             subprocess.run(["dvc", "init"], check=True)
+
+        # Add dvc remote storage
+        dvc_remote = get_remote_path()
+        if dvc_remote:
+            subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
 
         folders = ["data","reports"]
         for folder in folders:
             subprocess.run(["dvc", "add",folder], check=True)
+    
         
         if platform == "GitHub":
             # Rename branch to 'main' if it was initialized as 'master'
