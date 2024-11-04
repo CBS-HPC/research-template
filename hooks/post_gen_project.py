@@ -32,6 +32,46 @@ def setup_rclone(bin_folder):
             print(f"An error occurred: {e}")
 
     def set_to_path(path_to_set):
+        """Set the specified path to the user-level PATH using PowerShell on Windows."""
+        
+        if platform.system() == "Windows":
+            # PowerShell command to check if the path is already in PATH
+            check_command = f'$currentPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User); $currentPath -notlike "*{path_to_set}*"'
+            
+            # Execute the check command
+            try:
+                is_not_in_path = subprocess.check_output(['powershell', '-Command', check_command], text=True).strip()
+                if is_not_in_path == "True":
+                    # If the path is not in PATH, append it
+                    add_command = f'[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";{path_to_set}", [System.EnvironmentVariableTarget]::User)'
+                    subprocess.run(['powershell', '-Command', add_command], check=True)
+                    print(f"Added {path_to_set} to user PATH.")
+                else:
+                    print(f"{path_to_set} is already in user PATH.")
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to update PATH in Windows: {e}")
+        
+        elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
+            # Set PATH for Unix-like systems
+            shell_config_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc for Zsh users
+            if os.path.exists(os.path.expanduser("~/.zshrc")):
+                shell_config_file = os.path.expanduser("~/.zshrc")
+            
+            # Check if the PATH is already set
+            with open(shell_config_file, "r") as file:
+                lines = file.readlines()
+            
+            if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
+                with open(shell_config_file, "a") as file:
+                    file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
+                print(f"Added rclone to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
+            else:
+                print("rclone is already in user PATH in the shell configuration file.")
+        else:
+            print("Unsupported operating system. PATH not modified.")
+
+
+    def set_to_path2(path_to_set):
         """Set the rclone executable to the user-level PATH based on the operating system."""
        
         if platform.system() == "Windows":
@@ -142,9 +182,9 @@ def setup_rclone(bin_folder):
     repo_path = clone_git_annex_remote_rclone(bin_folder)
     
     # Set to path
-    #set_to_path(repo_path)
+    set_to_path(repo_path)
 
-    paths_to_env(bin_folder, [rclone_path,repo_path])
+    #paths_to_env(bin_folder, [rclone_path,repo_path])
 
 
 def get_hardware_info():
