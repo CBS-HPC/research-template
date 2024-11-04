@@ -176,7 +176,7 @@ def setup_rclone(bin_folder):
     # Download, Extract and Copy rclone
     rclone_path = download_rclone(bin_folder)
     # Set rclone to PATH
-    #set_to_path(rclone_path)
+    set_to_path(rclone_path)
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     repo_path = clone_git_annex_remote_rclone(bin_folder)
