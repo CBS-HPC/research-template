@@ -520,8 +520,8 @@ def setup_version_control():
         check = is_vc_installed(version_control)
         if check is False:
             install_vc(version_control,remote_storage)
-    
-    if version_control =="Datalad" and remote_storage in ["Dropbox", "Diec Storage"]:
+            
+    if version_control =="Datalad" and remote_storage in ["Dropbox", "Deic Storage"]:
         setup_rclone("bin")
     
     vc_init(version_control,platform)
