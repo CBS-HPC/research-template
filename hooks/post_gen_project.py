@@ -485,7 +485,7 @@ def vc_init(version_control,platform):
         
     if version_control == "Git":
         git_init(platform)
-    elif version_control == "Datalab":
+    elif version_control == "Datalad":
         datalad_create()
     elif version_control == "DVC":
         dvc_init(platform)
@@ -521,8 +521,8 @@ def setup_version_control():
         if check is False:
             install_vc(version_control,remote_storage)
     
-    #if version_control =="Datalad" and remote_storage in ["Dropbox", "Diec Storage"]:
-    #setup_rclone("bin")
+    if version_control =="Datalad" and remote_storage in ["Dropbox", "Diec Storage"]:
+        setup_rclone("bin")
     
     vc_init(version_control,platform)
     
