@@ -325,8 +325,6 @@ def is_vc_installed(software_name):
             print("Git is not installed or not in the system PATH.")
         except subprocess.CalledProcessError:
             print("An error occurred while checking Git version.")
-        
-        print("hello")
         return False
 
     def is_datalad_installed():
@@ -363,8 +361,6 @@ def is_vc_installed(software_name):
         check = is_git_installed()
     elif software_name == 'Datalad':
         check = is_datalad_installed()
-
-
     elif software_name == 'DVC':
         check = is_dvc_installed()
 
@@ -517,7 +513,6 @@ def setup_version_control():
     remote_storage = "{{cookiecutter.remote_storage}}"
     
     check = is_vc_installed("Git")
-    
     if version_control == None or check is False:
         return
     
@@ -526,9 +521,9 @@ def setup_version_control():
         if check is False:
             install_vc(version_control,remote_storage)
     
-    if version_control =="Datalad" and remote_storage in ["Dropbox", "Diec Storage"]:
-            setup_rclone("bin")
-
+    #if version_control =="Datalad" and remote_storage in ["Dropbox", "Diec Storage"]:
+    #setup_rclone("bin")
+    
     vc_init(version_control,platform)
     
 def create_repository():
