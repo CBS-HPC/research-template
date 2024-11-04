@@ -325,6 +325,8 @@ def is_vc_installed(software_name):
             print("Git is not installed or not in the system PATH.")
         except subprocess.CalledProcessError:
             print("An error occurred while checking Git version.")
+        
+        print("hello")
         return False
 
     def is_datalad_installed():
