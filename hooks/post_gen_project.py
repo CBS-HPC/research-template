@@ -359,7 +359,7 @@ def is_vc_installed(software_name):
 
     if software_name == 'Git':
         check = is_git_installed()
-    elif software_name == 'Datalab':
+    elif software_name == 'Datalad':
         check = is_datalad_installed()
     elif software_name == 'DVC':
         check = is_dvc_installed()
@@ -402,7 +402,7 @@ def install_vc(software_name,remote_storage):
 
     
 
-    if software_name == 'Datalab':
+    if software_name == 'Datalad':
         install_datalad()
         if remote_storage in ["Dropbox", "Diec Storage"]:
             setup_rclone("bin")
