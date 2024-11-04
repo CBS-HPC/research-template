@@ -361,6 +361,8 @@ def is_vc_installed(software_name):
         check = is_git_installed()
     elif software_name == 'Datalad':
         check = is_datalad_installed()
+
+
     elif software_name == 'DVC':
         check = is_dvc_installed()
 
@@ -400,12 +402,8 @@ def install_vc(software_name,remote_storage):
         except FileNotFoundError:
             print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
 
-    
-
     if software_name == 'Datalad':
         install_datalad()
-        if remote_storage in ["Dropbox", "Diec Storage"]:
-            setup_rclone("bin")
     elif software_name == 'DVC':
         install_dvc()
 
@@ -526,6 +524,9 @@ def setup_version_control():
         if check is False:
             install_vc(version_control,remote_storage)
     
+    if version_control =="Datalad" and remote_storage in ["Dropbox", "Diec Storage"]:
+            setup_rclone("bin")
+
     vc_init(version_control,platform)
     
 def create_repository():
