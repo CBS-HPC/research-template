@@ -10,6 +10,27 @@ import zipfile
 def setup_rclone(bin_folder):
     """Download and extract rclone to the specified bin folder."""
 
+
+    def paths_to_env(bin_folder, paths):
+        """
+        Write paths to a .env file located one level above the bin folder.
+
+        Parameters:
+        - bin_folder (str): Path to the bin folder.
+        - paths (list): List of paths to write to the .env file.
+        """
+        # Determine the path to the .env file
+        env_file_path = os.path.abspath(os.path.join(bin_folder, '..', '.env'))
+        
+        try:
+            with open(env_file_path, 'a') as env_file:
+                for path in paths:
+                    # Format each path as an environment variable
+                    env_file.write(f'PATH={path};${{PATH}}\n')
+            print(f"Paths written to .env file at {env_file_path}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
     def set_to_path(path_to_set):
         """Set the rclone executable to the user-level PATH based on the operating system."""
        
@@ -115,13 +136,16 @@ def setup_rclone(bin_folder):
     # Download, Extract and Copy rclone
     rclone_path = download_rclone(bin_folder)
     # Set rclone to PATH
-    set_to_path(rclone_path)
+    #set_to_path(rclone_path)
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     repo_path = clone_git_annex_remote_rclone(bin_folder)
     
     # Set to path
-    set_to_path(repo_path)
+    #set_to_path(repo_path)
+
+    paths_to_env(bin_folder, [rclone_path,repo_path])
+
 
 def get_hardware_info():
     """
@@ -520,7 +544,7 @@ def setup_version_control():
         check = is_vc_installed(version_control)
         if check is False:
             install_vc(version_control,remote_storage)
-            
+
     if version_control =="Datalad" and remote_storage in ["Dropbox", "Deic Storage"]:
         setup_rclone("bin")
     
