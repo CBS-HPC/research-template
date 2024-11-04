@@ -10,27 +10,6 @@ import zipfile
 def setup_rclone(bin_folder):
     """Download and extract rclone to the specified bin folder."""
 
-
-    def paths_to_env(bin_folder, paths):
-        """
-        Write paths to a .env file located one level above the bin folder.
-
-        Parameters:
-        - bin_folder (str): Path to the bin folder.
-        - paths (list): List of paths to write to the .env file.
-        """
-        # Determine the path to the .env file
-        env_file_path = os.path.abspath(os.path.join(bin_folder, '..', '.env'))
-        
-        try:
-            with open(env_file_path, 'a') as env_file:
-                for path in paths:
-                    # Format each path as an environment variable
-                    env_file.write(f'PATH={path};${{PATH}}\n')
-            print(f"Paths written to .env file at {env_file_path}")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
     def set_to_path(path_to_set):
         """Set the specified path to the user-level PATH using PowerShell on Windows."""
         
