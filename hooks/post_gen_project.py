@@ -10,47 +10,7 @@ import zipfile
 def setup_rclone(bin_folder):
     """Download and extract rclone to the specified bin folder."""
 
-    def set_to_path_no_admin(path_to_set):
-        """Set the specified path to the user-level PATH using PowerShell on Windows."""
-        
-        if platform.system() == "Windows":
-            # PowerShell command to check if the path is already in PATH
-            check_command = f'$currentPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User); $currentPath -notlike "*{path_to_set}*"'
-            
-            # Execute the check command
-            try:
-                is_not_in_path = subprocess.check_output(['powershell', '-Command', check_command], text=True).strip()
-                if is_not_in_path == "True":
-                    # If the path is not in PATH, append it
-                    add_command = f'[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";{path_to_set}", [System.EnvironmentVariableTarget]::User)'
-                    subprocess.run(['powershell', '-Command', add_command], check=True)
-                    print(f"Added {path_to_set} to user PATH.")
-                else:
-                    print(f"{path_to_set} is already in user PATH.")
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to update PATH in Windows: {e}")
-        
-        elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
-            # Set PATH for Unix-like systems
-            shell_config_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc for Zsh users
-            if os.path.exists(os.path.expanduser("~/.zshrc")):
-                shell_config_file = os.path.expanduser("~/.zshrc")
-            
-            # Check if the PATH is already set
-            with open(shell_config_file, "r") as file:
-                lines = file.readlines()
-            
-            if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
-                with open(shell_config_file, "a") as file:
-                    file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
-                print(f"Added rclone to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
-            else:
-                print("rclone is already in user PATH in the shell configuration file.")
-        else:
-            print("Unsupported operating system. PATH not modified.")
-
-
-
+    # FIX ME !!
     def set_to_path(path_to_set):
         """Set the specified path to the user-level PATH, requesting admin privileges on Windows if needed."""
 
@@ -96,46 +56,6 @@ def setup_rclone(bin_folder):
         else:
             print("Unsupported operating system. PATH not modified.")
 
-
-    def set_to_path2(path_to_set):
-        """Set the rclone executable to the user-level PATH based on the operating system."""
-       
-        if platform.system() == "Windows":
-            import winreg  # Only available on Windows
-            # Set PATH for Windows
-            try:
-                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_SET_VALUE)
-                current_path = winreg.QueryValueEx(key, "Path")[0]
-                
-                if path_to_set not in current_path.split(os.pathsep):
-                    new_path = current_path + os.pathsep + path_to_set
-                    winreg.SetValueEx(key, "Path", 0, winreg.REG_EXPAND_SZ, new_path)
-                    print(f"Added rclone to user PATH: {path_to_set}")
-                else:
-                    print("rclone is already in user PATH.")
-                winreg.CloseKey(key)
-            except Exception as e:
-                print(f"Failed to update PATH in Windows: {e}")
-        
-        elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
-            # Set PATH for Unix-like systems
-            shell_config_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc for Zsh users
-            if os.path.exists(os.path.expanduser("~/.zshrc")):
-                shell_config_file = os.path.expanduser("~/.zshrc")
-            
-            # Check if the PATH is already set
-            with open(shell_config_file, "r") as file:
-                lines = file.readlines()
-            
-            if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
-                with open(shell_config_file, "a") as file:
-                    file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
-                print(f"Added rclone to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
-            else:
-                print("rclone is already in user PATH in the shell configuration file.")
-        else:
-            print("Unsupported operating system. PATH not modified.")
-        
     def download_rclone(bin_folder):
         system = platform.system()
         
@@ -198,19 +118,79 @@ def setup_rclone(bin_folder):
         repo_path = os.path.abspath(repo_path)  # Convert to absolute path
         return repo_path
 
+    check = is_vc_installed('rclone')
+    if check is False:
+        rclone_path = download_rclone(bin_folder)
+        set_to_path(rclone_path)
 
-    # Download, Extract and Copy rclone
-    rclone_path = download_rclone(bin_folder)
-    # Set rclone to PATH
-    set_to_path(rclone_path)
-
-    # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
-    repo_path = clone_git_annex_remote_rclone(bin_folder)
     
-    # Set to path
-    set_to_path(repo_path)
+    check = is_vc_installed('git-annex-remote-rclone')
+    # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
+    if check is False:
+        repo_path = clone_git_annex_remote_rclone(bin_folder)
+        set_to_path(repo_path)
 
-    #paths_to_env(bin_folder, [rclone_path,repo_path])
+def setup_remote_storage(remote_storage):
+
+    def create_deic_storage_remote():
+        """
+        Prompts the user for their email and password, then creates an rclone remote configuration.
+        """
+        email = input("Please enter your email (e.g., kgp.lib@cbs.dk): ").strip()
+        password = input("Please enter your chosen password: ").strip()
+
+        # Construct the command
+        command = [
+            'rclone', 'config', 'create', 'deic-storage', 'sftp',
+            'host', 'sftp.storage.deic.dk',
+            'port', '2222',
+            'user', email,
+            'pass', password
+        ]
+
+        try:
+            # Execute the command
+            subprocess.run(command, check=True)
+            print("Rclone remote 'deic-storage' created successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to create rclone remote: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+    def create_git_annex_remote(remote_name,target,prefix):
+        """
+        Creates a git annex remote configuration for 'deic-storage' using rclone.
+        """
+        remote_name = "deic-storage"
+        target = "dropbox-for-friends"  # Change this to your actual target as needed
+        prefix = "my_awesome_dataset"  # Change this to your desired prefix
+
+        # Construct the command
+        command = [
+            'git', 'annex', 'initremote', remote_name,
+            'type=external', 'externaltype=rclone',
+            'chunk=50MiB', 'encryption=none',
+            'target=' + target, 'prefix=' + prefix
+        ]
+
+        try:
+            # Execute the command
+            subprocess.run(command, check=True)
+            print(f"Git annex remote '{remote_name}' created successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to create git annex remote: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+    repo_name = "{{ cookiecutter.repo_name }}"
+
+    if remote_storage == "Dropbox":
+        print("Hello")
+    elif remote_storage == "Deic Storage":
+        create_deic_storage_remote()
+        create_git_annex_remote("deic-storage","deic-storage",repo_name)
+
+
 
 
 def get_hardware_info():
@@ -439,20 +419,58 @@ def is_vc_installed(software_name):
         """
         try:
             # Run 'dvc --version' and capture the output
-            output = subprocess.check_output(['dvc', '--version'], stderr=subprocess.STDOUT)
+            results = subprocess.check_output(['dvc', '--version'], stderr=subprocess.STDOUT)
             return True
         except FileNotFoundError:
             print("DVC is not installed or not in the system PATH.")
         except subprocess.CalledProcessError:
             print("An error occurred while checking DVC version.")
         return False
+    
+    def is_rclone_installed():
+        """
+        Check if rclone is installed on the system and return its version.
 
+        Returns:
+        str: rclone version if installed, otherwise an empty string.
+        """
+        try:
+            # Run 'rclone --version' and capture the output
+            result = subprocess.check_output(['rclone', '--version'], stderr=subprocess.STDOUT)
+            return True
+        except FileNotFoundError:
+            print("rclone is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError as e:
+            print("An error occurred while checking rclone version:")
+        return False
+    
+    def is_git_annex_remote_rclone_installed():
+        """
+        Check if git-annex-remote-rclone is installed on the system.
+
+        Returns:
+        str: Confirmation message if installed, otherwise an empty string.
+        """
+        try:
+            # Run 'git-annex-remote-rclone' and capture the output
+            result = subprocess.check_output(['git-annex-remote-rclone'], stderr=subprocess.STDOUT)
+            return True  # Decode bytes to string and strip whitespace
+        except FileNotFoundError:
+            print("git-annex-remote-rclone is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError as e:
+            print("An error occurred while checking git-annex-remote-rclone:")
+        return False
+    
     if software_name == 'Git':
         check = is_git_installed()
     elif software_name == 'Datalad':
         check = is_datalad_installed()
     elif software_name == 'DVC':
         check = is_dvc_installed()
+    elif software_name == 'rclone':
+        check = is_rclone_installed()
+    elif software_name == 'git-annex-remote-rclone':
+        check = is_git_annex_remote_rclone_installed()
 
     return check
 
@@ -495,7 +513,7 @@ def install_vc(software_name,remote_storage):
     elif software_name == 'DVC':
         install_dvc()
 
-def vc_init(version_control,platform):
+def vc_init(version_control,platform,remote_storage):
 
 
     def git_init(platform):
@@ -573,10 +591,13 @@ def vc_init(version_control,platform):
         subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
         print("Created an initial commit.")
         
+
     if version_control == "Git":
         git_init(platform)
     elif version_control == "Datalad":
         datalad_create()
+        setup_remote_storage(remote_storage)
+
     elif version_control == "DVC":
         dvc_init(platform)
 
@@ -613,8 +634,9 @@ def setup_version_control():
 
     if version_control =="Datalad" and remote_storage in ["Dropbox", "Deic Storage"]:
         setup_rclone("bin")
+
     
-    vc_init(version_control,platform)
+    vc_init(version_control,platform,remote_storage)
     
 def create_repository():
     """Handle repository creation and log-in based on selected platform."""
