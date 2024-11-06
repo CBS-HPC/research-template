@@ -514,7 +514,8 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
         """
         try:
             # Run 'git-annex-remote-rclone' and capture the output
-            result = subprocess.check_output(['git-annex-remote-rclone'], stderr=subprocess.STDOUT)
+            result = subprocess.check_output(["where",'git-annex-remote-rclone'], stderr=subprocess.STDOUT)
+            #result = subprocess.check_output(['git-annex-remote-rclone'], stderr=subprocess.STDOUT)
             return True  # Decode bytes to string and strip whitespace
         except FileNotFoundError:
             print("git-annex-remote-rclone is not installed or not in the system PATH.")
