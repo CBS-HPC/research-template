@@ -408,27 +408,54 @@ def setup_dvc(remote_storage,platform,repo_name):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-    def dvc_local_storage(remote_directory):
+    def dvc_local_storage(repo_name):
 
-        def get_remote_path(remote_directory):
+        def get_remote_path(repo_name):
             """
-            Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
-            
+            Prompt the user to provide the path to a DVC remote storage folder. 
+            If `folder_path` already ends with `repo_name` and exists, an error is raised.
+            Otherwise, if `folder_path` exists but does not end with `repo_name`, 
+            it appends `repo_name` to `folder_path` to create the required directory.
+
+            Parameters:
+            - repo_name (str): The name of the repository to ensure at the end of `folder_path`.
+
             Returns:
-            - str: Validated file path if the file exists and has the correct extension.
+            - str: Finalized path to DVC remote storage if valid, or None if an error occurs.
             """
-            # Prompt the user for the file path
-            folder_path = input("Please enter the path to DVC remote storage: ").strip()
-                
-            # Check if the file exists
+            # Prompt the user for the folder path
+            folder_path = input("Please enter the path to DVC remote storage:").strip()
+            
+            # Attempt to create folder_path if it does not exist
             if not os.path.isdir(folder_path):
-                print("The local path does not exist")
-                return None
-    
-            # If both checks pass, return the valid file path
+                try:
+                    os.makedirs(folder_path, exist_ok=True)
+                    print(f"The path '{folder_path}' did not exist and was created.")
+                except OSError as e:
+                    print(f"Failed to create the path '{folder_path}': {e}")
+                    return None
+            
+            # Check if folder_path already ends with repo_name
+            if folder_path.endswith(repo_name):
+                # Check if it already exists as a directory
+                if os.path.isdir(folder_path):
+                    print(f"The path '{folder_path}' already exists with '{repo_name}' as the final folder.")
+                    return None  # Error out if the path already exists
+            else:
+                # Append repo_name to folder_path if it doesn’t end with it
+                folder_path = os.path.join(folder_path, repo_name)
+                try:
+                    # Create the repo_name directory if it doesn't exist
+                    os.makedirs(folder_path, exist_ok=True)
+                    print(f"Created directory: {folder_path}")
+                except OSError as e:
+                    print(f"Failed to create the path '{folder_path}': {e}")
+                    return None
+
+            # Return the finalized path
             return folder_path
 
-        dvc_remote = get_remote_path(remote_directory)
+        dvc_remote = get_remote_path(repo_name)
         if dvc_remote:
             subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
 
