@@ -340,7 +340,7 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
         """
         try:
             # Install DVC via pip
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc','dvc-ssh'])
             print("DVC has been installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"An error occurred during DVC installation: {e}")
@@ -741,12 +741,11 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
     if check is False:
             install_datalad()
 
-    if remote_storage in ["Dropbox", "Deic Storage"]:
-            setup_rclone("bin")
 
     datalad_create()
-
-    datalad_deic_storage(repo_name)
+    if remote_storage in ["Dropbox", "Deic Storage"]:
+        setup_rclone("bin")
+        datalad_deic_storage(repo_name)
 
 
 # Install requirements
