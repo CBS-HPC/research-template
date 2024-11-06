@@ -799,7 +799,7 @@ def setup_dvc(remote_storage,platform,repo_name):
         except FileNotFoundError:
             print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
 
-    def dvc_init(version_control,remote_storage,platform,repo_name):
+    def dvc_init(remote_storage,platform,repo_name):
     
         # Initialize a Git repository if one does not already exist
         if not os.path.isdir(".git"):
