@@ -426,6 +426,8 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
             # Prompt the user for the folder path
             folder_path = input("Please enter the path to DVC remote storage:").strip()
             
+            folder_path = os.path.abspath(folder_path)
+
             # Attempt to create folder_path if it does not exist
             if not os.path.isdir(folder_path):
                 try:
@@ -533,6 +535,9 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
 
                 # Step 4: Install DataLad with pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad'])
+
+                # Upgrading pyopenssl needed for datalad create siblings
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyopenssl','--upgrade']) 
 
             except subprocess.CalledProcessError as e:
                 print(f"An error occurred: {e}")
@@ -730,7 +735,60 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
           
         rclone_remote(email,password)
         git_annex_remote("deic-storage","deic-storage",repo_name)
-                
+
+    def datalad_local_storage(repo_name):
+
+        def get_remote_path(repo_name):
+            """
+            Prompt the user to provide the path to a DVC remote storage folder. 
+            If `folder_path` already ends with `repo_name` and exists, an error is raised.
+            Otherwise, if `folder_path` exists but does not end with `repo_name`, 
+            it appends `repo_name` to `folder_path` to create the required directory.
+
+            Parameters:
+            - repo_name (str): The name of the repository to ensure at the end of `folder_path`.
+
+            Returns:
+            - str: Finalized path to DVC remote storage if valid, or None if an error occurs.
+            """
+            # Prompt the user for the folder path
+            folder_path = input("Please enter the path to Datalad emote storage (ria):").strip()
+            
+            folder_path = os.path.abspath(folder_path)
+
+            # Attempt to create folder_path if it does not exist
+            if not os.path.isdir(folder_path):
+                try:
+                    os.makedirs(folder_path, exist_ok=True)
+                    print(f"The path '{folder_path}' did not exist and was created.")
+                except OSError as e:
+                    print(f"Failed to create the path '{folder_path}': {e}")
+                    return None
+            
+            # Check if folder_path already ends with repo_name
+            if folder_path.endswith(repo_name):
+                # Check if it already exists as a directory
+                if os.path.isdir(folder_path):
+                    print(f"The path '{folder_path}' already exists with '{repo_name}' as the final folder.")
+                    return None  # Error out if the path already exists
+            else:
+                # Append repo_name to folder_path if it doesn’t end with it
+                folder_path = os.path.join(folder_path, repo_name)
+                try:
+                    # Create the repo_name directory if it doesn't exist
+                    os.makedirs(folder_path, exist_ok=True)
+                    print(f"Created directory: {folder_path}")
+                except OSError as e:
+                    print(f"Failed to create the path '{folder_path}': {e}")
+                    return None
+
+            # Return the finalized path
+            return folder_path
+
+        datalad_remote = get_remote_path(repo_name)
+        if datalad_remote:
+            subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
+
     check = setup_git(version_control,platform)
 
     if check is False:
@@ -742,13 +800,15 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
             install_datalad()
 
     datalad_create()
-    if remote_storage in ["Dropbox", "Deic Storage"]:
-        print("hello")
-        print(remote_storage)
+
+    datalad_local_storage
+
+    if remote_storage == "Local Path":
+        datalad_local_storage(repo_name)
+    elif remote_storage in ["Dropbox", "Deic Storage"]:
         setup_rclone("bin")
         datalad_deic_storage(repo_name)
-
-
+        
 # Install requirements
 #nstall_requirements()
 
