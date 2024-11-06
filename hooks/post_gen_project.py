@@ -272,13 +272,13 @@ def setup_version_control():
     if version_control == None:
         return
     elif version_control == "Git":
-        check = setup_git(platform)
+        check = setup_git(version_control,platform)
         if check is False:
             return
     if version_control == "Datalad":
-        setup_datalad(remote_storage,platform,repo_name)
+        setup_datalad(version_control,remote_storage,platform,repo_name)
     elif version_control == "DVC":
-        setup_dvc(remote_storage,platform,repo_name)
+        setup_dvc(version_control,remote_storage,platform,repo_name)
     
 def setup_git(version_control,platform):
     
@@ -315,7 +315,7 @@ def setup_git(version_control,platform):
         
     return check
     
-def setup_dvc(remote_storage,platform,repo_name):
+def setup_dvc(version_control,remote_storage,platform,repo_name):
 
     def is_dvc_installed():
         """
@@ -459,7 +459,7 @@ def setup_dvc(remote_storage,platform,repo_name):
         if dvc_remote:
             subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
 
-    check = setup_git()
+    check = setup_git(version_control,platform)
 
     if check is False:
         return
@@ -471,7 +471,7 @@ def setup_dvc(remote_storage,platform,repo_name):
 
     dvc_init(remote_storage,platform,repo_name)
     
-def setup_datalad(remote_storage,platform,repo_name):
+def setup_datalad(version_control,remote_storage,platform,repo_name):
 
     def is_datalad_installed():
         try:
@@ -731,7 +731,7 @@ def setup_datalad(remote_storage,platform,repo_name):
         rclone_remote(email,password)
         git_annex_remote("deic-storage","deic-storage",repo_name)
                 
-    check = setup_git()
+    check = setup_git(version_control,platform)
 
     if check is False:
         return
