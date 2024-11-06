@@ -741,9 +741,10 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
     if check is False:
             install_datalad()
 
-
     datalad_create()
     if remote_storage in ["Dropbox", "Deic Storage"]:
+        print("hello")
+        print(remote_storage)
         setup_rclone("bin")
         datalad_deic_storage(repo_name)
 
