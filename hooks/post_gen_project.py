@@ -606,7 +606,7 @@ def vc_init(version_control,platform,remote_storage,repo_name):
 
             dvc_remote = get_remote_path(repo_name)
             if dvc_remote:
-            subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
+                subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
 
         # Initialize a Git repository if one does not already exist
         if not os.path.isdir(".git"):
