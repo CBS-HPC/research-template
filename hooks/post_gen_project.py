@@ -386,9 +386,9 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
         # Construct the command to add the DVC SFTP remote
         add_command = [
             'dvc', 'remote', 'add', '-d', 'deic_storage',
-            f"sftp://'{email}'@sftp.storage.deic.dk:2222/{remote_directory}"
+            f"sftp://'{email}'@sftp.storage.deic.dk:2222"
         ]
-        
+        #f"sftp://'{email}'@sftp.storage.deic.dk:2222/{remote_directory}"
         # Construct the command to set the password for the remote
         password_command = [
             'dvc', 'remote', 'modify', 'deic_storage', 'password', password
