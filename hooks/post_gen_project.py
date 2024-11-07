@@ -206,7 +206,20 @@ def setup_remote_repository():
             print(f"Unexpected error: {e}")
             return False
 
-    def install_gh(check,install_path):
+    def install_gh(check):
+        if check:
+            return check 
+        try:
+            # Install DVC via pip
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'github-cli'])
+            print("GitHub CLI has been installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred during GitHub CLI installation: {e}")
+        except FileNotFoundError:
+            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
+        
+    # FiX ME 
+    def install_gh_new(check,install_path):
         if check:
             return check 
         try:
@@ -331,7 +344,7 @@ def setup_remote_repository():
 
         if remote_repo == "GitHub":
             check = is_gh_installed()
-            check = install_gh(check,"bin/gh")
+            check = install_gh(check)
 
             gh_login(check,username,privacy_setting,repo_name,description)
         elif remote_repo == "GitLab":
@@ -804,8 +817,8 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
         except subprocess.CalledProcessError:
             print("An error occurred while checking DVC version.")
         return False
-    
-    def install_dvc(install_path):
+    # FIX ME 
+    def install_dvc_new(install_path):
         """
         Install DVC using pip.
         """
@@ -820,7 +833,7 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
 
         set_to_path(install_path) 
     
-    def install_dvc_old():
+    def install_dvc():
         """
         Install DVC using pip.
         """
@@ -955,7 +968,8 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
     check = is_dvc_installed()
 
     if check is False:
-            install_dvc("bin/dvc")
+            #install_dvc("bin/dvc")
+            install_dvc()
 
     dvc_init(remote_storage,platform,repo_name)
     
@@ -1008,8 +1022,8 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
         except subprocess.CalledProcessError as e:
             print("An error occurred while checking git-annex-remote-rclone:")
         return False
-    
-    def install_datalad(install_path):
+    # FIX ME 
+    def install_datalad_new(install_path):
             try:
                 # Step 1: Install datalad-installer via pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'datalad-installer'])
@@ -1036,7 +1050,7 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
 
             set_to_path(install_path)      
 
-    def install_datalad_old():
+    def install_datalad():
             try:
                 # Step 1: Install datalad-installer via pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
@@ -1266,7 +1280,8 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
     check = is_datalad_installed()
 
     if check is False:
-        install_datalad("bin/datalad")
+        install_datalad()
+        #install_datalad("bin/datalad")
     datalad_create()
 
     if remote_storage == "Local Path":
