@@ -1015,7 +1015,8 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'datalad-installer'])
 
                 # Step 2: Install git-annex using datalad-installer
-                subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
+                subprocess.check_call([f"{install_path}/datalad-installer", 'git-annex', '-m', 'datalad/git-annex:release'])
+                #subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
 
                 # Step 3: Set recommended git-annex configuration for performance improvement
                 subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
