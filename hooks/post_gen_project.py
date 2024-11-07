@@ -218,12 +218,14 @@ def setup_remote_repository():
         if check:
             try:
                 # Check if the user is logged in
-                login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, check=True)
-                
-                if "You are not logged into any GitHub hosts" in login_status.stderr:
-                    print("Not logged into GitHub. Attempting login...")
+                subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, check=True)
+            except Exception as e:
+                try:
                     subprocess.run(["gh", "auth", "login"], check=True)
-                
+                except Exception as e:
+                    print(f"'gh auth login' failed: {e}")
+                    return False  # Return False for any unexpected errors
+            try:    
                 # Create the GitHub repository
                 subprocess.run([
                     "gh", "repo", "create", f"{username}/{repo_name}",
@@ -232,19 +234,11 @@ def setup_remote_repository():
                 
                 print(f"Repository {repo_name} created and pushed successfully.")
                 return True  # Return True if everything is successful
-
-            except subprocess.CalledProcessError as e:
-                print(f"Error during GitHub CLI operation: {e}")
-                print(f"Standard output: {e.stdout}")
-                print(f"Standard error: {e.stderr}")
-                return False  # Return False if an error occurs
-
             except Exception as e:
-                print(f"Unexpected error: {e}")
-                return False  # Return False for any unexpected errors
+                print(f"Failed to create '{username}/{repo_name}' on Github")
+                return False  
         else:
-            print("Check flag is not set to True. Skipping GitHub login and repository creation.")
-            return False  # Return False if the check flag is not True
+            return False  
 
     def gitlab_login(username,privacy_setting,repo_name,description):  # FIX ME !! Not working
 
@@ -278,6 +272,7 @@ def setup_remote_repository():
         if remote_repo == "GitHub":
             check = is_gh_installed()
             check = install_gh(check)
+
             gh_login(check,username,privacy_setting,repo_name,description)
         elif remote_repo == "GitLab":
             gitlab_login(username,privacy_setting,repo_name,description)
@@ -668,11 +663,11 @@ def setup_git(version_control,platform):
                     print("Git is not fully configured.")
                     return False  # Return False if Git is not fully configured
 
-            except subprocess.CalledProcessError as e:
-                print(f"Git configuration check failed: {e}")
-                return False  # Return False if subprocess fails
-            except Exception as e:
-                print(f"Unexpected error: {e}")
+            #except subprocess.CalledProcessError as e:
+                #print(f"Git configuration check failed: {e}")
+            #    return False  # Return False if subprocess fails
+            except Exception as e:    
+                #print(f"Unexpected error: {e}")
                 return False  # Return False for any other unexpected errors
         else:
             print("Git configuration check skipped.")
