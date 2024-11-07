@@ -1313,7 +1313,7 @@ def back_up_software(software_list,destination_folder):
 
 # Install requirements
 #nstall_requirements()
-set_to_path(path_to_set)
+
 # Create Virtual Environment
 setup_virtual_environment()
 
