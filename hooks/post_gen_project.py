@@ -195,7 +195,7 @@ def setup_remote_repository():
         
         elif os_type == "linux":
             distro_name = distro.name().lower()
-            if "ubuntu" in distro or "debian" in distro_name:
+            if "ubuntu" in distro_name or "debian" in distro_name:
                 command = ["sudo", "apt", "install", "gh"]
             elif "centos" in distro_name or "rhel" in distro_name:
                 command = ["sudo", "yum", "install", "gh"]
