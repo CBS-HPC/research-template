@@ -130,9 +130,21 @@ def setup_remote_repository():
 
     def is_gh_installed():
         try:
-            subprocess.run(["gh", "--version"], check=True, capture_output=True, text=True)
+            # Attempt to run `gh --version` to check if GitHub CLI is installed
+            result = subprocess.run(["gh", "--version"], check=True, capture_output=True, text=True)
+            # If the command executes successfully, return True
             return True
-        except subprocess.CalledProcessError:
+        except FileNotFoundError:
+            # If `gh` is not found in the system, it means GitHub CLI is not installed
+            print("GitHub CLI (gh) is not installed.")
+            return False
+        except subprocess.CalledProcessError as e:
+            # If the command fails with a non-zero exit code, return False
+            print(f"Error occurred while checking GitHub CLI: {e}")
+            return False
+        except Exception as e:
+            # Catch any unexpected errors
+            print(f"Unexpected error: {e}")
             return False
 
     def install_gh(check):
