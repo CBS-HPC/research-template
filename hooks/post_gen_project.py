@@ -161,7 +161,19 @@ def setup_remote_repository():
             print(f"Unexpected error: {e}")
             return False
 
-    def install_gh(check):
+    def install_gh(check,install_path):
+        if check:
+            return check 
+        try:
+            # Install DVC via pip
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'github-cli'])
+            print("GitHub CLI has been installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred during GitHub CLI installation: {e}")
+        except FileNotFoundError:
+            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
+
+    def install_gh_old(check):
 
         if check:
             return check 
@@ -272,7 +284,7 @@ def setup_remote_repository():
 
         if remote_repo == "GitHub":
             check = is_gh_installed()
-            check = install_gh(check)
+            check = install_gh(check,"bin/gh")
 
             gh_login(check,username,privacy_setting,repo_name,description)
         elif remote_repo == "GitLab":
@@ -746,7 +758,19 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
             print("An error occurred while checking DVC version.")
         return False
     
-    def install_dvc():
+    def install_dvc(install_path):
+        """
+        Install DVC using pip.
+        """
+        try:
+            # Install DVC via pip
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'dvc','dvc-ssh'])
+            print("DVC has been installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred during DVC installation: {e}")
+        except FileNotFoundError:
+            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
+    def install_dvc_old():
         """
         Install DVC using pip.
         """
@@ -881,7 +905,7 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
     check = is_dvc_installed()
 
     if check is False:
-            install_dvc()
+            install_dvc("bin/dvc")
 
     dvc_init(remote_storage,platform,repo_name)
     
@@ -935,7 +959,29 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
             print("An error occurred while checking git-annex-remote-rclone:")
         return False
     
-    def install_datalad():
+    def install_datalad(install_path):
+            try:
+                # Step 1: Install datalad-installer via pip
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'datalad-installer'])
+
+                # Step 2: Install git-annex using datalad-installer
+                subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
+
+                # Step 3: Set recommended git-annex configuration for performance improvement
+                subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
+
+                # Step 4: Install DataLad with pip
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'datalad'])
+
+                # Upgrading pyopenssl needed for datalad create siblings
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'pyopenssl', '--upgrade'])
+    
+            except subprocess.CalledProcessError as e:
+                print(f"An error occurred: {e}")
+            except FileNotFoundError:
+                print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")           
+
+    def install_datalad_old():
             try:
                 # Step 1: Install datalad-installer via pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
@@ -1210,8 +1256,7 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
     check = is_datalad_installed()
 
     if check is False:
-            install_datalad()
-
+            install_datalad("bin/datalad")
     datalad_create()
 
     if remote_storage == "Local Path":
@@ -1219,7 +1264,6 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
     elif remote_storage in ["Dropbox", "Deic Storage"]:
         setup_rclone("bin")
         datalad_deic_storage(repo_name)
-
 
 def back_up_software(software_list,destination_folder):
 
@@ -1259,8 +1303,6 @@ def back_up_software(software_list,destination_folder):
     
     # Copy the found software executables to the specified folder
     copy_software_to_folder(software_paths, destination_folder)
-
-
 
 # Install requirements
 #nstall_requirements()
