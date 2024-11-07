@@ -5,6 +5,19 @@ import platform
 import requests
 import zipfile
 import urllib.request
+import importlib
+
+
+required_libraries = ['distro'] 
+for lib in required_libraries:
+    try:
+        importlib.import_module(lib)
+    except ImportError:
+        print(f"Installing {lib}...")
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+
+import distro
+
 
 def get_hardware_info():
     """
@@ -181,19 +194,21 @@ def setup_remote_repository():
                 return False
         
         elif os_type == "linux":
-            distro = platform.linux_distribution()[0].lower()
-            if "ubuntu" in distro or "debian" in distro:
-                try:
-                    subprocess.run(["sudo", "apt", "install", "gh"], check=True)
-                    print("GitHub CLI (gh) installed successfully on Linux.")
-                    return True
-                except subprocess.CalledProcessError as e:
-                    print(f"Failed to install GitHub CLI on Linux: {e}")
-                    return False
+            distro_name = distro.name().lower()
+            if "ubuntu" in distro or "debian" in distro_name:
+                command = ["sudo", "apt", "install", "gh"]
+            elif "centos" in distro_name or "rhel" in distro_name:
+                command = ["sudo", "yum", "install", "gh"]
             else:
-                print("Unsupported Linux distribution for automated GitHub CLI installation.")
+                print(f"Unsupported Linux distribution: {distro_name}")
                 return False
-
+            try:
+                subprocess.run(command, check=True)
+                print("GitHub CLI (gh) installed successfully on Linux.")
+                return True
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install GitHub CLI on Linux: {e}")
+                return False
         else:
             print("Unsupported operating system.")
             return False
