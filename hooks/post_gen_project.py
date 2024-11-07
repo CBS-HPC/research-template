@@ -6,6 +6,7 @@ import requests
 import zipfile
 import urllib.request
 import importlib
+import shutil
 
 
 required_libraries = ['distro'] 
@@ -1218,7 +1219,49 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
     elif remote_storage in ["Dropbox", "Deic Storage"]:
         setup_rclone("bin")
         datalad_deic_storage(repo_name)
-        
+
+
+def back_up_software(software_list,destination_folder):
+
+    def get_software_path(software_list):
+        software_paths = {}
+        for software in software_list:
+            try:
+                # Run the 'which' command to find the executable path
+                result = subprocess.run(['which', software], capture_output=True, text=True, check=True)
+                software_paths[software] = result.stdout.strip()
+            except subprocess.CalledProcessError:
+                print(f"{software} not found.")
+        return software_paths
+
+    def copy_software_to_folder(software_paths, destination_folder):
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
+            
+        for software, path in software_paths.items():
+            if path:
+                try:
+                    # Get the filename from the full path
+                    filename = os.path.basename(path)
+                    # Copy the file to the destination folder
+                    shutil.copy(path, os.path.join(destination_folder, filename))
+                    print(f"Copied {software} from {path} to {destination_folder}.")
+                except Exception as e:
+                    print(f"Failed to copy {software}: {e}")
+            else:
+                print(f"Skipping {software} because no path was found.")
+
+    # List of software to check for
+    software_list = ['git-annex', 'git', 'datalad', 'dvc', 'gh']
+    
+    # Get paths for all software in the list
+    software_paths = get_software_path(software_list)
+    
+    # Copy the found software executables to the specified folder
+    copy_software_to_folder(software_paths, destination_folder)
+
+
+
 # Install requirements
 #nstall_requirements()
 
@@ -1226,10 +1269,12 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
 setup_virtual_environment()
 
 # Get Hardware information
-get_hardware_info()
+#get_hardware_info()
 
 # Setup Version Control
 setup_version_control()
 
 # Create Remote Repository
 setup_remote_repository()
+
+back_up_software(['git-annex', 'git', 'datalad', 'dvc', 'gh'],"bin")
