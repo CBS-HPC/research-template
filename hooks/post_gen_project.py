@@ -127,20 +127,96 @@ def install_requirements():
 
 def setup_remote_repository():
     """Handle repository creation and log-in based on selected platform."""
-     
-    def github_login(username,privacy_setting,repo_name,description):
-        
-        # Login if necessary
-        login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
-        if "You are not logged into any GitHub hosts" in login_status.stderr:
-            print("Not logged into GitHub. Attempting login...")
-            subprocess.run(["gh", "auth", "login"], check=True)
 
-        # Create the GitHub repository
-        subprocess.run([
-            "gh", "repo", "create", f"{username}/{repo_name}",
-            f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
-        ])
+    def is_gh_installed():
+        try:
+            subprocess.run(["gh", "--version"], check=True, capture_output=True, text=True)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def install_gh(check):
+
+        if check:
+            return check 
+
+        os_type = platform.system().lower()
+        
+        if os_type == "windows":
+            installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
+            installer_name = "gh_installer.msi"
+            try:
+                # Download the installer
+                subprocess.run(["curl", "-LO", installer_url], check=True)
+                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart"], check=True)
+                print("GitHub CLI (gh) installed successfully.")
+                return True
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install GitHub CLI: {e}")
+                return False
+            finally:
+                if os.path.exists(installer_name):
+                    os.remove(installer_name)
+        
+        elif os_type == "darwin":  # macOS
+            try:
+                # Using Homebrew to install GitHub CLI
+                subprocess.run(["brew", "install", "gh"], check=True)
+                print("GitHub CLI (gh) installed successfully on macOS.")
+                return True
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install GitHub CLI on macOS: {e}")
+                return False
+        
+        elif os_type == "linux":
+            distro = platform.linux_distribution()[0].lower()
+            if "ubuntu" in distro or "debian" in distro:
+                try:
+                    subprocess.run(["sudo", "apt", "install", "gh"], check=True)
+                    print("GitHub CLI (gh) installed successfully on Linux.")
+                    return True
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to install GitHub CLI on Linux: {e}")
+                    return False
+            else:
+                print("Unsupported Linux distribution for automated GitHub CLI installation.")
+                return False
+
+        else:
+            print("Unsupported operating system.")
+            return False
+
+    def gh_login(check, username, privacy_setting, repo_name, description):
+        if check:
+            try:
+                # Check if the user is logged in
+                login_status = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, check=True)
+                
+                if "You are not logged into any GitHub hosts" in login_status.stderr:
+                    print("Not logged into GitHub. Attempting login...")
+                    subprocess.run(["gh", "auth", "login"], check=True)
+                
+                # Create the GitHub repository
+                subprocess.run([
+                    "gh", "repo", "create", f"{username}/{repo_name}",
+                    f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
+                ], check=True)
+                
+                print(f"Repository {repo_name} created and pushed successfully.")
+                return True  # Return True if everything is successful
+
+            except subprocess.CalledProcessError as e:
+                print(f"Error during GitHub CLI operation: {e}")
+                print(f"Standard output: {e.stdout}")
+                print(f"Standard error: {e.stderr}")
+                return False  # Return False if an error occurs
+
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+                return False  # Return False for any unexpected errors
+        else:
+            print("Check flag is not set to True. Skipping GitHub login and repository creation.")
+            return False  # Return False if the check flag is not True
 
     def gitlab_login(username,privacy_setting,repo_name,description):  # FIX ME !! Not working
 
@@ -172,7 +248,9 @@ def setup_remote_repository():
             privacy_setting = "private"
 
         if platform == "GitHub":
-            github_login(username,privacy_setting,repo_name,description)
+            check = is_gh_installed()
+            check = install_gh(check)
+            gh_login(check,username,privacy_setting,repo_name,description)
         elif platform == "GitLab":
             gitlab_login(username,privacy_setting,repo_name,description)
 
