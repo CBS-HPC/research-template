@@ -20,6 +20,51 @@ for lib in required_libraries:
 import distro
 
 
+def set_to_path(path_to_set):
+    """Set the specified path to the user-level PATH, requesting admin privileges on Windows if needed."""
+
+    if platform.system() == "Windows":
+        try:
+            # Command to check if the path is in the user PATH
+            check_command = f'$currentPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User); $currentPath -notlike "*{path_to_set}*"'
+            is_not_in_path = subprocess.check_output(['powershell', '-Command', check_command], text=True).strip()
+            
+            # If the path is not in PATH, add it with admin privileges
+            if is_not_in_path == "True":
+                add_command = (
+                    f"Start-Process powershell -Verb runAs -ArgumentList "
+                    f"'[System.Environment]::SetEnvironmentVariable(\"Path\", "
+                    f"[System.Environment]::GetEnvironmentVariable(\"Path\", "
+                    f"[System.EnvironmentVariableTarget]::User) + \";{path_to_set}\", "
+                    f"[System.EnvironmentVariableTarget]::User)'"
+                )
+                subprocess.run(['powershell', '-Command', add_command], check=True)
+                print(f"Added {path_to_set} to user PATH with admin rights.")
+            else:
+                print(f"{path_to_set} is already in the user PATH.")
+                
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to update PATH on Windows: {e}")
+
+    elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
+        shell_config_file = os.path.expanduser("~/.bashrc")
+        if os.path.exists(os.path.expanduser("~/.zshrc")):
+            shell_config_file = os.path.expanduser("~/.zshrc")
+        
+        # Check if the PATH is already set
+        with open(shell_config_file, "r") as file:
+            lines = file.readlines()
+        
+        if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
+            with open(shell_config_file, "a") as file:
+                file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
+            print(f"Added {path_to_set} to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
+        else:
+            print(f"{path_to_set} is already in the user PATH in {shell_config_file}.")
+    
+    else:
+        print("Unsupported operating system. PATH not modified.")
+
 def get_hardware_info():
     """
     Extract hardware information and save it to a file.
@@ -172,6 +217,8 @@ def setup_remote_repository():
             print(f"An error occurred during GitHub CLI installation: {e}")
         except FileNotFoundError:
             print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
+        
+        set_to_path(install_path)
 
     def install_gh_old(check):
 
@@ -770,6 +817,9 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
             print(f"An error occurred during DVC installation: {e}")
         except FileNotFoundError:
             print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
+
+        set_to_path(install_path) 
+    
     def install_dvc_old():
         """
         Install DVC using pip.
@@ -979,7 +1029,9 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
             except subprocess.CalledProcessError as e:
                 print(f"An error occurred: {e}")
             except FileNotFoundError:
-                print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")           
+                print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
+
+            set_to_path(install_path)      
 
     def install_datalad_old():
             try:
@@ -1007,51 +1059,6 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
         """Download and extract rclone to the specified bin folder."""
 
         # FIX ME !!
-        def set_to_path(path_to_set):
-            """Set the specified path to the user-level PATH, requesting admin privileges on Windows if needed."""
-
-            if platform.system() == "Windows":
-                try:
-                    # Command to check if the path is in the user PATH
-                    check_command = f'$currentPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User); $currentPath -notlike "*{path_to_set}*"'
-                    is_not_in_path = subprocess.check_output(['powershell', '-Command', check_command], text=True).strip()
-                    
-                    # If the path is not in PATH, add it with admin privileges
-                    if is_not_in_path == "True":
-                        add_command = (
-                            f"Start-Process powershell -Verb runAs -ArgumentList "
-                            f"'[System.Environment]::SetEnvironmentVariable(\"Path\", "
-                            f"[System.Environment]::GetEnvironmentVariable(\"Path\", "
-                            f"[System.EnvironmentVariableTarget]::User) + \";{path_to_set}\", "
-                            f"[System.EnvironmentVariableTarget]::User)'"
-                        )
-                        subprocess.run(['powershell', '-Command', add_command], check=True)
-                        print(f"Added {path_to_set} to user PATH with admin rights.")
-                    else:
-                        print(f"{path_to_set} is already in the user PATH.")
-                        
-                except subprocess.CalledProcessError as e:
-                    print(f"Failed to update PATH on Windows: {e}")
-
-            elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
-                shell_config_file = os.path.expanduser("~/.bashrc")
-                if os.path.exists(os.path.expanduser("~/.zshrc")):
-                    shell_config_file = os.path.expanduser("~/.zshrc")
-                
-                # Check if the PATH is already set
-                with open(shell_config_file, "r") as file:
-                    lines = file.readlines()
-                
-                if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
-                    with open(shell_config_file, "a") as file:
-                        file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
-                    print(f"Added {path_to_set} to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
-                else:
-                    print(f"{path_to_set} is already in the user PATH in {shell_config_file}.")
-            
-            else:
-                print("Unsupported operating system. PATH not modified.")
-
         def download_rclone(bin_folder):
             system = platform.system()
             
@@ -1256,7 +1263,7 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
     check = is_datalad_installed()
 
     if check is False:
-            install_datalad("bin/datalad")
+        install_datalad("bin/datalad")
     datalad_create()
 
     if remote_storage == "Local Path":
@@ -1306,7 +1313,7 @@ def back_up_software(software_list,destination_folder):
 
 # Install requirements
 #nstall_requirements()
-
+set_to_path(path_to_set)
 # Create Virtual Environment
 setup_virtual_environment()
 
