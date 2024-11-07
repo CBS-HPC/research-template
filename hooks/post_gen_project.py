@@ -4,7 +4,7 @@ import sys
 import platform
 import requests
 import zipfile
-
+import urllib.request
 
 def get_hardware_info():
     """
@@ -37,7 +37,7 @@ def get_hardware_info():
     except subprocess.CalledProcessError as e:
         print(f"Error retrieving hardware information: {e}")
 
-def create_virtual_environment():
+def setup_virtual_environment():
     """
     Create a virtual environment for Python or R based on the specified programming language.
     
@@ -70,62 +70,7 @@ def create_virtual_environment():
         
         # If both checks pass, return the valid file path
         return file_path
-        
-    def check_conda():
-        """Check if conda is installed."""
-        try:
-            subprocess.run(['conda', '--version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            return True
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            return False
-
-    def create_conda_env(env_name, programming_language):
-        """Create a conda environment."""
-        subprocess.run(['conda', 'create', '--name', env_name, programming_language, '--yes'], check=True)
-        print(f'Conda environment "{env_name}" for {programming_language} created successfully.')
-
-    def create_from_yml(env_name=None,yml_file='environment.yml'):
-        """
-        Create a conda environment from an environment.yml file with a specified name.
-        
-        Parameters:
-        - env_file: str, path to the environment YAML file. Defaults to 'environment.yml'.
-        - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
-        """
-        try:
-            # Construct the command
-            command = ['conda', 'env', 'create', '-f', yml_file]
-            if env_name:
-                command.extend(['--name', env_name])  # Add the specified name
-
-            # Run the command
-            subprocess.run(command, check=True)
-            print(f"Conda environment '{env_name or 'default name in YAML'}' created successfully from {yml_file}.")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to create conda environment: {e}")
-        except FileNotFoundError:
-            print("Conda is not installed or not found in the system path.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-    def generate_yml(env_name,requirements_path):
-        """Generate an environment.yml file using a requirements.txt file."""
-        yml_content = f"""
-            name: {env_name}
-            channels:
-            - conda-forge
-            dependencies:
-            - python>=3.5
-            - anaconda
-            - pip
-            - pip:
-                - -r file:{requirements_path}
-            """
-        with open('environment.yml', 'w') as yml_file:
-            yml_file.write(yml_content)
-        print(f"Generated environment.yml file using {requirements_path}.")
-
+   
     def create_venv_env(env_name):
         """Create a Python virtual environment using venv."""
         subprocess.run([sys.executable, '-m', 'venv', env_name], check=True)
@@ -135,34 +80,11 @@ def create_virtual_environment():
         """Create a Python virtual environment using virtualenv."""
         subprocess.run(['virtualenv', env_name], check=True)
         print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
-
-    def export_conda_env(env_name, output_file='environment.yml'):
-        """
-        Export the details of a conda environment to a YAML file.
         
-        Parameters:
-        - env_name: str, name of the conda environment to export.
-        - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
-        """
-        try:
-            # Use subprocess to run the conda export command
-            with open(output_file, 'w') as f:
-                subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)
-            
-            print(f"Conda environment '{env_name}' exported to {output_file}.")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to export conda environment: {e}")
-        except FileNotFoundError:
-            print("Conda is not installed or not found in the system path.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-                
-
     repo_name = "{{ cookiecutter.repo_name }}"
     virtual_environment = "{{ cookiecutter.virtual_environment}}"
 
-    if virtual_environment.lower() not in ['python','r','environment.yaml','requirements.txt']:
+    if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
         return
     
     # Ask for user confirmation
@@ -172,27 +94,20 @@ def create_virtual_environment():
         print("Virtual environment creation canceled.")
         return
     
-    if virtual_environment.lower() in ['environment.yaml','requirements.txt']:
+    if virtual_environment ['environment.yaml','requirements.txt']:
         env_file = get_file_path()
         if env_file is None:
             return
 
-    if virtual_environment.lower() in ['python','r','environment.yaml','requirements.txt']:
-        if check_conda():
-            if virtual_environment.lower() in ['python','r']:
-                create_conda_env(repo_name,virtual_environment)
-            elif virtual_environment.lower() in ['environment.yaml']:
-                create_from_yml(repo_name,env_file)
-            elif virtual_environment.lower() in ['requirements.txt']:
-                generate_yml(repo_name,env_file)
-                create_from_yml(repo_name,env_file)
-            export_conda_env(repo_name)
-        elif virtual_environment.lower() == 'python':
+    if virtual_environment in ['Python','R','environment.yaml','requirements.txt']:
+        check = setup_conda(virtual_environment,repo_name,env_file)
+
+        if check is False and virtual_environment == 'Python':
             if subprocess.call(['which', 'virtualenv']) == 0:
                 create_virtualenv_env(repo_name)
             else:
                 create_venv_env(repo_name)
-        elif virtual_environment.lower() == 'r': 
+        elif virtual_environment == 'R': 
             print('Conda is not installed. Please install it to create an {programming_language}  environment.')
 
 def install_requirements():
@@ -210,7 +125,7 @@ def install_requirements():
         print(f"An error occurred while trying to install requirements: {e}")
         exit(1)
 
-def create_repository():
+def setup_remote_repository():
     """Handle repository creation and log-in based on selected platform."""
      
     def github_login(username,privacy_setting,repo_name,description):
@@ -279,7 +194,224 @@ def setup_version_control():
         setup_datalad(version_control,remote_storage,platform,repo_name)
     elif version_control == "DVC":
         setup_dvc(version_control,remote_storage,platform,repo_name)
+
+def setup_conda(virtual_environment,repo_name,env_file):
+            
+    def is_conda_installed(check = True):
+        """Check if conda is installed."""
+        
+        if check is False:
+            return check
+        try:
+            subprocess.run(['conda', '--version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
+    def install_miniconda(check,install_path):
+        """
+        Downloads and installs Miniconda to a specified location based on the operating system.
+        
+        Parameters:
+        - install_path (str): The absolute path where Miniconda should be installed.
+
+        Returns:
+        - bool: True if installation is successful, False otherwise.
+        """
+        if check:
+            return check
+        
+        system = platform.system().lower()
+        installer_name = None
+        download_dir = os.path.dirname(install_path)  # One level up from the install_path
+        installer_path = None
+        
+        if system == "windows":
+            installer_name = "Miniconda3-latest-Windows-x86_64.exe"
+            url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+            installer_path = os.path.join(download_dir, installer_name)
+            install_command = [installer_path, "/InstallationType=JustMe", f"/AddToPath=0", f"/RegisterPython=0", f"/S", f"/D={install_path}"]
+            
+        elif system == "darwin":  # macOS
+            installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
+            url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+            installer_path = os.path.join(download_dir, installer_name)
+            install_command = ["bash", installer_path, "-b", "-p", install_path]
+            
+        elif system == "linux":
+            installer_name = "Miniconda3-latest-Linux-x86_64.sh"
+            url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+            installer_path = os.path.join(download_dir, installer_name)
+            install_command = ["bash", installer_path, "-b", "-p", install_path]
+            
+        else:
+            print("Unsupported operating system.")
+            return False
+        
+        try:
+            print(f"Downloading {installer_name} from {url} to {download_dir}...")
+            urllib.request.urlretrieve(url, installer_path)
+            print("Download complete.")
+            
+            print("Installing Miniconda...")
+            subprocess.run(install_command, check=True)
+            if installer_path and os.path.exists(installer_path):
+                os.remove(installer_path)
+            print("Miniconda installation complete.")
+            return True
+            
+        except Exception as e:
+            if installer_path and os.path.exists(installer_path):
+                os.remove(installer_path)
+            print(f"Failed to install Miniconda: {e}")
+            return False
+
+    def add_miniconda_to_path(check,install_path):
+        """
+        Adds Miniconda's bin (Linux/Mac) or Scripts (Windows) directory to the system PATH.
+
+        Parameters:
+        - install_path (str): The absolute path where Miniconda is installed.
+
+        Returns:
+        - bool: True if addition to PATH is successful, False otherwise.
+        """
+        if check:
+            return check
     
+        system = platform.system().lower()
+        conda_bin_path = os.path.join(install_path, 'Scripts' if system == 'windows' else 'bin')
+        
+        try:
+            if system == 'windows':
+                subprocess.run(f'setx PATH "%PATH%;{conda_bin_path}"', shell=True, check=True)
+                print("Miniconda path added to system PATH (permanent for Windows).")
+            else:
+                shell_profile = os.path.expanduser("~/.bashrc" if system == "linux" else "~/.zshrc")
+                with open(shell_profile, "a") as file:
+                    file.write(f'\n# Miniconda path\nexport PATH="{conda_bin_path}:$PATH"\n')
+                os.environ["PATH"] = f"{conda_bin_path}:{os.environ['PATH']}"
+                print(f"Miniconda path added to PATH. Please restart your terminal or source your {shell_profile} to apply.")
+            return True
+            
+        except Exception as e:
+            print(f"Failed to add Miniconda to PATH: {e}")
+            return False
+
+    def initialize_conda_shell(check):
+        """
+        Initializes Conda for the user's shell by running `conda init` and starting a new interactive shell session.
+
+        Returns:
+        - bool: True if Conda shell initialization is successful, False otherwise.
+        """
+        if check:
+            return check
+        system = platform.system().lower()
+
+        try:
+            subprocess.run(["conda", "init"], check=True)
+            print("Conda shell initialization complete.")
+            
+            if system == "windows":
+                print("Please restart your terminal to apply the changes.")
+            elif system == "linux" or system == "darwin":
+                print("Starting a new shell session to apply Conda setup...")
+                subprocess.run(["bash", "-i"])
+            return True
+
+        except Exception as e:
+            print(f"Failed to initialize Conda shell: {e}")
+            return False
+
+    def create_conda_env(env_name, programming_language):
+        """Create a conda environment."""
+        subprocess.run(['conda', 'create', '--name', env_name, programming_language, '--yes'], check=True)
+        print(f'Conda environment "{env_name}" for {programming_language} created successfully.')
+
+    def create_from_yml(env_name=None,yml_file='environment.yml'):
+        """
+        Create a conda environment from an environment.yml file with a specified name.
+        
+        Parameters:
+        - env_file: str, path to the environment YAML file. Defaults to 'environment.yml'.
+        - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
+        """
+        try:
+            # Construct the command
+            command = ['conda', 'env', 'create', '-f', yml_file]
+            if env_name:
+                command.extend(['--name', env_name])  # Add the specified name
+
+            # Run the command
+            subprocess.run(command, check=True)
+            print(f"Conda environment '{env_name or 'default name in YAML'}' created successfully from {yml_file}.")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to create conda environment: {e}")
+        except FileNotFoundError:
+            print("Conda is not installed or not found in the system path.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    def generate_yml(env_name,requirements_path):
+        """Generate an environment.yml file using a requirements.txt file."""
+        yml_content = f"""
+            name: {env_name}
+            channels:
+            - conda-forge
+            dependencies:
+            - python>=3.5
+            - anaconda
+            - pip
+            - pip:
+                - -r file:{requirements_path}
+            """
+        with open('environment.yml', 'w') as yml_file:
+            yml_file.write(yml_content)
+        print(f"Generated environment.yml file using {requirements_path}.")
+
+    def export_conda_env(env_name, output_file='environment.yml'):
+        """
+        Export the details of a conda environment to a YAML file.
+        
+        Parameters:
+        - env_name: str, name of the conda environment to export.
+        - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
+        """
+        try:
+            # Use subprocess to run the conda export command
+            with open(output_file, 'w') as f:
+                subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)
+            
+            print(f"Conda environment '{env_name}' exported to {output_file}.")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to export conda environment: {e}")
+        except FileNotFoundError:
+            print("Conda is not installed or not found in the system path.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+               
+
+    install_path = "bin/miniconda"
+    check = is_conda_installed()
+    check = install_miniconda(check,install_path)
+    check = add_miniconda_to_path(check,install_path)
+    check = initialize_conda_shell(check,install_path)
+
+    if check:
+        if virtual_environment in ['Python','R']:
+            create_conda_env(repo_name,virtual_environment)
+        elif virtual_environment in ['environment.yaml']:
+            create_from_yml(repo_name,env_file)
+        elif virtual_environment in ['requirements.txt']:
+            generate_yml(repo_name,env_file)
+            create_from_yml(repo_name,env_file)
+        export_conda_env(repo_name)
+    
+    return check
+
 def setup_git(version_control,platform):
     
     def is_git_installed():
@@ -295,23 +427,192 @@ def setup_git(version_control,platform):
             print("An error occurred while checking Git version.")
         return False
     
-    def git_init(platform):
-        # Initialize a Git repository if one does not already exist
-        if not os.path.isdir(".git"):
-            subprocess.run(["git", "init"], check=True)
-            print("Initialized a new Git repository.")
+    def install_git(check,install_path=None):
+        """
+        Installs Git if it is not already installed.
+        - For Windows: Downloads and installs Git to a specified path.
+        - For Linux: Installs using 'sudo apt install git-all'.
+        - For macOS: Installs via Xcode Command Line Tools.
 
-        if platform == "GitHub":
-            # Rename branch to 'main' if it was initialized as 'master'
-            subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
+        Parameters:
+        - install_path (str, optional): The path where Git should be installed on Windows.
 
-        subprocess.run(["git", "add", "."], check=True)    
-        subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
-        print("Created an initial commit.")
+        Returns:
+        - bool: True if installation is successful, False otherwise.
+        """
+        if check:
+            return check 
+        
+        try:
+    
+            system = platform.system().lower()
 
+            if system == "windows":
+                if install_path is None:
+                    print("Please provide an install path for Windows installation.")
+                    return False
+                
+                # Define the installer download location one level up from the install_path
+                download_dir = os.path.dirname(install_path)
+                installer_name = "Git-latest-64-bit.exe"
+                installer_path = os.path.join(download_dir, installer_name)
+
+                # Download Git installer for Windows
+                url = f"https://github.com/git-for-windows/git/releases/latest/download/{installer_name}"
+                print(f"Downloading Git installer from {url} to {download_dir}...")
+                urllib.request.urlretrieve(url, installer_path)
+                print("Download complete.")
+
+                # Silent installation command
+                install_command = [
+                    installer_path, "/VERYSILENT", f"/DIR={install_path}", "/NORESTART"
+                ]
+
+                # Run the installation
+                subprocess.run(install_command, check=True)
+
+                # Add Git to PATH
+                git_bin_path = os.path.join(install_path, "bin")
+                os.environ["PATH"] += os.pathsep + git_bin_path
+
+    
+                # Verify installation
+                if is_git_installed():
+                    print("Git installation complete and added to PATH.")
+                    return True
+                else:
+                    print("Failed to verify Git installation.")
+                    return False
+
+            elif system == "linux":
+                # Install Git on Linux using apt
+                print("Installing Git on Linux using 'sudo apt install git-all'...")
+                install_command = ["sudo", "apt", "install", "-y", "git-all"]
+
+                # Run the installation
+                subprocess.run(install_command, check=True)
+
+                # Verify installation
+                if is_git_installed():
+                    print("Git installation complete.")
+                    return True
+                else:
+                    print("Failed to verify Git installation.")
+                    return False
+
+            elif system == "darwin":  # macOS
+                # Attempt to install Git using Xcode Command Line Tools
+                print("Installing Git on macOS using Xcode Command Line Tools...")
+                try:
+                    subprocess.run(["git", "--version"], check=True)
+                    print("Git installation complete using Xcode Command Line Tools.")
+                    return True
+                except subprocess.CalledProcessError:
+                    print("Xcode Command Line Tools installation failed or was canceled.")
+                    return False
+
+            else:
+                print("Unsupported operating system.")
+                return False
+
+        except Exception as e:
+            print(f"Failed to install Git: {e}")
+            return False
+
+        finally:
+            # Clean up by removing the installer file on Windows
+            if system == "windows" and 'installer_path' in locals() and os.path.exists(installer_path):
+                os.remove(installer_path)
+                print(f"Installer {installer_name} has been removed from {download_dir}.")
+
+    def check_git_config(check):
+        """
+        Checks if Git is configured with a user name and email globally.
+        
+        Returns:
+        - bool: True if Git is configured with user.name and user.email, False otherwise.
+        """
+
+        if check is False:
+            return 
+        try:
+            # Check if Git user name is configured
+            current_name = subprocess.run(
+                ["git", "config", "--global", "user.name"],
+                capture_output=True, text=True, check=True
+            ).stdout.strip()
+
+            # Check if Git user email is configured
+            current_email = subprocess.run(
+                ["git", "config", "--global", "user.email"],
+                capture_output=True, text=True, check=True
+            ).stdout.strip()
+
+            # If both user.name and user.email are configured, return True
+            if current_name and current_email:
+                print(f"Git is configured with name: {current_name} and email: {current_email}")
+                return True
+            else:
+                print("Git is not fully configured with a user name and email.")
+                return False
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error checking Git configuration: {e}")
+            return False
+
+
+ 
+    def setup_git_config(check):
+        """
+        Prompts the user for their name and email, then configures Git with these details.
+
+        Returns:
+        - bool: True if the configuration is successful, False otherwise.
+        """
+        if check:
+            return check
+        try:
+            # Prompt user for name and email
+            user_name = input("Enter your Git user name: ").strip()
+            user_email = input("Enter your Git user email: ").strip()
+
+            # Check if inputs are valid
+            if not user_name or not user_email:
+                print("Both name and email are required.")
+                return False
+
+            # Configure Git user name and email globally
+            subprocess.run(["git", "config", "--global", "user.name", user_name], check=True)
+            subprocess.run(["git", "config", "--global", "user.email", user_email], check=True)
+
+            print(f"Git configured with name: {user_name} and email: {user_email}")
+            return True
+
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to configure Git: {e}")
+            return False
+            
+
+    def git_init(check,version_control,platform):
+        if check and version_control == "Git":  
+            # Initialize a Git repository if one does not already exist
+            if not os.path.isdir(".git"):
+                subprocess.run(["git", "init"], check=True)
+                print("Initialized a new Git repository.")
+
+            if platform == "GitHub":
+                # Rename branch to 'main' if it was initialized as 'master'
+                subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
+
+            subprocess.run(["git", "add", "."], check=True)    
+            subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
+            print("Created an initial commit.")
+    
     check = is_git_installed()
-    if check and version_control == "Git":
-        git_init(platform)
+    check = install_git(check,install_path=None)
+    check = check_git_config(check)
+    check = setup_git_config(check)
+    git_init(check,version_control,platform)
         
     return check
     
@@ -802,8 +1103,6 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
 
     datalad_create()
 
-    datalad_local_storage
-
     if remote_storage == "Local Path":
         datalad_local_storage(repo_name)
     elif remote_storage in ["Dropbox", "Deic Storage"]:
@@ -814,7 +1113,7 @@ def setup_datalad(version_control,remote_storage,platform,repo_name):
 #nstall_requirements()
 
 # Create Virtual Environment
-create_virtual_environment()
+setup_virtual_environment()
 
 # Get Hardware information
 get_hardware_info()
@@ -823,4 +1122,4 @@ get_hardware_info()
 setup_version_control()
 
 # Create Remote Repository
-create_repository()
+setup_remote_repository()
