@@ -605,41 +605,51 @@ def setup_git(version_control,platform):
 
     def check_git_config(check):
         """
-        Checks if Git is configured with a user name and email globally.
-        
+        Check if Git is configured with user.name and user.email. If not, prompt the user for this information.
+
+        Args:
+        - check: Flag to indicate whether to check and configure Git.
+
         Returns:
-        - bool: True if Git is configured with user.name and user.email, False otherwise.
+        - bool: True if Git is configured, False otherwise.
         """
+        if check:
+            try:
+                # Check the current Git user configuration
+                current_name = subprocess.run(
+                    ["git", "config", "--global", "user.name"],
+                    capture_output=True, text=True, check=True)
+                current_email = subprocess.run(
+                    ["git", "config", "--global", "user.email"],
+                    capture_output=True, text=True, check=True)
+                
+                # Handle potential UnicodeDecodeError
+                try:
+                    current_name = current_name.stdout.strip()
+                    current_email = current_email.stdout.strip()
+                except UnicodeDecodeError as e:
+                    print(f"Error decoding Git configuration output: {e}")
+                    return False  # Return False if we can't decode the output
+                
+                # Check if Git is properly configured
+                if current_name and current_email:
+                    print(f"Git is configured with user.name: {current_name} and user.email: {current_email}")
+                    return True  # Return True if configured
 
-        if check is False:
-            return 
-        try:
-            # Check if Git user name is configured
-            current_name = subprocess.run(
-                ["git", "config", "--global", "user.name"],
-                capture_output=True, text=True, check=True
-            ).stdout.strip()
+                else:
+                    print("Git is not fully configured.")
+                    return False  # Return False if Git is not fully configured
 
-            # Check if Git user email is configured
-            current_email = subprocess.run(
-                ["git", "config", "--global", "user.email"],
-                capture_output=True, text=True, check=True
-            ).stdout.strip()
-
-            # If both user.name and user.email are configured, return True
-            if current_name and current_email:
-                print(f"Git is configured with name: {current_name} and email: {current_email}")
-                return True
-            else:
-                print("Git is not fully configured with a user name and email.")
-                return False
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error checking Git configuration: {e}")
-            return False
-
-
- 
+            except subprocess.CalledProcessError as e:
+                print(f"Git configuration check failed: {e}")
+                return False  # Return False if subprocess fails
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+                return False  # Return False for any other unexpected errors
+        else:
+            print("Git configuration check skipped.")
+            return False  # Return False if the check flag is not set to True
+        
     def setup_git_config(check):
         """
         Prompts the user for their name and email, then configures Git with these details.
@@ -670,7 +680,6 @@ def setup_git(version_control,platform):
             print(f"Failed to configure Git: {e}")
             return False
             
-
     def git_init(check,version_control,platform):
         if check and version_control == "Git":  
             # Initialize a Git repository if one does not already exist
