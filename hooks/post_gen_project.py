@@ -246,24 +246,24 @@ def setup_remote_repository():
     
     repo_name = "{{ cookiecutter.repo_name }}"
     description = "{{ cookiecutter.description }}"
-    platform = "{{ cookiecutter.repository_platform }}"
+    remote_repo = "{{ cookiecutter.repository_platform }}"
     version_control = "{{cookiecutter.version_control}}"
 
     if version_control == None or not os.path.isdir(".git"):
         return
-    elif platform in ["GitHub", "GitLab"]:
-        username = input(f"Enter your {platform} username: ").strip()
+    elif remote_repo in ["GitHub", "GitLab"]:
+        username = input(f"Enter your {remote_repo} username: ").strip()
         privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
         
         if privacy_setting not in ["private", "public"]:
             print("Invalid choice. Defaulting to 'private'.")
             privacy_setting = "private"
 
-        if platform == "GitHub":
+        if remote_repo == "GitHub":
             check = is_gh_installed()
             check = install_gh(check)
             gh_login(check,username,privacy_setting,repo_name,description)
-        elif platform == "GitLab":
+        elif remote_repo == "GitLab":
             gitlab_login(username,privacy_setting,repo_name,description)
 
 def setup_version_control():
