@@ -818,7 +818,7 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
             print("An error occurred while checking DVC version.")
         return False
     # FIX ME 
-    def install_dvc(install_path):
+    def install_dvc_new(install_path):
         """
         Install DVC using pip.
         """
@@ -833,7 +833,7 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
 
         set_to_path(install_path) 
     
-    def install_dvc_old():
+    def install_dvc():
         """
         Install DVC using pip.
         """
@@ -968,8 +968,8 @@ def setup_dvc(version_control,remote_storage,platform,repo_name):
     check = is_dvc_installed()
 
     if check is False:
-            install_dvc("bin/dvc")
-            #install_dvc()
+            #install_dvc("bin/dvc")
+            install_dvc()
 
     dvc_init(remote_storage,platform,repo_name)
     
