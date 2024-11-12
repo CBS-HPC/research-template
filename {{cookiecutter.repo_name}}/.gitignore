@@ -1,5 +1,5 @@
 # ignore the bin files as they contain local installation for rclone and git_annex_remote_rclone 
-bin/
+#bin/
 
 
 # Byte-compiled / optimized / DLL files

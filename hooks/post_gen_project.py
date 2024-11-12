@@ -391,18 +391,33 @@ def run_python_script(script_path, env_name=None, conda_path=None):
         print(f"An error occurred: {e}")
         sys.exit(e.returncode)
 
+def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
+    try:
+        # Make sure the script is executable
+        os.chmod(script_path, 0o755)
+
+        # Run the script with the additional paths as arguments
+        subprocess.check_call(['bash', '-i', script_path, repo_name, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
+        print(f"Script {script_path} executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing the script: {e}")
 
 # `__file__` gives the current file's path
 #script_dir = os.path.dirname(os.path.abspath(__file__))
 #setup_version_control = os.path.join(script_dir, "setup_version_control.py")
 #setup_remote_repository = os.path.join(script_dir, "setup_remote_repository.py")
+
 setup_version_control = "bin/setup_version_control.py"
 setup_remote_repository = "bin/setup_remote_repository.py"
+setup_bash_script = "bin/setup.sh"
 miniconda_path =  "bin/miniconda"
-conda_path = miniconda_path + "/bin/conda"
+#conda_path = miniconda_path + "/bin/conda"
 
 # Create Virtual Environment
-repo_name = setup_virtual_environment(miniconda_path )
+repo_name = setup_virtual_environment(miniconda_path)
+
+run_bash_script(setup_bash_script, repo_name, setup_version_control, setup_remote_repository)
+
 
 #run_python_script(setup_version_control, repo_name,conda_path)
 #run_python_script(setup_remote_repository, repo_name,conda_path)
