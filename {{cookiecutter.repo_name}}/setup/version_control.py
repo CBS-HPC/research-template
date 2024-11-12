@@ -5,7 +5,7 @@ import platform
 import zipfile
 import urllib.request
 import importlib
-
+import shutil
 
 required_libraries = ['requests'] 
 for lib in required_libraries:
@@ -16,6 +16,8 @@ for lib in required_libraries:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
 import requests
+
+
 
 def setup_version_control():
     """Handle repository creation and log-in based on selected platform."""
@@ -517,46 +519,20 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
         except subprocess.CalledProcessError as e:
             print("An error occurred while checking git-annex-remote-rclone:")
         return False
-    # FIX ME 
-    def install_datalad_new(install_path):
-            try:
-                # Step 1: Install datalad-installer via pip
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'datalad-installer'])
-
-                _set_to_path(f"{install_path}/datalad-installer")
-
-                # Step 2: Install git-annex using datalad-installer
-                #subprocess.check_call([f"{install_path}/datalad-installer", 'git-annex', '-m', 'datalad/git-annex:release'])
-                subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
-
-                # Step 3: Set recommended git-annex configuration for performance improvement
-                subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
-
-                # Step 4: Install DataLad with pip
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'datalad'])
-
-                # Upgrading pyopenssl needed for datalad create siblings
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'pyopenssl', '--upgrade'])
-    
-            except subprocess.CalledProcessError as e:
-                print(f"An error occurred: {e}")
-            except FileNotFoundError:
-                print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
-
-            _set_to_path(install_path)      
 
     def install_datalad():
             try:
                 # Step 1: Install datalad-installer via pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
 
+                install_git_annex()
+                
                 # Step 2: Install git-annex using datalad-installer
-                subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
+                #subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
 
                 # Step 3: Set recommended git-annex configuration for performance improvement
-                subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
+                #subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
 
-                # Step 4: Install DataLad with pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad'])
 
                 # Upgrading pyopenssl needed for datalad create siblings
@@ -566,7 +542,34 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                 print(f"An error occurred: {e}")
             except FileNotFoundError:
                 print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")           
-    
+
+    def install_git_annex():
+        try:
+            # Step 1: Check if 'datalad-installer' is available
+            if shutil.which('datalad-installer'):
+                subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
+            else:
+                # Step 2: Fall back to apt-get (Linux) or brew (macOS)
+                if sys.platform.startswith('linux'):
+                    subprocess.check_call(['sudo', 'apt-get', 'install', '-y', 'git-annex'])
+                elif sys.platform == 'darwin':  # macOS
+                    subprocess.check_call(['brew', 'install', 'git-annex'])
+                else:
+                    print(f"Unsupported platform {sys.platform}. Please install git-annex manually.")
+                    return False
+            
+            subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
+
+            print("git-annex installed successfully.")
+            return True
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error during git-annex installation: {e}")
+            return False
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return False  
+        
     def setup_rclone(bin_folder):
         """Download and extract rclone to the specified bin folder."""
 
