@@ -91,6 +91,7 @@ def setup_remote_repository():
             # Install DVC via pip
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'github-cli'])
             print("GitHub CLI has been installed successfully.")
+            return True
         except subprocess.CalledProcessError as e:
             print(f"An error occurred during GitHub CLI installation: {e}")
         except FileNotFoundError:
