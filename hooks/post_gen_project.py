@@ -480,7 +480,7 @@ def setup_conda(virtual_environment,repo_name,env_file = None):
         Returns:
         - bool: True if addition to PATH is successful, False otherwise.
         """
-        if check:
+        if check is False:
             return check
     
         system = platform.system().lower()
@@ -509,7 +509,7 @@ def setup_conda(virtual_environment,repo_name,env_file = None):
         Returns:
         - bool: True if Conda shell initialization is successful, False otherwise.
         """
-        if check:
+        if check is False:
             return check
         system = platform.system().lower()
 
@@ -600,9 +600,10 @@ def setup_conda(virtual_environment,repo_name,env_file = None):
 
     install_path = "bin/miniconda"
     check = is_conda_installed()
-    check = install_miniconda(check,install_path)
-    check = add_miniconda_to_path(check,install_path)
-    check = initialize_conda_shell(check)
+    if check is False:
+        check = install_miniconda(check,install_path)
+        check = add_miniconda_to_path(check,install_path)
+        check = initialize_conda_shell(check)
 
     if check:
         if virtual_environment in ['Python','R']:
