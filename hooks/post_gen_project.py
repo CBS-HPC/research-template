@@ -517,11 +517,11 @@ def setup_conda(virtual_environment,repo_name,env_file = None):
             subprocess.run(["conda", "init"], check=True)
             print("Conda shell initialization complete.")
             
-            if system == "windows":
-                print("Please restart your terminal to apply the changes.")
-            elif system == "linux" or system == "darwin":
-                print("Starting a new shell session to apply Conda setup...")
-                subprocess.run(["bash", "-i"])
+            #if system == "windows":
+            #    print("Please restart your terminal to apply the changes.")
+            #elif system == "linux" or system == "darwin":
+            #    print("Starting a new shell session to apply Conda setup...")
+            #    subprocess.run(["bash", "-i"])
             return True
 
         except Exception as e:
