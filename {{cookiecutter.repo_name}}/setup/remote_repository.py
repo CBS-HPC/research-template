@@ -3,7 +3,7 @@ import subprocess
 import sys
 import platform
 import importlib
-
+import shutil
 
 required_libraries = ['distro'] 
 for lib in required_libraries:
@@ -82,39 +82,9 @@ def setup_remote_repository():
             # Catch any unexpected errors
             print(f"Unexpected error: {e}")
             return False
-
-    def install_gh_notworking(check):
-        if check:
-            return check 
-        try:    
-            subprocess.run(["conda", "install", "gh", "--channel", "conda-forge", "-y"], check=True, shell=True)
-            subprocess.run(["conda", "update", "gh", "--channel", "conda-forge", "-y"], check=True, shell=True)
-            #subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'gh'])
-            #subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'github-cli'])
-            print("GitHub CLI has been installed successfully.")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred during GitHub CLI installation: {e}")
-        except FileNotFoundError:
-            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
-        
-    # FiX ME 
-    def install_gh_new(check,install_path):
-        if check:
-            return check 
-        try:
-            # Install DVC via pip
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'github-cli'])
-            print("GitHub CLI has been installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred during GitHub CLI installation: {e}")
-        except FileNotFoundError:
-            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
-        
-        _set_to_path(install_path)
-
-    def install_gh(check):
-
+ 
+ 
+    def install_gh_OLD(check):
         if check:
             return check 
 
@@ -159,6 +129,115 @@ def setup_remote_repository():
             try:
                 subprocess.run(command, check=True)
                 print("GitHub CLI (gh) installed successfully on Linux.")
+                return True
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install GitHub CLI on Linux: {e}")
+                return False
+        else:
+            print("Unsupported operating system.")
+            return False
+
+    def install_gh(install_path=None, check=False):
+        """
+        Install GitHub CLI (gh) on Windows, macOS, or Linux. Optionally, copy the `gh`
+        binary to a custom install path if already installed and add it to the system PATH.
+
+        Parameters:
+        - install_path (str or None): Path to copy the `gh` binary. If None, it skips the copying process.
+        - check (bool): If True, checks if `gh` is already installed and skips installation.
+        """
+        if check:
+            return check
+
+        os_type = platform.system().lower()
+        
+        # Function to copy the `gh` binary to a custom install path and add it to PATH
+        def copy_gh_to_bin():
+            gh_location = shutil.which("gh")
+            
+            if gh_location is None:
+                print("GitHub CLI (gh) not found.")
+                return False
+            
+            try:
+                # Ensure the custom path exists
+                os.makedirs(install_path, exist_ok=True)
+                
+                # Copy the gh binary to the custom path
+                shutil.copy(gh_location, install_path)
+                
+                # Make the binary executable if not already
+                os.chmod(os.path.join(install_path, "gh"), 0o755)
+                
+                # Add custom install path to PATH if not already present
+                if install_path not in os.environ["PATH"]:
+                    os.environ["PATH"] += os.pathsep + install_path
+                
+                print(f"GitHub CLI (gh) successfully copied to {install_path}.")
+                return True
+            except Exception as e:
+                print(f"Failed to copy GitHub CLI: {e}")
+                return False
+
+        if install_path:
+            # Try to copy `gh` to the specified path if it's already installed
+            if not copy_gh_to_bin():
+                print("Proceeding with installation...")
+            return True
+
+        # Install GitHub CLI based on the OS type
+        if os_type == "windows":
+            installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
+            installer_name = "gh_installer.msi"
+            try:
+                # Download the installer
+                subprocess.run(["curl", "-LO", installer_url], check=True)
+                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart"], check=True)
+                print("GitHub CLI (gh) installed successfully.")
+                return True
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install GitHub CLI: {e}")
+                return False
+            finally:
+                if os.path.exists(installer_name):
+                    os.remove(installer_name)
+
+        elif os_type == "darwin":  # macOS
+            try:
+                # Using Homebrew to install GitHub CLI
+                subprocess.run(["brew", "install", "gh"], check=True)
+                print("GitHub CLI (gh) installed successfully on macOS.")
+                return True
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install GitHub CLI on macOS: {e}")
+                return False
+
+        elif os_type == "linux":
+            distro_name = distro.name().lower()
+            command = []
+            
+            # Checking if `gh` is already installed using the package manager
+            if "ubuntu" in distro_name or "debian" in distro_name:
+                subprocess.run(["sudo", "apt", "update"], check=True)
+                command = ["sudo", "apt", "install", "-y", "gh"]
+            elif "centos" in distro_name or "rhel" in distro_name:
+                command = ["sudo", "yum", "install", "-y", "gh"]
+            else:
+                print(f"Unsupported Linux distribution: {distro_name}")
+                return False
+            
+            try:
+                subprocess.run(command, check=True)
+                print("GitHub CLI (gh) installed successfully on Linux.")
+                
+                # After installation, ensure gh is added to PATH if necessary
+                gh_location = shutil.which("gh")
+                if gh_location:
+                    print(f"GitHub CLI (gh) located at {gh_location}.")
+                    # Optionally copy to a custom location if specified
+                    if install_path:
+                        copy_gh_to_bin()
+                
                 return True
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install GitHub CLI on Linux: {e}")

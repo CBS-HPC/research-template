@@ -18,7 +18,6 @@ for lib in required_libraries:
 import requests
 
 
-
 def setup_version_control():
     """Handle repository creation and log-in based on selected platform."""
 
@@ -547,7 +546,8 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
         try:
             # Step 1: Check if 'datalad-installer' is available
             if shutil.which('datalad-installer'):
-                subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
+                #subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
+                subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
             else:
                 # Step 2: Fall back to apt-get (Linux) or brew (macOS)
                 if sys.platform.startswith('linux'):
