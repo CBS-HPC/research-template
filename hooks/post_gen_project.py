@@ -111,6 +111,7 @@ def setup_virtual_environment():
             print('Conda is not installed. Please install it to create an {programming_language}  environment.')
 
         return repo_name
+
 def setup_conda(virtual_environment,repo_name,env_file = None):
             
     def is_conda_installed(check = True):
@@ -365,14 +366,14 @@ def run_python_script(script_path, env_name=None):
 
 # `__file__` gives the current file's path
 script_dir = os.path.dirname(os.path.abspath(__file__))
-post_gen_path = os.path.join(script_dir, "post_gen_project.py")
-
-print("Full path to post_gen_project.py:", post_gen_path)
+setup_version_control = os.path.join(script_dir, "setup_version_control.py")
+setup_remote_repository = os.path.join(script_dir, "setup_remote_repository.py")
 
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment()
 
 
-run_python_script("setup_version_control.py", repo_name)
+run_python_script(setup_version_control, repo_name)
+run_python_script(setup_remote_repository, repo_name)
 
