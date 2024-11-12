@@ -172,7 +172,7 @@ def setup_virtual_environment():
         
     repo_name = "{{ cookiecutter.repo_name }}"
     virtual_environment = "{{ cookiecutter.virtual_environment}}"
-
+    env_file  = None
     if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
         return
     
@@ -399,7 +399,7 @@ def setup_version_control():
     elif version_control == "DVC":
         setup_dvc(version_control,remote_storage,platform,repo_name)
 
-def setup_conda(virtual_environment,repo_name,env_file):
+def setup_conda(virtual_environment,repo_name,env_file = None):
             
     def is_conda_installed(check = True):
         """Check if conda is installed."""
