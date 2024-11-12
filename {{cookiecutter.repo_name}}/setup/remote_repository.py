@@ -61,7 +61,6 @@ def _set_to_path(path_to_set):
     else:
         print("Unsupported operating system. PATH not modified.")
 
-
 def setup_remote_repository():
     """Handle repository creation and log-in based on selected platform."""
 
@@ -89,7 +88,8 @@ def setup_remote_repository():
             return check 
         try:
             # Install DVC via pip
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'github-cli'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'gh'])
+            #subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'github-cli'])
             print("GitHub CLI has been installed successfully.")
             return True
         except subprocess.CalledProcessError as e:
