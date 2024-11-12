@@ -65,6 +65,36 @@ def set_to_path(path_to_set):
     else:
         print("Unsupported operating system. PATH not modified.")
 
+def run_script_in_conda_env(script_path, env_name=None):
+    """
+    Runs a Python script in a specified Conda environment, or in the current environment if env_name is None.
+
+    Parameters:
+    - script_path (str): The path to the Python script to run.
+    - env_name (str): Optional. The name of the Conda environment. If None, uses the currently active environment.
+
+    Returns:
+    - bool: True if the script runs successfully, False otherwise.
+    """
+    # Ensure the script path is absolute
+    script_path = os.path.abspath(script_path)
+
+    # Determine command prefix based on OS
+    shell_cmd = "activate" if os.name == "nt" else "source activate"
+    shell_exec = "cmd.exe" if os.name == "nt" else "/bin/bash"
+
+    # Form command: activate environment if specified, otherwise use current
+    command = f"{shell_cmd} {env_name} && python {script_path}" if env_name else f"python {script_path}"
+
+    try:
+        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True, executable=shell_exec)
+        print("Script output:\n", result.stdout)
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print("Error running the script:", e.stderr)
+        return False
+    
 def get_hardware_info():
     """
     Extract hardware information and save it to a file.
@@ -153,7 +183,7 @@ def setup_virtual_environment():
         print("Virtual environment creation canceled.")
         return
     
-    if virtual_environment ['environment.yaml','requirements.txt']:
+    if virtual_environment in ['environment.yaml','requirements.txt']:
         env_file = get_file_path()
         if env_file is None:
             return
@@ -1344,4 +1374,4 @@ setup_version_control()
 # Create Remote Repository
 setup_remote_repository()
 
-back_up_software(['git-annex', 'git', 'datalad', 'dvc', 'gh'],"bin")
+#back_up_software(['git-annex', 'git', 'datalad', 'dvc', 'gh'],"bin")
