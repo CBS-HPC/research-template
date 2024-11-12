@@ -86,9 +86,10 @@ def setup_remote_repository():
     def install_gh(check):
         if check:
             return check 
-        try:
-            # Install DVC via pip
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'gh'])
+        try:    
+            subprocess.run(["conda", "install", "gh", "--channel", "conda-forge", "-y"], check=True, shell=True)
+            subprocess.run(["conda", "update", "gh", "--channel", "conda-forge", "-y"], check=True, shell=True)
+            #subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'gh'])
             #subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'github-cli'])
             print("GitHub CLI has been installed successfully.")
             return True
