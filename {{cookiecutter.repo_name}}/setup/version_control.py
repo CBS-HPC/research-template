@@ -226,6 +226,7 @@ def _setup_git(version_control,platform):
                 # Check if Git is properly configured
                 if current_name and current_email:
                     print(f"Git is configured with user.name: {current_name} and user.email: {current_email}")
+
                     return True  # Return True if configured
 
                 else:
@@ -241,7 +242,7 @@ def _setup_git(version_control,platform):
         else:
             print("Git configuration check skipped.")
             return False  # Return False if the check flag is not set to True
-        
+
     def setup_git_config(check):
         """
         Prompts the user for their name and email, then configures Git with these details.
@@ -287,12 +288,62 @@ def _setup_git(version_control,platform):
             subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
             print("Created an initial commit.")
     
+
+    def git_to_env(env_file=".env"):
+        """
+        Adds Git username and email to the specified .env file. 
+        Creates the file if it doesn't exist.
+        
+        Parameters:
+        - env_file (str): The path to the .env file. Default is ".env".
+        """
+        def get_git_user_info():
+            """
+            Retrieves the Git global username and email configuration.
+            """
+            try:
+                # Retrieve Git username
+                user_name = subprocess.run(
+                    ["git", "config", "--global", "user.name"], capture_output=True, text=True, check=True
+                ).stdout.strip()
+
+                # Retrieve Git email
+                user_email = subprocess.run(
+                    ["git", "config", "--global", "user.email"], capture_output=True, text=True, check=True
+                ).stdout.strip()
+
+                return user_name, user_email
+            except subprocess.CalledProcessError as e:
+                print(f"Error getting Git user info: {e}")
+                return None, None
+            
+        # Get Git user info
+        git_user_name, git_user_email = get_git_user_info()
+        
+        if not git_user_name or not git_user_email:
+            print("Failed to retrieve Git user information. Make sure Git is configured.")
+            return
+        
+        # Check if .env file exists and create if not
+        if not os.path.exists(env_file):
+            print(f"{env_file} does not exist. Creating a new one.")
+            with open(env_file, 'w') as file:
+                file.write("# Created .env file for storing Git user credentials.\n")
+        
+        # Write the credentials to the .env file
+        with open(env_file, 'a') as file:
+            file.write(f"GIT_USER_NAME={git_user_name}\n")
+            file.write(f"GIT_USER_EMAIL={git_user_email}\n")
+        
+        print(f"Git user information added to {env_file}")
+
+
     check = is_git_installed()
     check = install_git(check,install_path=None)
     check = check_git_config(check)
     check = setup_git_config(check)
     git_init(check,version_control,platform)
-        
+    git_to_env()    
     return check
     
 def _setup_dvc(version_control,remote_storage,platform,repo_name):

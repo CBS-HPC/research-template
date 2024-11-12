@@ -83,7 +83,6 @@ def setup_remote_repository():
             print(f"Unexpected error: {e}")
             return False
  
- 
     def install_gh_OLD(check):
         if check:
             return check 
@@ -137,63 +136,30 @@ def setup_remote_repository():
             print("Unsupported operating system.")
             return False
 
-    def install_gh(install_path=None, check=False):
-        """
-        Install GitHub CLI (gh) on Windows, macOS, or Linux. Optionally, copy the `gh`
-        binary to a custom install path if already installed and add it to the system PATH.
-
-        Parameters:
-        - install_path (str or None): Path to copy the `gh` binary. If None, it skips the copying process.
-        - check (bool): If True, checks if `gh` is already installed and skips installation.
-        """
+    def install_gh(check, install_path=None):
         if check:
             return check
-
+        
         os_type = platform.system().lower()
         
-        # Function to copy the `gh` binary to a custom install path and add it to PATH
-        def copy_gh_to_bin():
-            gh_location = shutil.which("gh")
-            
-            if gh_location is None:
-                print("GitHub CLI (gh) not found.")
-                return False
-            
-            try:
-                # Ensure the custom path exists
-                os.makedirs(install_path, exist_ok=True)
-                
-                # Copy the gh binary to the custom path
-                shutil.copy(gh_location, install_path)
-                
-                # Make the binary executable if not already
-                os.chmod(os.path.join(install_path, "gh"), 0o755)
-                
-                # Add custom install path to PATH if not already present
-                if install_path not in os.environ["PATH"]:
-                    os.environ["PATH"] += os.pathsep + install_path
-                
-                print(f"GitHub CLI (gh) successfully copied to {install_path}.")
-                return True
-            except Exception as e:
-                print(f"Failed to copy GitHub CLI: {e}")
-                return False
+        # Function to check and create a custom install path
+        def ensure_install_path(path):
+            if path and not os.path.exists(path):
+                os.makedirs(path, exist_ok=True)
+            return path or os.getcwd()  # Default to current directory if no install_path is given
 
-        if install_path:
-            # Try to copy `gh` to the specified path if it's already installed
-            if not copy_gh_to_bin():
-                print("Proceeding with installation...")
-            return True
+        install_path = ensure_install_path(install_path)
 
-        # Install GitHub CLI based on the OS type
         if os_type == "windows":
             installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
             installer_name = "gh_installer.msi"
             try:
                 # Download the installer
                 subprocess.run(["curl", "-LO", installer_url], check=True)
-                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart"], check=True)
-                print("GitHub CLI (gh) installed successfully.")
+                
+                # Install and specify the custom directory
+                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
+                print(f"GitHub CLI (gh) installed successfully to {install_path}.")
                 return True
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install GitHub CLI: {e}")
@@ -204,9 +170,9 @@ def setup_remote_repository():
 
         elif os_type == "darwin":  # macOS
             try:
-                # Using Homebrew to install GitHub CLI
-                subprocess.run(["brew", "install", "gh"], check=True)
-                print("GitHub CLI (gh) installed successfully on macOS.")
+                # Using Homebrew to install GitHub CLI with a custom install path
+                subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
+                print(f"GitHub CLI (gh) installed successfully on macOS to {install_path}.")
                 return True
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install GitHub CLI on macOS: {e}")
@@ -214,9 +180,8 @@ def setup_remote_repository():
 
         elif os_type == "linux":
             distro_name = distro.name().lower()
-            command = []
             
-            # Checking if `gh` is already installed using the package manager
+            # Install GitHub CLI using package manager
             if "ubuntu" in distro_name or "debian" in distro_name:
                 subprocess.run(["sudo", "apt", "update"], check=True)
                 command = ["sudo", "apt", "install", "-y", "gh"]
@@ -228,16 +193,14 @@ def setup_remote_repository():
             
             try:
                 subprocess.run(command, check=True)
-                print("GitHub CLI (gh) installed successfully on Linux.")
-                
-                # After installation, ensure gh is added to PATH if necessary
+                print(f"GitHub CLI (gh) installed successfully on Linux.")
+
+                # Move the installed binary to the custom install path
                 gh_location = shutil.which("gh")
                 if gh_location:
-                    print(f"GitHub CLI (gh) located at {gh_location}.")
-                    # Optionally copy to a custom location if specified
-                    if install_path:
-                        copy_gh_to_bin()
-                
+                    shutil.copy(gh_location, install_path)
+                    os.chmod(os.path.join(install_path, "gh"), 0o755)
+                    print(f"GitHub CLI (gh) moved to {install_path}.")
                 return True
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install GitHub CLI on Linux: {e}")
@@ -286,6 +249,52 @@ def setup_remote_repository():
             f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
         ])
     
+    def gh_to_env_file(env_file=".env"):
+        """
+        Adds GitHub username and token from `gh auth status` to the .env file. If the file does not exist,
+        it will be created.
+        
+        Parameters:
+        - env_file (str): The path to the .env file. Default is ".env".
+        """
+
+        def gh_user_and_token():
+            """
+            Retrieves the GitHub username and personal access token from the GitHub CLI.
+            """
+            try:
+                # Check the authentication status to get the username
+                result = subprocess.run(["gh", "auth", "status", "--json", "user", "-t"], capture_output=True, check=True, text=True)
+                if result.returncode == 0:
+                    # Extract username from the output
+                    username = result.stdout.splitlines()[0].split()[1]  # Assuming the format is like: 'Logged in to github.com as <username>'
+                    
+                    # Get the token
+                    token = result.stdout.splitlines()[1].split()[1]  # Assuming the token is shown like 'token <token>'
+                    
+                    return username, token
+            except subprocess.CalledProcessError as e:
+                print(f"Error getting GitHub authentication info: {e}")
+                return None, None
+
+        # Get GitHub credentials using gh CLI
+        username, token = gh_user_and_token()
+        
+        if not username or not token:
+            print("Failed to retrieve GitHub credentials. Make sure you're logged in to GitHub CLI.")
+            return
+        
+        # Check if .env file exists
+        if not os.path.exists(env_file):
+            print(f"{env_file} does not exist. Creating a new one.")
+        
+        # Write the credentials to the .env file
+        with open(env_file, 'a') as file:
+            file.write(f"GITHUB_USERNAME={username}\n")
+            file.write(f"GITHUB_TOKEN={token}\n")
+        
+        print(f"GitHub username and token added to {env_file}")
+
     repo_name = "{{ cookiecutter.repo_name }}"
     description = "{{ cookiecutter.description }}"
     remote_repo = "{{ cookiecutter.repository_platform }}"
@@ -304,8 +313,9 @@ def setup_remote_repository():
         if remote_repo == "GitHub":
             check = is_gh_installed()
             check = install_gh(check)
-
             gh_login(check,username,privacy_setting,repo_name,description)
+            gh_to_env_file()
+            
         elif remote_repo == "GitLab":
             gitlab_login(username,privacy_setting,repo_name,description)
 
