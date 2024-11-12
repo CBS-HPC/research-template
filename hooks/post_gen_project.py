@@ -407,9 +407,9 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
 #setup_version_control = os.path.join(script_dir, "setup_version_control.py")
 #setup_remote_repository = os.path.join(script_dir, "setup_remote_repository.py")
 
-setup_version_control = "bin/setup_version_control.py"
-setup_remote_repository = "bin/setup_remote_repository.py"
-setup_bash_script = "bin/setup.sh"
+setup_version_control = "setup/version_control.py"
+setup_remote_repository = "setup/remote_repository.py"
+setup_bash_script = "setup/create.sh"
 miniconda_path =  "bin/miniconda"
 #conda_path = miniconda_path + "/bin/conda"
 

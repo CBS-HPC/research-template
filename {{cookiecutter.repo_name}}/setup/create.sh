@@ -9,7 +9,7 @@ setup_remote_repository_path=$3
 if [ "$repo_name" != "None" ]; then
     echo "Activating conda environment: $repo_name"
     # Activate conda environment only if repo_name is provided
-    source ~/anaconda3/etc/profile.d/conda.sh  # Adjust if using Miniconda or different installation path
+    #source ~/anaconda3/etc/profile.d/conda.sh  # Adjust if using Miniconda or different installation path
     conda activate "$repo_name"                # Activate the environment with the name provided
 else
     echo "No repo_name provided. Skipping conda environment activation."
