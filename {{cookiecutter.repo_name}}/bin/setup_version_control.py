@@ -2,10 +2,20 @@ import os
 import subprocess
 import sys
 import platform
-import requests
 import zipfile
 import urllib.request
+import importlib
 
+
+required_libraries = ['requests'] 
+for lib in required_libraries:
+    try:
+        importlib.import_module(lib)
+    except ImportError:
+        print(f"Installing {lib}...")
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+
+import requests
 
 def setup_version_control():
     """Handle repository creation and log-in based on selected platform."""
