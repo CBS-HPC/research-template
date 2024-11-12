@@ -404,6 +404,6 @@ conda_path = miniconda_path + "/bin/conda"
 # Create Virtual Environment
 repo_name = setup_virtual_environment(miniconda_path )
 
-run_python_script(setup_version_control, repo_name,conda_path)
-run_python_script(setup_remote_repository, repo_name,conda_path)
+#run_python_script(setup_version_control, repo_name,conda_path)
+#run_python_script(setup_remote_repository, repo_name,conda_path)
 
