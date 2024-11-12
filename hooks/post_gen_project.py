@@ -4,8 +4,6 @@ import sys
 import platform
 import urllib.request
 
-
-
 def get_hardware_info():
     """
     Extract hardware information and save it to a file.
@@ -37,7 +35,7 @@ def get_hardware_info():
     except subprocess.CalledProcessError as e:
         print(f"Error retrieving hardware information: {e}")
 
-def setup_virtual_environment():
+def setup_virtual_environment(install_path = "bin/miniconda"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
     
@@ -100,7 +98,7 @@ def setup_virtual_environment():
             return None
 
     if virtual_environment in ['Python','R','environment.yaml','requirements.txt']:
-        check = setup_conda(virtual_environment,repo_name,env_file)
+        check = setup_conda(install_path,virtual_environment,repo_name,env_file)
 
         if check is False and virtual_environment == 'Python':
             if subprocess.call(['which', 'virtualenv']) == 0:
@@ -112,7 +110,7 @@ def setup_virtual_environment():
 
         return repo_name
 
-def setup_conda(virtual_environment,repo_name,env_file = None):
+def setup_conda(install_path,virtual_environment,repo_name,env_file = None):
             
     def is_conda_installed(check = True):
         """Check if conda is installed."""
@@ -310,8 +308,6 @@ def setup_conda(virtual_environment,repo_name,env_file = None):
         except Exception as e:
             print(f"An error occurred: {e}")
                
-
-    install_path = "bin/miniconda"
     check = is_conda_installed()
     if check is False:
         check = install_miniconda(check,install_path)
@@ -330,31 +326,63 @@ def setup_conda(virtual_environment,repo_name,env_file = None):
     
     return check
 
-def run_python_script(script_path, env_name=None):
+def run_python_script(script_path, env_name=None, conda_path=None):
     """
     Runs a Python script in a specified Conda environment. If no environment is specified,
-    the current environment is used.
-    
+    the base Python environment is used.
+
     Parameters:
     - script_path (str): Path to the Python script to execute.
-    - env_name (str or None): Name of the Conda environment to activate. Uses the current
-                              environment if None is provided.
+    - env_name (str or None): Name of the Conda environment to activate. If None, uses the base Python environment.
+    - conda_path (str or None): Path to the Conda installation. Defaults to CONDA_PREFIX or Conda base if None.
     """
     # Determine the OS-specific shell
     shell = '/bin/bash' if os.name != 'nt' else 'cmd.exe'
-    
-    # Check if a specific environment is provided
+
+    def set_conda(env_name, conda_path):
+        """
+        Determines the path to the Conda activate script and constructs the activation command.
+        
+        Parameters:
+        - env_name (str): Name of the Conda environment to activate.
+        - conda_path (str or None): Path to the Conda installation. If None, uses the base or CONDA_PREFIX.
+
+        Returns:
+        - str: The command to activate the Conda environment.
+        """
+        # Locate the Conda activate script
+        if conda_path:
+            conda_activate = os.path.join(conda_path, "bin", "activate")
+        else:
+            conda_prefix = os.environ.get("CONDA_PREFIX")
+            if conda_prefix:
+                conda_activate = os.path.join(conda_prefix, "bin", "activate")
+            else:
+                # Fallback: Use 'conda info --base' to locate Conda's base environment
+                try:
+                    conda_info = subprocess.run(
+                        ["conda", "info", "--base"], capture_output=True, text=True, check=True
+                    )
+                    conda_base = conda_info.stdout.strip()
+                    conda_activate = os.path.join(conda_base, "bin", "activate")
+                except subprocess.CalledProcessError:
+                    raise EnvironmentError("Could not locate Conda base environment. Ensure Conda is installed.")
+        
+        # Construct the activation command
+        if shell == '/bin/bash':
+            return f"source {conda_activate} && conda activate {env_name}"
+        else:
+            return f"{conda_activate} {env_name} &&"
+
+    # Construct the full command based on the environment setting
     if env_name:
-        # Set up the Conda activation command for the specified environment
-        conda_activate = os.path.join(os.environ['CONDA_PREFIX'], 'bin', 'activate')
-        activate_cmd = f'source {conda_activate} {env_name}' if shell == '/bin/bash' else f'activate {env_name} &&'
-        # Construct the full command to activate and run the script
+        activate_cmd = set_conda(env_name, conda_path)
         full_command = f"{activate_cmd} && python {script_path}"
     else:
-        # No env_name given, run with the currently active environment
+        # No env_name provided, use the base Python environment
         full_command = f"python {script_path}"
-    
-    # Run the command in the specified or default environment
+
+    # Run the command
     try:
         result = subprocess.run(full_command, shell=True, executable=shell, check=True)
         print("Script executed successfully.")
@@ -365,15 +393,17 @@ def run_python_script(script_path, env_name=None):
 
 
 # `__file__` gives the current file's path
-script_dir = os.path.dirname(os.path.abspath(__file__))
-setup_version_control = os.path.join(script_dir, "setup_version_control.py")
-setup_remote_repository = os.path.join(script_dir, "setup_remote_repository.py")
-
+#script_dir = os.path.dirname(os.path.abspath(__file__))
+#setup_version_control = os.path.join(script_dir, "setup_version_control.py")
+#setup_remote_repository = os.path.join(script_dir, "setup_remote_repository.py")
+setup_version_control = "bin/setup_version_control.py"
+setup_remote_repository = "bin/setup_remote_repository.py"
+miniconda_path =  "bin/miniconda"
+conda_path = miniconda_path + "/bin/conda"
 
 # Create Virtual Environment
-repo_name = setup_virtual_environment()
+repo_name = setup_virtual_environment(miniconda_path )
 
-
-run_python_script(setup_version_control, repo_name)
-run_python_script(setup_remote_repository, repo_name)
+run_python_script(setup_version_control, repo_name,conda_path)
+run_python_script(setup_remote_repository, repo_name,conda_path)
 
