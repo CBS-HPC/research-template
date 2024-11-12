@@ -83,7 +83,7 @@ def setup_remote_repository():
             print(f"Unexpected error: {e}")
             return False
 
-    def install_gh(check):
+    def install_gh_notworking(check):
         if check:
             return check 
         try:    
@@ -113,7 +113,7 @@ def setup_remote_repository():
         
         _set_to_path(install_path)
 
-    def install_gh_old(check):
+    def install_gh(check):
 
         if check:
             return check 
