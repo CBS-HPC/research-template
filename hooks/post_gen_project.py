@@ -390,7 +390,7 @@ repo_name = setup_virtual_environment(version_control,virtual_environment,repo_p
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    run_bash_script(setup_powershell_script, repo_name, setup_version_control, setup_remote_repository)
+    run_powershell_script(setup_powershell_script, repo_name, setup_version_control, setup_remote_repository)
 elif os_type == "darwin" or os_type == "linux":
     run_bash_script(setup_bash_script, repo_name, setup_version_control, setup_remote_repository)
 
