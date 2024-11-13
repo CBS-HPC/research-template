@@ -80,9 +80,8 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         subprocess.run(['virtualenv', env_name], check=True)
         print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
         
+    install_packages = ['python']
 
-    #install_packages = ['python']
-    install_packages = ['-c', 'conda-forge','python']
     env_file  = None
 
     if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
@@ -101,7 +100,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
             return None
 
     if virtual_environment in ['Python','R','environment.yaml','requirements.txt']:
-
+        
         if virtual_environment == 'R':
              install_packages.extend(['r-base'])  
         if version_control == 'Git':
@@ -109,7 +108,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         if version_control == 'DVC':
              install_packages.extend(['git','dvc, dvc-ssh'])    
         elif version_control == 'Datalad':
-             install_packages.extend(['git','rclone'])
+             install_packages.extend(['git','git-annex','rclone'])
         if repo_platform == 'GitHub':
              install_packages.extend(['gh'])     
             
@@ -322,7 +321,7 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
 
     if check:
         if virtual_environment in ['Python','R']:
-            command = ['conda', 'create','--yes', '--name', repo_name]
+            command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
             if install_packages:
                 command.extend(install_packages)
             #command.extend(['--yes'])
