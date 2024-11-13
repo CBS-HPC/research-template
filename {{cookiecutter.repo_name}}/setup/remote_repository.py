@@ -212,8 +212,11 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
 
 repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
-repo_platform = "{{ cookiecutter.repository_platform}}"
 version_control = "{{cookiecutter.version_control}}"
+repo_platform   = os.environ["COOKIECUTTER_REPOSITORY_PLATFORM"] 
+
+#repo_platform = "{{ cookiecutter.repository_platform}}"
+
 
 # Create Remote Repository
 setup_remote_repository(version_control,repo_platform,repo_name,description)
