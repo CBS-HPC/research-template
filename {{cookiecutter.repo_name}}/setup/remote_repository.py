@@ -219,7 +219,7 @@ def setup_remote_repository():
                     subprocess.run(["gh", "auth", "login"], check=True)
                 except Exception as e:
                     print(f"'gh auth login' failed: {e}")
-                    return False  # Return False for any unexpected errors
+                    return False, None, None  # Return False for any unexpected errors
             try:    
                 # Create the GitHub repository
                 subprocess.run([
@@ -228,12 +228,12 @@ def setup_remote_repository():
                 ], check=True)
                 
                 print(f"Repository {repo_name} created and pushed successfully.")
-                return True  # Return True if everything is successful
+                return True, username,repo_name   # Return True if everything is successful
             except Exception as e:
                 print(f"Failed to create '{username}/{repo_name}' on Github")
-                return False  
+                return False, None, None
         else:
-            return False  
+            return False, None, None  
 
     def gitlab_login(username,privacy_setting,repo_name,description):  # FIX ME !! Not working
 
@@ -249,7 +249,7 @@ def setup_remote_repository():
             f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
         ])
     
-    def gh_to_env_file(env_file=".env"):
+    def gh_to_env_file(check,username,repo_name, env_file=".env"):
         """
         Adds GitHub username and token from `gh auth status` to the .env file. If the file does not exist,
         it will be created.
@@ -257,41 +257,34 @@ def setup_remote_repository():
         Parameters:
         - env_file (str): The path to the .env file. Default is ".env".
         """
-
-        def gh_user_and_token():
-            """
-            Retrieves the GitHub username and personal access token from the GitHub CLI.
-            """
+        
+        def get_gh_token():
             try:
-                # Check the authentication status to get the username
-                result = subprocess.run(["gh", "auth", "status", "--json", "user", "-t"], capture_output=True, check=True, text=True)
-                if result.returncode == 0:
-                    # Extract username from the output
-                    username = result.stdout.splitlines()[0].split()[1]  # Assuming the format is like: 'Logged in to github.com as <username>'
-                    
-                    # Get the token
-                    token = result.stdout.splitlines()[1].split()[1]  # Assuming the token is shown like 'token <token>'
-                    
-                    return username, token
+                # Run the command to get the token
+                result = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, check=True)
+                return result.stdout.strip()  # Returns the token
             except subprocess.CalledProcessError as e:
-                print(f"Error getting GitHub authentication info: {e}")
-                return None, None
-
-        # Get GitHub credentials using gh CLI
-        username, token = gh_user_and_token()
-        
-        if not username or not token:
-            print("Failed to retrieve GitHub credentials. Make sure you're logged in to GitHub CLI.")
-            return
-        
-        # Check if .env file exists
-        if not os.path.exists(env_file):
-            print(f"{env_file} does not exist. Creating a new one.")
-        
-        # Write the credentials to the .env file
-        with open(env_file, 'a') as file:
-            file.write(f"GITHUB_USERNAME={username}\n")
-            file.write(f"GITHUB_TOKEN={token}\n")
+                print(f"Failed to get GitHub token: {e}")
+                return None
+    
+        if check:
+    
+            token = get_gh_token()
+            
+            if not username or not token:
+                print("Failed to retrieve GitHub credentials. Make sure you're logged in to GitHub CLI.")
+                return
+            
+            # Check if .env file exists
+            if not os.path.exists(env_file):
+                print(f"{env_file} does not exist. Creating a new one.")
+            
+            # Write the credentials to the .env file
+            with open(env_file, 'a') as file:
+                file.write(f"GITHUB_USERNAME={username}\n")
+                file.write(f"GITHUB_REPO_NAME={repo_name}\n")
+                if token:
+                    file.write(f"GITHUB_TOKEN={token}\n")
         
         print(f"GitHub username and token added to {env_file}")
 
@@ -299,7 +292,7 @@ def setup_remote_repository():
     description = "{{ cookiecutter.description }}"
     remote_repo = "{{ cookiecutter.repository_platform }}"
     version_control = "{{cookiecutter.version_control}}"
-
+    
     if version_control == None or not os.path.isdir(".git"):
         return
     elif remote_repo in ["GitHub", "GitLab"]:
@@ -313,9 +306,9 @@ def setup_remote_repository():
         if remote_repo == "GitHub":
             check = is_gh_installed()
             check = install_gh(check)
-            gh_login(check,username,privacy_setting,repo_name,description)
-            gh_to_env_file()
-            
+            check, username, repo_name = gh_login(check,username,privacy_setting,repo_name,description)
+            gh_to_env_file(check,username,repo_name)
+
         elif remote_repo == "GitLab":
             gitlab_login(username,privacy_setting,repo_name,description)
 

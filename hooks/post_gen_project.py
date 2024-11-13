@@ -81,6 +81,8 @@ def setup_virtual_environment(install_path = "bin/miniconda"):
         
     repo_name = "{{ cookiecutter.repo_name }}"
     virtual_environment = "{{ cookiecutter.virtual_environment}}"
+    remote_repo = "{{ cookiecutter.repository_platform}}"
+    
     env_file  = None
     if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
         return
