@@ -338,100 +338,25 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
     
     return check
 
-def run_python_script(script_path, env_name=None, conda_path=None):
-    """
-    Runs a Python script in a specified Conda environment. If no environment is specified,
-    the base Python environment is used.
-
-    Parameters:
-    - script_path (str): Path to the Python script to execute.
-    - env_name (str or None): Name of the Conda environment to activate. If None, uses the base Python environment.
-    - conda_path (str or None): Path to the Conda installation. Defaults to CONDA_PREFIX or Conda base if None.
-    """
-    # Determine the OS-specific shell
-    shell = '/bin/bash' if os.name != 'nt' else 'cmd.exe'
-
-    def set_conda(env_name, conda_path):
-        """
-        Determines the path to the Conda activate script and constructs the activation command.
-        
-        Parameters:
-        - env_name (str): Name of the Conda environment to activate.
-        - conda_path (str or None): Path to the Conda installation. If None, uses the base or CONDA_PREFIX.
-
-        Returns:
-        - str: The command to activate the Conda environment.
-        """
-        # Locate the Conda activate script
-        if conda_path:
-            conda_activate = os.path.join(conda_path, "bin", "activate")
-        else:
-            conda_prefix = os.environ.get("CONDA_PREFIX")
-            if conda_prefix:
-                conda_activate = os.path.join(conda_prefix, "bin", "activate")
-            else:
-                # Fallback: Use 'conda info --base' to locate Conda's base environment
-                try:
-                    conda_info = subprocess.run(
-                        ["conda", "info", "--base"], capture_output=True, text=True, check=True
-                    )
-                    conda_base = conda_info.stdout.strip()
-                    conda_activate = os.path.join(conda_base, "bin", "activate")
-                except subprocess.CalledProcessError:
-                    raise EnvironmentError("Could not locate Conda base environment. Ensure Conda is installed.")
-        
-        # Construct the activation command
-        if shell == '/bin/bash':
-            return f"source {conda_activate} && conda activate {env_name}"
-        else:
-            return f"{conda_activate} {env_name} &&"
-
-    # Construct the full command based on the environment setting
-    if env_name:
-        activate_cmd = set_conda(env_name, conda_path)
-        full_command = f"{activate_cmd} && python {script_path}"
-    else:
-        # No env_name provided, use the base Python environment
-        full_command = f"python {script_path}"
-
-    # Run the command
-    try:
-        result = subprocess.run(full_command, shell=True, executable=shell, check=True)
-        print("Script executed successfully.")
-        return result
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
-        sys.exit(e.returncode)
-
 def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
-    
-    def find_git_bash():
-        # Find the git executable
-        git_path = shutil.which("git")
-        
-        if git_path:
-            # Get the directory of git executable
-            git_dir = os.path.dirname(git_path)
-            
-            # Check if bash.exe exists in the same directory
-            bash_path = os.path.join(git_dir, "bash.exe")
-            
-            if os.path.exists(bash_path):
-                print(f"Found bash.exe at: {bash_path}")
-                return bash_path
-            else:
-                print("No bash.exe found in the same folder as git.")
-                return None
-        else:
-            print("Git executable not found in the PATH.")
-            return None
+    try:
+        # Make sure the script is executable
+        os.chmod(script_path, 0o755)
 
-    def get_bash_command(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
-         # Build the command with additional arguments
-        # Check the operating system
-        os_type = platform.system().lower()
+        # Run the script with the additional paths as arguments
+        subprocess.check_call(['bash', '-i', script_path, repo_name, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
+        print(f"Script {script_path} executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing the script: {e}")
 
-        command = [script_path]
+def run_powershell_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
+    try:
+        # Prepare the command to execute the PowerShell script with arguments
+        command = [
+            "powershell", "-ExecutionPolicy", "Bypass", "-File", script_path
+        ]
+
+        # Append arguments if they are provided
         if repo_name:
             command.append(repo_name)
         if setup_version_control_path:
@@ -439,48 +364,18 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
         if setup_remote_repository_path:
             command.append(setup_remote_repository_path)
 
-        # Adjust for different OS environments
-        if os_type == "windows":
-            # Check for Git Bash in the PATH
-            git_bash_path = find_git_bash()
-       
-            if git_bash_path:
-                command = [git_bash_path, "-i"] + command
-            elif shutil.which("wsl"):
-                # Fall back to WSL if bash is not found
-                command = ["wsl", "bash", "-i"] + command
-            else:
-                raise EnvironmentError("No bash executable or WSL found on Windows.")
-        elif os_type == "darwin" or os_type == "linux":
-            # Use native bash for macOS and Linux (automatically found in PATH)
-            bash_path = shutil.which("bash")
-            if bash_path:
-                command = [bash_path, "-i"] + command
-            else:
-                raise EnvironmentError("No bash executable found on this system.")
-        else:
-            raise EnvironmentError(f"Unsupported operating system: {os_type}")
-          
-        return command
-    
-    try:
-        # Make sure the script is executable
-        os.chmod(script_path, 0o755)
-
-        command = get_bash_command(script_path, repo_name, setup_version_control_path, setup_remote_repository_path)
-
-        # Run the command
+        # Run the PowerShell script with the specified arguments
         subprocess.check_call(command)
         print(f"Script {script_path} executed successfully.")
-
+    
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
-    except EnvironmentError as e:
-        print(e)
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
 setup_bash_script = "setup/create.sh"
+setup_powershell_script = "setup/create.ps1"
+
 miniconda_path =  "bin/miniconda"
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
@@ -492,6 +387,11 @@ remote_storage = "{{cookiecutter.remote_storage}}"
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
 
-run_bash_script(setup_bash_script, repo_name, setup_version_control, setup_remote_repository)
+os_type = platform.system().lower()
+
+if os_type == "windows":
+    run_bash_script(setup_powershell_script, repo_name, setup_version_control, setup_remote_repository)
+elif os_type == "darwin" or os_type == "linux":
+    run_bash_script(setup_bash_script, repo_name, setup_version_control, setup_remote_repository)
 
 
