@@ -195,7 +195,7 @@ def _setup_git(version_control,platform):
                 os.remove(installer_path)
                 print(f"Installer {installer_name} has been removed from {download_dir}.")
 
-    def check_git_config(check,git_name, git_email):
+    def check_git_config(check):
         """
         Check if Git is configured with user.name and user.email. If not, prompt the user for this information.
 
