@@ -80,7 +80,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
         
 
-    additional_packages = []
+    install_packages = ['python']
     env_file  = None
 
     if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
@@ -99,15 +99,15 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
             return None
 
     if virtual_environment in ['Python','R','environment.yaml','requirements.txt']:
-           
+
         if virtual_environment == 'R':
-            additional_packages.extend(['python'])  
+             install_packages.extend(['r-base'])  
         if repo_platform == 'GitHub':
-            additional_packages.extend(['gh'])
+             install_packages.extend(['gh'])
         if version_control == 'Datalad':
-            additional_packages.extend(['git-annex'])
+             install_packages.extend(['git-annex'])
       
-        check = setup_conda(install_path,virtual_environment,repo_name,additional_packages,env_file)
+        check = setup_conda(install_path,virtual_environment,repo_name, install_packages,env_file)
 
         if check is False and virtual_environment == 'Python':
             if subprocess.call(['which', 'virtualenv']) == 0:
@@ -119,7 +119,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
 
         return repo_name
 
-def setup_conda(install_path,virtual_environment,repo_name,additional_packages =[], env_file = None):
+def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
             
     def is_conda_installed(check = True):
         """Check if conda is installed."""
@@ -316,11 +316,11 @@ def setup_conda(install_path,virtual_environment,repo_name,additional_packages =
 
     if check:
         if virtual_environment in ['Python','R']:
-            command = ['conda', 'create', '--name', repo_name,virtual_environment]
-            if additional_packages:
-                command.extend(additional_packages)
+            command = ['conda', 'create', '--name', repo_name,install_packages]
+            if install_packages:
+                command.extend(install_packages)
             command.extend(['--yes'])
-            msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following additional packages were installed: {additional_packages}'
+            msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following packages were installed: {install_packages}'
         elif virtual_environment in ['environment.yaml','requirements.txt']:
             if virtual_environment == 'requirements.txt':
                 generate_yml(repo_name,env_file)
