@@ -534,22 +534,12 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
             print("An error occurred while checking git-annex-remote-rclone:")
         return False
 
-    def install_datalad():
+    def install_datalad(check):   
+            if check:
+                return True
             try:
                 # Step 1: Install datalad-installer via pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
-
-                check = is_git_annex_installed()
-                check = install_git_annex(check)
-                if check is False: 
-                    print("git-annex installation was unsuccesful")
-                    return False
-                
-                # Step 2: Install git-annex using datalad-installer
-                #subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
-
-                # Step 3: Set recommended git-annex configuration for performance improvement
-                #subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
 
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad'])
 
@@ -564,10 +554,9 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                 return False           
 
     def install_git_annex(check):
-        
         if check:
+            subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
             return True
-
         try:
             # Step 1: Check if 'datalad-installer' is available
             if shutil.which('datalad-installer'):
@@ -582,7 +571,6 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                 else:
                     print(f"Unsupported platform {sys.platform}. Please install git-annex manually.")
                     return False
-            
             subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
 
             print("git-annex installed successfully.")
@@ -800,13 +788,16 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
     if check is False:
         return
 
+    # Install datalad
     check = is_datalad_installed()
-
+    check = install_datalad(check)
     if check is False:
-        check = install_datalad()
-        if check is False:
+        return
+    # Install git-annex
+    check = is_git_annex_installed()
+    check = install_git_annex(check)
+    if check is False:
             return
-        #install_datalad("bin/datalad")
     
     datalad_create()
 
@@ -815,8 +806,6 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
     elif remote_storage in ["Dropbox", "Deic Storage"]:
         setup_rclone("bin")
         datalad_deic_storage(repo_name)
-
-
 
 version_control = "{{cookiecutter.version_control}}"
 repo_name = "{{ cookiecutter.repo_name }}"

@@ -108,7 +108,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         if version_control == 'DVC':
              install_packages.extend(['git','dvc, dvc-ssh'])    
         elif version_control == 'Datalad':
-             install_packages.extend(['git','git-annex','rclone'])
+             install_packages.extend(['git','datalad','git-annex','rclone'])
         if repo_platform == 'GitHub':
              install_packages.extend(['gh'])     
             
