@@ -323,10 +323,10 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
 
     if check:
         if virtual_environment in ['Python','R']:
-            command = ['conda', 'create', '--name', repo_name]
+            command = ['conda', 'create','--yes', '--name', repo_name]
             if install_packages:
                 command.extend(install_packages)
-            command.extend(['--yes'])
+            #command.extend(['--yes'])
             msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following packages were installed: {install_packages}'
         elif virtual_environment in ['environment.yaml','requirements.txt']:
             if virtual_environment == 'requirements.txt':
