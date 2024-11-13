@@ -195,7 +195,7 @@ def _setup_git(version_control,platform):
                 os.remove(installer_path)
                 print(f"Installer {installer_name} has been removed from {download_dir}.")
 
-    def check_git_config(check):
+    def check_git_config(check,git_name, git_email):
         """
         Check if Git is configured with user.name and user.email. If not, prompt the user for this information.
 
@@ -221,29 +221,26 @@ def _setup_git(version_control,platform):
                     current_email = current_email.stdout.strip()
                 except UnicodeDecodeError as e:
                     print(f"Error decoding Git configuration output: {e}")
-                    return False  # Return False if we can't decode the output
+                    return False, None, None  # Return False if we can't decode the output
                 
                 # Check if Git is properly configured
                 if current_name and current_email:
                     print(f"Git is configured with user.name: {current_name} and user.email: {current_email}")
-
-                    return True  # Return True if configured
-
+                    return True, current_name, current_email # Return True if configured
                 else:
                     print("Git is not fully configured.")
-                    return False  # Return False if Git is not fully configured
+                    return False, None, None   # Return False if Git is not fully configured
 
-            #except subprocess.CalledProcessError as e:
-                #print(f"Git configuration check failed: {e}")
-            #    return False  # Return False if subprocess fails
+            except subprocess.CalledProcessError as e:
+                print(f"Git configuration check failed: {e}")
+                return False  # Return False if subprocess fails
             except Exception as e:    
-                #print(f"Unexpected error: {e}")
-                return False  # Return False for any other unexpected errors
+                print(f"Unexpected error: {e}")
+                return False, None, None   # Return False for any other unexpected errors
         else:
-            print("Git configuration check skipped.")
-            return False  # Return False if the check flag is not set to True
+            return False, None, None   # Return False if the check flag is not set to True
 
-    def setup_git_config(check):
+    def setup_git_config(check,git_name,git_email):
         """
         Prompts the user for their name and email, then configures Git with these details.
 
@@ -251,27 +248,26 @@ def _setup_git(version_control,platform):
         - bool: True if the configuration is successful, False otherwise.
         """
         if check:
-            return check
+            return True,git_name,git_email
         try:
             # Prompt user for name and email
-            user_name = input("Enter your Git user name: ").strip()
-            user_email = input("Enter your Git user email: ").strip()
+            git_name = input("Enter your Git user name: ").strip()
+            git_email = input("Enter your Git user email: ").strip()
 
             # Check if inputs are valid
-            if not user_name or not user_email:
+            if not git_name or not git_email:
                 print("Both name and email are required.")
-                return False
+                return False,git_name,git_email
 
             # Configure Git user name and email globally
-            subprocess.run(["git", "config", "--global", "user.name", user_name], check=True)
-            subprocess.run(["git", "config", "--global", "user.email", user_email], check=True)
+            subprocess.run(["git", "config", "--global", "user.name", git_name], check=True)
+            subprocess.run(["git", "config", "--global", "user.email", git_email], check=True)
 
-            print(f"Git configured with name: {user_name} and email: {user_email}")
-            return True
-
+            print(f"Git configured with name: {git_name} and email: {git_email}")
+            return True,git_name,git_email
         except subprocess.CalledProcessError as e:
             print(f"Failed to configure Git: {e}")
-            return False
+            return False,git_name,git_email
             
     def git_init(check,version_control,platform):
         if check and version_control == "Git":  
@@ -288,39 +284,15 @@ def _setup_git(version_control,platform):
             subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
             print("Created an initial commit.")
     
-
-    def git_to_env(env_file=".env"):
+    def git_to_env(git_name, git_email,env_file=".env"):
         """
         Adds Git username and email to the specified .env file. 
         Creates the file if it doesn't exist.
         
         Parameters:
         - env_file (str): The path to the .env file. Default is ".env".
-        """
-        def get_git_user_info():
-            """
-            Retrieves the Git global username and email configuration.
-            """
-            try:
-                # Retrieve Git username
-                user_name = subprocess.run(
-                    ["git", "config", "--global", "user.name"], capture_output=True, text=True, check=True
-                ).stdout.strip()
-
-                # Retrieve Git email
-                user_email = subprocess.run(
-                    ["git", "config", "--global", "user.email"], capture_output=True, text=True, check=True
-                ).stdout.strip()
-
-                return user_name, user_email
-            except subprocess.CalledProcessError as e:
-                print(f"Error getting Git user info: {e}")
-                return None, None
-            
-        # Get Git user info
-        git_user_name, git_user_email = get_git_user_info()
-        
-        if not git_user_name or not git_user_email:
+        """ 
+        if not git_name or not git_email:
             print("Failed to retrieve Git user information. Make sure Git is configured.")
             return
         
@@ -332,18 +304,18 @@ def _setup_git(version_control,platform):
         
         # Write the credentials to the .env file
         with open(env_file, 'a') as file:
-            file.write(f"GIT_USER_NAME={git_user_name}\n")
-            file.write(f"GIT_USER_EMAIL={git_user_email}\n")
+            file.write(f"GIT_USER_NAME={git_name}\n")
+            file.write(f"GIT_USER_EMAIL={git_email}\n")
         
         print(f"Git user information added to {env_file}")
 
 
     check = is_git_installed()
     check = install_git(check,install_path=None)
-    check = check_git_config(check)
-    check = setup_git_config(check)
+    check, git_name, git_email = check_git_config(check)
+    check, git_name, git_email = setup_git_config(check)
     git_init(check,version_control,platform)
-    git_to_env()    
+    git_to_env(git_name, git_email)    
     return check
     
 def _setup_dvc(version_control,remote_storage,platform,repo_name):
