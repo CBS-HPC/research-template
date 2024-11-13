@@ -4,6 +4,7 @@ import sys
 import platform
 import urllib.request
 import os
+import shutil
 
 def get_hardware_info():
     """
@@ -119,9 +120,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
                 create_virtualenv_env(repo_name)
             else:
                 create_venv_env(repo_name)
-        elif virtual_environment == 'R': 
-            print('Conda is not installed. Please install it to create an {programming_language}  environment.')
-
+    
         return repo_name
 
 def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
@@ -401,6 +400,60 @@ def run_python_script(script_path, env_name=None, conda_path=None):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
         sys.exit(e.returncode)
+
+def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
+    
+    def get_bash_command(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
+         # Build the command with additional arguments
+        command = [script_path]
+        if repo_name:
+            command.append(repo_name)
+        if setup_version_control_path:
+            command.append(setup_version_control_path)
+        if setup_remote_repository_path:
+            command.append(setup_remote_repository_path)
+
+        # Adjust for different OS environments
+        if os_type == "windows":
+            # Check for Git Bash in the PATH
+            git_bash_path = shutil.which("bash")
+            if git_bash_path:
+                command = [git_bash_path, "-i"] + command
+            elif shutil.which("wsl"):
+                # Fall back to WSL if bash is not found
+                command = ["wsl", "bash", "-i"] + command
+            else:
+                raise EnvironmentError("No bash executable or WSL found on Windows.")
+        elif os_type == "darwin" or os_type == "linux":
+            # Use native bash for macOS and Linux (automatically found in PATH)
+            bash_path = shutil.which("bash")
+            if bash_path:
+                command = [bash_path, "-i"] + command
+            else:
+                raise EnvironmentError("No bash executable found on this system.")
+        else:
+            raise EnvironmentError(f"Unsupported operating system: {os_type}")
+          
+        return command
+    
+    try:
+        # Make sure the script is executable
+        os.chmod(script_path, 0o755)
+
+        # Check the operating system
+        os_type = platform.system().lower()
+
+        command = get_bash_command(script_path, repo_name, setup_version_control_path, setup_remote_repository_path)
+
+        # Run the command
+        subprocess.check_call(command)
+        print(f"Script {script_path} executed successfully.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing the script: {e}")
+    except EnvironmentError as e:
+        print(e)
+
 
 def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
