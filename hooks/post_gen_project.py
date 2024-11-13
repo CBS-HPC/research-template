@@ -456,17 +456,6 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
     except EnvironmentError as e:
         print(e)
 
-def run_bash_script2(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
-    try:
-        # Make sure the script is executable
-        os.chmod(script_path, 0o755)
-
-        # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, repo_name, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
-        print(f"Script {script_path} executed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while executing the script: {e}")
-
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
 setup_bash_script = "setup/create.sh"
