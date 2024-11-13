@@ -61,7 +61,7 @@ def _set_to_path(path_to_set):
     else:
         print("Unsupported operating system. PATH not modified.")
 
-def setup_remote_repository():
+def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 
     def is_gh_installed():
@@ -288,31 +288,32 @@ def setup_remote_repository():
         
         print(f"GitHub username and token added to {env_file}")
 
-    repo_name = "{{ cookiecutter.repo_name }}"
-    description = "{{ cookiecutter.description }}"
-    remote_repo = "{{ cookiecutter.repository_platform }}"
-    version_control = "{{cookiecutter.version_control}}"
-    
     if version_control == None or not os.path.isdir(".git"):
         return
-    elif remote_repo in ["GitHub", "GitLab"]:
-        username = input(f"Enter your {remote_repo} username: ").strip()
+    elif repo_platform in ["GitHub", "GitLab"]:
+        username = input(f"Enter your {repo_platform} username: ").strip()
         privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
         
         if privacy_setting not in ["private", "public"]:
             print("Invalid choice. Defaulting to 'private'.")
             privacy_setting = "private"
 
-        if remote_repo == "GitHub":
+        if repo_platform == "GitHub":
             check = is_gh_installed()
             check = install_gh(check)
             check, username, repo_name = gh_login(check,username,privacy_setting,repo_name,description)
             gh_to_env_file(check,username,repo_name)
 
-        elif remote_repo == "GitLab":
+        elif repo_platform == "GitLab":
             gitlab_login(username,privacy_setting,repo_name,description)
 
 
+
+repo_name = "{{ cookiecutter.repo_name }}"
+description = "{{ cookiecutter.description }}"
+repo_platform = "{{ cookiecutter.repository_platform}}"
+version_control = "{{cookiecutter.version_control}}"
+
 # Create Remote Repository
-setup_remote_repository()
+setup_remote_repository(version_control,repo_platform,repo_name,description)
 

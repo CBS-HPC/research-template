@@ -35,7 +35,7 @@ def get_hardware_info():
     except subprocess.CalledProcessError as e:
         print(f"Error retrieving hardware information: {e}")
 
-def setup_virtual_environment(install_path = "bin/miniconda"):
+def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
     
@@ -79,11 +79,10 @@ def setup_virtual_environment(install_path = "bin/miniconda"):
         subprocess.run(['virtualenv', env_name], check=True)
         print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
         
-    repo_name = "{{ cookiecutter.repo_name }}"
-    virtual_environment = "{{ cookiecutter.virtual_environment}}"
-    remote_repo = "{{ cookiecutter.repository_platform}}"
-    
+
+    additional_packages = []
     env_file  = None
+
     if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
         return
     
@@ -100,7 +99,15 @@ def setup_virtual_environment(install_path = "bin/miniconda"):
             return None
 
     if virtual_environment in ['Python','R','environment.yaml','requirements.txt']:
-        check = setup_conda(install_path,virtual_environment,repo_name,env_file)
+           
+        if virtual_environment == 'R':
+            additional_packages.extend(['python'])  
+        if repo_platform == 'GitHub':
+            additional_packages.extend(['gh'])
+        if version_control == 'Datalad':
+            additional_packages.extend(['git-annex'])
+      
+        check = setup_conda(install_path,virtual_environment,repo_name,additional_packages,env_file)
 
         if check is False and virtual_environment == 'Python':
             if subprocess.call(['which', 'virtualenv']) == 0:
@@ -112,7 +119,7 @@ def setup_virtual_environment(install_path = "bin/miniconda"):
 
         return repo_name
 
-def setup_conda(install_path,virtual_environment,repo_name,env_file = None):
+def setup_conda(install_path,virtual_environment,repo_name,additional_packages =[], env_file = None):
             
     def is_conda_installed(check = True):
         """Check if conda is installed."""
@@ -241,12 +248,7 @@ def setup_conda(install_path,virtual_environment,repo_name,env_file = None):
             print(f"Failed to initialize Conda shell: {e}")
             return False
 
-    def create_conda_env(env_name, programming_language):
-        """Create a conda environment."""
-        subprocess.run(['conda', 'create', '--name', env_name, programming_language, '--yes'], check=True)
-        print(f'Conda environment "{env_name}" for {programming_language} created successfully.')
-
-    def create_from_yml(env_name=None,yml_file='environment.yml'):
+    def create_conda_env(command,msg):
         """
         Create a conda environment from an environment.yml file with a specified name.
         
@@ -255,15 +257,11 @@ def setup_conda(install_path,virtual_environment,repo_name,env_file = None):
         - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
         """
         try:
-            # Construct the command
-            command = ['conda', 'env', 'create', '-f', yml_file]
-            if env_name:
-                command.extend(['--name', env_name])  # Add the specified name
-
+  
             # Run the command
             subprocess.run(command, check=True)
-            print(f"Conda environment '{env_name or 'default name in YAML'}' created successfully from {yml_file}.")
-
+            print(msg)
+            
         except subprocess.CalledProcessError as e:
             print(f"Failed to create conda environment: {e}")
         except FileNotFoundError:
@@ -318,12 +316,18 @@ def setup_conda(install_path,virtual_environment,repo_name,env_file = None):
 
     if check:
         if virtual_environment in ['Python','R']:
-            create_conda_env(repo_name,virtual_environment)
-        elif virtual_environment in ['environment.yaml']:
-            create_from_yml(repo_name,env_file)
-        elif virtual_environment in ['requirements.txt']:
-            generate_yml(repo_name,env_file)
-            create_from_yml(repo_name,env_file)
+            command = ['conda', 'create', '--name', repo_name,virtual_environment]
+            if additional_packages:
+                command.extend(additional_packages)
+            command.extend(['--yes'])
+            msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following additional packages were installed: {additional_packages}'
+        elif virtual_environment in ['environment.yaml','requirements.txt']:
+            if virtual_environment == 'requirements.txt':
+                generate_yml(repo_name,env_file)
+            command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
+            msg = f'Conda environment "{repo_name}" created successfully from {virtual_environment}.'
+        
+        create_conda_env(command,msg)
         export_conda_env(repo_name)
     
     return check
@@ -404,23 +408,23 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-# `__file__` gives the current file's path
-#script_dir = os.path.dirname(os.path.abspath(__file__))
-#setup_version_control = os.path.join(script_dir, "setup_version_control.py")
-#setup_remote_repository = os.path.join(script_dir, "setup_remote_repository.py")
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
 setup_bash_script = "setup/create.sh"
 miniconda_path =  "bin/miniconda"
-#conda_path = miniconda_path + "/bin/conda"
+
+virtual_environment = "{{ cookiecutter.virtual_environment}}"
+repo_name = "{{ cookiecutter.repo_name }}"
+repo_platform = "{{ cookiecutter.repository_platform}}"
+version_control = "{{cookiecutter.version_control}}"
+remote_storage = "{{cookiecutter.remote_storage}}"
+
+
 
 # Create Virtual Environment
-repo_name = setup_virtual_environment(miniconda_path)
+repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
 
 run_bash_script(setup_bash_script, repo_name, setup_version_control, setup_remote_repository)
 
-
-#run_python_script(setup_version_control, repo_name,conda_path)
-#run_python_script(setup_remote_repository, repo_name,conda_path)
 

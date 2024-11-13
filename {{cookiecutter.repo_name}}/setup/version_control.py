@@ -18,24 +18,19 @@ for lib in required_libraries:
 import requests
 
 
-def setup_version_control():
+def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
     """Handle repository creation and log-in based on selected platform."""
 
-    platform = "{{cookiecutter.repository_platform }}"
-    version_control = "{{cookiecutter.version_control}}"
-    remote_storage = "{{cookiecutter.remote_storage}}"
-    repo_name = "{{ cookiecutter.repo_name }}"
-    
     if version_control == None:
         return
     elif version_control == "Git":
-        check = _setup_git(version_control,platform)
+        check = _setup_git(version_control,repo_platform)
         if check is False:
             return
     if version_control == "Datalad":
-        _setup_datalad(version_control,remote_storage,platform,repo_name)
+        _setup_datalad(version_control,remote_storage,repo_platform,repo_name)
     elif version_control == "DVC":
-        _setup_dvc(version_control,remote_storage,platform,repo_name)
+        _setup_dvc(version_control,remote_storage,repo_platform,repo_name)
 
 def _set_to_path(path_to_set):
     """Set the specified path to the user-level PATH, requesting admin privileges on Windows if needed."""
@@ -82,7 +77,7 @@ def _set_to_path(path_to_set):
     else:
         print("Unsupported operating system. PATH not modified.")
 
-def _setup_git(version_control,platform):
+def _setup_git(version_control,repo_platform):
     
     def is_git_installed():
         try:
@@ -269,14 +264,14 @@ def _setup_git(version_control,platform):
             print(f"Failed to configure Git: {e}")
             return False,git_name,git_email
             
-    def git_init(check,version_control,platform):
+    def git_init(check,version_control,repo_platform):
         if check and version_control == "Git":  
             # Initialize a Git repository if one does not already exist
             if not os.path.isdir(".git"):
                 subprocess.run(["git", "init"], check=True)
                 print("Initialized a new Git repository.")
 
-            if platform == "GitHub":
+            if repo_platform == "GitHub":
                 # Rename branch to 'main' if it was initialized as 'master'
                 subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
 
@@ -309,16 +304,15 @@ def _setup_git(version_control,platform):
         
         print(f"Git user information added to {env_file}")
 
-
     check = is_git_installed()
     check = install_git(check,install_path=None)
     check, git_name, git_email = check_git_config(check)
     check, git_name, git_email = setup_git_config(check,git_name, git_email)
-    git_init(check,version_control,platform)
+    git_init(check,version_control,repo_platform)
     git_to_env(git_name, git_email)    
     return check
     
-def _setup_dvc(version_control,remote_storage,platform,repo_name):
+def _setup_dvc(version_control,remote_storage,repo_platform,repo_name):
 
     def is_dvc_installed():
         """
@@ -336,22 +330,7 @@ def _setup_dvc(version_control,remote_storage,platform,repo_name):
         except subprocess.CalledProcessError:
             print("An error occurred while checking DVC version.")
         return False
-    # FIX ME 
-    def install_dvc_new(install_path):
-        """
-        Install DVC using pip.
-        """
-        try:
-            # Install DVC via pip
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--target', install_path, 'dvc','dvc-ssh'])
-            print("DVC has been installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred during DVC installation: {e}")
-        except FileNotFoundError:
-            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
 
-        _set_to_path(install_path) 
-    
     def install_dvc():
         """
         Install DVC using pip.
@@ -365,7 +344,7 @@ def _setup_dvc(version_control,remote_storage,platform,repo_name):
         except FileNotFoundError:
             print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
 
-    def dvc_init(remote_storage,platform,repo_name):
+    def dvc_init(remote_storage,repo_platform,repo_name):
     
         # Initialize a Git repository if one does not already exist
         if not os.path.isdir(".git"):
@@ -385,7 +364,7 @@ def _setup_dvc(version_control,remote_storage,platform,repo_name):
         for folder in folders:
             subprocess.run(["dvc", "add",folder], check=True)
     
-        if platform == "GitHub":
+        if repo_platform == "GitHub":
             # Rename branch to 'main' if it was initialized as 'master'
             subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
 
@@ -479,7 +458,7 @@ def _setup_dvc(version_control,remote_storage,platform,repo_name):
         if dvc_remote:
             subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
 
-    check = _setup_git(version_control,platform)
+    check = _setup_git(version_control,repo_platform)
 
     if check is False:
         return
@@ -490,7 +469,7 @@ def _setup_dvc(version_control,remote_storage,platform,repo_name):
             #install_dvc("bin/dvc")
             install_dvc()
 
-    dvc_init(remote_storage,platform,repo_name)
+    dvc_init(remote_storage,repo_platform,repo_name)
     
 def _setup_datalad(version_control,remote_storage,platform,repo_name):
 
@@ -812,6 +791,11 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
         datalad_deic_storage(repo_name)
 
 
+repo_platform = "{{cookiecutter.repository_platform }}"
+version_control = "{{cookiecutter.version_control}}"
+remote_storage = "{{cookiecutter.remote_storage}}"
+repo_name = "{{ cookiecutter.repo_name }}"
+
 # Setup Version Control
-setup_version_control()
+setup_version_control(version_control,remote_storage,repo_platform,repo_name)
 
