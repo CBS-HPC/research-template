@@ -5,6 +5,42 @@ import platform
 import urllib.request
 import os
 import click
+import json
+
+def prompt_for_optional_fields():
+    version_control = "{{ cookiecutter.version_control }}"
+    
+    # Check if 'version_control' is set to 'None'
+    if version_control == "None":
+        # Automatically set both to 'None' if no version control is chosen
+        remote_storage = "None"
+        repository_platform = "None"
+    else:
+        # Otherwise, prompt for 'remote_storage' and 'repository_platform' values
+        remote_storage = click.prompt(
+            "Choose remote storage", type=click.Choice(["Dropbox", "Deic Storage", "Local Path", "None"]), default="None"
+        )
+        repository_platform = click.prompt(
+            "Choose repository platform", type=click.Choice(["GitHub", "GitLab", "None"]), default="None"
+        )
+    
+    # Write the chosen values to environment variables or files as needed
+    os.environ["COOKIECUTTER_REMOTE_STORAGE"] = remote_storage
+    os.environ["COOKIECUTTER_REPOSITORY_PLATFORM"] = repository_platform
+    
+    # Update the cookiecutter context with chosen values
+    with open("cookiecutter.json", "r") as file:
+        context = json.load(file)
+    context["remote_storage"] = remote_storage
+    context["repository_platform"] = repository_platform
+    with open("cookiecutter.json", "w") as file:
+        json.dump(context, file, indent=4)
+
+# Run the function after project generation
+
+    prompt_for_optional_fields()
+
+prompt_for_optional_fields()
 
 def get_hardware_info():
     """
@@ -417,42 +453,6 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-
-def prompt_for_optional_fields():
-    version_control = "{{ cookiecutter.version_control }}"
-    
-    # Check if 'version_control' is set to 'None'
-    if version_control == "None":
-        # Automatically set both to 'None' if no version control is chosen
-        remote_storage = "None"
-        repository_platform = "None"
-    else:
-        # Otherwise, prompt for 'remote_storage' and 'repository_platform' values
-        remote_storage = click.prompt(
-            "Choose remote storage", type=click.Choice(["Dropbox", "Deic Storage", "Local Path", "None"]), default="None"
-        )
-        repository_platform = click.prompt(
-            "Choose repository platform", type=click.Choice(["GitHub", "GitLab", "None"]), default="None"
-        )
-    
-    # Write the chosen values to environment variables or files as needed
-    os.environ["COOKIECUTTER_REMOTE_STORAGE"] = remote_storage
-    os.environ["COOKIECUTTER_REPOSITORY_PLATFORM"] = repository_platform
-    
-    # Update the cookiecutter context with chosen values
-    with open("cookiecutter.json", "r") as file:
-        context = json.load(file)
-    context["remote_storage"] = remote_storage
-    context["repository_platform"] = repository_platform
-    with open("cookiecutter.json", "w") as file:
-        json.dump(context, file, indent=4)
-
-# Run the function after project generation
-
-    prompt_for_optional_fields()
-
-
-prompt_for_optional_fields()
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
