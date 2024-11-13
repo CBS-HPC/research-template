@@ -15,52 +15,6 @@ for lib in required_libraries:
 
 import distro
 
-
-def _set_to_path(path_to_set):
-    """Set the specified path to the user-level PATH, requesting admin privileges on Windows if needed."""
-
-    if platform.system() == "Windows":
-        try:
-            # Command to check if the path is in the user PATH
-            check_command = f'$currentPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User); $currentPath -notlike "*{path_to_set}*"'
-            is_not_in_path = subprocess.check_output(['powershell', '-Command', check_command], text=True).strip()
-            
-            # If the path is not in PATH, add it with admin privileges
-            if is_not_in_path == "True":
-                add_command = (
-                    f"Start-Process powershell -Verb runAs -ArgumentList "
-                    f"'[System.Environment]::SetEnvironmentVariable(\"Path\", "
-                    f"[System.Environment]::GetEnvironmentVariable(\"Path\", "
-                    f"[System.EnvironmentVariableTarget]::User) + \";{path_to_set}\", "
-                    f"[System.EnvironmentVariableTarget]::User)'"
-                )
-                subprocess.run(['powershell', '-Command', add_command], check=True)
-                print(f"Added {path_to_set} to user PATH with admin rights.")
-            else:
-                print(f"{path_to_set} is already in the user PATH.")
-                
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to update PATH on Windows: {e}")
-
-    elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
-        shell_config_file = os.path.expanduser("~/.bashrc")
-        if os.path.exists(os.path.expanduser("~/.zshrc")):
-            shell_config_file = os.path.expanduser("~/.zshrc")
-        
-        # Check if the PATH is already set
-        with open(shell_config_file, "r") as file:
-            lines = file.readlines()
-        
-        if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
-            with open(shell_config_file, "a") as file:
-                file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
-            print(f"Added {path_to_set} to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
-        else:
-            print(f"{path_to_set} is already in the user PATH in {shell_config_file}.")
-    
-    else:
-        print("Unsupported operating system. PATH not modified.")
-
 def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 
@@ -83,59 +37,6 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
             print(f"Unexpected error: {e}")
             return False
  
-    def install_gh_OLD(check):
-        if check:
-            return check 
-
-        os_type = platform.system().lower()
-        
-        if os_type == "windows":
-            installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
-            installer_name = "gh_installer.msi"
-            try:
-                # Download the installer
-                subprocess.run(["curl", "-LO", installer_url], check=True)
-                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart"], check=True)
-                print("GitHub CLI (gh) installed successfully.")
-                return True
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install GitHub CLI: {e}")
-                return False
-            finally:
-                if os.path.exists(installer_name):
-                    os.remove(installer_name)
-        
-        elif os_type == "darwin":  # macOS
-            try:
-                # Using Homebrew to install GitHub CLI
-                subprocess.run(["brew", "install", "gh"], check=True)
-                print("GitHub CLI (gh) installed successfully on macOS.")
-                return True
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install GitHub CLI on macOS: {e}")
-                return False
-        
-        elif os_type == "linux":
-            distro_name = distro.name().lower()
-            if "ubuntu" in distro_name or "debian" in distro_name:
-                subprocess.run(["sudo", "apt", "update"], check=True)
-                command = ["sudo", "apt", "install", "gh"]
-            elif "centos" in distro_name or "rhel" in distro_name:
-                command = ["sudo", "yum", "install", "gh"]
-            else:
-                print(f"Unsupported Linux distribution: {distro_name}")
-                return False
-            try:
-                subprocess.run(command, check=True)
-                print("GitHub CLI (gh) installed successfully on Linux.")
-                return True
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install GitHub CLI on Linux: {e}")
-                return False
-        else:
-            print("Unsupported operating system.")
-            return False
-
     def install_gh(check, install_path=None):
         if check:
             return check

@@ -817,10 +817,14 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
         datalad_deic_storage(repo_name)
 
 
-repo_platform = "{{cookiecutter.repository_platform }}"
+
 version_control = "{{cookiecutter.version_control}}"
-remote_storage = "{{cookiecutter.remote_storage}}"
 repo_name = "{{ cookiecutter.repo_name }}"
+
+remote_storage = os.environ["COOKIECUTTER_REMOTE_STORAGE"]
+repo_platform = os.environ["COOKIECUTTER_REPOSITORY_PLATFORM"]
+#repo_platform = "{{cookiecutter.repository_platform }}"
+#remote_storage = "{{cookiecutter.remote_storage}}"
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,repo_platform,repo_name)
