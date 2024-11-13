@@ -405,6 +405,27 @@ def run_python_script(script_path, env_name=None, conda_path=None):
 
 def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
     
+    def find_git_bash():
+        # Find the git executable
+        git_path = shutil.which("git")
+        
+        if git_path:
+            # Get the directory of git executable
+            git_dir = os.path.dirname(git_path)
+            
+            # Check if bash.exe exists in the same directory
+            bash_path = os.path.join(git_dir, "bash.exe")
+            
+            if os.path.exists(bash_path):
+                print(f"Found bash.exe at: {bash_path}")
+                return bash_path
+            else:
+                print("No bash.exe found in the same folder as git.")
+                return None
+        else:
+            print("Git executable not found in the PATH.")
+            return None
+
     def get_bash_command(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
          # Build the command with additional arguments
         # Check the operating system
@@ -421,7 +442,8 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
         # Adjust for different OS environments
         if os_type == "windows":
             # Check for Git Bash in the PATH
-            git_bash_path = shutil.which("bash")
+            git_bash_path = find_git_bash()
+       
             if git_bash_path:
                 command = [git_bash_path, "-i"] + command
             elif shutil.which("wsl"):
