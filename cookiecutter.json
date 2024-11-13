@@ -6,6 +6,6 @@
     "open_source_license": ["MIT", "BSD-3-Clause", "No license file"],
 	"virtual_environment":["Python","R","environment.yaml","requirements.txt","None"],
 	"version_control":["Git","Datalad","DVC","None"],
-	"remote_storage":["None"],
-    "repository_platform": ["None"]
+	"remote_storage": ["Dropbox","Deic Storage","Local Path","None (only if version_control is 'None')"],
+    "repository_platform": ["GitHub","GitLab","None (only if version_control is 'None')"]
 }
