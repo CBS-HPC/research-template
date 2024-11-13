@@ -107,9 +107,13 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         if version_control == 'Git':
              install_packages.extend(['git'])   
         if version_control == 'DVC':
-             install_packages.extend(['git','dvc, dvc-ssh'])    
+             install_packages.extend(['git'])
+             #install_packages.extend(['git','dvc, dvc-ssh'])       
         elif version_control == 'Datalad':
-             install_packages.extend(['git','datalad','git-annex','rclone'])
+            install_packages.extend(['git','datalad','rclone'])
+            if platform.system().lower() in ["darwin","linux"]:
+                install_packages.extend(['git-annex'])
+
         if repo_platform == 'GitHub':
              install_packages.extend(['gh'])     
             
@@ -321,9 +325,7 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
     if check:
         if virtual_environment in ['Python','R']:
             command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
-            if install_packages:
-                command.extend(install_packages)
-            #command.extend(['--yes'])
+            command.extend(install_packages)
             msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following packages were installed: {install_packages}'
         elif virtual_environment in ['environment.yaml','requirements.txt']:
             if virtual_environment == 'requirements.txt':
@@ -405,6 +407,9 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
     
     def get_bash_command(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
          # Build the command with additional arguments
+        # Check the operating system
+        os_type = platform.system().lower()
+
         command = [script_path]
         if repo_name:
             command.append(repo_name)
@@ -440,9 +445,6 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
-        # Check the operating system
-        os_type = platform.system().lower()
-
         command = get_bash_command(script_path, repo_name, setup_version_control_path, setup_remote_repository_path)
 
         # Run the command
@@ -454,8 +456,7 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
     except EnvironmentError as e:
         print(e)
 
-
-def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
+def run_bash_script2(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
