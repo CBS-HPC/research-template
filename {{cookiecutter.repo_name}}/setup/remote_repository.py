@@ -208,8 +208,6 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
         elif repo_platform == "GitLab":
             gitlab_login(username,privacy_setting,repo_name,description)
 
-
-
 repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
 version_control = "{{cookiecutter.version_control}}"

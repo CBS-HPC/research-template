@@ -416,7 +416,6 @@ def run_bash_script(script_path, repo_name=None, setup_version_control_path=None
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
 setup_bash_script = "setup/create.sh"
@@ -427,8 +426,6 @@ repo_name = "{{ cookiecutter.repo_name }}"
 repo_platform = "{{ cookiecutter.repository_platform}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
-
-
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
