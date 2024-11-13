@@ -337,7 +337,7 @@ def _setup_dvc(version_control,remote_storage,repo_platform,repo_name):
         """
         try:
             # Install DVC via pip
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc','dvc-ssh'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc[all]'])
             print("DVC has been installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"An error occurred during DVC installation: {e}")
