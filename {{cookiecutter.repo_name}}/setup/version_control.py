@@ -486,6 +486,19 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
             print("An error occurred while checking DataLad version.")
         return False
 
+    def is_git_annex_installed():
+        try:
+            # Run 'datalad --version' and capture the output
+            output = subprocess.check_output(['git-annex', 'version'], stderr=subprocess.STDOUT)
+            # Decode the output from bytes to string and check if it contains 'datalad'
+            if 'git-annex version' in output.decode('utf-8'):
+                return True
+        except FileNotFoundError:
+            print("DataLad is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking DataLad version.")
+        return False
+
     def is_rclone_installed():
         """
         Check if rclone is installed on the system and return its version.
@@ -526,7 +539,11 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                 # Step 1: Install datalad-installer via pip
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
 
-                install_git_annex()
+                check = is_git_annex_installed()
+                check = install_git_annex(check)
+                if check is False: 
+                    print("git-annex installation was unsuccesful")
+                    return False
                 
                 # Step 2: Install git-annex using datalad-installer
                 #subprocess.check_call(['datalad-installer', 'git-annex', '-m', 'datalad/git-annex:release'])
@@ -538,13 +555,19 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
 
                 # Upgrading pyopenssl needed for datalad create siblings
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyopenssl','--upgrade']) 
-
+                return True
             except subprocess.CalledProcessError as e:
                 print(f"An error occurred: {e}")
+                return False
             except FileNotFoundError:
-                print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")           
+                print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
+                return False           
 
-    def install_git_annex():
+    def install_git_annex(check):
+        
+        if check:
+            return True
+
         try:
             # Step 1: Check if 'datalad-installer' is available
             if shutil.which('datalad-installer'):
@@ -780,8 +803,11 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
     check = is_datalad_installed()
 
     if check is False:
-        install_datalad()
+        check = install_datalad()
+        if check is False:
+            return
         #install_datalad("bin/datalad")
+    
     datalad_create()
 
     if remote_storage == "Local Path":

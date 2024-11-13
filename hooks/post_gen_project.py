@@ -105,7 +105,8 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         if repo_platform == 'GitHub':
              install_packages.extend(['gh'])
         if version_control == 'Datalad':
-             install_packages.extend(['git-annex'])
+             install_packages.extend(['git-annex','rclone'])
+            
       
         check = setup_conda(install_path,virtual_environment,repo_name, install_packages,env_file)
 
@@ -316,7 +317,7 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
 
     if check:
         if virtual_environment in ['Python','R']:
-            command = ['conda', 'create', '--name', repo_name,install_packages]
+            command = ['conda', 'create', '--name', repo_name]
             if install_packages:
                 command.extend(install_packages)
             command.extend(['--yes'])
