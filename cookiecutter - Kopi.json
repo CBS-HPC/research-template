@@ -7,5 +7,5 @@
 	"virtual_environment":["Python","R","environment.yaml","requirements.txt","None"],
 	"version_control":["Git","Datalad","DVC","None"],
 	"remote_storage":["Dropbox","Deic Storage","Local Path","None"],
-    "repository_platform": ["GitHub","GitLab","None"],
+    "repository_platform": ["GitHub","GitLab","None"]
 }

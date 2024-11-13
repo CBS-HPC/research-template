@@ -5,5 +5,7 @@
     "description": "A short description of the data_science_template project.",
     "open_source_license": ["MIT", "BSD-3-Clause", "No license file"],
 	"virtual_environment":["Python","R","environment.yaml","requirements.txt","None"],
-	"version_control":["Git","Datalad","DVC","None"]
+	"version_control":["Git","Datalad","DVC","None"],
+	"remote_storage":["None"],
+    "repository_platform": ["None"]
 }
