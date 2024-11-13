@@ -81,8 +81,8 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
         
 
-    install_packages = ['python']
-    #install_packages = ['-c conda-forge','python']
+    #install_packages = ['python']
+    install_packages = ['-c', 'conda-forge','python']
     env_file  = None
 
     if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
