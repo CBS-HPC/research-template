@@ -313,7 +313,7 @@ def _setup_git(version_control,platform):
     check = is_git_installed()
     check = install_git(check,install_path=None)
     check, git_name, git_email = check_git_config(check)
-    check, git_name, git_email = setup_git_config(check)
+    check, git_name, git_email = setup_git_config(check,git_name, git_email)
     git_init(check,version_control,platform)
     git_to_env(git_name, git_email)    
     return check
