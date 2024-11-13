@@ -233,7 +233,7 @@ def _setup_git(version_control,platform):
 
             except subprocess.CalledProcessError as e:
                 print(f"Git configuration check failed: {e}")
-                return False  # Return False if subprocess fails
+                return False, None, None   # Return False if subprocess fails
             except Exception as e:    
                 print(f"Unexpected error: {e}")
                 return False, None, None   # Return False for any other unexpected errors
