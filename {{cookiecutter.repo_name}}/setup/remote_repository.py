@@ -5,6 +5,8 @@ import platform
 import importlib
 import shutil
 import requests
+import zipfile
+import tarfile
 
 required_libraries = ['distro'] 
 for lib in required_libraries:
@@ -110,11 +112,11 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     with open(env_file, 'a') as file:
         file.write(f"{tag}_USERNAME={username}\n")
         file.write(f"{tag}_REPO_NAME={repo_name}\n")
+        file.write(f"{tag}_PATH={shutil.which(repo_platform)}\n")
         if token:
             file.write(f"{tag}_TOKEN={token}\n")
     
     print(f"{tag} username and token added to {env_file}")
-
 
 def _setup_glab(username,privacy_setting,repo_name,description):
 
@@ -130,58 +132,71 @@ def _setup_glab(username,privacy_setting,repo_name,description):
             print(f"Error retrieving the latest glab version: {e}")
             return None
 
+    def add_to_path(extracted_path):
+        """
+        Adds the path of the glab binary to the system PATH.
+        """
+        glab_bin_path = os.path.join(extracted_path, "glab")
+        if os.path.exists(glab_bin_path):
+            os.environ["PATH"] += os.pathsep + extracted_path
+            print(f"Added {extracted_path} to PATH.")
+        else:
+            print(f"glab binary not found in {extracted_path}, unable to add to PATH.")
+
     def install_glab(install_path=None):
-        
         os_type = platform.system().lower()
         install_path = install_path or os.getcwd()  # Default to current directory if no install_path is provided
+        version = get_glab_version()
+        if not version:
+            print("Could not retrieve the latest version of glab.")
+            return False
 
-        if os_type in ["windows","linux"]:
-            version = get_glab_version()
-            if not version:
-                print("Could not retrieve the latest version of glab.")
-                return
-
+        # Set URL and extraction method based on OS type
         if os_type == "windows":
-            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab.exe"
-            glab_exe_path = os.path.join(install_path, "glab.exe")
-            try:
-                print(f"Downloading glab from {glab_url}...")
-                response = requests.get(glab_url, stream=True)
-                response.raise_for_status()
-                with open(glab_exe_path, "wb") as f:
-                    shutil.copyfileobj(response.raw, f)
-                print(f"glab downloaded successfully to {glab_exe_path}")
-            except requests.RequestException as e:
-                print(f"Failed to download glab: {e}")
-                return
+            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{version}_windows_amd64.zip"
+            glab_path = os.path.join(install_path, f"glab_{version}_windows_amd64.zip")
+            extract_method = lambda: zipfile.ZipFile(glab_path, 'r').extractall(install_path)
 
         elif os_type == "darwin":  # macOS
-            try:
-                print("Installing glab using Homebrew on macOS...")
-                subprocess.check_call(["brew", "install", "glab"])
-                print("glab installed successfully on macOS.")
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install glab on macOS: {e}")
+            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{version}_darwin_amd64.tar.gz"
+            glab_path = os.path.join(install_path, f"glab_{version}_darwin_amd64.tar.gz")
+            extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
 
         elif os_type == "linux":
-            try:
-                print("Installing glab on Linux...")
-                # This uses Homebrew if available, or manually installs otherwise
-                if shutil.which("brew"):
-                    subprocess.check_call(["brew", "install", "glab"])
-                else:
-                    glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{version}_linux_amd64.tar.gz"
-                    glab_tar_path = os.path.join(install_path, f"glab_{version}.tar.gz")
-                    subprocess.check_call(["curl", "-L", glab_url, "-o", glab_tar_path])
-                    subprocess.check_call(["tar", "-xzf", glab_tar_path, "-C", install_path])
-                    print(f"glab installed successfully in {install_path}.")
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install glab on Linux: {e}")
+            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{version}_linux_amd64.tar.gz"
+            glab_path = os.path.join(install_path, f"glab_{version}_linux_amd64.tar.gz")
+            extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
 
         else:
             print(f"Unsupported operating system: {os_type}")
+            return False
 
-    if install_glab():
+        # Check if glab is already downloaded and extracted
+        if os.path.exists(glab_path):
+            print(f"{glab_path} already exists. Skipping download.")
+        else:
+            try:
+                # Download the glab binary
+                print(f"Downloading glab for {os_type} from {glab_url}...")
+                response = requests.get(glab_url, stream=True)
+                response.raise_for_status()
+                with open(glab_path, "wb") as f:
+                    shutil.copyfileobj(response.raw, f)
+                print(f"glab downloaded successfully to {glab_path}")
+            except requests.RequestException as e:
+                print(f"Failed to download glab for {os_type}: {e}")
+                return False
+
+        # Extract the downloaded file
+        print(f"Extracting {glab_path}...")
+        extract_method()
+
+        # Add the extracted glab to the system PATH
+        add_to_path(install_path)
+
+        return True
+
+    if install_glab("bin"):
                 check, username, repo_name = repo_login("glab",username,privacy_setting,repo_name,description)
                 if check:
                     repo_to_env_file("glab",username,repo_name)
@@ -326,7 +341,6 @@ def _setup_gh(username,privacy_setting,repo_name,description):
                 check, username, repo_name = repo_login("gh",username,privacy_setting,repo_name,description)
                 if check:
                     repo_to_env_file("gh",username,repo_name)
-
 
 repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
