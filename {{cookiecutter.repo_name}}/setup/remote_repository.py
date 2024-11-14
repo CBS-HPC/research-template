@@ -47,7 +47,6 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
 
         if repo_platform == "GitHub":
             _setup_gh(username,privacy_setting,repo_name,description)
-
         elif repo_platform == "GitLab":
            _setup_glab(username,privacy_setting,repo_name,description)
 
@@ -59,7 +58,7 @@ def repo_login(repo_platform,username, privacy_setting, repo_name, description):
         try:
             subprocess.run([repo_platform, "auth", "login"], check=True)
         except Exception as e:
-            print(f"'gh auth login' failed: {e}")
+            print(f"{repo_platform} auth login' failed: {e}")
             return False, None, None  # Return False for any unexpected errors
     try:    
         # Create the GitHub repository
@@ -136,7 +135,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
         """
         Adds the path of the glab binary to the system PATH.
         """
-        glab_bin_path = os.path.join(extracted_path, "glab")
+        glab_bin_path = os.path.join(extracted_path, "bin/glab")
         if os.path.exists(glab_bin_path):
             os.environ["PATH"] += os.pathsep + extracted_path
             print(f"Added {extracted_path} to PATH.")
@@ -197,7 +196,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
 
         return True
 
-    if install_glab("bin"):
+    if install_glab("bin/glab"):
                 check, username, repo_name = repo_login("glab",username,privacy_setting,repo_name,description)
                 if check:
                     repo_to_env_file("glab",username,repo_name)
