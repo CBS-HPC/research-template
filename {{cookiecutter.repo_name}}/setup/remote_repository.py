@@ -144,7 +144,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
 
     def install_glab(install_path=None):
         os_type = platform.system().lower()
-        install_path = install_path or os.getcwd()  # Default to current directory if no install_path is provided
+        install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
         version = get_glab_version()
         nversion = version.lstrip("v")
         if not version:
