@@ -15,27 +15,31 @@ for lib in required_libraries:
 
 import distro
 
-
-def is_installed(executable: str = None, name: str = None):
-    # Check if both executable and name are provided as strings
-    if not isinstance(executable, str) or not isinstance(name, str):
-        raise ValueError("Both 'executable' and 'name' must be strings.")
-    
-    # Check if the executable is on the PATH
-    path = shutil.which(executable)
-    if path:
-        return True
-    else: 
-        print(f"{name} is not on Path")
-        return False
-    
 def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 
-    def install_gh(install_path=None):
-
-        if is_installed('gh',"GitHub CLI (gh)"):
+    def is_gh_installed():
+        try:
+            # Attempt to run `gh --version` to check if GitHub CLI is installed
+            result = subprocess.run(["gh", "--version"], check=True, capture_output=True, text=True)
+            # If the command executes successfully, return True
             return True
+        except FileNotFoundError:
+            # If `gh` is not found in the system, it means GitHub CLI is not installed
+            print("GitHub CLI (gh) is not installed.")
+            return False
+        except subprocess.CalledProcessError as e:
+            # If the command fails with a non-zero exit code, return False
+            print(f"Error occurred while checking GitHub CLI: {e}")
+            return False
+        except Exception as e:
+            # Catch any unexpected errors
+            print(f"Unexpected error: {e}")
+            return False
+ 
+    def install_gh(check, install_path=None):
+        if check:
+            return check
         
         os_type = platform.system().lower()
         
@@ -196,7 +200,8 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
             privacy_setting = "private"
 
         if repo_platform == "GitHub":
-            check = install_gh()
+            check = is_gh_installed()
+            check = install_gh(check)
             check, username, repo_name = gh_login(check,username,privacy_setting,repo_name,description)
             gh_to_env_file(check,username,repo_name)
 
@@ -207,6 +212,7 @@ repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
 version_control = "{{cookiecutter.version_control}}"
 repo_platform = "{{ cookiecutter.repository_platform}}"
+
 
 # Create Remote Repository
 setup_remote_repository(version_control,repo_platform,repo_name,description)

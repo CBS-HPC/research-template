@@ -17,26 +17,15 @@ for lib in required_libraries:
 
 import requests
 
-def is_installed(executable: str = None, name: str = None):
-    # Check if both executable and name are provided as strings
-    if not isinstance(executable, str) or not isinstance(name, str):
-        raise ValueError("Both 'executable' and 'name' must be strings.")
-    
-    # Check if the executable is on the PATH
-    path = shutil.which(executable)
-    if path:
-        return True
-    else: 
-        print(f"{name} is not on Path")
-        return False
-  
+
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
     """Handle repository creation and log-in based on selected platform."""
 
     if version_control == None:
         return
     elif version_control == "Git":
-        if not _setup_git(version_control,repo_platform):
+        check = _setup_git(version_control,repo_platform)
+        if check is False:
             return
     if version_control == "Datalad":
         _setup_datalad(version_control,remote_storage,repo_platform,repo_name)
@@ -89,8 +78,21 @@ def _set_to_path(path_to_set):
         print("Unsupported operating system. PATH not modified.")
 
 def _setup_git(version_control,repo_platform):
-     
-    def install_git(install_path=None):
+    
+    def is_git_installed():
+        try:
+            # Run 'git --version' and capture the output
+            output = subprocess.check_output(['git', '--version'], stderr=subprocess.STDOUT)
+            # Decode the output from bytes to string and check if it contains 'git version'
+            if 'git version' in output.decode('utf-8'):
+                return True
+        except FileNotFoundError:
+            print("Git is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking Git version.")
+        return False
+    
+    def install_git(check,install_path=None):
         """
         Installs Git if it is not already installed.
         - For Windows: Downloads and installs Git to a specified path.
@@ -103,10 +105,11 @@ def _setup_git(version_control,repo_platform):
         Returns:
         - bool: True if installation is successful, False otherwise.
         """
-        if is_installed('git','Git'):
-            return True 
+        if check:
+            return check 
         
         try:
+    
             system = platform.system().lower()
 
             if system == "windows":
@@ -139,7 +142,7 @@ def _setup_git(version_control,repo_platform):
 
     
                 # Verify installation
-                if is_installed('git','Git'):
+                if is_git_installed():
                     print("Git installation complete and added to PATH.")
                     return True
                 else:
@@ -155,7 +158,7 @@ def _setup_git(version_control,repo_platform):
                 subprocess.run(install_command, check=True)
 
                 # Verify installation
-                if is_installed('git','Git'):
+                if is_git_installed():
                     print("Git installation complete.")
                     return True
                 else:
@@ -301,34 +304,45 @@ def _setup_git(version_control,repo_platform):
         
         print(f"Git user information added to {env_file}")
 
-    if install_git():
-        check, git_name, git_email = check_git_config(check)
-        check, git_name, git_email = setup_git_config(check,git_name, git_email)
-        git_init(check,version_control,repo_platform)
-        git_to_env(git_name, git_email)    
-        return check
-    else:
-        return False
+    check = is_git_installed()
+    check = install_git(check,install_path=None)
+    check, git_name, git_email = check_git_config(check)
+    check, git_name, git_email = setup_git_config(check,git_name, git_email)
+    git_init(check,version_control,repo_platform)
+    git_to_env(git_name, git_email)    
+    return check
     
 def _setup_dvc(version_control,remote_storage,repo_platform,repo_name):
+
+    def is_dvc_installed():
+        """
+        Check if DVC is installed on the system and return its version.
+
+        Returns:
+        str: DVC version if installed, otherwise an empty string.
+        """
+        try:
+            # Run 'dvc --version' and capture the output
+            results = subprocess.check_output(['dvc', '--version'], stderr=subprocess.STDOUT)
+            return True
+        except FileNotFoundError:
+            print("DVC is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking DVC version.")
+        return False
 
     def install_dvc():
         """
         Install DVC using pip.
         """
-        if is_installed('dvc','DVC'):
-            return True
         try:
             # Install DVC via pip
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc[all]'])
             print("DVC has been installed successfully.")
-            return True
         except subprocess.CalledProcessError as e:
             print(f"An error occurred during DVC installation: {e}")
-            return False
         except FileNotFoundError:
             print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
-            return False
 
     def dvc_init(remote_storage,repo_platform,repo_name):
     
@@ -443,20 +457,85 @@ def _setup_dvc(version_control,remote_storage,repo_platform,repo_name):
         dvc_remote = get_remote_path(repo_name)
         if dvc_remote:
             subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
-    
-    # Install Git
-    if not _setup_git(version_control,repo_platform):
+
+    check = _setup_git(version_control,repo_platform)
+
+    if check is False:
         return
-    
-    # Install datalad
-    if not install_dvc():
-        return
+
+    check = is_dvc_installed()
+
+    if check is False:
+            #install_dvc("bin/dvc")
+            install_dvc()
+
     dvc_init(remote_storage,repo_platform,repo_name)
     
 def _setup_datalad(version_control,remote_storage,platform,repo_name):
 
-    def install_datalad():   
-            if is_installed('datalad','Datalad'):
+    def is_datalad_installed():
+        try:
+            # Run 'datalad --version' and capture the output
+            output = subprocess.check_output(['datalad', '--version'], stderr=subprocess.STDOUT)
+            # Decode the output from bytes to string and check if it contains 'datalad'
+            if 'datalad' in output.decode('utf-8'):
+                return True
+        except FileNotFoundError:
+            print("DataLad is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking DataLad version.")
+        return False
+
+    def is_git_annex_installed():
+        try:
+            # Run 'datalad --version' and capture the output
+            output = subprocess.check_output(['git-annex', 'version'], stderr=subprocess.STDOUT)
+            # Decode the output from bytes to string and check if it contains 'datalad'
+            if 'git-annex version' in output.decode('utf-8'):
+                return True
+        except FileNotFoundError:
+            print("DataLad is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError:
+            print("An error occurred while checking DataLad version.")
+        return False
+
+    def is_rclone_installed():
+        """
+        Check if rclone is installed on the system and return its version.
+
+        Returns:
+        str: rclone version if installed, otherwise an empty string.
+        """
+        try:
+            # Run 'rclone --version' and capture the output
+            result = subprocess.check_output(['rclone', '--version'], stderr=subprocess.STDOUT)
+            return True
+        except FileNotFoundError:
+            print("rclone is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError as e:
+            print("An error occurred while checking rclone version:")
+        return False
+    
+    def is_git_annex_remote_rclone_installed():
+        """
+        Check if git-annex-remote-rclone is installed on the system.
+
+        Returns:
+        str: Confirmation message if installed, otherwise an empty string.
+        """
+        try:
+            # Run 'git-annex-remote-rclone' and capture the output
+            result = subprocess.check_output(["where",'git-annex-remote-rclone'], stderr=subprocess.STDOUT)
+            #result = subprocess.check_output(['git-annex-remote-rclone'], stderr=subprocess.STDOUT)
+            return True  # Decode bytes to string and strip whitespace
+        except FileNotFoundError:
+            print("git-annex-remote-rclone is not installed or not in the system PATH.")
+        except subprocess.CalledProcessError as e:
+            print("An error occurred while checking git-annex-remote-rclone:")
+        return False
+
+    def install_datalad(check):   
+            if check:
                 return True
             try:
                 # Step 1: Install datalad-installer via pip
@@ -474,8 +553,8 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                 print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
                 return False           
 
-    def install_git_annex():
-        if is_installed('git-annex','Git-Annex'):
+    def install_git_annex(check):
+        if check:
             subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
             return True
         try:
@@ -507,6 +586,7 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
     def setup_rclone(bin_folder):
         """Download and extract rclone to the specified bin folder."""
 
+        # FIX ME !!
         def download_rclone(bin_folder):
             system = platform.system()
             
@@ -568,13 +648,16 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
 
             repo_path = os.path.abspath(repo_path)  # Convert to absolute path
             return repo_path
-        
-        if not is_installed('rclone','Rclone'):
+
+        check = is_rclone_installed()
+        if check is False:
             rclone_path = download_rclone(bin_folder)
             _set_to_path(rclone_path)
 
+        
+        check = is_git_annex_remote_rclone_installed()
         # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
-        if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
+        if check is False:
             repo_path = clone_git_annex_remote_rclone(bin_folder)
             _set_to_path(repo_path)
 
@@ -642,7 +725,8 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
 
         email = input("Please enter email to Deic Storage: ").strip()
         password = input("Please enter password to Deic Storage: ").strip()
-  
+
+          
         rclone_remote(email,password)
         git_annex_remote("deic-storage","deic-storage",repo_name)
 
@@ -699,18 +783,22 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
         if datalad_remote:
             subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
 
-    # Install Git
-    if not _setup_git(version_control,platform):
-        return
-    
-    # Install datalad
-    if not install_datalad():
-        return
-    
-    # Install git-annex
-    if not install_git_annex():
+    check = _setup_git(version_control,platform)
+
+    if check is False:
         return
 
+    # Install datalad
+    check = is_datalad_installed()
+    check = install_datalad(check)
+    if check is False:
+        return
+    # Install git-annex
+    check = is_git_annex_installed()
+    check = install_git_annex(check)
+    if check is False:
+            return
+    
     datalad_create()
 
     if remote_storage == "Local Path":
