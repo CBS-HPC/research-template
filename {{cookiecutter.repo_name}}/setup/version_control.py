@@ -299,9 +299,9 @@ def _setup_git(version_control,repo_platform):
 
     if install_git():  
         check, git_name, git_email = check_git_config()
-        
+
         if not check:
-            check, git_name, git_email = setup_git_config(check,git_name, git_email)
+            check, git_name, git_email = setup_git_config(git_name, git_email)
         
         if check and version_control == "Git":  
             check = git_init(repo_platform)
