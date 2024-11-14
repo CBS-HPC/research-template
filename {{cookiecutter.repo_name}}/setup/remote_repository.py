@@ -135,7 +135,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
         """
         Adds the path of the glab binary to the system PATH.
         """
-        glab_bin_path = os.path.join(extracted_path, "bin/glab")
+        glab_bin_path = os.path.join(extracted_path, "bin","glab")
         if os.path.exists(glab_bin_path):
             os.environ["PATH"] += os.pathsep + extracted_path
             print(f"Added {extracted_path} to PATH.")
