@@ -48,7 +48,7 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
 
         elif repo_platform == "GitLab":
            _setup_glab(username,privacy_setting,repo_name,description)
-           
+
 def repo_login(repo_platform,username, privacy_setting, repo_name, description):
     try:
         # Check if the user is logged in
@@ -325,7 +325,7 @@ def _setup_gh(username,privacy_setting,repo_name,description):
     if install_gh():
                 check, username, repo_name = repo_login("gh",username,privacy_setting,repo_name,description)
                 if check:
-                    repo_to_env_file("gh",username,repo_name
+                    repo_to_env_file("gh",username,repo_name)
 
 
 repo_name = "{{ cookiecutter.repo_name }}"
