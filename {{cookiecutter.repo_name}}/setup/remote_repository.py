@@ -147,24 +147,25 @@ def _setup_glab(username,privacy_setting,repo_name,description):
         os_type = platform.system().lower()
         install_path = install_path or os.getcwd()  # Default to current directory if no install_path is provided
         version = get_glab_version()
+        nversion = version.lstrip("v")
         if not version:
             print("Could not retrieve the latest version of glab.")
             return False
 
         # Set URL and extraction method based on OS type
         if os_type == "windows":
-            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{version}_windows_amd64.zip"
-            glab_path = os.path.join(install_path, f"glab_{version}_windows_amd64.zip")
+            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_windows_amd64.zip"
+            glab_path = os.path.join(install_path, f"glab_{nversion}_windows_amd64.zip")
             extract_method = lambda: zipfile.ZipFile(glab_path, 'r').extractall(install_path)
 
         elif os_type == "darwin":  # macOS
-            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{version}_darwin_amd64.tar.gz"
-            glab_path = os.path.join(install_path, f"glab_{version}_darwin_amd64.tar.gz")
+            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_darwin_amd64.tar.gz"
+            glab_path = os.path.join(install_path, f"glab_{nversion}_darwin_amd64.tar.gz")
             extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
 
         elif os_type == "linux":
-            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{version}_linux_amd64.tar.gz"
-            glab_path = os.path.join(install_path, f"glab_{version}_linux_amd64.tar.gz")
+            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_linux_amd64.tar.gz"
+            glab_path = os.path.join(install_path, f"glab_{nversion}_linux_amd64.tar.gz")
             extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
 
         else:
