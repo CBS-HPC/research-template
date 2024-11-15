@@ -37,7 +37,6 @@ def get_hardware_info():
     except subprocess.CalledProcessError as e:
         print(f"Error retrieving hardware information: {e}")
 
-
 def add_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
@@ -46,7 +45,6 @@ def add_to_env(executable: str = None,env_file=".env"):
     # Write the credentials to the .env file
     with open(env_file, 'a') as file:  
         file.write(f"{executable.upper()}={shutil.which(executable)}\n")
-
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
