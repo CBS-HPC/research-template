@@ -128,18 +128,21 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
     if virtual_environment in ['Python','R','environment.yaml','requirements.txt']:
         
         if virtual_environment == 'R':
-             install_packages.extend(['r-base'])  
-        if version_control == 'Git':
+             install_packages.extend(['r-base'])
+
+        if version_control in ['Git','DVC','Datalad']:
              install_packages.extend(['git'])   
-        if version_control == 'DVC':
-             install_packages.extend(['git'])
-             #install_packages.extend(['git','dvc, dvc-ssh'])       
-        elif version_control == 'Datalad':
-            install_packages.extend(['git','datalad','rclone'])
-            if platform.system().lower() in ["darwin","linux"]:
+        
+        #if version_control == 'DVC' and not is_installed('dvc', 'DVC'):
+        #     install_packages.extend(['dvc, dvc-ssh'])       
+        
+        elif version_control == 'Datalad'and not is_installed('rclone', 'Rclone'):    
+            install_packages.extend(['rclone'])
+       
+            if platform.system().lower() in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
                 install_packages.extend(['git-annex'])
 
-        if repo_platform == 'GitHub':
+        if repo_platform == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
              install_packages.extend(['gh'])     
             
         check = setup_conda(install_path,virtual_environment,repo_name, install_packages,env_file)
