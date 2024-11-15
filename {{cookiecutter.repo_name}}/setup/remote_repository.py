@@ -78,13 +78,18 @@ def repo_login(repo_platform,username, privacy_setting, repo_name, description):
         except Exception as e:
             print(f"{repo_platform} auth login failed: {e}")
             return False, None, None  # Return False for any unexpected errors
-    try:    
-        # Create the GitHub repository
-        subprocess.run([
-            repo_platform, "repo", "create", f"{username}/{repo_name}",
-            f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
-        ], check=True)
-        
+    try:
+        if repo_platform == 'gh':    
+            # Create the GitHub repository
+            subprocess.run([
+                repo_platform, "repo", "create", f"{username}/{repo_name}",
+                f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
+            ], check=True)
+        elif repo_platform == 'glab':
+             subprocess.run([
+                repo_platform, "repo", "create",
+                f"--{privacy_setting}", "--description", description], check=True)
+            
         print(f"Repository {repo_name} created and pushed successfully.")
         return True, username,repo_name   # Return True if everything is successful
     except Exception as e:
