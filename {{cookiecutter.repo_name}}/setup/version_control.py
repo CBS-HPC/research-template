@@ -117,9 +117,9 @@ def _setup_git(version_control,repo_platform):
             return True 
         
         try:
-            system = platform.system().lower()
+            os_type = platform.system().lower()
 
-            if system == "windows":
+            if os_type == "windows":
                 if not install_path:
                     print("Please provide an install path for Windows installation.")
                     return False
@@ -140,12 +140,12 @@ def _setup_git(version_control,repo_platform):
                 # Add Git to PATH
                 os.environ["PATH"] += os.pathsep + os.path.join(install_path, "bin")
 
-            elif system == "linux":
+            elif os_type == "linux":
                 # Install Git on Linux using apt
                 print("Installing Git on Linux using 'sudo apt install git-all'...")
                 subprocess.run(["sudo", "apt", "install", "-y", "git-all"], check=True)
 
-            elif system == "darwin":
+            elif os_type == "darwin":
                 # Attempt to install Git on macOS using Xcode Command Line Tools
                 print("Installing Git on macOS using Xcode Command Line Tools...")
                 try:
@@ -171,12 +171,6 @@ def _setup_git(version_control,repo_platform):
         except Exception as e:
             print(f"Failed to install Git: {e}")
             return False
-
-        finally:
-            # Clean up by removing the installer file on Windows
-            if system == "windows" and 'installer_path' in locals() and os.path.exists(installer_path):
-                os.remove(installer_path)
-                print(f"Installer {installer_name} has been removed from {download_dir}.")
 
     def check_git_config():
         """
@@ -479,6 +473,7 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                 if not shutil.which('datalad-installer'):
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
                 subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
+
                 if not is_installed('git-annex','Git-Annex'):
                     print("Error during git-annex installation.")
                     return False

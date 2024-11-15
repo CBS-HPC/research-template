@@ -9,7 +9,7 @@ import zipfile
 import tarfile
 
 
-required_libraries = ['distro','pyyaml'] 
+required_libraries = ['distro'] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -17,7 +17,6 @@ for lib in required_libraries:
         print(f"Installing {lib}...")
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
-import yaml
 import distro
 
 def add_to_path(executable: str = None,bin_path: str = None):
@@ -116,36 +115,38 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     Parameters:
     - env_file (str): The path to the .env file. Default is ".env".
     """
-
     def get_glab_token():
+        """
+        Retrieves the GitLab token from the glab CLI config file,
+        even if it is marked with '!!null'.
 
-        def get_glab_config():
-            """
-            Retrieves configuration details from the glab CLI config file.
-
-            Returns:
-                dict: The parsed configuration if found, else None.
-            """
-            config_path = os.path.expanduser("~/.config/glab-cli/config.yml")  # Path to glab config file
-            if not os.path.exists(config_path):
-                print(f"Config file not found: {config_path}")
-                return None
-
-            try:
-                with open(config_path, "r") as file:
-                    config = yaml.safe_load(file)
-                    return config
-            except Exception as e:
-                print(f"Error reading config file: {e}")
-                return None
-
-        # Example usage
-        config = get_glab_config()
-        if config and config['hosts']['gitlab.com']['token']:
-            return config['hosts']['gitlab.com']['token']
-        else:
+        Returns:
+            str: The GitLab token, or None if not found.
+        """
+        config_path = os.path.expanduser("~/.config/glab-cli/config.yml")
+        if not os.path.exists(config_path):
+            print(f"Config file not found: {config_path}")
             return None
-        
+
+        try:
+            with open(config_path, "r") as file:
+                lines = file.readlines()
+
+            # Look for the token line in the file
+            for line in lines:
+                if "token:" in line:
+                    # Split the line to get the token after '!!null'
+                    token_part = line.split("!!null")[-1].strip()
+                    if token_part:  # If there's something after !!null
+                        return token_part
+
+            print("Token not found in the config file.")
+            return None
+
+        except Exception as e:
+            print(f"Error reading config file: {e}")
+            return None
+ 
     def get_gh_token():
         try:
             # Run the command to get the token
@@ -333,66 +334,6 @@ def _setup_gh(username,privacy_setting,repo_name,description):
         else:
             print("Unsupported operating system.")
             return False
-
-    def gh_login(username, privacy_setting, repo_name, description):
-        try:
-            # Check if the user is logged in
-            subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, check=True)
-        except Exception as e:
-            try:
-                subprocess.run(["gh", "auth", "login"], check=True)
-            except Exception as e:
-                print(f"'gh auth login' failed: {e}")
-                return False, None, None  # Return False for any unexpected errors
-        try:    
-            # Create the GitHub repository
-            subprocess.run([
-                "gh", "repo", "create", f"{username}/{repo_name}",
-                f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
-            ], check=True)
-            
-            print(f"Repository {repo_name} created and pushed successfully.")
-            return True, username,repo_name   # Return True if everything is successful
-        except Exception as e:
-            print(f"Failed to create '{username}/{repo_name}' on Github")
-            return False, None, None 
-
-    def gh_to_env_file(username,repo_name, env_file=".env"):
-        """
-        Adds GitHub username and token from `gh auth status` to the .env file. If the file does not exist,
-        it will be created.
-        
-        Parameters:
-        - env_file (str): The path to the .env file. Default is ".env".
-        """
-        
-        def get_gh_token():
-            try:
-                # Run the command to get the token
-                result = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, check=True)
-                return result.stdout.strip()  # Returns the token
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to get GitHub token: {e}")
-                return None
-    
-        token = get_gh_token()
-        
-        if not username or not token:
-            print("Failed to retrieve GitHub credentials. Make sure you're logged in to GitHub CLI.")
-            return
-        
-        # Check if .env file exists
-        if not os.path.exists(env_file):
-            print(f"{env_file} does not exist. Creating a new one.")
-        
-        # Write the credentials to the .env file
-        with open(env_file, 'a') as file:
-            file.write(f"GITHUB_USERNAME={username}\n")
-            file.write(f"GITHUB_REPO_NAME={repo_name}\n")
-            if token:
-                file.write(f"GITHUB_TOKEN={token}\n")
-        
-        print(f"GitHub username and token added to {env_file}")
 
     if install_gh("bin/gh"):
                 check, username, repo_name = repo_login("bin/gh","gh",username,privacy_setting,repo_name,description)
