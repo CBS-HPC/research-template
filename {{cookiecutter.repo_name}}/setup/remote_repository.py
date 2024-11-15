@@ -119,6 +119,7 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
 
 def _setup_glab(username,privacy_setting,repo_name,description):
 
+
     def get_glab_version():
         url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
         try:
@@ -131,20 +132,27 @@ def _setup_glab(username,privacy_setting,repo_name,description):
             print(f"Error retrieving the latest glab version: {e}")
             return None
 
-    def add_to_path(extracted_path):
+    def add_to_path(bin_path):
         """
-        Adds the path of the glab binary to the system PATH.
+        Adds the path of the glab binary to the system PATH permanently.
         """
-        glab_bin_path = os.path.join(extracted_path, "bin","glab")
-        if os.path.exists(glab_bin_path):
-            os.environ["PATH"] += os.pathsep + extracted_path
-            print(f"Added {extracted_path} to PATH.")
+        if os.path.exists(bin_path):
+            if platform.system() == "Windows":
+                # Use setx to set the environment variable permanently in Windows
+                subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
+            else:
+                # On macOS/Linux, you can add the path to the shell profile file
+                profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
+                with open(profile_file, "a") as file:
+                    file.write(f'\nexport PATH="{bin_path}:$PATH"')
+                print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
         else:
-            print(f"glab binary not found in {extracted_path}, unable to add to PATH.")
+            print(f"glab binary not found in {bin_path}, unable to add to PATH.")
 
     def install_glab(install_path=None):
         os_type = platform.system().lower()
         install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
+        os.makedirs(install_path, exist_ok=True)
         version = get_glab_version()
         nversion = version.lstrip("v")
         if not version:
@@ -192,7 +200,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
         extract_method()
 
         # Add the extracted glab to the system PATH
-        add_to_path(install_path)
+        add_to_path(os.path.join(install_path, "bin"))
 
         return True
 
