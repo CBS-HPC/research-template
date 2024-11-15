@@ -38,6 +38,16 @@ def add_to_path(executable: str = None,bin_path: str = None):
         else:
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
 
+def add_to_env(executable: str = None,env_file=".env"):
+    # Check if .env file exists
+    if not os.path.exists(env_file):
+        print(f"{env_file} does not exist. Creating a new one.")
+    
+    # Write the credentials to the .env file
+    with open(env_file, 'a') as file:  
+        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
+
+
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
@@ -46,6 +56,7 @@ def is_installed(executable: str = None, name: str = None):
     # Check if the executable is on the PATH
     path = shutil.which(executable)
     if path:
+        add_to_env(executable)
         return True
     else: 
         print(f"{name} is not on Path")
@@ -164,7 +175,6 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     with open(env_file, 'a') as file:
         file.write(f"{tag}_USERNAME={username}\n")
         file.write(f"{tag}_REPO_NAME={repo_name}\n")
-        file.write(f"{tag}_PATH={shutil.which(repo_platform)}\n")
         if token:
             file.write(f"{tag}_TOKEN={token}\n")
     
@@ -185,6 +195,10 @@ def _setup_glab(username,privacy_setting,repo_name,description):
             return None
 
     def install_glab(install_path=None):
+
+        if is_installed('glab',"GitLab CLI (glab)"):
+            return True
+
         os_type = platform.system().lower()
         install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
         os.makedirs(install_path, exist_ok=True)

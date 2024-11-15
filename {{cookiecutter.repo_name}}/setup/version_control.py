@@ -17,6 +17,15 @@ for lib in required_libraries:
 
 import requests
 
+def add_to_env(executable: str = None,env_file=".env"):
+    # Check if .env file exists
+    if not os.path.exists(env_file):
+        print(f"{env_file} does not exist. Creating a new one.")
+    
+    # Write the credentials to the .env file
+    with open(env_file, 'a') as file:  
+        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
+
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
@@ -25,6 +34,7 @@ def is_installed(executable: str = None, name: str = None):
     # Check if the executable is on the PATH
     path = shutil.which(executable)
     if path:
+        add_to_env(executable)
         return True
     else: 
         print(f"{name} is not on Path")
@@ -89,7 +99,7 @@ def _set_to_path(path_to_set):
         print("Unsupported operating system. PATH not modified.")
 
 def _setup_git(version_control,repo_platform):
-     
+
     def install_git(install_path=None):
         """
         Installs Git if it is not already installed.
@@ -103,67 +113,40 @@ def _setup_git(version_control,repo_platform):
         Returns:
         - bool: True if installation is successful, False otherwise.
         """
-        if is_installed('git','Git'):
+        if is_installed('git', 'Git'):
             return True 
         
         try:
             system = platform.system().lower()
 
             if system == "windows":
-                if install_path is None:
+                if not install_path:
                     print("Please provide an install path for Windows installation.")
                     return False
-                
-                # Define the installer download location one level up from the install_path
+
+                # Download Git installer for Windows
                 download_dir = os.path.dirname(install_path)
                 installer_name = "Git-latest-64-bit.exe"
                 installer_path = os.path.join(download_dir, installer_name)
-
-                # Download Git installer for Windows
                 url = f"https://github.com/git-for-windows/git/releases/latest/download/{installer_name}"
+
                 print(f"Downloading Git installer from {url} to {download_dir}...")
                 urllib.request.urlretrieve(url, installer_path)
                 print("Download complete.")
 
-                # Silent installation command
-                install_command = [
-                    installer_path, "/VERYSILENT", f"/DIR={install_path}", "/NORESTART"
-                ]
-
-                # Run the installation
-                subprocess.run(install_command, check=True)
+                # Run the silent installation
+                subprocess.run([installer_path, "/VERYSILENT", f"/DIR={install_path}", "/NORESTART"], check=True)
 
                 # Add Git to PATH
-                git_bin_path = os.path.join(install_path, "bin")
-                os.environ["PATH"] += os.pathsep + git_bin_path
-
-    
-                # Verify installation
-                if is_installed('git','Git'):
-                    print("Git installation complete and added to PATH.")
-                    return True
-                else:
-                    print("Failed to verify Git installation.")
-                    return False
+                os.environ["PATH"] += os.pathsep + os.path.join(install_path, "bin")
 
             elif system == "linux":
                 # Install Git on Linux using apt
                 print("Installing Git on Linux using 'sudo apt install git-all'...")
-                install_command = ["sudo", "apt", "install", "-y", "git-all"]
+                subprocess.run(["sudo", "apt", "install", "-y", "git-all"], check=True)
 
-                # Run the installation
-                subprocess.run(install_command, check=True)
-
-                # Verify installation
-                if is_installed('git','Git'):
-                    print("Git installation complete.")
-                    return True
-                else:
-                    print("Failed to verify Git installation.")
-                    return False
-
-            elif system == "darwin":  # macOS
-                # Attempt to install Git using Xcode Command Line Tools
+            elif system == "darwin":
+                # Attempt to install Git on macOS using Xcode Command Line Tools
                 print("Installing Git on macOS using Xcode Command Line Tools...")
                 try:
                     subprocess.run(["git", "--version"], check=True)
@@ -175,6 +158,14 @@ def _setup_git(version_control,repo_platform):
 
             else:
                 print("Unsupported operating system.")
+                return False
+
+            # Verify installation
+            if is_installed('git', 'Git'):
+                print("Git installation complete.")
+                return True
+            else:
+                print("Failed to verify Git installation.")
                 return False
 
         except Exception as e:
@@ -297,7 +288,7 @@ def _setup_git(version_control,repo_platform):
         
         print(f"Git user information added to {env_file}")
 
-    if install_git():  
+    if install_git("bin/git"):  
         check, git_name, git_email = check_git_config()
 
         if not check:
@@ -319,19 +310,21 @@ def _setup_dvc(version_control,remote_storage,repo_platform,repo_name):
         """
         Install DVC using pip.
         """
-        if is_installed('dvc','DVC'):
-            return True
-        try:
-            # Install DVC via pip
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc[all]'])
-            print("DVC has been installed successfully.")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred during DVC installation: {e}")
-            return False
-        except FileNotFoundError:
-            print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
-            return False
+        if not is_installed('dvc','DVC'):
+            try:
+                # Install DVC via pip
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'dvc[all]'])
+                if not is_installed('dvc','DVC'):
+                    print("Error during datalad installation.")
+                    return False
+                print("DVC has been installed successfully.") 
+            except subprocess.CalledProcessError as e:
+                print(f"An error occurred during DVC installation: {e}")
+                return False
+            except FileNotFoundError:
+                print("Python or pip was not found. Please ensure Python and pip are installed and in your PATH.")
+                return False
+        return True
 
     def dvc_init(remote_storage,repo_platform,repo_name):
     
@@ -468,6 +461,10 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad'])
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyopenssl','--upgrade']) 
+                    if not is_installed('datalad','Datalad'):
+                        print("Error during datalad installation.")
+                        return False
+                    print("datalad installed successfully.")
                 except subprocess.CalledProcessError as e:
                     print(f"An error occurred: {e}")
                     return False
@@ -475,12 +472,17 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                     print("One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH.")
                     return False           
             return True
+    
     def install_git_annex():
         if not is_installed('git-annex','Git-Annex'):
             try:
                 if not shutil.which('datalad-installer'):
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
                 subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
+                if not is_installed('git-annex','Git-Annex'):
+                    print("Error during git-annex installation.")
+                    return False
+                print("git-annex installed successfully.")
             except subprocess.CalledProcessError as e:
                 print(f"Error during git-annex installation: {e}")
                 return False
@@ -488,7 +490,6 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
                 print(f"Unexpected error: {e}")
                 return False 
         subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
-        print("git-annex installed successfully.")
         return True
      
     def setup_rclone(bin_folder):

@@ -37,6 +37,17 @@ def get_hardware_info():
     except subprocess.CalledProcessError as e:
         print(f"Error retrieving hardware information: {e}")
 
+
+def add_to_env(executable: str = None,env_file=".env"):
+    # Check if .env file exists
+    if not os.path.exists(env_file):
+        print(f"{env_file} does not exist. Creating a new one.")
+    
+    # Write the credentials to the .env file
+    with open(env_file, 'a') as file:  
+        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
+
+
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
@@ -45,11 +56,12 @@ def is_installed(executable: str = None, name: str = None):
     # Check if the executable is on the PATH
     path = shutil.which(executable)
     if path:
+        add_to_env(executable)
         return True
     else: 
         print(f"{name} is not on Path")
         return False
-    
+  
 def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
@@ -374,6 +386,7 @@ repo_name = "{{ cookiecutter.repo_name }}"
 repo_platform = "{{ cookiecutter.repository_platform}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
+
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
