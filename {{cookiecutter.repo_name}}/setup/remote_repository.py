@@ -257,25 +257,89 @@ def _setup_glab(username,privacy_setting,repo_name,description):
     if install_glab("bin/glab"):
                 check, username, repo_name = repo_login("glab",username,privacy_setting,repo_name,description)
                 if check:
-                    repo_to_env_file("bin/glab","glab",username,repo_name)
+                    repo_to_env_file("glab",username,repo_name)
 
 def _setup_gh(username,privacy_setting,repo_name,description):
     
+
     def install_gh(install_path=None):
+        """
+        Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
+
+        Parameters:
+        - install_path (str, optional): The directory where GitHub CLI should be installed. Defaults to the current working directory.
+
+        Returns:
+        - bool: True if installation is successful, False otherwise.
+        """
+        if is_installed('gh', "GitHub CLI (gh)"):
+            return True
+
+        os_type = platform.system().lower()
+        install_path = os.path.abspath(install_path or os.getcwd())
+        os.makedirs(install_path, exist_ok=True)
+
+        try:
+            if os_type == "windows":
+                installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
+                installer_name = os.path.join(install_path, "gh_installer.msi")
+                
+                # Download the installer
+                subprocess.run(["curl", "-Lo", installer_name, installer_url], check=True)
+
+                # Install GitHub CLI
+                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
+                print(f"GitHub CLI (gh) installed successfully to {install_path}.")
+
+            elif os_type == "darwin":  # macOS
+                # Using Homebrew to install GitHub CLI
+                subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
+                print(f"GitHub CLI (gh) installed successfully to {install_path}.")
+
+            elif os_type == "linux":
+                distro_name = distro.name().lower()
+                if "ubuntu" in distro_name or "debian" in distro_name:
+                    subprocess.run(["sudo", "apt", "update"], check=True)
+                    command = ["sudo", "apt", "install", "-y", "gh"]
+                elif "centos" in distro_name or "rhel" in distro_name:
+                    command = ["sudo", "yum", "install", "-y", "gh"]
+                else:
+                    print(f"Unsupported Linux distribution: {distro_name}")
+                    return False
+                
+                subprocess.run(command, check=True)
+                print(f"GitHub CLI (gh) installed successfully on {distro_name}.")
+
+            else:
+                print("Unsupported operating system.")
+                return False
+
+            # Add GitHub CLI to PATH
+            gh_bin_path = os.path.join(install_path, "bin")
+            add_to_path("GitHub CLI", gh_bin_path)
+            return True
+
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install GitHub CLI: {e}")
+            return False
+
+        finally:
+            # Clean up installer on Windows
+            if os_type == "windows" and 'installer_name' in locals() and os.path.exists(installer_name):
+                os.remove(installer_name)
+                print(f"Installer {installer_name} removed.")
+
+
+
+    def install_gh_old(install_path=None):
 
         if is_installed('gh',"GitHub CLI (gh)"):
             return True
         
         os_type = platform.system().lower()
+        install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
+        os.makedirs(install_path, exist_ok=True)
         
-        # Function to check and create a custom install path
-        def ensure_install_path(path):
-            if path and not os.path.exists(path):
-                os.makedirs(path, exist_ok=True)
-            return path or os.getcwd()  # Default to current directory if no install_path is given
-
-        install_path = ensure_install_path(install_path)
-
         if os_type == "windows":
             installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
             installer_name = "gh_installer.msi"
@@ -286,7 +350,7 @@ def _setup_gh(username,privacy_setting,repo_name,description):
                 # Install and specify the custom directory
                 subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
                 print(f"GitHub CLI (gh) installed successfully to {install_path}.")
-                return True
+       
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install GitHub CLI: {e}")
                 return False
@@ -298,8 +362,6 @@ def _setup_gh(username,privacy_setting,repo_name,description):
             try:
                 # Using Homebrew to install GitHub CLI with a custom install path
                 subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
-                print(f"GitHub CLI (gh) installed successfully on macOS to {install_path}.")
-                return True
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install GitHub CLI on macOS: {e}")
                 return False
@@ -319,21 +381,16 @@ def _setup_gh(username,privacy_setting,repo_name,description):
             
             try:
                 subprocess.run(command, check=True)
-                print(f"GitHub CLI (gh) installed successfully on Linux.")
-
-                # Move the installed binary to the custom install path
-                gh_location = shutil.which("gh")
-                if gh_location:
-                    shutil.copy(gh_location, install_path)
-                    os.chmod(os.path.join(install_path, "gh"), 0o755)
-                    print(f"GitHub CLI (gh) moved to {install_path}.")
-                return True
             except subprocess.CalledProcessError as e:
-                print(f"Failed to install GitHub CLI on Linux: {e}")
+                print(f"Failed to install GitHub CLI: {e}")
                 return False
         else:
             print("Unsupported operating system.")
             return False
+             # Add the extracted glab to the system PATH
+        print(f"GitHub CLI (gh) installed successfully to {install_path}.")
+        add_to_path('GitLab',os.path.join(install_path, "bin"))
+        return True
 
     if install_gh("bin/gh"):
                 check, username, repo_name = repo_login("bin/gh","gh",username,privacy_setting,repo_name,description)
