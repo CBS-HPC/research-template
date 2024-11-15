@@ -151,195 +151,6 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
     
         return repo_name
 
-def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
-            
-    def install_miniconda(install_path):
-        """
-        Downloads and installs Miniconda to a specified location based on the operating system.
-        
-        Parameters:
-        - install_path (str): The absolute path where Miniconda should be installed.
-
-        Returns:
-        - bool: True if installation is successful, False otherwise.
-        """ 
-        os_type = platform.system().lower()
-        installer_name = None
-        download_dir = os.path.dirname(install_path)  # One level up from the install_path
-        installer_path = None
-        
-        if os_type == "windows":
-            installer_name = "Miniconda3-latest-Windows-x86_64.exe"
-            url = f"https://repo.anaconda.com/miniconda/{installer_name}"
-            installer_path = os.path.join(download_dir, installer_name)
-            install_command = [installer_path, "/InstallationType=JustMe", f"/AddToPath=0", f"/RegisterPython=0", f"/S", f"/D={install_path}"]
-            
-        elif os_type == "darwin":  # macOS
-            installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
-            url = f"https://repo.anaconda.com/miniconda/{installer_name}"
-            installer_path = os.path.join(download_dir, installer_name)
-            install_command = ["bash", installer_path, "-b", "-p", install_path]
-            
-        elif os_type == "linux":
-            installer_name = "Miniconda3-latest-Linux-x86_64.sh"
-            url = f"https://repo.anaconda.com/miniconda/{installer_name}"
-            installer_path = os.path.join(download_dir, installer_name)
-            install_command = ["bash", installer_path, "-b", "-p", install_path]
-            
-        else:
-            print("Unsupported operating system.")
-            return False
-        
-        try:
-            print(f"Downloading {installer_name} from {url} to {download_dir}...")
-            urllib.request.urlretrieve(url, installer_path)
-            print("Download complete.")
-            
-            print("Installing Miniconda...")
-            subprocess.run(install_command, check=True)
-            if installer_path and os.path.exists(installer_path):
-                os.remove(installer_path)
-            print("Miniconda installation complete.")
-            return True
-            
-        except Exception as e:
-            if installer_path and os.path.exists(installer_path):
-                os.remove(installer_path)
-            print(f"Failed to install Miniconda: {e}")
-            return False
-
-    def add_miniconda_to_path(install_path):
-        """
-        Adds Miniconda's bin (Linux/Mac) or Scripts (Windows) directory to the system PATH.
-
-        Parameters:
-        - install_path (str): The absolute path where Miniconda is installed.
-
-        Returns:
-        - bool: True if addition to PATH is successful, False otherwise.
-        """
-
-        os_type = platform.system().lower()
-        conda_bin_path = os.path.join(install_path, 'Scripts' if os_type == 'windows' else 'bin')
-        
-        try:
-            if os_type == 'windows':
-                subprocess.run(f'setx PATH "%PATH%;{conda_bin_path}"', shell=True, check=True)
-                print("Miniconda path added to system PATH (permanent for Windows).")
-            else:
-                shell_profile = os.path.expanduser("~/.bashrc" if os_type == "linux" else "~/.zshrc")
-                with open(shell_profile, "a") as file:
-                    file.write(f'\n# Miniconda path\nexport PATH="{conda_bin_path}:$PATH"\n')
-                os.environ["PATH"] = f"{conda_bin_path}:{os.environ['PATH']}"
-                print(f"Miniconda path added to PATH. Please restart your terminal or source your {shell_profile} to apply.")
-            return True
-            
-        except Exception as e:
-            print(f"Failed to add Miniconda to PATH: {e}")
-            return False
-
-    def initialize_conda_shell():
-        """
-        Initializes Conda for the user's shell by running `conda init` and starting a new interactive shell session.
-
-        Returns:
-        - bool: True if Conda shell initialization is successful, False otherwise.
-        """
-        try:
-            subprocess.run(["conda", "init"], check=True)
-            print("Conda shell initialization complete.")
-            return True
-
-        except Exception as e:
-            print(f"Failed to initialize Conda shell: {e}")
-            return False
-
-    def create_conda_env(command,msg):
-        """
-        Create a conda environment from an environment.yml file with a specified name.
-        
-        Parameters:
-        - env_file: str, path to the environment YAML file. Defaults to 'environment.yml'.
-        - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
-        """
-        try:
-  
-            # Run the command
-            subprocess.run(command, check=True)
-            print(msg)
-            
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to create conda environment: {e}")
-        except FileNotFoundError:
-            print("Conda is not installed or not found in the system path.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-    def generate_yml(env_name,requirements_path):
-        """Generate an environment.yml file using a requirements.txt file."""
-        yml_content = f"""
-            name: {env_name}
-            channels:
-            - conda-forge
-            dependencies:
-            - python>=3.5
-            - anaconda
-            - pip
-            - pip:
-                - -r file:{requirements_path}
-            """
-        with open('environment.yml', 'w') as yml_file:
-            yml_file.write(yml_content)
-        print(f"Generated environment.yml file using {requirements_path}.")
-
-    def export_conda_env(env_name, output_file='environment.yml'):
-        """
-        Export the details of a conda environment to a YAML file.
-        
-        Parameters:
-        - env_name: str, name of the conda environment to export.
-        - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
-        """
-        try:
-            # Use subprocess to run the conda export command
-            with open(output_file, 'w') as f:
-                subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)
-            
-            print(f"Conda environment '{env_name}' exported to {output_file}.")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to export conda environment: {e}")
-        except FileNotFoundError:
-            print("Conda is not installed or not found in the system path.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-    if not is_installed('conda','Conda'):
-        if install_miniconda(install_path):
-            if add_miniconda_to_path(install_path):
-                if not initialize_conda_shell():
-                    return False
-            else:
-                return False
-        else:
-            return False
-        is_installed('conda','Conda')
-
-    if virtual_environment in ['Python','R']:
-        command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
-        command.extend(install_packages)
-        msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following packages were installed: {install_packages}'
-    elif virtual_environment in ['environment.yaml','requirements.txt']:
-        if virtual_environment == 'requirements.txt':
-            generate_yml(repo_name,env_file)
-        command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
-        msg = f'Conda environment "{repo_name}" created successfully from {virtual_environment}.'
-    
-    create_conda_env(command,msg)
-    export_conda_env(repo_name)
-    
-    return True
-
 def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
         # Make sure the script is executable
@@ -372,6 +183,197 @@ def run_powershell_script(script_path, repo_name=None, setup_version_control_pat
     
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
+
+# Conda Setup Functions
+def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
+ 
+    if not is_installed('conda','Conda'):
+        if install_miniconda(install_path):
+            if add_miniconda_to_path(install_path):
+                if not initialize_conda_shell():
+                    return False
+            else:
+                return False
+        else:
+            return False
+        is_installed('conda','Conda')
+
+    if virtual_environment in ['Python','R']:
+        command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
+        command.extend(install_packages)
+        msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following packages were installed: {install_packages}'
+    elif virtual_environment in ['environment.yaml','requirements.txt']:
+        if virtual_environment == 'requirements.txt':
+            generate_yml(repo_name,env_file)
+        command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
+        msg = f'Conda environment "{repo_name}" created successfully from {virtual_environment}.'
+    
+    create_conda_env(command,msg)
+    export_conda_env(repo_name)
+    
+    return True
+    
+def install_miniconda(install_path):
+    """
+    Downloads and installs Miniconda to a specified location based on the operating system.
+    
+    Parameters:
+    - install_path (str): The absolute path where Miniconda should be installed.
+
+    Returns:
+    - bool: True if installation is successful, False otherwise.
+    """ 
+    os_type = platform.system().lower()
+    installer_name = None
+    download_dir = os.path.dirname(install_path)  # One level up from the install_path
+    installer_path = None
+    
+    if os_type == "windows":
+        installer_name = "Miniconda3-latest-Windows-x86_64.exe"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        install_command = [installer_path, "/InstallationType=JustMe", f"/AddToPath=0", f"/RegisterPython=0", f"/S", f"/D={install_path}"]
+        
+    elif os_type == "darwin":  # macOS
+        installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        install_command = ["bash", installer_path, "-b", "-p", install_path]
+        
+    elif os_type == "linux":
+        installer_name = "Miniconda3-latest-Linux-x86_64.sh"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        install_command = ["bash", installer_path, "-b", "-p", install_path]
+        
+    else:
+        print("Unsupported operating system.")
+        return False
+    
+    try:
+        print(f"Downloading {installer_name} from {url} to {download_dir}...")
+        urllib.request.urlretrieve(url, installer_path)
+        print("Download complete.")
+        
+        print("Installing Miniconda...")
+        subprocess.run(install_command, check=True)
+        if installer_path and os.path.exists(installer_path):
+            os.remove(installer_path)
+        print("Miniconda installation complete.")
+        return True
+        
+    except Exception as e:
+        if installer_path and os.path.exists(installer_path):
+            os.remove(installer_path)
+        print(f"Failed to install Miniconda: {e}")
+        return False
+
+def add_miniconda_to_path(install_path):
+    """
+    Adds Miniconda's bin (Linux/Mac) or Scripts (Windows) directory to the system PATH.
+
+    Parameters:
+    - install_path (str): The absolute path where Miniconda is installed.
+
+    Returns:
+    - bool: True if addition to PATH is successful, False otherwise.
+    """
+
+    os_type = platform.system().lower()
+    conda_bin_path = os.path.join(install_path, 'Scripts' if os_type == 'windows' else 'bin')
+    
+    try:
+        if os_type == 'windows':
+            subprocess.run(f'setx PATH "%PATH%;{conda_bin_path}"', shell=True, check=True)
+            print("Miniconda path added to system PATH (permanent for Windows).")
+        else:
+            shell_profile = os.path.expanduser("~/.bashrc" if os_type == "linux" else "~/.zshrc")
+            with open(shell_profile, "a") as file:
+                file.write(f'\n# Miniconda path\nexport PATH="{conda_bin_path}:$PATH"\n')
+            os.environ["PATH"] = f"{conda_bin_path}:{os.environ['PATH']}"
+            print(f"Miniconda path added to PATH. Please restart your terminal or source your {shell_profile} to apply.")
+        return True
+        
+    except Exception as e:
+        print(f"Failed to add Miniconda to PATH: {e}")
+        return False
+
+def initialize_conda_shell():
+    """
+    Initializes Conda for the user's shell by running `conda init` and starting a new interactive shell session.
+
+    Returns:
+    - bool: True if Conda shell initialization is successful, False otherwise.
+    """
+    try:
+        subprocess.run(["conda", "init"], check=True)
+        print("Conda shell initialization complete.")
+        return True
+
+    except Exception as e:
+        print(f"Failed to initialize Conda shell: {e}")
+        return False
+
+def create_conda_env(command,msg):
+    """
+    Create a conda environment from an environment.yml file with a specified name.
+    
+    Parameters:
+    - env_file: str, path to the environment YAML file. Defaults to 'environment.yml'.
+    - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
+    """
+    try:
+
+        # Run the command
+        subprocess.run(command, check=True)
+        print(msg)
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create conda environment: {e}")
+    except FileNotFoundError:
+        print("Conda is not installed or not found in the system path.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def generate_yml(env_name,requirements_path):
+    """Generate an environment.yml file using a requirements.txt file."""
+    yml_content = f"""
+        name: {env_name}
+        channels:
+        - conda-forge
+        dependencies:
+        - python>=3.5
+        - anaconda
+        - pip
+        - pip:
+            - -r file:{requirements_path}
+        """
+    with open('environment.yml', 'w') as yml_file:
+        yml_file.write(yml_content)
+    print(f"Generated environment.yml file using {requirements_path}.")
+
+def export_conda_env(env_name, output_file='environment.yml'):
+    """
+    Export the details of a conda environment to a YAML file.
+    
+    Parameters:
+    - env_name: str, name of the conda environment to export.
+    - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
+    """
+    try:
+        # Use subprocess to run the conda export command
+        with open(output_file, 'w') as f:
+            subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)
+        
+        print(f"Conda environment '{env_name}' exported to {output_file}.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to export conda environment: {e}")
+    except FileNotFoundError:
+        print("Conda is not installed or not found in the system path.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"

@@ -23,10 +23,11 @@ def add_to_path(executable: str = None,bin_path: str = None):
         """
         Adds the path of an executalbe binary to the system PATH permanently.
         """
+        os_type = platform.system().lower() 
         if os.path.exists(bin_path):
                     # Add to current session PATH
             os.environ["PATH"] += os.pathsep + bin_path
-            if platform.system() == "Windows":
+            if os_type == "windows":
                 # Use setx to set the environment variable permanently in Windows
                 subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
             else:
@@ -75,9 +76,9 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
             privacy_setting = "private"
 
         if repo_platform == "GitHub":
-            _setup_gh(username,privacy_setting,repo_name,description)
+            setup_gh(username,privacy_setting,repo_name,description)
         elif repo_platform == "GitLab":
-           _setup_glab(username,privacy_setting,repo_name,description)
+           setup_glab(username,privacy_setting,repo_name,description)
 
 def repo_login(repo_platform,username, privacy_setting, repo_name, description):
     try:
@@ -181,157 +182,161 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     
     print(f"{tag} username and token added to {env_file}")
 
-def _setup_glab(username,privacy_setting,repo_name,description):
 
-    def get_glab_version():
-        url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            latest_release = response.json()[0]  # Get the latest release
-            version = latest_release["tag_name"]
-            return version
-        except requests.RequestException as e:
-            print(f"Error retrieving the latest glab version: {e}")
-            return None
-
-    def install_glab(install_path=None):
-
-        if is_installed('glab',"GitLab CLI (glab)"):
-            return True
-
-        os_type = platform.system().lower()
-        install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
-        os.makedirs(install_path, exist_ok=True)
-        version = get_glab_version()
-        nversion = version.lstrip("v")
-        if not version:
-            print("Could not retrieve the latest version of glab.")
-            return False
-
-        # Set URL and extraction method based on OS type
-        if os_type == "windows":
-            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_windows_amd64.zip"
-            glab_path = os.path.join(install_path, f"glab_{nversion}_windows_amd64.zip")
-            extract_method = lambda: zipfile.ZipFile(glab_path, 'r').extractall(install_path)
-
-        elif os_type == "darwin":  # macOS
-            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_darwin_amd64.tar.gz"
-            glab_path = os.path.join(install_path, f"glab_{nversion}_darwin_amd64.tar.gz")
-            extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
-
-        elif os_type == "linux":
-            glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_linux_amd64.tar.gz"
-            glab_path = os.path.join(install_path, f"glab_{nversion}_linux_amd64.tar.gz")
-            extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
-
-        else:
-            print(f"Unsupported operating system: {os_type}")
-            return False
-
-        # Check if glab is already downloaded and extracted
-        if os.path.exists(glab_path):
-            print(f"{glab_path} already exists. Skipping download.")
-        else:
-            try:
-                # Download the glab binary
-                print(f"Downloading glab for {os_type} from {glab_url}...")
-                response = requests.get(glab_url, stream=True)
-                response.raise_for_status()
-                with open(glab_path, "wb") as f:
-                    shutil.copyfileobj(response.raw, f)
-                print(f"glab downloaded successfully to {glab_path}")
-            except requests.RequestException as e:
-                print(f"Failed to download glab for {os_type}: {e}")
-                return False
-
-        # Extract the downloaded file
-        print(f"Extracting {glab_path}...")
-        extract_method()
-
-        # Add the extracted glab to the system PATH
-        add_to_path('GitLab CLI',os.path.join(install_path, "bin"))
-
-        return True
+# GitLab Setup Functions
+def setup_glab(username,privacy_setting,repo_name,description):
 
     if install_glab("bin/glab"):
                 check, username, repo_name = repo_login("glab",username,privacy_setting,repo_name,description)
                 if check:
                     repo_to_env_file("glab",username,repo_name)
 
-def _setup_gh(username,privacy_setting,repo_name,description):
-    
-    def install_gh(install_path=None):
-        """
-        Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
+def get_glab_version():
+    url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        latest_release = response.json()[0]  # Get the latest release
+        version = latest_release["tag_name"]
+        return version
+    except requests.RequestException as e:
+        print(f"Error retrieving the latest glab version: {e}")
+        return None
 
-        Parameters:
-        - install_path (str, optional): The directory where GitHub CLI should be installed. Defaults to the current working directory.
+def install_glab(install_path=None):
 
-        Returns:
-        - bool: True if installation is successful, False otherwise.
-        """
-        if is_installed('gh', "GitHub CLI (gh)"):
-            return True
+    if is_installed('glab',"GitLab CLI (glab)"):
+        return True
 
-        os_type = platform.system().lower()
-        install_path = os.path.abspath(install_path or os.getcwd())
-        os.makedirs(install_path, exist_ok=True)
+    os_type = platform.system().lower()
+    install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
+    os.makedirs(install_path, exist_ok=True)
+    version = get_glab_version()
+    nversion = version.lstrip("v")
+    if not version:
+        print("Could not retrieve the latest version of glab.")
+        return False
 
+    # Set URL and extraction method based on OS type
+    if os_type == "windows":
+        glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_windows_amd64.zip"
+        glab_path = os.path.join(install_path, f"glab_{nversion}_windows_amd64.zip")
+        extract_method = lambda: zipfile.ZipFile(glab_path, 'r').extractall(install_path)
+
+    elif os_type == "darwin":  # macOS
+        glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_darwin_amd64.tar.gz"
+        glab_path = os.path.join(install_path, f"glab_{nversion}_darwin_amd64.tar.gz")
+        extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
+
+    elif os_type == "linux":
+        glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_linux_amd64.tar.gz"
+        glab_path = os.path.join(install_path, f"glab_{nversion}_linux_amd64.tar.gz")
+        extract_method = lambda: tarfile.open(glab_path, "r:gz").extractall(install_path)
+
+    else:
+        print(f"Unsupported operating system: {os_type}")
+        return False
+
+    # Check if glab is already downloaded and extracted
+    if os.path.exists(glab_path):
+        print(f"{glab_path} already exists. Skipping download.")
+    else:
         try:
-            if os_type == "windows":
-                installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
-                installer_name = os.path.join(install_path, "gh_installer.msi")
-                
-                # Download the installer
-                subprocess.run(["curl", "-Lo", installer_name, installer_url], check=True)
-
-                # Install GitHub CLI
-                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
-                print(f"GitHub CLI (gh) installed successfully to {install_path}.")
-
-            elif os_type == "darwin":  # macOS
-                # Using Homebrew to install GitHub CLI
-                subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
-                print(f"GitHub CLI (gh) installed successfully to {install_path}.")
-
-            elif os_type == "linux":
-                distro_name = distro.name().lower()
-                if "ubuntu" in distro_name or "debian" in distro_name:
-                    subprocess.run(["sudo", "apt", "update"], check=True)
-                    command = ["sudo", "apt", "install", "-y", "gh"]
-                elif "centos" in distro_name or "rhel" in distro_name:
-                    command = ["sudo", "yum", "install", "-y", "gh"]
-                else:
-                    print(f"Unsupported Linux distribution: {distro_name}")
-                    return False
-                
-                subprocess.run(command, check=True)
-                print(f"GitHub CLI (gh) installed successfully on {distro_name}.")
-
-            else:
-                print("Unsupported operating system.")
-                return False
-
-            # Add the extracted glab to the system PATH
-            add_to_path("GitHub CLI",os.path.join(install_path, "bin"))
-   
-            return True
-
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to install GitHub CLI: {e}")
+            # Download the glab binary
+            print(f"Downloading glab for {os_type} from {glab_url}...")
+            response = requests.get(glab_url, stream=True)
+            response.raise_for_status()
+            with open(glab_path, "wb") as f:
+                shutil.copyfileobj(response.raw, f)
+            print(f"glab downloaded successfully to {glab_path}")
+        except requests.RequestException as e:
+            print(f"Failed to download glab for {os_type}: {e}")
             return False
 
-        finally:
-            # Clean up installer on Windows
-            if os_type == "windows" and 'installer_name' in locals() and os.path.exists(installer_name):
-                os.remove(installer_name)
-                print(f"Installer {installer_name} removed.")
+    # Extract the downloaded file
+    print(f"Extracting {glab_path}...")
+    extract_method()
+
+    # Add the extracted glab to the system PATH
+    add_to_path('GitLab CLI',os.path.join(install_path, "bin"))
+
+    return True
+
+# GitHub Setup Functions
+def setup_gh(username,privacy_setting,repo_name,description):
 
     if install_gh("bin/gh"):
                 check, username, repo_name = repo_login("bin/gh","gh",username,privacy_setting,repo_name,description)
                 if check:
                     repo_to_env_file("gh",username,repo_name)
+   
+def install_gh(install_path=None):
+    """
+    Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
+
+    Parameters:
+    - install_path (str, optional): The directory where GitHub CLI should be installed. Defaults to the current working directory.
+
+    Returns:
+    - bool: True if installation is successful, False otherwise.
+    """
+    if is_installed('gh', "GitHub CLI (gh)"):
+        return True
+
+    os_type = platform.system().lower()
+    install_path = os.path.abspath(install_path or os.getcwd())
+    os.makedirs(install_path, exist_ok=True)
+
+    try:
+        if os_type == "windows":
+            installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
+            installer_name = os.path.join(install_path, "gh_installer.msi")
+            
+            # Download the installer
+            subprocess.run(["curl", "-Lo", installer_name, installer_url], check=True)
+
+            # Install GitHub CLI
+            subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
+            print(f"GitHub CLI (gh) installed successfully to {install_path}.")
+
+        elif os_type == "darwin":  # macOS
+            # Using Homebrew to install GitHub CLI
+            subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
+            print(f"GitHub CLI (gh) installed successfully to {install_path}.")
+
+        elif os_type == "linux":
+            distro_name = distro.name().lower()
+            if "ubuntu" in distro_name or "debian" in distro_name:
+                subprocess.run(["sudo", "apt", "update"], check=True)
+                command = ["sudo", "apt", "install", "-y", "gh"]
+            elif "centos" in distro_name or "rhel" in distro_name:
+                command = ["sudo", "yum", "install", "-y", "gh"]
+            else:
+                print(f"Unsupported Linux distribution: {distro_name}")
+                return False
+            
+            subprocess.run(command, check=True)
+            print(f"GitHub CLI (gh) installed successfully on {distro_name}.")
+
+        else:
+            print("Unsupported operating system.")
+            return False
+
+        # Add the extracted glab to the system PATH
+        add_to_path("GitHub CLI",os.path.join(install_path, "bin"))
+
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install GitHub CLI: {e}")
+        return False
+
+    finally:
+        # Clean up installer on Windows
+        if os_type == "windows" and 'installer_name' in locals() and os.path.exists(installer_name):
+            os.remove(installer_name)
+            print(f"Installer {installer_name} removed.")
+
 
 repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
