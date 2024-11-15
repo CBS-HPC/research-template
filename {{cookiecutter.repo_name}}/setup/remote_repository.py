@@ -18,6 +18,24 @@ for lib in required_libraries:
 
 import distro
 
+def add_to_path(executable: str = None,bin_path: str = None):
+        """
+        Adds the path of an executalbe binary to the system PATH permanently.
+        """
+        if os.path.exists(bin_path):
+                    # Add to current session PATH
+            os.environ["PATH"] += os.pathsep + bin_path
+            if platform.system() == "Windows":
+                # Use setx to set the environment variable permanently in Windows
+                subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
+            else:
+                # On macOS/Linux, you can add the path to the shell profile file
+                profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
+                with open(profile_file, "a") as file:
+                    file.write(f'\nexport PATH="{bin_path}:$PATH"')
+                print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
+        else:
+            print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
@@ -58,7 +76,7 @@ def repo_login(repo_platform,username, privacy_setting, repo_name, description):
         try:
             subprocess.run([repo_platform, "auth", "login"], check=True)
         except Exception as e:
-            print(f"{repo_platform} auth login' failed: {e}")
+            print(f"{repo_platform} auth login failed: {e}")
             return False, None, None  # Return False for any unexpected errors
     try:    
         # Create the GitHub repository
@@ -119,7 +137,6 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
 
 def _setup_glab(username,privacy_setting,repo_name,description):
 
-
     def get_glab_version():
         url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
         try:
@@ -131,23 +148,6 @@ def _setup_glab(username,privacy_setting,repo_name,description):
         except requests.RequestException as e:
             print(f"Error retrieving the latest glab version: {e}")
             return None
-
-    def add_to_path(bin_path):
-        """
-        Adds the path of the glab binary to the system PATH permanently.
-        """
-        if os.path.exists(bin_path):
-            if platform.system() == "Windows":
-                # Use setx to set the environment variable permanently in Windows
-                subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
-            else:
-                # On macOS/Linux, you can add the path to the shell profile file
-                profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
-                with open(profile_file, "a") as file:
-                    file.write(f'\nexport PATH="{bin_path}:$PATH"')
-                print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
-        else:
-            print(f"glab binary not found in {bin_path}, unable to add to PATH.")
 
     def install_glab(install_path=None):
         os_type = platform.system().lower()
@@ -200,7 +200,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
         extract_method()
 
         # Add the extracted glab to the system PATH
-        add_to_path(os.path.join(install_path, "bin"))
+        add_to_path('GitLab',os.path.join(install_path, "bin"))
 
         return True
 
