@@ -692,15 +692,14 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
     # Install Git
     if not _setup_git(version_control,platform):
         return
+    # Install git-annex
+    if not install_git_annex():
+        return
     
     # Install datalad
     if not install_datalad():
         return
     
-    # Install git-annex
-    if not install_git_annex():
-        return
-
     datalad_create()
 
     if remote_storage == "Local Path":
