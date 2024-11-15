@@ -250,7 +250,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
         extract_method()
 
         # Add the extracted glab to the system PATH
-        add_to_path('GitLab',os.path.join(install_path, "bin"))
+        add_to_path('GitLab CLI',os.path.join(install_path, "bin"))
 
         return True
 
@@ -313,9 +313,9 @@ def _setup_gh(username,privacy_setting,repo_name,description):
                 print("Unsupported operating system.")
                 return False
 
-            # Add GitHub CLI to PATH
-            gh_bin_path = os.path.join(install_path, "bin")
-            add_to_path("GitHub CLI", gh_bin_path)
+            # Add the extracted glab to the system PATH
+            add_to_path("GitHub CLI",os.path.join(install_path, "bin"))
+   
             return True
 
         except subprocess.CalledProcessError as e:

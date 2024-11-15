@@ -17,6 +17,27 @@ for lib in required_libraries:
 
 import requests
 
+
+def add_to_path(executable: str = None,bin_path: str = None):
+        """
+        Adds the path of an executalbe binary to the system PATH permanently.
+        """
+        os_type = platform.system().lower() 
+        if os.path.exists(bin_path):
+                    # Add to current session PATH
+            os.environ["PATH"] += os.pathsep + bin_path
+            if os_type == "windows":
+                # Use setx to set the environment variable permanently in Windows
+                subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
+            else:
+                # On macOS/Linux, you can add the path to the shell profile file
+                profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
+                with open(profile_file, "a") as file:
+                    file.write(f'\nexport PATH="{bin_path}:$PATH"')
+                print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
+        else:
+            print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
+
 def add_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
@@ -487,29 +508,30 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
         subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
         return True
      
-    def setup_rclone(bin_folder):
+    def install_rclone(install_path):
         """Download and extract rclone to the specified bin folder."""
 
-        def download_rclone(bin_folder):
-            system = platform.system()
+        def download_rclone(install_path):
+            os_type = platform.system().lower()
             
             # Set the URL and executable name based on the OS
-            if system == "Windows":
+            if os_type == "windows":
                 url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
                 rclone_executable = "rclone.exe"
-            elif system in ["Linux", "Darwin"]:  # "Darwin" is the system name for macOS
+            elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
                 url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if system == "Linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
                 rclone_executable = "rclone"
             else:
-                print(f"Unsupported operating system: {system}. Please install rclone manually.")
+                print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
                 return
 
             # Create the bin folder if it doesn't exist
-            os.makedirs(bin_folder, exist_ok=True)
-
+            install_path = os.path.abspath(install_path or os.getcwd())
+            os.makedirs(install_path, exist_ok=True)
+        
             # Download rclone
-            local_zip = os.path.join(bin_folder, "rclone.zip")
-            print(f"Downloading rclone for {system} to {local_zip}...")
+            local_zip = os.path.join(install_path, "rclone.zip")
+            print(f"Downloading rclone for {os_type} to {local_zip}...")
             response = requests.get(url)
             if response.status_code == 200:
                 with open(local_zip, 'wb') as file:
@@ -522,28 +544,29 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
             # Extract the rclone executable
             print("Extracting rclone...")
             with zipfile.ZipFile(local_zip, 'r') as zip_ref:
-                zip_ref.extractall(bin_folder)
+                zip_ref.extractall(install_path)
 
             # Clean up by deleting the zip file
             os.remove(local_zip)
-            print(f"rclone installed successfully at {os.path.join(bin_folder, rclone_executable)}.")
+            print(f"rclone installed successfully at {os.path.join(install_path, rclone_executable)}.")
 
-            rclone_path = os.path.abspath(os.path.join(bin_folder, rclone_executable))
+            rclone_path = os.path.abspath(os.path.join(install_path, rclone_executable))
 
             return rclone_path
 
-        def clone_git_annex_remote_rclone(bin_folder):
+        def clone_git_annex_remote_rclone(install_path):
             """Clone the git-annex-remote-rclone repository to the specified bin folder."""
             repo_url = "https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git"
             repo_name = os.path.basename(repo_url).replace('.git', '')
-            repo_path = os.path.join(bin_folder, repo_name)
+            repo_path = os.path.join(install_path, repo_name)
 
             # Create the bin folder if it doesn't exist
-            os.makedirs(bin_folder, exist_ok=True)
+            install_path = os.path.abspath(install_path or os.getcwd())
+            os.makedirs(install_path, exist_ok=True)
 
             # Check if the repository already exists
             if os.path.isdir(repo_path):
-                print(f"The repository '{repo_name}' already exists in {bin_folder}.")
+                print(f"The repository '{repo_name}' already exists in {install_path}.")
             else:
                 print(f"Cloning {repo_url} into {repo_path}...")
                 subprocess.run(["git", "clone", repo_url, repo_path], check=True)
@@ -553,13 +576,15 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
             return repo_path
         
         if not is_installed('rclone','Rclone'):
-            rclone_path = download_rclone(bin_folder)
-            _set_to_path(rclone_path)
+            rclone_path = download_rclone(install_path)
+            add_to_path('rclone',rclone_path)
+            #_set_to_path(rclone_path)
 
         # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
         if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
-            repo_path = clone_git_annex_remote_rclone(bin_folder)
-            _set_to_path(repo_path)
+            repo_path = clone_git_annex_remote_rclone(install_path)
+            add_to_path('git-annex-remote-rclone',repo_path)
+            #_set_to_path(repo_path)
 
     def datalad_create():
 
@@ -696,6 +721,10 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
     if not install_datalad():
         return
     
+    # Install rclone git-annex-remote-rclone
+    install_rclone("bin")
+
+
     datalad_create()
 
     if remote_storage == "Local Path":

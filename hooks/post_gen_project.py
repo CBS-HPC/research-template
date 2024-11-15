@@ -11,14 +11,14 @@ def get_hardware_info():
     Extract hardware information and save it to a file.
     Works on Windows, Linux, and macOS.
     """
-    system = platform.system()
+    os_type = platform.system().lower()
     command = ""
 
-    if system == "Windows":
+    if os_type == "Windows":
         command = "systeminfo"
-    elif system == "Linux":
+    elif os_type == "Linux":
         command = "lshw -short"  # Alternative: "dmidecode"
-    elif system == "Darwin":  # macOS
+    elif os_type == "Darwin":  # macOS
         command = "system_profiler SPHardwareDataType"
     else:
         print("Unsupported operating system.")
@@ -103,7 +103,8 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         """Create a Python virtual environment using virtualenv."""
         subprocess.run(['virtualenv', env_name], check=True)
         print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
-        
+
+    os_type = platform.system().lower()    
     install_packages = ['python']
 
     env_file  = None
@@ -130,14 +131,11 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
 
         if version_control in ['Git','DVC','Datalad']:
              install_packages.extend(['git'])   
-        
-        #if version_control == 'DVC' and not is_installed('dvc', 'DVC'):
-        #     install_packages.extend(['dvc, dvc-ssh'])       
-        
+           
         elif version_control == 'Datalad'and not is_installed('rclone', 'Rclone'):    
             install_packages.extend(['rclone'])
-       
-            if platform.system().lower() in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
+ 
+            if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
                 install_packages.extend(['git-annex'])
 
         if repo_platform == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
@@ -165,24 +163,24 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
         Returns:
         - bool: True if installation is successful, False otherwise.
         """ 
-        system = platform.system().lower()
+        os_type = platform.system().lower()
         installer_name = None
         download_dir = os.path.dirname(install_path)  # One level up from the install_path
         installer_path = None
         
-        if system == "windows":
+        if os_type == "windows":
             installer_name = "Miniconda3-latest-Windows-x86_64.exe"
             url = f"https://repo.anaconda.com/miniconda/{installer_name}"
             installer_path = os.path.join(download_dir, installer_name)
             install_command = [installer_path, "/InstallationType=JustMe", f"/AddToPath=0", f"/RegisterPython=0", f"/S", f"/D={install_path}"]
             
-        elif system == "darwin":  # macOS
+        elif os_type == "darwin":  # macOS
             installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
             url = f"https://repo.anaconda.com/miniconda/{installer_name}"
             installer_path = os.path.join(download_dir, installer_name)
             install_command = ["bash", installer_path, "-b", "-p", install_path]
             
-        elif system == "linux":
+        elif os_type == "linux":
             installer_name = "Miniconda3-latest-Linux-x86_64.sh"
             url = f"https://repo.anaconda.com/miniconda/{installer_name}"
             installer_path = os.path.join(download_dir, installer_name)
@@ -221,15 +219,15 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
         - bool: True if addition to PATH is successful, False otherwise.
         """
 
-        system = platform.system().lower()
-        conda_bin_path = os.path.join(install_path, 'Scripts' if system == 'windows' else 'bin')
+        os_type = platform.system().lower()
+        conda_bin_path = os.path.join(install_path, 'Scripts' if os_type == 'windows' else 'bin')
         
         try:
-            if system == 'windows':
+            if os_type == 'windows':
                 subprocess.run(f'setx PATH "%PATH%;{conda_bin_path}"', shell=True, check=True)
                 print("Miniconda path added to system PATH (permanent for Windows).")
             else:
-                shell_profile = os.path.expanduser("~/.bashrc" if system == "linux" else "~/.zshrc")
+                shell_profile = os.path.expanduser("~/.bashrc" if os_type == "linux" else "~/.zshrc")
                 with open(shell_profile, "a") as file:
                     file.write(f'\n# Miniconda path\nexport PATH="{conda_bin_path}:$PATH"\n')
                 os.environ["PATH"] = f"{conda_bin_path}:{os.environ['PATH']}"
@@ -316,7 +314,6 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
         except Exception as e:
             print(f"An error occurred: {e}")
 
-
     if not is_installed('conda','Conda'):
         if install_miniconda(install_path):
             if add_miniconda_to_path(install_path):
@@ -326,7 +323,8 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
                 return False
         else:
             return False
-    
+        is_installed('conda','Conda')
+
     if virtual_environment in ['Python','R']:
         command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
         command.extend(install_packages)
