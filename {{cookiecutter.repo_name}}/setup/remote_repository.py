@@ -164,8 +164,8 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
         token = get_glab_token()
         tag = "GITLAB"
   
-    if not username or not token:
-        print("Failed to retrieve GitHub credentials. Make sure you're logged in to GitHub CLI.")
+    if not username and not token:
+        print(f"Failed to retrieve {repo_platform}. Make sure you're logged in to {repo_platform}.")
         return
     
     # Check if .env file exists
