@@ -261,7 +261,6 @@ def _setup_glab(username,privacy_setting,repo_name,description):
 
 def _setup_gh(username,privacy_setting,repo_name,description):
     
-
     def install_gh(install_path=None):
         """
         Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
@@ -328,69 +327,6 @@ def _setup_gh(username,privacy_setting,repo_name,description):
             if os_type == "windows" and 'installer_name' in locals() and os.path.exists(installer_name):
                 os.remove(installer_name)
                 print(f"Installer {installer_name} removed.")
-
-
-
-    def install_gh_old(install_path=None):
-
-        if is_installed('gh',"GitHub CLI (gh)"):
-            return True
-        
-        os_type = platform.system().lower()
-        install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
-        os.makedirs(install_path, exist_ok=True)
-        
-        if os_type == "windows":
-            installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
-            installer_name = "gh_installer.msi"
-            try:
-                # Download the installer
-                subprocess.run(["curl", "-LO", installer_url], check=True)
-                
-                # Install and specify the custom directory
-                subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
-                print(f"GitHub CLI (gh) installed successfully to {install_path}.")
-       
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install GitHub CLI: {e}")
-                return False
-            finally:
-                if os.path.exists(installer_name):
-                    os.remove(installer_name)
-
-        elif os_type == "darwin":  # macOS
-            try:
-                # Using Homebrew to install GitHub CLI with a custom install path
-                subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install GitHub CLI on macOS: {e}")
-                return False
-
-        elif os_type == "linux":
-            distro_name = distro.name().lower()
-            
-            # Install GitHub CLI using package manager
-            if "ubuntu" in distro_name or "debian" in distro_name:
-                subprocess.run(["sudo", "apt", "update"], check=True)
-                command = ["sudo", "apt", "install", "-y", "gh"]
-            elif "centos" in distro_name or "rhel" in distro_name:
-                command = ["sudo", "yum", "install", "-y", "gh"]
-            else:
-                print(f"Unsupported Linux distribution: {distro_name}")
-                return False
-            
-            try:
-                subprocess.run(command, check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install GitHub CLI: {e}")
-                return False
-        else:
-            print("Unsupported operating system.")
-            return False
-             # Add the extracted glab to the system PATH
-        print(f"GitHub CLI (gh) installed successfully to {install_path}.")
-        add_to_path('GitLab',os.path.join(install_path, "bin"))
-        return True
 
     if install_gh("bin/gh"):
                 check, username, repo_name = repo_login("bin/gh","gh",username,privacy_setting,repo_name,description)
