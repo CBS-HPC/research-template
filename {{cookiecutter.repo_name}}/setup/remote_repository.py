@@ -7,9 +7,9 @@ import shutil
 import requests
 import zipfile
 import tarfile
-import yaml
 
-required_libraries = ['distro'] 
+
+required_libraries = ['distro','pyyaml'] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -17,6 +17,7 @@ for lib in required_libraries:
         print(f"Installing {lib}...")
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
+import yaml
 import distro
 
 def add_to_path(executable: str = None,bin_path: str = None):
@@ -46,7 +47,6 @@ def add_to_env(executable: str = None,env_file=".env"):
     # Write the credentials to the .env file
     with open(env_file, 'a') as file:  
         file.write(f"{executable.upper()}={shutil.which(executable)}\n")
-
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
