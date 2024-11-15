@@ -7,6 +7,7 @@ import shutil
 import requests
 import zipfile
 import tarfile
+import yaml
 
 required_libraries = ['distro'] 
 for lib in required_libraries:
@@ -105,6 +106,35 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     - env_file (str): The path to the .env file. Default is ".env".
     """
 
+    def get_glab_token():
+
+        def get_glab_config():
+            """
+            Retrieves configuration details from the glab CLI config file.
+
+            Returns:
+                dict: The parsed configuration if found, else None.
+            """
+            config_path = os.path.expanduser("~/.config/glab-cli/config.yml")  # Path to glab config file
+            if not os.path.exists(config_path):
+                print(f"Config file not found: {config_path}")
+                return None
+
+            try:
+                with open(config_path, "r") as file:
+                    config = yaml.safe_load(file)
+                    return config
+            except Exception as e:
+                print(f"Error reading config file: {e}")
+                return None
+
+        # Example usage
+        config = get_glab_config()
+        if config and config['hosts']['gitlab.com']['token']:
+            return config['hosts']['gitlab.com']['token']
+        else:
+            return None
+        
     def get_gh_token():
         try:
             # Run the command to get the token
@@ -117,11 +147,11 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     if repo_platform == 'gh':
         token = get_gh_token()
         tag = "GITHUB"
-        token  = None
-      
+   
     elif repo_platform == 'glab':
+        token = get_glab_token()
         tag = "GITLAB"
-
+  
     if not username or not token:
         print("Failed to retrieve GitHub credentials. Make sure you're logged in to GitHub CLI.")
         return
@@ -212,7 +242,7 @@ def _setup_glab(username,privacy_setting,repo_name,description):
     if install_glab("bin/glab"):
                 check, username, repo_name = repo_login("glab",username,privacy_setting,repo_name,description)
                 if check:
-                    repo_to_env_file("glab",username,repo_name)
+                    repo_to_env_file("bin/glab","glab",username,repo_name)
 
 def _setup_gh(username,privacy_setting,repo_name,description):
     
@@ -350,8 +380,8 @@ def _setup_gh(username,privacy_setting,repo_name,description):
         
         print(f"GitHub username and token added to {env_file}")
 
-    if install_gh():
-                check, username, repo_name = repo_login("gh",username,privacy_setting,repo_name,description)
+    if install_gh("bin/gh"):
+                check, username, repo_name = repo_login("bin/gh","gh",username,privacy_setting,repo_name,description)
                 if check:
                     repo_to_env_file("gh",username,repo_name)
 
