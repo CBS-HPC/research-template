@@ -546,7 +546,7 @@ def install_rclone(install_path):
             url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
             rclone_executable = "rclone.exe"
         elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
-            url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if system == "Linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
+            url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if os_type == "linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
             rclone_executable = "rclone"
         else:
             print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
