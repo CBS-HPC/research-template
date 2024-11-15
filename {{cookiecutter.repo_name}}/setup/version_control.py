@@ -724,13 +724,12 @@ def _setup_datalad(version_control,remote_storage,platform,repo_name):
     # Install rclone git-annex-remote-rclone
     install_rclone("bin")
 
-
+    # Create datalad dataset
     datalad_create()
 
     if remote_storage == "Local Path":
         datalad_local_storage(repo_name)
     elif remote_storage in ["Dropbox", "Deic Storage"]:
-        setup_rclone("bin")
         datalad_deic_storage(repo_name)
 
 version_control = "{{cookiecutter.version_control}}"
