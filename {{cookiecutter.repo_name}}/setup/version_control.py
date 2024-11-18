@@ -18,6 +18,25 @@ for lib in required_libraries:
 import requests
 
 
+def ask_yes_no(question):
+    """
+    Prompt the user with a yes/no question and validate the input.
+
+    Args:
+        question (str): The question to display to the user.
+
+    Returns:
+        bool: True if the user confirms (yes/y), False if the user declines (no/n).
+    """
+    while True:
+        response = input(question).strip().lower()
+        if response in {"yes", "y"}:
+            return True
+        elif response in {"no", "n"}:
+            return False
+        else:
+            print("Invalid response. Please answer with 'yes' or 'no'.")
+
 def add_to_path(executable: str = None,bin_path: str = None):
         """
         Adds the path of an executalbe binary to the system PATH permanently.
@@ -73,52 +92,6 @@ def setup_version_control(version_control,remote_storage,repo_platform,repo_name
         setup_datalad(version_control,remote_storage,repo_platform,repo_name)
     elif version_control == "DVC":
         setup_dvc(version_control,remote_storage,repo_platform,repo_name)
-
-def _set_to_path(path_to_set):
-    """Set the specified path to the user-level PATH, requesting admin privileges on Windows if needed."""
-
-    if platform.system() == "Windows":
-        try:
-            # Command to check if the path is in the user PATH
-            check_command = f'$currentPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User); $currentPath -notlike "*{path_to_set}*"'
-            is_not_in_path = subprocess.check_output(['powershell', '-Command', check_command], text=True).strip()
-            
-            # If the path is not in PATH, add it with admin privileges
-            if is_not_in_path == "True":
-                add_command = (
-                    f"Start-Process powershell -Verb runAs -ArgumentList "
-                    f"'[System.Environment]::SetEnvironmentVariable(\"Path\", "
-                    f"[System.Environment]::GetEnvironmentVariable(\"Path\", "
-                    f"[System.EnvironmentVariableTarget]::User) + \";{path_to_set}\", "
-                    f"[System.EnvironmentVariableTarget]::User)'"
-                )
-                subprocess.run(['powershell', '-Command', add_command], check=True)
-                print(f"Added {path_to_set} to user PATH with admin rights.")
-            else:
-                print(f"{path_to_set} is already in the user PATH.")
-                
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to update PATH on Windows: {e}")
-
-    elif platform.system() in ["Linux", "Darwin"]:  # Darwin is macOS
-        shell_config_file = os.path.expanduser("~/.bashrc")
-        if os.path.exists(os.path.expanduser("~/.zshrc")):
-            shell_config_file = os.path.expanduser("~/.zshrc")
-        
-        # Check if the PATH is already set
-        with open(shell_config_file, "r") as file:
-            lines = file.readlines()
-        
-        if f'export PATH="$PATH:{path_to_set}"' not in ''.join(lines):
-            with open(shell_config_file, "a") as file:
-                file.write(f'\nexport PATH="$PATH:{path_to_set}"\n')
-            print(f"Added {path_to_set} to PATH in {shell_config_file}. Please run 'source {shell_config_file}' or restart your terminal to apply changes.")
-        else:
-            print(f"{path_to_set} is already in the user PATH in {shell_config_file}.")
-    
-    else:
-        print("Unsupported operating system. PATH not modified.")
-
 
 # Git Setup Functions
 def setup_git(version_control,repo_platform):
@@ -176,8 +149,9 @@ def install_git(install_path=None):
             # Run the silent installation
             subprocess.run([installer_path, "/VERYSILENT", f"/DIR={install_path}", "/NORESTART"], check=True)
 
-            # Add Git to PATH
-            os.environ["PATH"] += os.pathsep + os.path.join(install_path, "bin")
+            # Add Git to PATH¨
+            add_to_path('Git',os.path.join(install_path, "bin"))
+            #os.environ["PATH"] += os.pathsep + os.path.join(install_path, "bin")
 
         elif os_type == "linux":
             # Install Git on Linux using apt
@@ -241,7 +215,13 @@ def check_git_config():
         # Check if Git is properly configured
         if current_name and current_email:
             print(f"Git is configured with user.name: {current_name} and user.email: {current_email}")
-            return True, current_name, current_email # Return True if configured
+
+            confirm = ask_yes_no(f"Do you want to keep the current Git user.name: {current_name} and user.email: {current_email} (yes/no): ")
+            
+            if confirm:
+                return True, current_name, current_email # Return True if configured
+            else: 
+                return False, None, None   # Return False if Git is not fully configured
         else:
             print("Git is not fully configured.")
             return False, None, None   # Return False if Git is not fully configured

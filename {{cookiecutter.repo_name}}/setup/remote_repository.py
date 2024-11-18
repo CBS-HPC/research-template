@@ -266,7 +266,7 @@ def install_glab(install_path=None):
 def setup_gh(username,privacy_setting,repo_name,description):
 
     if install_gh("bin/gh"):
-                check, username, repo_name = repo_login("bin/gh","gh",username,privacy_setting,repo_name,description)
+                check, username, repo_name = repo_login("gh",username,privacy_setting,repo_name,description)
                 if check:
                     repo_to_env_file("gh",username,repo_name)
    
