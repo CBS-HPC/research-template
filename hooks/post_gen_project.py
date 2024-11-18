@@ -12,7 +12,7 @@ if script_dir not in sys.path:
     sys.path.append(script_dir)
 
 
-from utils import ask_yes_no,is_installed
+from utils import ask_yes_no,is_installed,load_from_env
 
 def get_hardware_info():
     """

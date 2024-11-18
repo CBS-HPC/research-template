@@ -19,7 +19,7 @@ for lib in required_libraries:
 
 #from dotenv import load_dotenv
 
-from utils import add_to_path,is_installed
+from utils import add_to_path,is_installed,load_from_env
 
 def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -27,28 +27,72 @@ def setup_remote_repository(version_control,repo_platform,repo_name,description)
     if version_control == None or not os.path.isdir(".git"):
         return
     elif repo_platform in ["GitHub", "GitLab"]:
-        username = input(f"Enter your {repo_platform} username: ").strip()
-        privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
-        
-        if privacy_setting not in ["private", "public"]:
-            print("Invalid choice. Defaulting to 'private'.")
-            privacy_setting = "private"
-
         if repo_platform == "GitHub":
-            setup_gh(username,privacy_setting,repo_name,description)
+            if install_gh("bin/gh"):
+                setup_repo("gh",repo_name,description)      
         elif repo_platform == "GitLab":
-           setup_glab(username,privacy_setting,repo_name,description)
+            if install_glab("bin/glab"):
+                setup_repo("glab",repo_name,description)      
 
-def repo_login(repo_platform,username, privacy_setting, repo_name, description):
+def repo_details():
+    username = input(f"Enter your {repo_platform} username:").strip()
+    privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
+    
+    if privacy_setting not in ["private", "public"]:
+        print("Invalid choice. Defaulting to 'private'.")
+        privacy_setting = "private"
+    return username, privacy_setting
+
+def repo_login(repo_platform):
+
+    try: 
+        if repo_platform == 'gh':
+            user = load_from_env('GITHUB_USER')
+            token = load_from_env('GH_TOKEN')
+            command = ['gh', 'auth', 'login', '--with-token']
+        
+            # Check if both environment variables are set
+            if user and token:
+                # Run the gh auth login command with the token
+                subprocess.run(command, input=token, text=True, capture_output=True)
+                return True
+            else:
+                return False
+        elif repo_platform == 'glab':
+            user = load_from_env('GITLAB_USER')
+            token = load_from_env('GH_TOKEN')
+            hostname = load_from_env('GH_HOSTNAME')
+            
+            if hostname:
+                command = ['glab', 'auth', 'login', '--hostname', hostname, '--token'] 
+            else: 
+                return False
+   
+
+        # Check if both environment variables are set
+        if user and token:
+            # Run the gh auth login command with the token
+            subprocess.run(command, input=token, text=True, capture_output=True)
+            return True
+        else:
+            return False    
+    
+    except Exception as e:
+        return False
+  
+def repo_init(repo_platform):    
     try:
         # Check if the user is logged in
         subprocess.run([repo_platform, "auth", "status"], capture_output=True, text=True, check=True)
     except Exception as e:
         try:
             subprocess.run([repo_platform, "auth", "login"], check=True)
+            return True        
         except Exception as e:
             print(f"{repo_platform} auth login failed: {e}")
-            return False, None, None  # Return False for any unexpected errors
+            return False
+
+def repo_create(repo_platform,username, privacy_setting, repo_name, description):
     try:
         if repo_platform == 'gh':    
             # Create the GitHub repository
@@ -106,7 +150,38 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
         except Exception as e:
             print(f"Error reading config file: {e}")
             return None
- 
+        
+    def get_glab_hostname():
+        """
+        Retrieves the GitLab hostname from the glab CLI config file.
+
+        Returns:
+            str: The GitLab hostname, or None if not found.
+        """
+        config_path = os.path.expanduser("~/.config/glab-cli/config.yml")
+
+        if not os.path.exists(config_path):
+            print(f"Config file not found: {config_path}")
+            return None
+
+        try:
+            with open(config_path, "r") as file:
+                lines = file.readlines()
+
+            # Look for the hostname line in the file
+            for line in lines:
+                if "hostname:" in line:
+                    # Extract the hostname value after 'hostname:'
+                    hostname = line.split(":")[-1].strip()
+                    return hostname
+
+            print("Hostname not found in the config file.")
+            return None
+
+        except Exception as e:
+            print(f"Error reading config file: {e}")
+            return None
+        
     def get_gh_token():
         try:
             # Run the command to get the token
@@ -119,10 +194,14 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     if repo_platform == 'gh':
         token = get_gh_token()
         tag = "GITHUB"
+        token_tag = "GH"
+        hostname = None
    
     elif repo_platform == 'glab':
         token = get_glab_token()
+        hostname = get_glab_hostname()
         tag = "GITLAB"
+        token_tag = "GLAB"
   
     if not username and not token:
         print(f"Failed to retrieve {repo_platform}. Make sure you're logged in to {repo_platform}.")
@@ -134,35 +213,36 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
     
     # Write the credentials to the .env file
     with open(env_file, 'a') as file:
-        file.write(f"{tag}_USERNAME={username}\n")
-        file.write(f"{tag}_REPO_NAME={repo_name}\n")
+        file.write(f"{tag}_USER={username}\n")
+        file.write(f"{tag}_REPO={repo_name}\n")
         if token:
-            file.write(f"{tag}_TOKEN={token}\n")
+            file.write(f"{token_tag}_TOKEN={token}\n")
+        if hostname:
+            file.write(f"{token_tag}_HOSTNAME={hostname}\n")
     
     print(f"{tag} username and token added to {env_file}")
 
-
-# GitLab Setup Functions
-def setup_glab(username,privacy_setting,repo_name,description):
-
-    if install_glab("bin/glab"):
-                check, username, repo_name = repo_login("glab",username,privacy_setting,repo_name,description)
-                if check:
-                    repo_to_env_file("glab",username,repo_name)
-
-def get_glab_version():
-    url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        latest_release = response.json()[0]  # Get the latest release
-        version = latest_release["tag_name"]
-        return version
-    except requests.RequestException as e:
-        print(f"Error retrieving the latest glab version: {e}")
-        return None
-
+def setup_repo(repo_platform,repo_name,description):
+    if not repo_login(repo_platform):
+        username,privacy_setting = repo_details()
+        if repo_init(repo_platform):
+            check, username, repo_name = repo_create(repo_platform,username,privacy_setting,repo_name,description)
+            if check:
+                repo_to_env_file(repo_platform,username,repo_name)
+ 
 def install_glab(install_path=None):
+    
+    def get_glab_version():
+        url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            latest_release = response.json()[0]  # Get the latest release
+            version = latest_release["tag_name"]
+            return version
+        except requests.RequestException as e:
+            print(f"Error retrieving the latest glab version: {e}")
+            return None
 
     if is_installed('glab',"GitLab CLI (glab)"):
         return True
@@ -220,14 +300,6 @@ def install_glab(install_path=None):
     add_to_path('GitLab CLI',os.path.join(install_path, "bin"))
 
     return True
-
-# GitHub Setup Functions
-def setup_gh(username,privacy_setting,repo_name,description):
-
-    if install_gh("bin/gh"):
-                check, username, repo_name = repo_login("gh",username,privacy_setting,repo_name,description)
-                if check:
-                    repo_to_env_file("gh",username,repo_name)
    
 def install_gh(install_path=None):
     """

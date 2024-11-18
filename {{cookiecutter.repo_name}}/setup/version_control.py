@@ -19,7 +19,7 @@ import requests
 
 #from dotenv import load_dotenv
 
-from utils import ask_yes_no,add_to_path,is_installed
+from utils import ask_yes_no,add_to_path,is_installed,load_from_env
 
 
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
@@ -137,6 +137,13 @@ def check_git_config():
     - bool: True if Git is configured, False otherwise.
     """
     try:
+        # Check .env file
+        env_name = load_from_env('GIT_USER')
+        env_email= load_from_env('GIT_EMAIL')
+
+        if env_name and env_email:
+            True, env_name, env_email
+
         # Check the current Git user configuration
         current_name = subprocess.run(
             ["git", "config", "--global", "user.name"],
@@ -237,8 +244,8 @@ def git_to_env(git_name, git_email,env_file=".env"):
     
     # Write the credentials to the .env file
     with open(env_file, 'a') as file:
-        file.write(f"GIT_USER_NAME={git_name}\n")
-        file.write(f"GIT_USER_EMAIL={git_email}\n")
+        file.write(f"GIT_USER={git_name}\n")
+        file.write(f"GIT_EMAIL={git_email}\n")
     
     print(f"Git user information added to {env_file}")
 

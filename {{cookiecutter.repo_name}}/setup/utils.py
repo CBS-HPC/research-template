@@ -54,9 +54,9 @@ def load_from_env(executable: str, env_file=".env"):
         return False
 
     # Construct the binary path
-    bin_path = os.path.join(env_var, "bin", executable)
-    if os.path.exists(bin_path):
-        return add_to_path(executable, os.path.dirname(bin_path))
+    #bin_path = os.path.join(env_var, "bin", executable)
+    if os.path.exists(env_var):
+        return add_to_path(executable, os.path.dirname(env_var))
     else:
         return False
 
@@ -97,7 +97,6 @@ def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
         raise ValueError("Both 'executable' and 'name' must be strings.")
-    
     if not load_from_env(executable):
         # Check if the executable is on the PATH
         path = shutil.which(executable)
