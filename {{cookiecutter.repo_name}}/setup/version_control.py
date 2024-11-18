@@ -19,7 +19,7 @@ import requests
 
 #from dotenv import load_dotenv
 
-from utils import ask_yes_no,add_to_path,is_installed,load_from_env
+from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env
 
 
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
@@ -67,6 +67,10 @@ def install_git(install_path=None):
     Returns:
     - bool: True if installation is successful, False otherwise.
     """
+    # Set from .env file
+    if set_from_env('git'):
+        return True
+    
     if is_installed('git', 'Git'):
         return True 
     
@@ -266,6 +270,10 @@ def install_dvc():
     """
     Install DVC using pip.
     """
+    # Set from .env file
+    if set_from_env('dvc'):
+        return True
+    
     if not is_installed('dvc','DVC'):
         try:
             # Install DVC via pip
@@ -425,6 +433,10 @@ def setup_datalad(version_control,remote_storage,repo_platform,repo_name):
         datalad_deic_storage(repo_name)
 
 def install_datalad():   
+        # Set from .env file
+        if set_from_env('datalad'):
+            return True
+        
         if not is_installed('datalad','Datalad'):
             try:
                 if not shutil.which('datalad-installer'):
@@ -444,6 +456,10 @@ def install_datalad():
         return True
 
 def install_git_annex():
+    # Set from .env file
+    if set_from_env('git-annex'):
+        return True
+        
     if not is_installed('git-annex','Git-Annex'):
         try:
             if not shutil.which('datalad-installer'):
@@ -530,11 +546,20 @@ def install_rclone(install_path):
         repo_path = os.path.abspath(repo_path)  # Convert to absolute path
         return repo_path
     
+    # Set from .env file
+    if set_from_env('rclone'):
+        return True
+    
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
         add_to_path('rclone',rclone_path)
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
+    
+    # Set from .env file
+    if set_from_env('git-annex-remote-rclone'):
+        return True
+    
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
         add_to_path('git-annex-remote-rclone',repo_path)

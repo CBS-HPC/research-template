@@ -12,7 +12,7 @@ if script_dir not in sys.path:
     sys.path.append(script_dir)
 
 
-from utils import ask_yes_no,is_installed,load_from_env
+from utils import ask_yes_no,is_installed,set_from_env
 
 def get_hardware_info():
     """
@@ -173,7 +173,10 @@ def run_powershell_script(script_path, repo_name=None, setup_version_control_pat
 
 # Conda Setup Functions
 def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
- 
+    
+    # Set frpm .env file
+    set_from_env('conda')
+
     if not is_installed('conda','Conda'):
         if install_miniconda(install_path):
             if add_miniconda_to_path(install_path):

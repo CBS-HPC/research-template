@@ -19,7 +19,7 @@ for lib in required_libraries:
 
 #from dotenv import load_dotenv
 
-from utils import add_to_path,is_installed,load_from_env
+from utils import add_to_path,is_installed,load_from_env,set_from_env
 
 def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -244,6 +244,12 @@ def install_glab(install_path=None):
             print(f"Error retrieving the latest glab version: {e}")
             return None
 
+     # Set from .env file
+    
+    # Set from .env file
+    if set_from_env('glab'):
+        return True
+    
     if is_installed('glab',"GitLab CLI (glab)"):
         return True
 
@@ -311,6 +317,10 @@ def install_gh(install_path=None):
     Returns:
     - bool: True if installation is successful, False otherwise.
     """
+    # Set from .env file
+    if set_from_env('gh'):
+        return True
+
     if is_installed('gh', "GitHub CLI (gh)"):
         return True
 
