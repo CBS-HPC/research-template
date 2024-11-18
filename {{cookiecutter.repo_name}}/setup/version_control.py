@@ -152,7 +152,7 @@ def check_git_config():
         print(env_name)
         print(os.getcwd())
         if env_name and env_email:
-            True, env_name, env_email
+            return True, env_name, env_email
 
         # Check the current Git user configuration
         current_name = subprocess.run(
@@ -463,37 +463,6 @@ def install_datalad():
 
 def install_git_annex():
     
-    def install_git_annex_datalad():
-        # Run the datalad-installer command and capture the output
-        process = subprocess.Popen(
-            "echo y | datalad-installer git-annex -m datalad/git-annex:release",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True  # Ensures output is captured as a string
-        )
-
-        # Capture output and error in real time
-        stdout, stderr = process.communicate()
-
-        # If there is an error, print it
-        if process.returncode != 0:
-            print(f"Error during installation: {stderr}")
-            return None
-
-        # Print the captured output
-        print(stdout)
-
-        # Search for the final installation path in the output using a regular expression
-        match = re.search(r'git-annex is now installed at (.+)', stdout)
-        if match:
-            install_path = match.group(1)
-            print(f"git-annex installed at: {install_path}")
-            return install_path
-        else:
-            print("Installation path not found.")
-            return None
-
     # Set from .env file
     if set_from_env('git-annex'):
         return True
@@ -503,15 +472,6 @@ def install_git_annex():
             if not shutil.which('datalad-installer'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
             subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
-
-            #git_annex_path = install_git_annex_datalad()
-            
-            #if git_annex_path:
-            #    add_to_path('git-annex',git_annex_path)
-
-            #if not is_installed('git-annex','Git-Annex'):
-            #    print("Error during git-annex installation.")
-            #    return False
             print("git-annex installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error during git-annex installation: {e}")
