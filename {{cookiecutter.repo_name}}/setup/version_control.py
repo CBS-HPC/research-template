@@ -494,16 +494,16 @@ def install_git_annex():
         try:
             if not shutil.which('datalad-installer'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
-            #subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
+            subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
 
-            git_annex_path = install_git_annex_datalad()
+            #git_annex_path = install_git_annex_datalad()
             
-            if git_annex_path:
-                add_to_path('git-annex',git_annex_path)
+            #if git_annex_path:
+            #    add_to_path('git-annex',git_annex_path)
 
-            if not is_installed('git-annex','Git-Annex'):
-                print("Error during git-annex installation.")
-                return False
+            #if not is_installed('git-annex','Git-Annex'):
+            #    print("Error during git-annex installation.")
+            #    return False
             print("git-annex installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error during git-annex installation: {e}")
