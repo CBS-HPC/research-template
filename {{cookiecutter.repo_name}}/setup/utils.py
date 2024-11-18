@@ -36,7 +36,14 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
-def load_from_env(executable: str, env_file=".env"):
+def load_from_env(env_var: str, env_file=".env"):
+    # Load the .env file
+    load_dotenv(env_file)
+
+    # Get the environment variable for the executable (uppercase)
+    return os.getenv(env_var.upper())
+
+def set_from_env(executable: str, env_file=".env"):
     """
     Tries to load the environment variable for the given executable from the .env file.
     If the variable exists and points to a valid binary path, adds it to the system PATH.
@@ -45,20 +52,16 @@ def load_from_env(executable: str, env_file=".env"):
         executable (str): The name of the executable.
         env_file (str): The path to the .env file. Defaults to '.env'.
     """
-    # Load the .env file
-    load_dotenv(env_file)
-
-    # Get the environment variable for the executable (uppercase)
-    env_var = os.getenv(executable.upper())
+    env_var = load_from_env(executable, env_file)
     if not env_var:
         return False
 
     # Construct the binary path
-    #bin_path = os.path.join(env_var, "bin", executable)
-    if os.path.exists(env_var):
-        return add_to_path(executable, os.path.dirname(env_var))
-    else:
-        return False
+    if os.path.exists(env_var):    
+        if add_to_path(executable, os.path.dirname(env_var)):
+            if shutil.which(executable):
+                return True
+    return False
 
 def add_to_path(executable: str = None,bin_path: str = None):
         """
@@ -97,7 +100,7 @@ def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
         raise ValueError("Both 'executable' and 'name' must be strings.")
-    if not load_from_env(executable):
+    if not set_from_env(executable):
         # Check if the executable is on the PATH
         path = shutil.which(executable)
         if path:
