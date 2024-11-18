@@ -148,6 +148,9 @@ def check_git_config():
         env_name = load_from_env('GIT_USER')
         env_email= load_from_env('GIT_EMAIL')
 
+        # Test
+        print(env_name)
+        print(os.getcwd())
         if env_name and env_email:
             True, env_name, env_email
 
