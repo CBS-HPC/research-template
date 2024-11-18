@@ -6,6 +6,14 @@ import urllib.request
 import os
 import shutil
 
+# Add the directory to sys.path
+script_dir = "setup"
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
+
+from utils import ask_yes_no,is_installed
+
 def get_hardware_info():
     """
     Extract hardware information and save it to a file.
@@ -37,29 +45,6 @@ def get_hardware_info():
     except subprocess.CalledProcessError as e:
         print(f"Error retrieving hardware information: {e}")
 
-def add_to_env(executable: str = None,env_file=".env"):
-    # Check if .env file exists
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
-    
-    # Write the credentials to the .env file
-    with open(env_file, 'a') as file:  
-        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
-
-def is_installed(executable: str = None, name: str = None):
-    # Check if both executable and name are provided as strings
-    if not isinstance(executable, str) or not isinstance(name, str):
-        raise ValueError("Both 'executable' and 'name' must be strings.")
-    
-    # Check if the executable is on the PATH
-    path = shutil.which(executable)
-    if path:
-        add_to_env(executable)
-        return True
-    else: 
-        print(f"{name} is not on Path")
-        return False
-  
 def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
@@ -105,7 +90,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
 
     os_type = platform.system().lower()    
-    install_packages = ['python']
+    install_packages = ['python','python-dotenv']
 
     env_file  = None
 
@@ -113,9 +98,11 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         return
     
     # Ask for user confirmation
-    confirm = input(f"Do you want to create a virtual environment named '{repo_name}' for/from {virtual_environment}? (yes/no): ").strip().lower()
+   #confirm = input(f"Do you want to create a virtual environment named '{repo_name}' for/from {virtual_environment}? (yes/no): ").strip().lower()
     
-    if confirm != 'yes':
+    confirm = ask_yes_no(f"Do you want to create a virtual environment named '{repo_name}' for/from {virtual_environment}? (yes/no):")
+
+    if not confirm:
         print("Virtual environment creation canceled.")
         return
     

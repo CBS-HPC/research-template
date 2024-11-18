@@ -9,7 +9,7 @@ import zipfile
 import tarfile
 
 
-required_libraries = [] 
+required_libraries = ['python-dotenv'] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -17,51 +17,10 @@ for lib in required_libraries:
         print(f"Installing {lib}...")
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
+#from dotenv import load_dotenv
 
+from utils import add_to_path,is_installed
 
-def add_to_path(executable: str = None,bin_path: str = None):
-        """
-        Adds the path of an executalbe binary to the system PATH permanently.
-        """
-        os_type = platform.system().lower() 
-        if os.path.exists(bin_path):
-                    # Add to current session PATH
-            os.environ["PATH"] += os.pathsep + bin_path
-            if os_type == "windows":
-                # Use setx to set the environment variable permanently in Windows
-                subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
-            else:
-                # On macOS/Linux, you can add the path to the shell profile file
-                profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
-                with open(profile_file, "a") as file:
-                    file.write(f'\nexport PATH="{bin_path}:$PATH"')
-                print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
-        else:
-            print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
-
-def add_to_env(executable: str = None,env_file=".env"):
-    # Check if .env file exists
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
-    
-    # Write the credentials to the .env file
-    with open(env_file, 'a') as file:  
-        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
-
-def is_installed(executable: str = None, name: str = None):
-    # Check if both executable and name are provided as strings
-    if not isinstance(executable, str) or not isinstance(name, str):
-        raise ValueError("Both 'executable' and 'name' must be strings.")
-    
-    # Check if the executable is on the PATH
-    path = shutil.which(executable)
-    if path:
-        add_to_env(executable)
-        return True
-    else: 
-        print(f"{name} is not on Path")
-        return False
-    
 def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 

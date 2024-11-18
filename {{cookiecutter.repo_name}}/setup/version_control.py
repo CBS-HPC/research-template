@@ -7,7 +7,7 @@ import urllib.request
 import importlib
 import shutil
 
-required_libraries = ['requests'] 
+required_libraries = ['requests','python-dotenv'] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -17,69 +17,11 @@ for lib in required_libraries:
 
 import requests
 
+#from dotenv import load_dotenv
 
-def ask_yes_no(question):
-    """
-    Prompt the user with a yes/no question and validate the input.
+from utils import ask_yes_no,add_to_path,is_installed
 
-    Args:
-        question (str): The question to display to the user.
 
-    Returns:
-        bool: True if the user confirms (yes/y), False if the user declines (no/n).
-    """
-    while True:
-        response = input(question).strip().lower()
-        if response in {"yes", "y"}:
-            return True
-        elif response in {"no", "n"}:
-            return False
-        else:
-            print("Invalid response. Please answer with 'yes' or 'no'.")
-
-def add_to_path(executable: str = None,bin_path: str = None):
-        """
-        Adds the path of an executalbe binary to the system PATH permanently.
-        """
-        os_type = platform.system().lower() 
-        if os.path.exists(bin_path):
-                    # Add to current session PATH
-            os.environ["PATH"] += os.pathsep + bin_path
-            if os_type == "windows":
-                # Use setx to set the environment variable permanently in Windows
-                subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
-            else:
-                # On macOS/Linux, you can add the path to the shell profile file
-                profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
-                with open(profile_file, "a") as file:
-                    file.write(f'\nexport PATH="{bin_path}:$PATH"')
-                print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
-        else:
-            print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
-
-def add_to_env(executable: str = None,env_file=".env"):
-    # Check if .env file exists
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
-    
-    # Write the credentials to the .env file
-    with open(env_file, 'a') as file:  
-        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
-
-def is_installed(executable: str = None, name: str = None):
-    # Check if both executable and name are provided as strings
-    if not isinstance(executable, str) or not isinstance(name, str):
-        raise ValueError("Both 'executable' and 'name' must be strings.")
-    
-    # Check if the executable is on the PATH
-    path = shutil.which(executable)
-    if path:
-        add_to_env(executable)
-        return True
-    else: 
-        print(f"{name} is not on Path")
-        return False
-  
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
     """Handle repository creation and log-in based on selected platform."""
 
@@ -151,7 +93,6 @@ def install_git(install_path=None):
 
             # Add Git to PATH¨
             add_to_path('Git',os.path.join(install_path, "bin"))
-            #os.environ["PATH"] += os.pathsep + os.path.join(install_path, "bin")
 
         elif os_type == "linux":
             # Install Git on Linux using apt
@@ -585,13 +526,12 @@ def install_rclone(install_path):
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
         add_to_path('rclone',rclone_path)
-        #_set_to_path(rclone_path)
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
         add_to_path('git-annex-remote-rclone',repo_path)
-        #_set_to_path(repo_path)
+
 
 def datalad_create():
 
