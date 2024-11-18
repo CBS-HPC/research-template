@@ -60,9 +60,7 @@ def set_from_env(executable: str, env_file=".env"):
     if os.path.exists(env_var):    
         if add_to_path(executable, os.path.dirname(env_var)):
             if shutil.which(executable):
-                print(f"{executable.upper()} from .env file has been set to path")
-                print(shutil.which(executable))
-                print(os.path.dirname(env_var))
+                print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
                 return True
     return False
 

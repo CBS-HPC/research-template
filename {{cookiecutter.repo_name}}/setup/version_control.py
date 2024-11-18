@@ -149,8 +149,6 @@ def check_git_config():
         env_email= load_from_env('GIT_EMAIL')
 
         # Test
-        print(env_name)
-        print(os.getcwd())
         if env_name and env_email:
             return True, env_name, env_email
 
@@ -690,7 +688,6 @@ def datalad_local_storage(repo_name):
     datalad_remote = get_remote_path(repo_name)
     if datalad_remote:
         subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
-
 
 version_control = "{{cookiecutter.version_control}}"
 repo_name = "{{ cookiecutter.repo_name }}"
