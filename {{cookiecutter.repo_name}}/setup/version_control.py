@@ -18,6 +18,11 @@ for lib in required_libraries:
 
 import requests
 
+# Add the directory to sys.path
+script_dir = "setup"
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
 from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env
 
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):

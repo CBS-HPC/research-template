@@ -17,7 +17,10 @@ for lib in required_libraries:
         print(f"Installing {lib}...")
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
-#from dotenv import load_dotenv
+# Add the directory to sys.path
+script_dir = "setup"
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
 
 from utils import add_to_path,is_installed,load_from_env,set_from_env
 
