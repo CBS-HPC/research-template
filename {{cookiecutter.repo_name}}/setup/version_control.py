@@ -6,6 +6,7 @@ import zipfile
 import urllib.request
 import importlib
 import shutil
+import re
 
 required_libraries = ['requests','python-dotenv'] 
 for lib in required_libraries:
@@ -455,7 +456,77 @@ def install_datalad():
                 return False           
         return True
 
+
+
+
+def install_git_annex_datalad():
+    # Run the datalad-installer command and capture the output
+    process = subprocess.Popen(
+        "echo y | datalad-installer git-annex -m datalad/git-annex:release",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True  # Ensures output is captured as a string
+    )
+
+    # Capture output and error in real time
+    stdout, stderr = process.communicate()
+
+    # If there is an error, print it
+    if process.returncode != 0:
+        print(f"Error during installation: {stderr}")
+        return None
+
+    # Print the captured output
+    print(stdout)
+
+    # Search for the final installation path in the output using a regular expression
+    match = re.search(r'git-annex is now installed at (.+)', stdout)
+    if match:
+        install_path = match.group(1)
+        print(f"git-annex installed at: {install_path}")
+        return install_path
+    else:
+        print("Installation path not found.")
+        return None
+
+# Example usage
+install_path = install_git_annex()
+
+
 def install_git_annex():
+    
+    def install_git_annex_datalad():
+        # Run the datalad-installer command and capture the output
+        process = subprocess.Popen(
+            "echo y | datalad-installer git-annex -m datalad/git-annex:release",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True  # Ensures output is captured as a string
+        )
+
+        # Capture output and error in real time
+        stdout, stderr = process.communicate()
+
+        # If there is an error, print it
+        if process.returncode != 0:
+            print(f"Error during installation: {stderr}")
+            return None
+
+        # Print the captured output
+        print(stdout)
+
+        # Search for the final installation path in the output using a regular expression
+        match = re.search(r'git-annex is now installed at (.+)', stdout)
+        if match:
+            install_path = match.group(1)
+            print(f"git-annex installed at: {install_path}")
+            return install_path
+        else:
+            print("Installation path not found.")
+            return None
+
     # Set from .env file
     if set_from_env('git-annex'):
         return True
@@ -464,7 +535,12 @@ def install_git_annex():
         try:
             if not shutil.which('datalad-installer'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
-            subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
+            #subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
+
+            git_annex_path = install_git_annex_datalad()
+            
+            if git_annex_path:
+                add_to_path('git-annex',git_annex_path)
 
             if not is_installed('git-annex','Git-Annex'):
                 print("Error during git-annex installation.")
@@ -563,7 +639,6 @@ def install_rclone(install_path):
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
         add_to_path('git-annex-remote-rclone',repo_path)
-
 
 def datalad_create():
 
