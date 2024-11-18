@@ -9,7 +9,7 @@ import zipfile
 import tarfile
 
 
-required_libraries = ['python-dotenv'] 
+required_libraries = [] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)

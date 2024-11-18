@@ -8,7 +8,7 @@ import importlib
 import shutil
 import re
 
-required_libraries = ['requests','python-dotenv'] 
+required_libraries = ['requests'] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -18,10 +18,7 @@ for lib in required_libraries:
 
 import requests
 
-#from dotenv import load_dotenv
-
 from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env
-
 
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
     """Handle repository creation and log-in based on selected platform."""

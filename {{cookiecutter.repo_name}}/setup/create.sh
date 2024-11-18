@@ -2,7 +2,7 @@
 
 # Get the repo_name and script paths passed from Python
 repo_name=$1
-setup_version_control_path=$2
+version_control_path=$2
 setup_remote_repository_path=$3
 
 # Check if repo_name is provided (i.e., not None)
@@ -16,18 +16,18 @@ else
 fi
 
 # Check if the script paths are provided and run them
-if [ -f "$setup_version_control_path" ]; then
-    echo "Running setup_version_control.py from $setup_version_control_path..."
-    python "$setup_version_control_path"
+if [ -f "$version_control_path" ]; then
+    echo "Running version_control.py from $version_control_path..."
+    python "$version_control_path"
 else
-    echo "Error: $setup_version_control_path not found."
+    echo "Error: $version_control_path not found."
 fi
 
-if [ -f "$setup_remote_repository_path" ]; then
-    echo "Running setup_remote_repository.py from $setup_remote_repository_path..."
-    python "$setup_remote_repository_path"
+if [ -f "$remote_repository_path" ]; then
+    echo "Running remote_repository.py from $remote_repository_path..."
+    python "$remote_repository_path"
 else
-    echo "Error: $setup_remote_repository_path not found."
+    echo "Error: $remote_repository_path not found."
 fi
 
 echo "Environment setup completed successfully."
