@@ -3,7 +3,7 @@
 # Get the repo_name and script paths passed from Python
 repo_name=$1
 version_control_path=$2
-setup_remote_repository_path=$3
+remote_repository_path=$3
 
 # Check if repo_name is provided (i.e., not None)
 if [ "$repo_name" != "None" ]; then
