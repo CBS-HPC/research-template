@@ -129,7 +129,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         if virtual_environment == 'R':
              install_packages.extend(['r-base'])
 
-        if version_control in ['Git','DVC','Datalad']:
+        if version_control in ['Git','DVC','Datalad'] and not is_installed('git', 'Git'):
              install_packages.extend(['git'])   
            
         elif version_control == 'Datalad'and not is_installed('rclone', 'Rclone'):    

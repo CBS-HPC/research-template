@@ -9,7 +9,7 @@ import zipfile
 import tarfile
 
 
-required_libraries = ['distro'] 
+required_libraries = [] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -17,7 +17,7 @@ for lib in required_libraries:
         print(f"Installing {lib}...")
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
-import distro
+
 
 def add_to_path(executable: str = None,bin_path: str = None):
         """
@@ -305,19 +305,9 @@ def install_gh(install_path=None):
             print(f"GitHub CLI (gh) installed successfully to {install_path}.")
 
         elif os_type == "linux":
-            distro_name = distro.name().lower()
-            if "ubuntu" in distro_name or "debian" in distro_name:
-                subprocess.run(["sudo", "apt", "update"], check=True)
-                command = ["sudo", "apt", "install", "-y", "gh"]
-            elif "centos" in distro_name or "rhel" in distro_name:
-                command = ["sudo", "yum", "install", "-y", "gh"]
-            else:
-                print(f"Unsupported Linux distribution: {distro_name}")
-                return False
-            
-            subprocess.run(command, check=True)
-            print(f"GitHub CLI (gh) installed successfully on {distro_name}.")
-
+            subprocess.run(["sudo", "apt", "update"], check=True)
+            subprocess.run(["sudo", "apt", "install", "-y", "gh"], check=True)
+            print(f"GitHub CLI (gh) installed successfully.")
         else:
             print("Unsupported operating system.")
             return False
@@ -336,7 +326,6 @@ def install_gh(install_path=None):
         if os_type == "windows" and 'installer_name' in locals() and os.path.exists(installer_name):
             os.remove(installer_name)
             print(f"Installer {installer_name} removed.")
-
 
 repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
