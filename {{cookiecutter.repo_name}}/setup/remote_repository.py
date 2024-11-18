@@ -87,6 +87,7 @@ def repo_init(repo_platform):
     try:
         # Check if the user is logged in
         subprocess.run([repo_platform, "auth", "status"], capture_output=True, text=True, check=True)
+        return True 
     except Exception as e:
         try:
             subprocess.run([repo_platform, "auth", "login"], check=True)
