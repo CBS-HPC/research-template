@@ -8,7 +8,6 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-
 def create_steps(language, folder_path, script_name, purpose):
     """
     Creates an individual script (R or Python) with the necessary structure.
@@ -150,9 +149,9 @@ def create_scripts(language, folder_path):
     # Create the workflow script that runs all steps
     create_workflow(language, folder_path)
 
-
+virtual_environment = "{{ cookiecutter.virtual_environment}}"
 # Creates default scripts:
-create_scripts("{{ cookiecutter.virtual_environment}}", "src")
+create_scripts(virtual_environment, "src")
 
 
 # Run the script
