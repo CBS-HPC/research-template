@@ -8,12 +8,10 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-import os
-
 def create_step_script(language, folder_path, script_name, purpose):
     """
     Creates an individual script (R or Python) with the necessary structure.
-
+    
     Parameters:
     language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the script will be saved.
@@ -63,7 +61,7 @@ if __name__ == "__main__":
 def create_workflow_script(language, folder_path):
     """
     Creates a workflow script that runs all steps in order.
-
+    
     Parameters:
     language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the workflow script will be saved.
@@ -124,7 +122,7 @@ def create_project_scripts(language, folder_path):
     """
     Creates a project structure with specific scripts for data science tasks
     and a workflow script in R or Python.
-
+    
     Parameters:
     language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the scripts will be saved.
@@ -148,6 +146,10 @@ def create_project_scripts(language, folder_path):
 
     # Create the workflow script that runs all steps
     create_workflow_script(language, folder_path)
+
+# Example usage
+# create_project_scripts("python", "./data_science_project")
+# create_project_scripts("r", "./data_science_project")
 
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
