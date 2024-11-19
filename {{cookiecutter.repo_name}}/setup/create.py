@@ -4,54 +4,281 @@ import sys
 import platform
 import urllib.request
 import os
-import shutil
+from textwrap import dedent
+
+
+required_libraries = ['nbformat'] 
+for lib in required_libraries:
+    try:
+        importlib.import_module(lib)
+    except ImportError:
+        print(f"Installing {lib}...")
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+
+import nbformat as nbf  # For creating Jupyter notebooks
+
 
 # Add the directory to sys.path
 script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-
 from utils import ask_yes_no,is_installed,set_from_env
 
 
-def copy_templates(language, folder_path):
+# Script creation
+def create_step_script(language, folder_path, script_name, purpose):
     """
-    Copies the files from the template folders (R or Python) to the specified folder path,
-    and deletes the template folders afterwards.
+    Creates an individual script (R or Python) with the necessary structure.
     
     Parameters:
     language (str): "r" for R, "python" for Python.
-    folder_path (str): The directory where the templates will be copied.
+    folder_path (str): The directory where the script will be saved.
+    script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
+    purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
     """
-    # Define template folders for R and Python
-    template_folders = {"r": "R", "python": "python"}
+    if language.lower() == "r":
+        extension = ".R"
+        # Wrap the entire R script content in the raw block
+        content = f"""# {% raw %}
+# {purpose} code
 
+run_{script_name} <- function() {{
+    # {purpose} code
+    print('Running {script_name}...')
+}}
+
+# If you want to test this script independently, you can call the run() function directly.
+if (interactive()) {{
+    run_{script_name}()
+}}
+# {% endraw %}
+"""
+    elif language.lower() == "python":
+        extension = ".py"
+        # Wrap the entire Python script content in the raw block
+        content = f"""# {% raw %}
+# {purpose} code
+
+def run_{script_name}():
+    # {purpose} code
+    print("Running {script_name}...")
+
+# If you want to test this script independently, you can call the run() function directly.
+if __name__ == "__main__":
+    run_{script_name}()
+# {% endraw %}
+"""
+    else:
+        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+
+    # Define the file path for saving the script
+    file_name = f"{script_name}{extension}"
+    file_path = os.path.join(folder_path, file_name)
+
+    # Write the script content to the file
+    with open(file_path, "w") as file:
+        file.write(content)
+    print(f"Created: {file_path}")
+
+def create_workflow_script(language, folder_path):
+    """
+    Creates a workflow script that runs all steps in order.
+    
+    Parameters:
+    language (str): "r" for R, "python" for Python.
+    folder_path (str): The directory where the workflow script will be saved.
+    """
+    if language.lower() == "r":
+        extension = ".R"
+        # Wrap the entire R workflow script content in the raw block
+        content = """
+# {% raw %}
+# Workflow: Running all steps in order
+
+# Run data collection
+source('data_collection.R')
+
+# Run preprocessing
+source('preprocessing.R')
+
+# Run modeling
+source('modeling.R')
+
+# Run visualization
+source('visualization.R')
+# {% endraw %}
+"""
+    elif language.lower() == "python":
+        extension = ".py"
+        # Wrap the entire Python workflow script content in the raw block
+        content = """
+# {% raw %}
+# Workflow: Running all steps in order
+
+# Run data collection
+import data_collection
+data_collection.run_data_collection()
+
+# Run preprocessing
+import preprocessing
+preprocessing.run_preprocessing()
+
+# Run modeling
+import modeling
+modeling.run_modeling()
+
+# Run visualization
+import visualization
+visualization.run_visualization()
+# {% endraw %}
+"""
+    else:
+        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+
+    # Define the file path for the workflow script
+    workflow_file_name = f"workflow{extension}"
+    workflow_file_path = os.path.join(folder_path, workflow_file_name)
+
+    # Write the workflow script content to the file
+    with open(workflow_file_path, "w") as file:
+        file.write(content)
+    print(f"Created: {workflow_file_path}")
+
+def create_project_scripts(language, folder_path):
+    """
+    Creates a project structure with specific scripts for data science tasks
+    and a workflow script in R or Python.
+    
+    Parameters:
+    language (str): "r" for R, "python" for Python.
+    folder_path (str): The directory where the scripts will be saved.
+    """
     # Ensure the folder exists
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
-    # Get the folder name based on the language
-    template_folder = template_folders.get(language.lower())
-    if not template_folder:
-        raise ValueError("Invalid language. Choose either 'r' or 'python'.")
+    # Script details based on purpose
+    scripts = {
+        "data_collection": "Data extraction/scraping",
+        "preprocessing": "Data cleaning, transformation, feature engineering",
+        "modeling": "Training and evaluation of models",
+        "utils": "Helper functions or utilities",
+        "visualization": "Functions for plots and visualizations"
+    }
 
-    # Define the source and destination paths
-    template_folder_path = os.path.join(os.getcwd(), template_folder)  # Assuming the templates are in the current directory
-    if not os.path.exists(template_folder_path):
-        raise FileNotFoundError(f"Template folder for {language} does not exist.")
+    # Create the individual step scripts
+    for script_name, purpose in scripts.items():
+        create_step_script(language, folder_path, script_name, purpose)
 
-    # Copy the files from the template folder to the specified folder path
-    for file_name in os.listdir(template_folder_path):
-        file_path = os.path.join(template_folder_path, file_name)
-        if os.path.isfile(file_path):
-            shutil.copy(file_path, folder_path)
-            print(f"Copied: {file_name} to {folder_path}")
+    # Create the workflow script that runs all steps
+    create_workflow_script(language, folder_path)
 
-    # Delete the template folder after copying
-    shutil.rmtree(template_folder_path)
-    print(f"Deleted template folder: {template_folder_path}")
+def create_notebookes(language, folder_path):
+    """
+    Creates a notebook (Jupyter for Python, RMarkdown for R) containing the workflow steps.
+    
+    Parameters:
+    language (str): "r" for R (RMarkdown), "python" for Python (Jupyter notebook).
+    folder_path (str): The directory where the notebook or RMarkdown file will be saved.
+    """
+    # Define the file name based on the language
+    if language == "python":
+        file_name = "workflow_notebook.ipynb"
+        file_path = os.path.join(folder_path, file_name)
 
+        # Create a new Jupyter notebook
+        nb = nbf.v4.new_notebook()
+
+        # Add markdown and code cells for each workflow step
+        cells = [
+            nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
+            nbf.v4.new_code_cell("""
+                {% raw %}
+                import data_collection
+                data_collection.run_data_collection()
+                {% endraw %}
+            """),
+            nbf.v4.new_code_cell("""
+                {% raw %}
+                import preprocessing
+                preprocessing.run_preprocessing()
+                {% endraw %}
+            """),
+            nbf.v4.new_code_cell("""
+                {% raw %}
+                import modeling
+                modeling.run_modeling()
+                {% endraw %}
+            """),
+            nbf.v4.new_code_cell("""
+                {% raw %}
+                import visualization
+                visualization.run_visualization()
+                {% endraw %}
+            """)
+        ]
+        nb.cells.extend(cells)
+
+        # Write the notebook to a file
+        with open(file_path, "w") as f:
+            nbf.write(nb, f)
+        print(f"Created: {file_path}")
+
+    elif language == "r":
+        file_name = "workflow.Rmd"
+        file_path = os.path.join(folder_path, file_name)
+
+        # Create RMarkdown content
+        content = dedent("""
+        ---
+        title: "Workflow: Running all steps in order"
+        output: html_document
+        ---
+
+        # Workflow
+
+        ## Run data collection
+        ```{r}
+        {% raw %}
+        source('data_collection.R')
+        run_data_collection()
+        {% endraw %}
+        ```
+
+        ## Run preprocessing
+        ```{r}
+        {% raw %}
+        source('preprocessing.R')
+        run_preprocessing()
+        {% endraw %}
+        ```
+
+        ## Run modeling
+        ```{r}
+        {% raw %}
+        source('modeling.R')
+        run_modeling()
+        {% endraw %}
+        ```
+
+        ## Run visualization
+        ```{r}
+        {% raw %}
+        source('visualization.R')
+        run_visualization()
+        {% endraw %}
+        ```
+        """)
+
+        # Write the RMarkdown content to a file
+        with open(file_path, "w") as file:
+            file.write(content)
+        print(f"Created: {file_path}")
+    else:
+        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+
+# 
 def get_hardware_info():
     """
     Extract hardware information and save it to a file.
@@ -415,12 +642,13 @@ repo_platform = "{{ cookiecutter.repository_platform}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 
-# Creates default scripts:
-#copy_templates(virtual_environment, "src")
+
+# Create scripts and nptebooks
+create_project_scripts(virtual_environment, "src")
+create_notebookes(virtual_environment, "notebooks")
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
-
 
 os_type = platform.system().lower()
 
