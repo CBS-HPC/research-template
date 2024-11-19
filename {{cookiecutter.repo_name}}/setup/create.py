@@ -177,9 +177,7 @@ def create_project_scripts(language, folder_path):
     # Create the workflow script that runs all steps
     create_workflow_script(language, folder_path)
 
-
-
-def create_notebookes(language, folder_path, src_folder):
+def create_notebooks(language, folder_path, src_folder):
     """
     Creates a notebook (Jupyter for Python, RMarkdown for R) containing the workflow steps
     and loads all scripts from the src_folder in the first cell.
@@ -190,14 +188,13 @@ def create_notebookes(language, folder_path, src_folder):
     src_folder (str): The directory where the source scripts (e.g., data_collection.R, preprocessing.R) are located.
     """
     # Ensure the notebooks folder exists
-    notebooks_folder = os.path.join(folder_path, "notebooks")
-    if not os.path.exists(notebooks_folder):
-        os.makedirs(notebooks_folder)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
 
     # Define the file name based on the language
     if language.lower() == "python":
         file_name = "workflow_notebook.ipynb"
-        file_path = os.path.join(notebooks_folder, file_name)
+        file_path = os.path.join(folder_path, file_name)
 
    
         nb = nbf.v4.new_notebook()
@@ -215,25 +212,13 @@ def create_notebookes(language, folder_path, src_folder):
                 import visualization
             {% endraw %}"""),
             nbf.v4.new_markdown_cell("## Run data collection"),
-            nbf.v4.new_code_cell("""{% raw %}
-                # Run data collection
-                data_collection.run()
-            {% endraw %}"""),
+            nbf.v4.new_code_cell("""data_collection.run()"""),
             nbf.v4.new_markdown_cell("## Run preprocessing"),
-            nbf.v4.new_code_cell("""{% raw %}
-                # Run preprocessing
-                preprocessing.run()
-            {% endraw %}"""),
+            nbf.v4.new_code_cell("""preprocessing.run()"""),
             nbf.v4.new_markdown_cell("## Run modeling"),
-            nbf.v4.new_code_cell("""{% raw %}
-                # Run modeling
-                modeling.run()
-            """),
+            nbf.v4.new_code_cell("""modeling.run()"""),
             nbf.v4.new_markdown_cell("## Run visualization"),
-            nbf.v4.new_code_cell("""{% raw %}
-                # Run visualization
-                visualization.run()
-            {% endraw %}"""),
+            nbf.v4.new_code_cell("""visualization.run()""")
         ]
         nb.cells.extend(cells)
 
@@ -286,8 +271,6 @@ def create_notebookes(language, folder_path, src_folder):
         print(f"Created: {file_path}")
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
-
-
 
 
 # 
@@ -657,7 +640,7 @@ remote_storage = "{{cookiecutter.remote_storage}}"
 
 # Create scripts and nptebooks
 create_project_scripts(virtual_environment, "src")
-create_notebookes(virtual_environment, "notebooks", "src")
+create_notebooks(virtual_environment, "notebooks", "src")
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
