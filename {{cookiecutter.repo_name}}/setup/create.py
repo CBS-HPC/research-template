@@ -61,13 +61,13 @@ if (interactive()) {{
         content = f"""# {% raw %}
 # {purpose} code
 
-def run_{script_name}():
+def run():
     # {purpose} code
     print("Running {script_name}...")
 
 # If you want to test this script independently, you can call the run() function directly.
 if __name__ == "__main__":
-    run_{script_name}()
+    run()
 # {% endraw %}
 """
     else:
@@ -117,21 +117,23 @@ source('visualization.R')
 # {% raw %}
 # Workflow: Running all steps in order
 
-# Run data collection
+# Load Scripts
 import data_collection
-data_collection.run_data_collection()
+import preprocessing
+import modeling
+import visualization
+
+# Run data collection
+data_collection.run()
 
 # Run preprocessing
-import preprocessing
-preprocessing.run_preprocessing()
+preprocessing.run()
 
 # Run modeling
-import modeling
-modeling.run_modeling()
+modeling.run()
 
 # Run visualization
-import visualization
-visualization.run_visualization()
+visualization.run()
 # {% endraw %}
 """
     else:
@@ -194,22 +196,18 @@ def create_notebookes(language, folder_path):
         # Add markdown and code cells for each workflow step
         cells = [
             nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
+            
             nbf.v4.new_code_cell("""{% raw %}
-                import data_collection
-                data_collection.run_data_collection()
+                data_collection.run()
                 {% endraw %}"""),
             nbf.v4.new_code_cell("""{% raw %}
-                import preprocessing
-                preprocessing.run_preprocessing()
+                preprocessing.run()
                 {% endraw %}"""),
             nbf.v4.new_code_cell("""{% raw %}
-                import modeling
-                modeling.run_modeling()
+                modeling.run()
                 {% endraw %}"""),
-            nbf.v4.new_code_cell("""
-                {% raw %}
-                import visualization
-                visualization.run_visualization()
+            nbf.v4.new_code_cell("""{% raw %}
+                visualization.run()
                 {% endraw %}""")
         ]
         nb.cells.extend(cells)
@@ -271,6 +269,125 @@ def create_notebookes(language, folder_path):
         print(f"Created: {file_path}")
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+
+
+import os
+from textwrap import dedent
+
+def create_notebook_or_rmd(language, folder_path, src_folder):
+    """
+    Creates a notebook (Jupyter for Python, RMarkdown for R) containing the workflow steps
+    and loads all scripts from the src_folder in the first cell.
+    
+    Parameters:
+    language (str): "r" for R (RMarkdown), "python" for Python (Jupyter notebook).
+    folder_path (str): The directory where the notebook or RMarkdown file will be saved.
+    src_folder (str): The directory where the source scripts (e.g., data_collection.R, preprocessing.R) are located.
+    """
+    # Ensure the notebooks folder exists
+    notebooks_folder = os.path.join(folder_path, "notebooks")
+    if not os.path.exists(notebooks_folder):
+        os.makedirs(notebooks_folder)
+
+    # Define the file name based on the language
+    if language.lower() == "python":
+        file_name = "workflow_notebook.ipynb"
+        file_path = os.path.join(notebooks_folder, file_name)
+
+   
+        nb = nbf.v4.new_notebook()
+
+        # First cell: Import all scripts
+        cells = [
+            nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
+            nbf.v4.new_markdown_cell("## Loading Scripts"),
+            nbf.v4.new_code_cell(f"""
+                import sys
+                sys.path.append('{src_folder}')
+                import data_collection
+                import preprocessing
+                import modeling
+                import visualization
+            """),
+            nbf.v4.new_markdown_cell("## Run data collection"),
+            nbf.v4.new_code_cell("""
+                # Run data collection
+                data_collection.run()
+            """),
+            nbf.v4.new_markdown_cell("## Run preprocessing"),
+            nbf.v4.new_code_cell("""
+                # Run preprocessing
+                preprocessing.run()
+            """),
+            nbf.v4.new_markdown_cell("## Run modeling"),
+            nbf.v4.new_code_cell("""
+                # Run modeling
+                modeling.run()
+            """),
+            nbf.v4.new_markdown_cell("## Run visualization"),
+            nbf.v4.new_code_cell("""
+                # Run visualization
+                visualization.run()
+            """),
+        ]
+        nb.cells.extend(cells)
+
+        # Write the notebook to a file
+        with open(file_path, "w") as f:
+            nbf.write(nb, f)
+        print(f"Created: {file_path}")
+
+    elif language.lower() == "r":
+        file_name = "workflow.Rmd"
+        file_path = os.path.join(notebooks_folder, file_name)
+
+        # Create RMarkdown content with the requested structure
+        content = dedent(f"""
+        ---
+        title: "Workflow: Running all steps in order"
+        output: html_document
+        ---
+
+        # Workflow
+
+        ## Load Scripts
+        ```{{r}}
+        source('{os.path.join(src_folder, "data_collection.R")}')
+        source('{os.path.join(src_folder, "preprocessing.R")}')
+        source('{os.path.join(src_folder, "modeling.R")}')
+        source('{os.path.join(src_folder, "visualization.R")}')
+        ```
+
+        ## Run data collection
+        ```{{r}}
+        run_data_collection()
+        ```
+
+        ## Run preprocessing
+        ```{{r}}
+        run_preprocessing()
+        ```
+
+        ## Run modeling
+        ```{{r}}
+        run_modeling()
+        ```
+
+        ## Run visualization
+        ```{{r}}
+        run_visualization()
+        ```
+        """)
+
+        # Write the RMarkdown content to a file
+        with open(file_path, "w") as file:
+            file.write(content)
+        print(f"Created: {file_path}")
+    else:
+        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+
+
+
 
 # 
 def get_hardware_info():
