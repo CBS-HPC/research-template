@@ -194,30 +194,23 @@ def create_notebookes(language, folder_path):
         # Add markdown and code cells for each workflow step
         cells = [
             nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
-            nbf.v4.new_code_cell("""
-                {% raw %}
+            nbf.v4.new_code_cell("""{% raw %}
                 import data_collection
                 data_collection.run_data_collection()
-                {% endraw %}
-            """),
-            nbf.v4.new_code_cell("""
-                {% raw %}
+                {% endraw %}"""),
+            nbf.v4.new_code_cell("""{% raw %}
                 import preprocessing
                 preprocessing.run_preprocessing()
-                {% endraw %}
-            """),
-            nbf.v4.new_code_cell("""
-                {% raw %}
+                {% endraw %}"""),
+            nbf.v4.new_code_cell("""{% raw %}
                 import modeling
                 modeling.run_modeling()
-                {% endraw %}
-            """),
+                {% endraw %}"""),
             nbf.v4.new_code_cell("""
                 {% raw %}
                 import visualization
                 visualization.run_visualization()
-                {% endraw %}
-            """)
+                {% endraw %}""")
         ]
         nb.cells.extend(cells)
 
