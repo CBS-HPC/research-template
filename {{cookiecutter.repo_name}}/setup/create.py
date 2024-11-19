@@ -5,6 +5,7 @@ import platform
 import urllib.request
 import os
 from textwrap import dedent
+import importlib
 
 
 required_libraries = ['nbformat'] 
