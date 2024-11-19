@@ -364,6 +364,54 @@ def export_conda_env(env_name, output_file='environment.yml'):
         print(f"An error occurred: {e}")
 
 
+# Create scripts:
+def create_scripts(language, folder_path):
+    """
+    Creates a project structure with specific scripts for data science tasks.
+
+    Parameters:
+    language (str): "R" or "Python" to specify the script language.
+    folder_path (str): The directory where the scripts will be saved.
+    """
+    # Ensure the folder exists
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Script details based on purpose
+    scripts = {
+        "data_collection": "Data extraction/scraping",
+        "preprocessing": "Data cleaning, transformation, feature engineering",
+        "exploration": "Exploratory Data Analysis (EDA)",
+        "modeling": "Training and evaluation of models",
+        "utils": "Helper functions or utilities",
+        "visualization": "Functions for plots and visualizations"
+    }
+
+    # Ensure correct language choice
+    language = language.lower()
+    if language == "r":
+        extension = ".R"
+        template = lambda purpose: f"# {purpose}\n\n# Write your R code here."
+    elif language == "python":
+        extension = ".py"
+        template = lambda purpose: f"# {purpose}\n\n# Write your Python code here."
+    else:
+        return
+
+    # Create scripts with appropriate content
+    for script_name, purpose in scripts.items():
+        file_name = f"{script_name}{extension}"
+        file_path = os.path.join(folder_path, file_name)
+        with open(file_path, "w") as file:
+            file.write(template(purpose))
+        print(f"Created: {file_path}")
+
+# Example usage
+# create_project_scripts("Python", "./data_science_project")
+# create_project_scripts("R", "./data_science_project")
+
+
+
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
 setup_bash_script = "setup/create.sh"
@@ -380,6 +428,9 @@ remote_storage = "{{cookiecutter.remote_storage}}"
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
+
+# Creates default scripts:
+create_scripts(virtual_environment, "src")
 
 os_type = platform.system().lower()
 
