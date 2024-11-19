@@ -17,7 +17,7 @@ def create_step_script(language, folder_path, script_name, purpose):
     script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
     purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
     """
-    if language == "r":
+    if language.lower() == "r":
         extension = ".R"
         # Wrap the entire R script content in the raw block
         content = f"""# {% raw %}
@@ -34,7 +34,7 @@ if (interactive()) {{
 }}
 # {% endraw %}
 """
-    elif language == "python":
+    elif language.lower() == "python":
         extension = ".py"
         # Wrap the entire Python script content in the raw block
         content = f"""# {% raw %}
@@ -69,7 +69,7 @@ def create_workflow_script(language, folder_path):
     language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the workflow script will be saved.
     """
-    if language == "r":
+    if language.lower() == "r":
         extension = ".R"
         # Wrap the entire R workflow script content in the raw block
         content = """
@@ -89,7 +89,7 @@ source('modeling.R')
 source('visualization.R')
 # {% endraw %}
 """
-    elif language == "python":
+    elif language.lower() == "python":
         extension = ".py"
         # Wrap the entire Python workflow script content in the raw block
         content = """
