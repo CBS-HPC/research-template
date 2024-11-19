@@ -22,28 +22,26 @@ def create_steps(language, folder_path, script_name, purpose):
         extension = ".R"
         content = f"""# {purpose}
 
-    run_{script_name} <- function() {{
-        # {purpose} code
-        print('Running {script_name}...')
-    }}
+run_{script_name} <- function() {{
+    print('Running {script_name}...')
+}}
 
-    # If you want to test this script independently, you can call the run() function directly.
-    if (interactive()) {{
-        run_{script_name}()
-    }}
-    """
+# If you want to test this script independently, you can call the run() function directly.
+if (interactive()) {{
+    run_{script_name}()
+}}
+"""
     elif language == "python":
-            extension = ".py"
-            content = f"""# {purpose}
+        extension = ".py"
+        content = f"""# {purpose}
 
-    def run_{script_name}():
-        # {purpose} code
-        print("Running {script_name}...")
+def run_{script_name}():
+    print("Running {script_name}...")
 
-    # If you want to test this script independently, you can call the run() function directly.
-    if __name__ == "__main__":
-        run_{script_name}()
-    """
+# If you want to test this script independently, you can call the run() function directly.
+if __name__ == "__main__":
+    run_{script_name}()
+"""
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
 
