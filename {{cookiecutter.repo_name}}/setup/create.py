@@ -416,7 +416,7 @@ version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 
 # Creates default scripts:
-copy_templates(virtual_environment, "src")
+#copy_templates(virtual_environment, "src")
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
