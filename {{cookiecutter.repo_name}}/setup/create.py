@@ -177,7 +177,7 @@ def create_project_scripts(language, folder_path):
     # Create the workflow script that runs all steps
     create_workflow_script(language, folder_path)
 
-def create_notebooks(language, folder_path, src_folder):
+def create_notebooks(language, folder_path):
     """
     Creates a notebook (Jupyter for Python, RMarkdown for R) containing the workflow steps
     and loads all scripts from the src_folder in the first cell.
@@ -203,14 +203,12 @@ def create_notebooks(language, folder_path, src_folder):
         cells = [
             nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
             nbf.v4.new_markdown_cell("## Loading Scripts"),
-            nbf.v4.new_code_cell("""{% raw %}
-                import sys
+            nbf.v4.new_code_cell("""import sys
                 sys.path.append('src')
                 import data_collection
                 import preprocessing
                 import modeling
-                import visualization
-            {% endraw %}"""),
+                import visualization"""),
             nbf.v4.new_markdown_cell("## Run data collection"),
             nbf.v4.new_code_cell("""data_collection.run()"""),
             nbf.v4.new_markdown_cell("## Run preprocessing"),
@@ -229,7 +227,7 @@ def create_notebooks(language, folder_path, src_folder):
 
     elif language.lower() == "r":
         file_name = "workflow.Rmd"
-        file_path = os.path.join(notebooks_folder, file_name)
+        file_path = os.path.join(folder_path, file_name)
 
         # Create RMarkdown content with the requested structure
         content = dedent("""{% raw %}
@@ -271,7 +269,6 @@ def create_notebooks(language, folder_path, src_folder):
         print(f"Created: {file_path}")
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
-
 
 # 
 def get_hardware_info():
@@ -640,7 +637,7 @@ remote_storage = "{{cookiecutter.remote_storage}}"
 
 # Create scripts and nptebooks
 create_project_scripts(virtual_environment, "src")
-create_notebooks(virtual_environment, "notebooks", "src")
+create_notebooks(virtual_environment, "notebooks")
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
