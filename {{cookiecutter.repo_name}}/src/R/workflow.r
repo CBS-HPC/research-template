@@ -1,3 +1,4 @@
+{% raw %}
 source('data_collection.R')
 source('preprocessing.R')
 source('modeling.R')
@@ -13,3 +14,4 @@ run_workflow <- function() {
 }
 
 run_workflow()
+{% endraw %}
