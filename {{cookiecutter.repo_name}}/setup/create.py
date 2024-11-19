@@ -184,7 +184,7 @@ def create_notebookes(language, folder_path):
     folder_path (str): The directory where the notebook or RMarkdown file will be saved.
     """
     # Define the file name based on the language
-    if language == "python":
+    if language.lower() == "python":
         file_name = "workflow_notebook.ipynb"
         file_path = os.path.join(folder_path, file_name)
 
@@ -226,7 +226,7 @@ def create_notebookes(language, folder_path):
             nbf.write(nb, f)
         print(f"Created: {file_path}")
 
-    elif language == "r":
+    elif language.lower() == "r":
         file_name = "workflow.Rmd"
         file_path = os.path.join(folder_path, file_name)
 
