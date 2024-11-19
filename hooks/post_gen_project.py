@@ -22,9 +22,9 @@ def create_steps(language, folder_path, script_name, purpose):
         extension = ".R"
         content = f"""# {purpose}
 
-run_{script_name} <- function() {{
-    # {purpose} code
-    print('Running {script_name}...')
+run_{{ script_name }} <- function() {{
+    # {{ purpose }} code
+    print('Running {{ script_name }}...')
 }}
 
 # If you want to test this script independently, you can call the run() function directly.
