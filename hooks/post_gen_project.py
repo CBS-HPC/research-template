@@ -151,7 +151,7 @@ def create_scripts(language, folder_path):
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
 # Creates default scripts:
-create_scripts(virtual_environment, "src")
+#create_scripts(virtual_environment, "src")
 
 
 # Run the script
