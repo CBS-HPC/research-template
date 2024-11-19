@@ -1,4 +1,3 @@
-# Source the step scripts
 source('data_collection.R')
 source('preprocessing.R')
 source('modeling.R')
