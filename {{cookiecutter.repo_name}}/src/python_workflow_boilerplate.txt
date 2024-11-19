@@ -1,0 +1,17 @@
+# Workflow: Running all steps in order
+
+# Run data collection
+import data_collection
+data_collection.run_data_collection()
+
+# Run preprocessing
+import preprocessing
+preprocessing.run_preprocessing()
+
+# Run modeling
+import modeling
+modeling.run_modeling()
+
+# Run visualization
+import visualization
+visualization.run_visualization()

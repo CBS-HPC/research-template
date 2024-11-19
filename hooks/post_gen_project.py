@@ -8,6 +8,31 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
+def load_boilerplate(language,folder_path,script_type="step"):
+    """
+    Loads the boilerplate code from text files depending on the language (Python or R) and script type (step or workflow).
+    """
+    if script_type == "step":
+        if language == "python":
+            file_path = "python_boilerplate.txt"
+        elif language == "r":
+            file_path = "r_boilerplate.txt"
+        else:
+            raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+    elif script_type == "workflow":
+        if language == "python":
+            file_path = "python_workflow_boilerplate.txt"
+        elif language == "r":
+            file_path = "r_workflow_boilerplate.txt"
+        else:
+            raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+    else:
+        raise ValueError("Invalid script_type. It must be 'step' or 'workflow'.")
+    
+    file_path = os.path.join(folder_path, file_path)
+    with open(file_path, "r") as file:
+        return file.read()
+
 def create_step_script(language, folder_path, script_name, purpose):
     """
     Creates an individual script (R or Python) with the necessary structure.
@@ -18,38 +43,18 @@ def create_step_script(language, folder_path, script_name, purpose):
     script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
     purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
     """
-    if language == "r":
-        extension = ".R"
-        # Create the R script content with placeholders replaced directly in the string
-        content = f"""# {purpose}
+    # Load the boilerplate code from text files
+    boilerplate = load_boilerplate(language,folder_path ,script_type="step")
 
-run_{script_name} <- function() {{
-    # {purpose} code
-    print('Running {script_name}...')
-}}
-
-# If you want to test this script independently, you can call the run() function directly.
-if (interactive()) {{
-    run_{script_name}()
-}}
-"""
-    elif language == "python":
-        extension = ".py"
-        # Create the Python script content with placeholders replaced directly in the string
-        content = f"""# {purpose}
-
-def run_{script_name}():
-    # {purpose} code
-    print("Running {script_name}...")
-
-# If you want to test this script independently, you can call the run() function directly.
-if __name__ == "__main__":
-    run_{script_name}()
-"""
-    else:
-        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+    # Replace placeholders in the boilerplate code
+    content = boilerplate.format(script_name=script_name, purpose=purpose)
 
     # Define the file path for saving the script
+    if language == "python":
+        extension = ".py"
+    elif language == "r":
+        extension = ".R"
+    
     file_name = f"{script_name}{extension}"
     file_path = os.path.join(folder_path, file_name)
 
@@ -66,56 +71,21 @@ def create_workflow_script(language, folder_path):
     language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the workflow script will be saved.
     """
-    if language == "r":
-        extension = ".R"
-        # Create the R workflow script content
-        content = """
-# Workflow: Running all steps in order
-
-# Run data collection
-source('data_collection.R')
-
-# Run preprocessing
-source('preprocessing.R')
-
-# Run modeling
-source('modeling.R')
-
-# Run visualization
-source('visualization.R')
-"""
-    elif language == "python":
-        extension = ".py"
-        # Create the Python workflow script content
-        content = """
-# Workflow: Running all steps in order
-
-# Run data collection
-import data_collection
-data_collection.run_data_collection()
-
-# Run preprocessing
-import preprocessing
-preprocessing.run_preprocessing()
-
-# Run modeling
-import modeling
-modeling.run_modeling()
-
-# Run visualization
-import visualization
-visualization.run_visualization()
-"""
-    else:
-        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+    # Load the workflow boilerplate
+    boilerplate = load_boilerplate(language,folder_path,script_type="workflow")
 
     # Define the file path for the workflow script
+    if language == "python":
+        extension = ".py"
+    elif language == "r":
+        extension = ".R"
+
     workflow_file_name = f"workflow{extension}"
     workflow_file_path = os.path.join(folder_path, workflow_file_name)
 
     # Write the workflow script content to the file
     with open(workflow_file_path, "w") as file:
-        file.write(content)
+        file.write(boilerplate)
     print(f"Created: {workflow_file_path}")
 
 def create_project_scripts(language, folder_path):
@@ -146,11 +116,6 @@ def create_project_scripts(language, folder_path):
 
     # Create the workflow script that runs all steps
     create_workflow_script(language, folder_path)
-
-# Example usage
-# create_project_scripts("python", "./data_science_project")
-# create_project_scripts("r", "./data_science_project")
-
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
 # Creates default scripts:
