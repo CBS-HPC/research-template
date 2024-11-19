@@ -8,7 +8,9 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-def create_steps(language, folder_path, script_name, purpose):
+import os
+
+def create_step_script(language, folder_path, script_name, purpose):
     """
     Creates an individual script (R or Python) with the necessary structure.
 
@@ -20,30 +22,32 @@ def create_steps(language, folder_path, script_name, purpose):
     """
     if language == "r":
         extension = ".R"
-        content = f"""# {{ purpose }}
+        # Create the R script content with placeholders replaced directly in the string
+        content = f"""# {purpose}
 
-    run_{{ script_name }} <- function() {{
-        # {{ purpose }} code
-        print('Running {{ script_name }}...')
-    }}
+run_{script_name} <- function() {{
+    # {purpose} code
+    print('Running {script_name}...')
+}}
 
-    # If you want to test this script independently, you can call the run() function directly.
-    if (interactive()) {{
-        run_{{ script_name }}()
-    }}
-    """
+# If you want to test this script independently, you can call the run() function directly.
+if (interactive()) {{
+    run_{script_name}()
+}}
+"""
     elif language == "python":
         extension = ".py"
-        content = f"""# {{ purpose }}
+        # Create the Python script content with placeholders replaced directly in the string
+        content = f"""# {purpose}
 
-    def run_{{ script_name }}():
-        # {{ purpose }} code
-        print("Running {{ script_name }}...")
+def run_{script_name}():
+    # {purpose} code
+    print("Running {script_name}...")
 
-    # If you want to test this script independently, you can call the run() function directly.
-    if __name__ == "__main__":
-        run_{{ script_name }}()
-    """
+# If you want to test this script independently, you can call the run() function directly.
+if __name__ == "__main__":
+    run_{script_name}()
+"""
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
 
@@ -56,7 +60,7 @@ def create_steps(language, folder_path, script_name, purpose):
         file.write(content)
     print(f"Created: {file_path}")
 
-def create_workflow(language, folder_path):
+def create_workflow_script(language, folder_path):
     """
     Creates a workflow script that runs all steps in order.
 
@@ -66,11 +70,9 @@ def create_workflow(language, folder_path):
     """
     if language == "r":
         extension = ".R"
+        # Create the R workflow script content
         content = """
 # Workflow: Running all steps in order
-
-# Load utility functions
-source('utils.R')
 
 # Run data collection
 source('data_collection.R')
@@ -86,11 +88,9 @@ source('visualization.R')
 """
     elif language == "python":
         extension = ".py"
+        # Create the Python workflow script content
         content = """
 # Workflow: Running all steps in order
-
-# Import utility functions
-import utils
 
 # Run data collection
 import data_collection
@@ -120,7 +120,7 @@ visualization.run_visualization()
         file.write(content)
     print(f"Created: {workflow_file_path}")
 
-def create_scripts(language, folder_path):
+def create_project_scripts(language, folder_path):
     """
     Creates a project structure with specific scripts for data science tasks
     and a workflow script in R or Python.
@@ -144,14 +144,15 @@ def create_scripts(language, folder_path):
 
     # Create the individual step scripts
     for script_name, purpose in scripts.items():
-        create_steps(language, folder_path, script_name, purpose)
+        create_step_script(language, folder_path, script_name, purpose)
 
     # Create the workflow script that runs all steps
-    create_workflow(language, folder_path)
+    create_workflow_script(language, folder_path)
+
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
 # Creates default scripts:
-create_scripts(virtual_environment, "src")
+create_project_scripts(virtual_environment, "src")
 
 # Run the script
 subprocess.run(["python", "setup/create.py"])
