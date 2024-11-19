@@ -153,6 +153,5 @@ virtual_environment = "{{ cookiecutter.virtual_environment}}"
 # Creates default scripts:
 create_scripts(virtual_environment, "src")
 
-
 # Run the script
 subprocess.run(["python", "setup/create.py"])
