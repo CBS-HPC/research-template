@@ -9,14 +9,18 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-def copy_and_cleanup_templates(language, folder_path):
+
+import os
+import shutil
+
+def copy_templates(language, folder_path):
     """
-    Copies the generated scripts from the template folders (R or Python) 
-    to the specified folder path, and deletes the template folders afterwards.
+    Copies the files from the template folders (R or Python) to the specified folder path,
+    and deletes the template folders afterwards.
     
     Parameters:
     language (str): "r" for R, "python" for Python.
-    folder_path (str): The directory where the scripts will be saved.
+    folder_path (str): The directory where the templates will be copied.
     """
     # Define template folders for R and Python
     template_folders = {"r": "R", "python": "python"}
@@ -46,10 +50,8 @@ def copy_and_cleanup_templates(language, folder_path):
     shutil.rmtree(template_folder_path)
     print(f"Deleted template folder: {template_folder_path}")
 
-
-virtual_environment = "{{ cookiecutter.virtual_environment}}"
 # Creates default scripts:
-copy_and_cleanup_templates(virtual_environment, "src")
+copy_templates("{{ cookiecutter.virtual_environment}}", "src")
 
 # Run the script
 subprocess.run(["python", "setup/create.py"])
