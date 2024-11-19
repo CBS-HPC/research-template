@@ -32,7 +32,7 @@ def copy_templates(language, folder_path):
         os.makedirs(folder_path)
 
     # Get the folder name based on the language
-    template_folder = template_folders.get(language)
+    template_folder = template_folders.get(language.lower())
     if not template_folder:
         raise ValueError("Invalid language. Choose either 'r' or 'python'.")
 
