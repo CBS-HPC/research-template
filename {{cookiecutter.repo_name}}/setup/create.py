@@ -177,104 +177,8 @@ def create_project_scripts(language, folder_path):
     # Create the workflow script that runs all steps
     create_workflow_script(language, folder_path)
 
-def create_notebookes(language, folder_path):
-    """
-    Creates a notebook (Jupyter for Python, RMarkdown for R) containing the workflow steps.
-    
-    Parameters:
-    language (str): "r" for R (RMarkdown), "python" for Python (Jupyter notebook).
-    folder_path (str): The directory where the notebook or RMarkdown file will be saved.
-    """
-    # Define the file name based on the language
-    if language.lower() == "python":
-        file_name = "workflow_notebook.ipynb"
-        file_path = os.path.join(folder_path, file_name)
 
-        # Create a new Jupyter notebook
-        nb = nbf.v4.new_notebook()
-
-        # Add markdown and code cells for each workflow step
-        cells = [
-            nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
-            
-            nbf.v4.new_code_cell("""{% raw %}
-                data_collection.run()
-                {% endraw %}"""),
-            nbf.v4.new_code_cell("""{% raw %}
-                preprocessing.run()
-                {% endraw %}"""),
-            nbf.v4.new_code_cell("""{% raw %}
-                modeling.run()
-                {% endraw %}"""),
-            nbf.v4.new_code_cell("""{% raw %}
-                visualization.run()
-                {% endraw %}""")
-        ]
-        nb.cells.extend(cells)
-
-        # Write the notebook to a file
-        with open(file_path, "w") as f:
-            nbf.write(nb, f)
-        print(f"Created: {file_path}")
-
-    elif language.lower() == "r":
-        file_name = "workflow.Rmd"
-        file_path = os.path.join(folder_path, file_name)
-
-        # Create RMarkdown content
-        content = dedent("""
-        ---
-        title: "Workflow: Running all steps in order"
-        output: html_document
-        ---
-
-        # Workflow
-
-        ## Run data collection
-        ```{r}
-        {% raw %}
-        source('data_collection.R')
-        run_data_collection()
-        {% endraw %}
-        ```
-
-        ## Run preprocessing
-        ```{r}
-        {% raw %}
-        source('preprocessing.R')
-        run_preprocessing()
-        {% endraw %}
-        ```
-
-        ## Run modeling
-        ```{r}
-        {% raw %}
-        source('modeling.R')
-        run_modeling()
-        {% endraw %}
-        ```
-
-        ## Run visualization
-        ```{r}
-        {% raw %}
-        source('visualization.R')
-        run_visualization()
-        {% endraw %}
-        ```
-        """)
-
-        # Write the RMarkdown content to a file
-        with open(file_path, "w") as file:
-            file.write(content)
-        print(f"Created: {file_path}")
-    else:
-        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
-
-
-import os
-from textwrap import dedent
-
-def create_notebook_or_rmd(language, folder_path, src_folder):
+def create_notebooks(language, folder_path, src_folder):
     """
     Creates a notebook (Jupyter for Python, RMarkdown for R) containing the workflow steps
     and loads all scripts from the src_folder in the first cell.
@@ -755,8 +659,8 @@ remote_storage = "{{cookiecutter.remote_storage}}"
 
 
 # Create scripts and nptebooks
-create_project_scripts(virtual_environment, "src")
-create_notebookes(virtual_environment, "notebooks")
+create_project_scripts(virtual_environment,"src")
+create_notebooks(virtual_environment, "notebooks","src")
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
