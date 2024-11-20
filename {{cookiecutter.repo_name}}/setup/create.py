@@ -210,7 +210,7 @@ def create_notebooks(language, folder_path):
                 "import preprocessing\n"
                 "import modeling\n"
                 "import visualization\n"
-            )
+            ),
             nbf.v4.new_markdown_cell("## Run data collection"),
             nbf.v4.new_code_cell("""data_collection.run()"""),
             nbf.v4.new_markdown_cell("## Run preprocessing"),
