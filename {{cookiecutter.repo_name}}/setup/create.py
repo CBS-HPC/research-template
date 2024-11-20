@@ -398,7 +398,7 @@ repo_platform = "{{ cookiecutter.repository_platform}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
-project_description = "{{cookiecutter.description}"
+project_description = "{{cookiecutter.description}}"
 
 # Create scripts and notebook
 create_scripts(virtual_environment, "src")
