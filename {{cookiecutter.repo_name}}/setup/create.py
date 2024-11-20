@@ -60,7 +60,7 @@ Project Structure
 
     # Write the README.md content
     readme_file = os.path.join(root_folder, "README.md")
-    with open(readme_file, "w") as file:
+    with open(readme_file, "w",encoding="utf-8") as file:
         file.write(header)
         file.write("\n".join(tree_structure))
     print(f"README.md created at: {readme_file}")
