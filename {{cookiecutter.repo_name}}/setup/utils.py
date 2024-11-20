@@ -113,7 +113,7 @@ def is_installed(executable: str = None, name: str = None):
             return False
   
 
-# Script creation
+# Scripts and README creation
 def create_step_script(language, folder_path, script_name, purpose):
     """
     Creates an individual script (R or Python) with the necessary structure.
@@ -357,6 +357,91 @@ def create_notebooks(language, folder_path):
         print(f"Created: {file_path}")
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+
+def generate_readme(project_name, project_description, ignore_list=None ,file_descriptions =None, root_folder = None):
+    """
+    Generates a README.md file with the project structure (from a tree command),
+    project name, and description.
+
+    Parameters:
+    - root_folder (str): The root folder to start generating the tree structure.
+    - project_name (str): The name of the project.
+    - project_description (str): A short description of the project.
+    """
+    def generate_tree(folder_path, prefix=""):
+        """
+        Recursively generates a tree structure of the folder.
+
+        Parameters:
+        - folder_path (str): The root folder path.
+        - prefix (str): The prefix for the current level of the tree.
+        """
+        tree = []
+        items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
+        for index, item in enumerate(items):
+            if item in ignore_list:
+                continue
+            item_path = os.path.join(folder_path, item)
+            is_last = index == len(items) - 1
+            tree_symbol = "└── " if is_last else "├── "
+            description = f" <- {file_descriptions.get(item, '')}" if item in file_descriptions else ""
+            tree.append(f"{prefix}{tree_symbol}{item}{description}")
+            if os.path.isdir(item_path):
+                child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
+                tree.extend(generate_tree(item_path, prefix=child_prefix))
+        return tree
+
+    # Project header
+    header = f"""{project_name}
+==============================
+
+{project_description}
+
+Project Structure
+------------
+"""
+    if not root_folder: 
+        root_folder = os.getcwd()
+
+    if ignore_list is None:
+        ignore_list = []  # Default to an empty list if not provided
+
+    if file_descriptions is None:
+        # Define file and folder descriptions
+        file_descriptions = {
+            "Makefile": "Makefile with commands like `make data` or `make train`",
+            "README.md": "The top-level README for developers using this project.",
+            "data": "Directory for datasets.",
+            "external": "Data from third-party sources.",
+            "interim": "Intermediate data transformed during the workflow.",
+            "processed": "The final, clean data used for analysis or modeling.",
+            "raw": "Original, immutable raw data.",
+            "docs": "Documentation files.",
+            "models": "Trained models and their outputs.",
+            "notebooks": "Jupyter or R notebooks for exploratory and explanatory work.",
+            "references": "Manuals, data dictionaries, or other resources.",
+            "reports": "Generated reports, including figures.",
+            "figures": "Generated graphics and figures to be used in reporting.",
+            "requirements.txt": "The requirements file for reproducing the analysis environment.",
+            "setup.py": "Makes project pip installable (pip install -e .) so `src` can be imported.",
+            "src": "Source code for use in this project.",
+            "__init__.py": "Makes `src` a Python module.",
+            "data": "Scripts to download or generate data.",
+            "make_dataset.py": "Script to create datasets.",
+            "features": "Scripts to turn raw data into features for modeling.",
+            "build_features.py": "Script to build features for modeling.",
+            "predict_model.py": "Script to make predictions using trained models."
+        }
+
+    # Generate the folder tree structure
+    tree_structure = generate_tree(root_folder)
+
+    # Write the README.md content
+    readme_file = os.path.join(root_folder, "README.md")
+    with open(readme_file, "w",encoding="utf-8") as file:
+        file.write(header)
+        file.write("\n".join(tree_structure))
+    print(f"README.md created at: {readme_file}")
 
 def get_hardware_info():
     """

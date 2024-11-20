@@ -11,60 +11,7 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import ask_yes_no,is_installed,set_from_env,create_scripts,create_notebooks
-
-def generate_readme(project_name, project_description,root_folder = None):
-    """
-    Generates a README.md file with the project structure (from a tree command),
-    project name, and description.
-
-    Parameters:
-    - root_folder (str): The root folder to start generating the tree structure.
-    - project_name (str): The name of the project.
-    - project_description (str): A short description of the project.
-    """
-    def generate_tree(folder_path, prefix=""):
-        """
-        Recursively generates a tree structure of the folder.
-
-        Parameters:
-        - folder_path (str): The root folder path.
-        - prefix (str): The prefix for the current level of the tree.
-        """
-        tree = []
-        items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
-        for index, item in enumerate(items):
-            item_path = os.path.join(folder_path, item)
-            is_last = index == len(items) - 1
-            tree_symbol = "└── " if is_last else "├── "
-            tree.append(f"{prefix}{tree_symbol}{item}")
-            if os.path.isdir(item_path):
-                child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path, prefix=child_prefix))
-        return tree
-
-    # Project header
-    header = f"""{project_name}
-==============================
-
-{project_description}
-
-Project Structure
-------------
-"""
-    if not root_folder: 
-        root_folder = os.getcwd()
-
-    # Generate the folder tree structure
-    tree_structure = generate_tree(root_folder)
-
-    # Write the README.md content
-    readme_file = os.path.join(root_folder, "README.md")
-    with open(readme_file, "w",encoding="utf-8") as file:
-        file.write(header)
-        file.write("\n".join(tree_structure))
-    print(f"README.md created at: {readme_file}")
-
+from utils import ask_yes_no,is_installed,set_from_env,create_scripts,create_notebooks,generate_readme
 
 def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda"):
     """
@@ -403,7 +350,7 @@ project_description = "{{cookiecutter.description}}"
 # Create scripts and notebook
 create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
-generate_readme(project_name, project_description)
+generate_readme(project_name, project_description,['.gitkeep','.env','__pycache__'])
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
