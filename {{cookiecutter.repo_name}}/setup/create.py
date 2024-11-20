@@ -4,19 +4,6 @@ import sys
 import platform
 import urllib.request
 import os
-from textwrap import dedent
-import importlib
-
-
-required_libraries = ['nbformat'] 
-for lib in required_libraries:
-    try:
-        importlib.import_module(lib)
-    except ImportError:
-        print(f"Installing {lib}...")
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-
-import nbformat as nbf  # For creating Jupyter notebooks
 
 
 # Add the directory to sys.path
@@ -24,285 +11,60 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import ask_yes_no,is_installed,set_from_env
+from utils import ask_yes_no,is_installed,set_from_env,create_scripts,create_notebooks
 
-
-# Script creation
-def create_step_script(language, folder_path, script_name, purpose):
+def generate_readme(project_name, project_description,root_folder = None):
     """
-    Creates an individual script (R or Python) with the necessary structure.
-    
+    Generates a README.md file with the project structure (from a tree command),
+    project name, and description.
+
     Parameters:
-    language (str): "r" for R, "python" for Python.
-    folder_path (str): The directory where the script will be saved.
-    script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
-    purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
+    - root_folder (str): The root folder to start generating the tree structure.
+    - project_name (str): The name of the project.
+    - project_description (str): A short description of the project.
     """
-    if language.lower() == "r":
-        extension = ".R"
-        # Wrap the entire R script content in the raw block
-        content = f"""# {% raw %}
-# {purpose} code
+    def generate_tree(folder_path, prefix=""):
+        """
+        Recursively generates a tree structure of the folder.
 
-run_{script_name} <- function() {{
-    # {purpose} code
-    print('Running {script_name}...')
-}}
+        Parameters:
+        - folder_path (str): The root folder path.
+        - prefix (str): The prefix for the current level of the tree.
+        """
+        tree = []
+        items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
+        for index, item in enumerate(items):
+            item_path = os.path.join(folder_path, item)
+            is_last = index == len(items) - 1
+            tree_symbol = "└── " if is_last else "├── "
+            tree.append(f"{prefix}{tree_symbol}{item}")
+            if os.path.isdir(item_path):
+                child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
+                tree.extend(generate_tree(item_path, prefix=child_prefix))
+        return tree
 
-# If you want to test this script independently, you can call the run() function directly.
-if (interactive()) {{
-    run_{script_name}()
-}}
-# {% endraw %}
+    # Project header
+    header = f"""{project_name}
+==============================
+
+{project_description}
+
+Project Structure
+------------
 """
-    elif language.lower() == "python":
-        extension = ".py"
-        # Wrap the entire Python script content in the raw block
-        content = f"""# {% raw %}
-# {purpose} code
+    if not root_folder: 
+        root_folder = os.getcwd()
 
-def run():
-    # {purpose} code
-    print("Running {script_name}...")
+    # Generate the folder tree structure
+    tree_structure = generate_tree(root_folder)
 
-# If you want to test this script independently, you can call the run() function directly.
-if __name__ == "__main__":
-    run()
-# {% endraw %}
-"""
-    else:
-        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+    # Write the README.md content
+    readme_file = os.path.join(root_folder, "README.md")
+    with open(readme_file, "w") as file:
+        file.write(header)
+        file.write("\n".join(tree_structure))
+    print(f"README.md created at: {readme_file}")
 
-    # Define the file path for saving the script
-    file_name = f"{script_name}{extension}"
-    file_path = os.path.join(folder_path, file_name)
-
-    # Write the script content to the file
-    with open(file_path, "w") as file:
-        file.write(content)
-    print(f"Created: {file_path}")
-
-def create_workflow_script(language, folder_path):
-    """
-    Creates a workflow script that runs all steps in order.
-    
-    Parameters:
-    language (str): "r" for R, "python" for Python.
-    folder_path (str): The directory where the workflow script will be saved.
-    """
-    if language.lower() == "r":
-        extension = ".R"
-        # Wrap the entire R workflow script content in the raw block
-        content = """
-# {% raw %}
-# Workflow: Running all steps in order
-
-# Run data collection
-source('data_collection.R')
-
-# Run preprocessing
-source('preprocessing.R')
-
-# Run modeling
-source('modeling.R')
-
-# Run visualization
-source('visualization.R')
-# {% endraw %}
-"""
-    elif language.lower() == "python":
-        extension = ".py"
-        # Wrap the entire Python workflow script content in the raw block
-        content = """
-# {% raw %}
-# Workflow: Running all steps in order
-
-# Load Scripts
-import data_collection
-import preprocessing
-import modeling
-import visualization
-
-# Run data collection
-data_collection.run()
-
-# Run preprocessing
-preprocessing.run()
-
-# Run modeling
-modeling.run()
-
-# Run visualization
-visualization.run()
-# {% endraw %}
-"""
-    else:
-        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
-
-    # Define the file path for the workflow script
-    workflow_file_name = f"workflow{extension}"
-    workflow_file_path = os.path.join(folder_path, workflow_file_name)
-
-    # Write the workflow script content to the file
-    with open(workflow_file_path, "w") as file:
-        file.write(content)
-    print(f"Created: {workflow_file_path}")
-
-def create_project_scripts(language, folder_path):
-    """
-    Creates a project structure with specific scripts for data science tasks
-    and a workflow script in R or Python.
-    
-    Parameters:
-    language (str): "r" for R, "python" for Python.
-    folder_path (str): The directory where the scripts will be saved.
-    """
-    # Ensure the folder exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
-    # Script details based on purpose
-    scripts = {
-        "data_collection": "Data extraction/scraping",
-        "preprocessing": "Data cleaning, transformation, feature engineering",
-        "modeling": "Training and evaluation of models",
-        "utils": "Helper functions or utilities",
-        "visualization": "Functions for plots and visualizations"
-    }
-
-    # Create the individual step scripts
-    for script_name, purpose in scripts.items():
-        create_step_script(language, folder_path, script_name, purpose)
-
-    # Create the workflow script that runs all steps
-    create_workflow_script(language, folder_path)
-
-def create_notebooks(language, folder_path):
-    """
-    Creates a notebook (Jupyter for Python, RMarkdown for R) containing the workflow steps
-    and loads all scripts from the src_folder in the first cell.
-    
-    Parameters:
-    language (str): "r" for R (RMarkdown), "python" for Python (Jupyter notebook).
-    folder_path (str): The directory where the notebook or RMarkdown file will be saved.
-    src_folder (str): The directory where the source scripts (e.g., data_collection.R, preprocessing.R) are located.
-    """
-    # Ensure the notebooks folder exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
-    # Define the file name based on the language
-    if language.lower() == "python":
-        file_name = "workflow_notebook.ipynb"
-        file_path = os.path.join(folder_path, file_name)
-
-   
-        nb = nbf.v4.new_notebook()
-
-        # First cell: Import all scripts
-        cells = [
-            nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
-            nbf.v4.new_markdown_cell("## Loading Scripts"),
-            nbf.v4.new_code_cell(
-                "import sys\n"
-                "sys.path.append('src')\n"
-                "import data_collection\n"
-                "import preprocessing\n"
-                "import modeling\n"
-                "import visualization\n"
-            ),
-            nbf.v4.new_markdown_cell("## Run data collection"),
-            nbf.v4.new_code_cell("""data_collection.run()"""),
-            nbf.v4.new_markdown_cell("## Run preprocessing"),
-            nbf.v4.new_code_cell("""preprocessing.run()"""),
-            nbf.v4.new_markdown_cell("## Run modeling"),
-            nbf.v4.new_code_cell("""modeling.run()"""),
-            nbf.v4.new_markdown_cell("## Run visualization"),
-            nbf.v4.new_code_cell("""visualization.run()""")
-        ]
-        nb.cells.extend(cells)
-
-        # Write the notebook to a file
-        with open(file_path, "w") as f:
-            nbf.write(nb, f)
-        print(f"Created: {file_path}")
-
-    elif language.lower() == "r":
-        file_name = "workflow.Rmd"
-        file_path = os.path.join(folder_path, file_name)
-
-        # Create RMarkdown content with the requested structure
-        content = dedent("""{% raw %}
-        ---
-        title: "Workflow: Running all steps in order"
-        output: html_document
-        ---
-
-        # Workflow
-
-        ## Load Scripts
-        ```{r}             
-        source("/src/data_collection.R")
-        source("/src/preprocessing.R")
-        source("/src/modeling.R")
-        source("/src/visualization.R")
-        ```
-        ## Run data collection
-        ```{r}
-        run_data_collection()
-        ```
-        ## Run preprocessing
-        ```{r}
-        run_preprocessing()
-        ```
-        ## Run modeling
-        ```{r}
-        run_modeling()
-        ```
-        ## Run visualization
-        ```{r}
-        run_visualization()
-        ```
-        {% endraw %}""")
-
-        # Write the RMarkdown content to a file
-        with open(file_path, "w") as file:
-            file.write(content)
-        print(f"Created: {file_path}")
-    else:
-        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
-
-# 
-def get_hardware_info():
-    """
-    Extract hardware information and save it to a file.
-    Works on Windows, Linux, and macOS.
-    """
-    os_type = platform.system().lower()
-    command = ""
-
-    if os_type == "Windows":
-        command = "systeminfo"
-    elif os_type == "Linux":
-        command = "lshw -short"  # Alternative: "dmidecode"
-    elif os_type == "Darwin":  # macOS
-        command = "system_profiler SPHardwareDataType"
-    else:
-        print("Unsupported operating system.")
-        return
-
-    try:
-        # Execute the command and capture the output
-        hardware_info = subprocess.check_output(command, shell=True, text=True)
-
-        # Save the hardware information to a file
-        with open("hardware_information.txt", "w") as file:
-            file.write(hardware_info)
-
-        print("Hardware information saved to hardware_information.txt")
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error retrieving hardware information: {e}")
 
 def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda"):
     """
@@ -635,11 +397,13 @@ repo_name = "{{ cookiecutter.repo_name }}"
 repo_platform = "{{ cookiecutter.repository_platform}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
+project_name = "{{cookiecutter.project_name}}"
+project_description = "{{cookiecutter.description}"
 
-
-# Create scripts and nptebooks
-create_project_scripts(virtual_environment, "src")
+# Create scripts and notebook
+create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
+generate_readme(project_name, project_description)
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
