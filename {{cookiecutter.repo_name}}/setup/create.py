@@ -203,12 +203,14 @@ def create_notebooks(language, folder_path):
         cells = [
             nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
             nbf.v4.new_markdown_cell("## Loading Scripts"),
-            nbf.v4.new_code_cell("""import sys
-                sys.path.append('src')
-                import data_collection
-                import preprocessing
-                import modeling
-                import visualization"""),
+            nbf.v4.new_code_cell(
+                "import sys\n"
+                "sys.path.append('src')\n"
+                "import data_collection\n"
+                "import preprocessing\n"
+                "import modeling\n"
+                "import visualization\n"
+            )
             nbf.v4.new_markdown_cell("## Run data collection"),
             nbf.v4.new_code_cell("""data_collection.run()"""),
             nbf.v4.new_markdown_cell("## Run preprocessing"),
