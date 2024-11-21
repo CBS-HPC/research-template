@@ -346,16 +346,6 @@ remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 
-author_name = "{{cookiecutter.author_name}}"
-
-setup = f"git clone https://github.com/username/research-project.git
-cd research-project
-pip install -r requirements.txt"
-
-usage = f"python src/train_model.py --config configs/model.yaml"
-contact = f"{author_name}"
-
-
 # Create scripts and notebook
 create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
@@ -363,7 +353,6 @@ create_notebooks(virtual_environment, "notebooks")
 # Create and update README and Project Tree:
 update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
 generate_readme(project_name, project_description,"README.md")
-generate_readme(project_name, project_description,setup,usage,contact,"README.md")
 create_tree("README.md", ['.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
 
 # Create Virtual Environment
