@@ -362,7 +362,6 @@ create_notebooks(virtual_environment, "notebooks")
 
 # Create and update README and Project Tree:
 update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
-generate_readme(project_name, project_description,"README.md")
 generate_readme(project_name, project_description,setup,usage,contact,"README.md")
 create_tree("README.md", ['.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
 
