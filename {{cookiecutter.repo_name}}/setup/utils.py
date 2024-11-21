@@ -441,7 +441,7 @@ Project Tree
     elif isinstance(file_descriptions, str) and file_descriptions.endswith(".json") and os.path.exists(file_descriptions): 
             with open(file_descriptions, "r", encoding="utf-8") as json_file:
                 file_descriptions = json.load(json_file)
-    
+
     # Generate the folder tree structure
     tree_structure = generate_tree(root_folder)
 
@@ -452,7 +452,7 @@ Project Tree
         file.write("\n".join(tree_structure))
     print(f"README.md created at: {readme_file}")
 
-def update_file_descriptions(readme_path, setup_folder="setup", json_file="file_descriptions.json"):
+def update_file_descriptions(readme_path, json_file="setup/file_descriptions.json"):
     """
     Reads the project tree from an existing README.md and updates a file_descriptions.json file.
 
@@ -466,15 +466,10 @@ def update_file_descriptions(readme_path, setup_folder="setup", json_file="file_
     """
     if not os.path.exists(readme_path):
         return 
-    # Ensure setup folder exists
-    os.makedirs(setup_folder, exist_ok=True)
-
-    # Full path to the JSON file
-    json_file_path = os.path.join(setup_folder, json_file)
-
+ 
     # Read existing descriptions if the JSON file exists
-    if os.path.exists(json_file_path):
-        with open(json_file_path, "r", encoding="utf-8") as f:
+    if os.path.exists(json_file):
+        with open(json_file, "r", encoding="utf-8") as f:
             file_descriptions = json.load(f)
     else:
         file_descriptions = {}
@@ -494,18 +489,24 @@ def update_file_descriptions(readme_path, setup_folder="setup", json_file="file_
     tree_lines = project_tree.splitlines()
     for line in tree_lines:
         # Match lines with descriptions: ├── filename <- description
-        match = re.match(r"[\s├──└──]+(\S+)\s*<- (.+)", line)
+        #match = re.match(r"^\s*(├──|└──|\|   )\s*(\S+)\s*(<- .+)?$", line)
+        while line.startswith("│   "):
+            line = line[4:]  # Remove prefix (4 characters)
+
+        match = re.match(r"^\s*(├──|└──|\|.*)?\s*(\S+)\s*(<- .+)?$", line)
         if match:
-            filename = match.group(1)
-            description = match.group(2).strip()
-            # Update or add the description
-            file_descriptions[filename] = description
+            filename = match.group(2).strip()
+            description = match.group(3)  # This captures everything after '<-'
+            if description:
+                description = description.strip()[3:]  # Remove the '<- ' part and get the description text
+            if description:
+                file_descriptions[filename] = description
 
     # Write the updated descriptions to the JSON file
-    with open(json_file_path, "w", encoding="utf-8") as f:
+    with open(json_file, "w", encoding="utf-8") as f:
         json.dump(file_descriptions, f, indent=4, ensure_ascii=False)
 
-    print(f"File descriptions updated in {json_file_path}")
+    print(f"File descriptions updated in {json_file}")
 
 def get_hardware_info():
     """
