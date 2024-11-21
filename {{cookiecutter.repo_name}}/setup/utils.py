@@ -5,6 +5,9 @@ import platform
 from textwrap import dedent
 import importlib
 import shutil
+import json
+import re
+
 
 required_libraries = ['python-dotenv','nbformat'] 
 for lib in required_libraries:
@@ -358,7 +361,7 @@ def create_notebooks(language, folder_path):
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
 
-def generate_readme(project_name, project_description, ignore_list=None ,file_descriptions =None, root_folder = None):
+def generate_readme(project_name, project_description, ignore_list=None ,file_descriptions = None, root_folder = None):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -432,7 +435,13 @@ Project Tree
             "build_features.py": "Script to build features for modeling.",
             "predict_model.py": "Script to make predictions using trained models."
         }
-
+        # Save to JSON file
+        with open("setup/file_descriptions.json", "w", encoding="utf-8") as json_file:
+            json.dump(file_descriptions, json_file, indent=4, ensure_ascii=False)
+    elif isinstance(file_descriptions, str) and file_descriptions.endswith(".json") and os.path.exists(file_descriptions): 
+            with open(file_descriptions, "r", encoding="utf-8") as json_file:
+                file_descriptions = json.load(json_file)
+    
     # Generate the folder tree structure
     tree_structure = generate_tree(root_folder)
 
@@ -442,6 +451,61 @@ Project Tree
         file.write(header)
         file.write("\n".join(tree_structure))
     print(f"README.md created at: {readme_file}")
+
+def update_file_descriptions(readme_path, setup_folder="setup", json_file="file_descriptions.json"):
+    """
+    Reads the project tree from an existing README.md and updates a file_descriptions.json file.
+
+    Parameters:
+    - readme_path (str): Path to the README.md file.
+    - setup_folder (str): Path to the setup folder where file_descriptions.json will be saved.
+    - json_file (str): The name of the JSON file for file descriptions.
+
+    Returns:
+    - None
+    """
+    if not os.path.exists(readme_path):
+        return 
+    # Ensure setup folder exists
+    os.makedirs(setup_folder, exist_ok=True)
+
+    # Full path to the JSON file
+    json_file_path = os.path.join(setup_folder, json_file)
+
+    # Read existing descriptions if the JSON file exists
+    if os.path.exists(json_file_path):
+        with open(json_file_path, "r", encoding="utf-8") as f:
+            file_descriptions = json.load(f)
+    else:
+        file_descriptions = {}
+
+    # Read the README.md and extract the "Project Tree" section
+    with open(readme_path, "r", encoding="utf-8") as f:
+        readme_content = f.read()
+
+    # Extract the project tree section using regex
+    tree_match = re.search(r"Project Tree\s*[-=]+\s*\n([\s\S]+)", readme_content)
+    if not tree_match:
+        raise ValueError("Project Tree section not found in README.md")
+
+    project_tree = tree_match.group(1)
+
+    # Extract file descriptions from the project tree
+    tree_lines = project_tree.splitlines()
+    for line in tree_lines:
+        # Match lines with descriptions: ├── filename <- description
+        match = re.match(r"[\s├──└──]+(\S+)\s*<- (.+)", line)
+        if match:
+            filename = match.group(1)
+            description = match.group(2).strip()
+            # Update or add the description
+            file_descriptions[filename] = description
+
+    # Write the updated descriptions to the JSON file
+    with open(json_file_path, "w", encoding="utf-8") as f:
+        json.dump(file_descriptions, f, indent=4, ensure_ascii=False)
+
+    print(f"File descriptions updated in {json_file_path}")
 
 def get_hardware_info():
     """
