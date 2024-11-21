@@ -703,7 +703,7 @@ def handling_readme(version_control,repo_name ,project_name, project_description
     # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    create_tree("README.md", ['.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
+    create_tree("README.md", ['.git','.datalad','.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
 
     if version_control in ["Git",'DVC']:
         subprocess.run(["git", "add", "."], check=True)    
