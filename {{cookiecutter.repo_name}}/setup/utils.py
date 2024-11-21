@@ -385,7 +385,7 @@ def generate_readme(project_name, project_description, ignore_list=None ,file_de
             is_last = index == len(items) - 1
             tree_symbol = "└── " if is_last else "├── "
             description = f" <- {file_descriptions.get(item, '')}" if item in file_descriptions else ""
-            tree.append(f"{prefix}{tree_symbol}{item}{description}")
+            tree.append(f"{prefix}{tree_symbol}{item}{description}  ") # Add spaces for a line break
             if os.path.isdir(item_path):
                 child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
                 tree.extend(generate_tree(item_path, prefix=child_prefix))
@@ -397,7 +397,7 @@ def generate_readme(project_name, project_description, ignore_list=None ,file_de
 
 {project_description}
 
-Project Structure
+Project Tree
 ------------
 """
     if not root_folder: 
