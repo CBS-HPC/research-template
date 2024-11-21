@@ -705,7 +705,7 @@ def handling_readme(version_control,repo_name ,project_name, project_description
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
     create_tree("README.md", ['.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
 
-    if version_control == ["Git",'DVC']:
+    if version_control in ["Git",'DVC']:
         subprocess.run(["git", "add", "."], check=True)    
         subprocess.run(["git", "commit", "-m", "README.md added"], check=True)
     elif version_control == "Datalad":
