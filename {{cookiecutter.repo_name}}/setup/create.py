@@ -348,11 +348,11 @@ project_description = "{{cookiecutter.description}}"
 
 author_name = "{{cookiecutter.author_name}}"
 
-setup = f"git clone 'https://github.com/username/research-project.git'
+setup = """git clone https://github.com/username/research-project.git
 cd research-project
-pip install -r requirements.txt"
+pip install -r requirements.txt"""
 
-usage = f"python src/train_model.py --config configs/model.yaml"
+usage = """python src/train_model.py --config configs/model.yaml"""
 contact = f"{author_name}"
 
 
