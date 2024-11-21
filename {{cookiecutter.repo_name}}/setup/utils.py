@@ -378,10 +378,12 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
 Setup and Installation
 ------------
+```
 {setup}
 
 Usage
 ------------
+```
 {usage}
 
 Contact Information

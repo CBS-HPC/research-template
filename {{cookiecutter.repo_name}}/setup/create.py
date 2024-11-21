@@ -348,8 +348,8 @@ project_description = "{{cookiecutter.description}}"
 
 author_name = "{{cookiecutter.author_name}}"
 
-setup = """git clone https://github.com/username/research-project.git
-cd research-project
+setup = """git clone https://github.com/username/research-project.git \
+cd research-project \
 pip install -r requirements.txt"""
 
 usage = """python src/train_model.py --config configs/model.yaml"""
