@@ -371,14 +371,10 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
     - project_description (str): A short description of the project.
     """
 
-    if readme_file is None:
-        readme_file = "README.md" 
-    if os.path.exists(readme_file):
-        return
 
     # Project header
-    header = f"""{project_name}
-    ==============================
+    header = f"""{project_name}  
+    ==============================  
     {project_description}
 
     Installation
@@ -400,7 +396,11 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
     ------------
     """
-
+    if readme_file is None:
+        readme_file = "README.md" 
+    if os.path.exists(readme_file):
+        return
+    
     # Write the README.md content
     with open(readme_file, "w",encoding="utf-8") as file:
         file.write(header)

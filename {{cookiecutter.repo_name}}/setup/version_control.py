@@ -695,7 +695,7 @@ def handling_readme(version_control,repo_name ,project_name, project_description
         cd {repo_name} \
         python setup.py"""
     else: 
-        setup = """cd {repo_name} \
+        setup = f"""cd {repo_name} \
         python setup.py"""
     usage = """python src/workflow.py"""
     contact = f"{author_name}"
