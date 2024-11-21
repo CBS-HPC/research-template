@@ -11,7 +11,7 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import ask_yes_no,is_installed,set_from_env,create_scripts,create_notebooks,generate_readme
+from utils import ask_yes_no,is_installed,set_from_env,create_scripts,create_notebooks,generate_readme,update_file_descriptions
 
 def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda"):
     """
@@ -350,6 +350,9 @@ project_description = "{{cookiecutter.description}}"
 # Create scripts and notebook
 create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
+
+# Create and update README and Project Tree:
+update_file_descriptions("README.md", setup_folder="setup", json_file="file_descriptions.json")
 generate_readme(project_name, project_description,['.gitkeep','.env','__pycache__'])
 
 # Create Virtual Environment
