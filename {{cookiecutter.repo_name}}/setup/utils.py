@@ -370,35 +370,38 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
     - project_name (str): The name of the project.
     - project_description (str): A short description of the project.
     """
- 
+
+    if readme_file is None:
+        readme_file = "README.md" 
+    if os.path.exists(readme_file):
+        return
+
     # Project header
     header = f"""{project_name}
-==============================
-{project_description}
+    ==============================
+    {project_description}
 
-Setup and Installation
-------------
-```
-{setup}
+    Installation
+    ------------
+    ```
+    {setup}
+    ```
+    Usage
+    ------------
+    ```
+    {usage}
+    ```
+    Contact Information
+    ------------
+    {contact}
 
-Usage
-------------
-```
-{usage}
+    Project Tree
+    ------------
 
-Contact Information
-------------
-{contact}
-
-Project Tree
-------------
-
-------------
-"""
+    ------------
+    """
 
     # Write the README.md content
-    if readme_file is None:
-        readme_file = "README.md"
     with open(readme_file, "w",encoding="utf-8") as file:
         file.write(header)
     print(f"README.md created at: {readme_file}")
@@ -495,86 +498,6 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         file.writelines(updated_content)
 
     print(f"'Project Tree' section updated in '{readme_file}'.")
-
-def create_tree_old(readme_file = None, ignore_list=None ,file_descriptions = None,root_folder = None):
-    """
-    README.md file with the project structure (from a tree command),
-
-    """
-    def generate_tree(folder_path, prefix=""):
-        """
-        Recursively generates a tree structure of the folder.
-
-        Parameters:
-        - folder_path (str): The root folder path.
-        - prefix (str): The prefix for the current level of the tree.
-        """
-        tree = []
-        items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
-        for index, item in enumerate(items):
-            if item in ignore_list:
-                continue
-            item_path = os.path.join(folder_path, item)
-            is_last = index == len(items) - 1
-            tree_symbol = "└── " if is_last else "├── "
-            description = f" <- {file_descriptions.get(item, '')}" if item in file_descriptions else ""
-            tree.append(f"{prefix}{tree_symbol}{item}{description}  ") # Add spaces for a line break
-            if os.path.isdir(item_path):
-                child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path, prefix=child_prefix))
-        return tree
-
-     # Write the README.md content
-    
-    if not readme_file:
-        readme_file = "README.md"
-    
-    if not os.path.exists(readme_file):
-        return 
-
-    if ignore_list is None:
-        ignore_list = []  # Default to an empty list if not provided
-
-    if file_descriptions is None:
-        # Define file and folder descriptions
-        file_descriptions = {
-            "Makefile": "Makefile with commands like `make data` or `make train`",
-            "README.md": "The top-level README for developers using this project.",
-            "data": "Directory for datasets.",
-            "external": "Data from third-party sources.",
-            "interim": "Intermediate data transformed during the workflow.",
-            "processed": "The final, clean data used for analysis or modeling.",
-            "raw": "Original, immutable raw data.",
-            "docs": "Documentation files.",
-            "models": "Trained models and their outputs.",
-            "notebooks": "Jupyter or R notebooks for exploratory and explanatory work.",
-            "references": "Manuals, data dictionaries, or other resources.",
-            "reports": "Generated reports, including figures.",
-            "figures": "Generated graphics and figures to be used in reporting.",
-            "requirements.txt": "The requirements file for reproducing the analysis environment.",
-            "setup.py": "Makes project pip installable (pip install -e .) so `src` can be imported.",
-            "src": "Source code for use in this project.",
-            "__init__.py": "Makes `src` a Python module.",
-            "data": "Scripts to download or generate data.",
-            "make_dataset.py": "Script to create datasets.",
-            "features": "Scripts to turn raw data into features for modeling.",
-            "build_features.py": "Script to build features for modeling.",
-            "predict_model.py": "Script to make predictions using trained models."
-        }
-        # Save to JSON file
-        with open("setup/file_descriptions.json", "w", encoding="utf-8") as json_file:
-            json.dump(file_descriptions, json_file, indent=4, ensure_ascii=False)
-    elif isinstance(file_descriptions, str) and file_descriptions.endswith(".json") and os.path.exists(file_descriptions): 
-            with open(file_descriptions, "r", encoding="utf-8") as json_file:
-                file_descriptions = json.load(json_file)
-
-    # Generate the folder tree structure
-    if not root_folder: 
-        root_folder = os.getcwd()
-    tree_structure = generate_tree(root_folder)
- 
-    with open(readme_file, "w",encoding="utf-8") as file:
-        file.write("\n".join(tree_structure))
 
 def update_file_descriptions(readme_path, json_file="setup/file_descriptions.json"):
     """

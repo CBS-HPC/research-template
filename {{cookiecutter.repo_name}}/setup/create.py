@@ -345,14 +345,18 @@ version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
-
 author_name = "{{cookiecutter.author_name}}"
 
-setup = """git clone https://github.com/username/research-project.git \
-cd research-project \
-pip install -r requirements.txt"""
 
-usage = """python src/train_model.py --config configs/model.yaml"""
+if repo_platform in ["Github","Gitlab"]:
+    web_repo = repo_platform.lower()
+    setup = """git clone https://{web_repo}.com/username/{repo_name}.git"" \
+    cd {repo_name} \
+    python setup.py"""
+else: 
+    setup = """cd {repo_name} \
+    python setup.py"""
+usage = """python src/workflow.py"""
 contact = f"{author_name}"
 
 
@@ -361,9 +365,9 @@ create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
 
 # Create and update README and Project Tree:
-update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
-generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-create_tree("README.md", ['.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
+#update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
+#generate_readme(project_name, project_description,setup,usage,contact,"README.md")
+#create_tree("README.md", ['.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)

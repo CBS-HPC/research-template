@@ -23,7 +23,7 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env
+from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env,generate_readme,create_tree,update_file_descriptions
 
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
     """Handle repository creation and log-in based on selected platform."""
@@ -257,7 +257,6 @@ def git_to_env(git_name, git_email,env_file=".env"):
     
     print(f"Git user information added to {env_file}")
 
-
 # DVC Setup Functions
 def setup_dvc(version_control,remote_storage,repo_platform,repo_name):
 
@@ -411,7 +410,6 @@ def dvc_local_storage(repo_name):
     if dvc_remote:
         subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
     
-
 # Datalad Setup Functions
 def setup_datalad(version_control,remote_storage,repo_platform,repo_name):
 
@@ -689,11 +687,40 @@ def datalad_local_storage(repo_name):
     if datalad_remote:
         subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
 
+def handling_readme(version_control,repo_name ,project_name, project_description,repo_platform,author_name):
+
+    if repo_platform in ["Github","Gitlab"]:
+        web_repo = repo_platform.lower()
+        setup = f"""git clone https://{web_repo}.com/username/{repo_name}.git"" \
+        cd {repo_name} \
+        python setup.py"""
+    else: 
+        setup = """cd {repo_name} \
+        python setup.py"""
+    usage = """python src/workflow.py"""
+    contact = f"{author_name}"
+
+    # Create and update README and Project Tree:
+    update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
+    generate_readme(project_name, project_description,setup,usage,contact,"README.md")
+    create_tree("README.md", ['.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
+
+    if version_control == ["Git",'DVC']:
+        subprocess.run(["git", "add", "."], check=True)    
+        subprocess.run(["git", "commit", "-m", "README.md added"], check=True)
+    elif version_control == "Datalad":
+        subprocess.run(["datalad", "save", "-m", "README.md added"], check=True)
+
 version_control = "{{cookiecutter.version_control}}"
 repo_name = "{{ cookiecutter.repo_name }}"
 repo_platform = "{{cookiecutter.repository_platform }}"
 remote_storage = "{{cookiecutter.remote_storage}}"
+project_name = "{{cookiecutter.project_name}}"
+project_description = "{{cookiecutter.description}}"
+author_name = "{{cookiecutter.author_name}}"
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,repo_platform,repo_name)
 
+# Updating
+handling_readme(version_control,repo_name ,project_name, project_description,repo_platform,author_name)
