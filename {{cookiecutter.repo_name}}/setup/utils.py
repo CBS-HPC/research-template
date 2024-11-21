@@ -373,25 +373,26 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
 
     # Project header
-    header = f"""{project_name}  
+        header = f"""# {project_name}  
     ==============================  
+
     {project_description}
 
-    Installation
+    ## Installation
     ------------
     ```
     {setup}
-    ```
-    Usage
+  
+    ## Usage
     ------------
     ```
     {usage}
-    ```
-    Contact Information
+   
+    ## Contact Information
     ------------
     {contact}
 
-    Project Tree
+    ## Project Tree
     ------------
 
     ------------
