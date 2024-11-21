@@ -348,7 +348,7 @@ project_description = "{{cookiecutter.description}}"
 
 author_name = "{{cookiecutter.author_name}}"
 
-setup = f"git clone https://github.com/username/research-project.git
+setup = f"git clone 'https://github.com/username/research-project.git'
 cd research-project
 pip install -r requirements.txt"
 
