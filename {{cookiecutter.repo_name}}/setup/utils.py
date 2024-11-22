@@ -396,22 +396,19 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
     # Project header
     header = f"""# {project_name}
-==============================  
+
 
 {project_description}
 
 ## Installation
-------------
 ```
 {setup}
 ```
 ## Usage
-------------
 ```
 {usage}
 ```
 ## Contact Information
-------------
 {contact}
 
 ## Project Tree
@@ -489,7 +486,8 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
     # Check for "Project Tree" section
     start_index = None
     for i, line in enumerate(readme_content):
-        if line.strip() == "Project Tree" and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "------------":
+        if "Project Tree" in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "------------":
+        #if line.strip() == "Project Tree" and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "------------":
             start_index = i + 2  # The line after "------------"
             break
 
