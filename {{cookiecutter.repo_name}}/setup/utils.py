@@ -395,30 +395,30 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
 
     # Project header
-    header = f"""# {project_name}  
-    ==============================  
+    header = f"""#{project_name}
+==============================  
 
-    {project_description}
+{project_description}
 
-    ## Installation
-    ------------
-    ```
-    {setup}
+## Installation
+------------
+```
+{setup}
   
-    ## Usage
-    ------------
-    ```
-    {usage}
+## Usage
+------------
+```
+{usage}
    
-    ## Contact Information
-    ------------
-    {contact}
+## Contact Information
+------------
+{contact}
 
-    ## Project Tree
-    ------------
+## Project Tree
+------------
 
-    ------------
-    """
+------------
+"""
     if readme_file is None:
         readme_file = "README.md" 
     if os.path.exists(readme_file):
