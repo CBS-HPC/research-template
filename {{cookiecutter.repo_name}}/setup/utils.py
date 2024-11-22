@@ -373,8 +373,7 @@ def creating_readme(repo_name ,project_name, project_description,repo_platform,a
         cd {repo_name} \
         python setup.py"""
     else: 
-        setup = f"""cd {repo_name} \
-        python setup.py"""
+        setup = f"""cd {repo_name} python setup.py"""
     usage = """python src/workflow.py"""
     contact = f"{author_name}"
 
@@ -564,9 +563,10 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
             "build_features.py": "Script to build features for modeling.",
             "predict_model.py": "Script to make predictions using trained models."
         }
+        print("Hello")
         # Save to JSON file
-        with open(json_file, "w", encoding="utf-8") as json_file:
-            json.dump(file_descriptions, json_file, indent=4, ensure_ascii=False)
+        with open(json_file, "w", encoding="utf-8") as file:
+            json.dump(file_descriptions, file, indent=4, ensure_ascii=False)
 
     # Read the README.md and extract the "Project Tree" section
     with open(readme_path, "r", encoding="utf-8") as f:
