@@ -22,7 +22,7 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import add_to_path,is_installed,load_from_env,set_from_env,creating_readme
+from utils import *
 
 def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -384,5 +384,11 @@ author_name = "{{cookiecutter.author_name}}"
 # Create Remote Repository
 setup_remote_repository(version_control,repo_platform,repo_name,description)
 
+# Updating environment.yaml
+export_conda_env(repo_name)
+
 # Updating README
 creating_readme(repo_name ,project_name, project_description,repo_platform,author_name)
+
+# Pushing to Git 
+git_push("environment.yaml updated and README.md added ")

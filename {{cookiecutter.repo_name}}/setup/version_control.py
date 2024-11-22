@@ -683,7 +683,6 @@ def datalad_local_storage(repo_name):
     if datalad_remote:
         subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
 
-
 version_control = "{{cookiecutter.version_control}}"
 repo_name = "{{ cookiecutter.repo_name }}"
 repo_platform = "{{cookiecutter.repository_platform }}"
