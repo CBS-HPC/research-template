@@ -633,15 +633,23 @@ def get_hardware_info():
 
 
 # Git related:
-def git_push(msg:str=""):
-    
-    if os.path.isdir(".datalad"):
-        subprocess.run(["datalad", "save", "-m", msg], check=True)
-    elif os.path.isdir(".git"):
+def git_commit(msg:str=""):
+    try:
         subprocess.run(["git", "add", "."], check=True)    
         subprocess.run(["git", "commit", "-m", msg], check=True)
-    
-    branch = subprocess.run(["git", "branch", "--show-current"], check=True)
-    if branch:
-        subprocess.run(["git", "push", "origin", branch], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
 
+def git_push(msg:str=""):
+    try:
+        if os.path.isdir(".datalad"):
+            subprocess.run(["datalad", "save", "-m", msg], check=True)
+        elif os.path.isdir(".git"):
+            git_commit(msg)
+        
+        result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
+        branch = result.stdout.strip()  # Remove any extra whitespace or newlin
+        if branch:
+            subprocess.run(["git", "push", "origin", branch], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")

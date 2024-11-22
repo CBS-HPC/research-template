@@ -23,7 +23,7 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env,creating_readme
+from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env,git_commit
 
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
     """Handle repository creation and log-in based on selected platform."""
@@ -226,9 +226,7 @@ def git_init(repo_platform):
     if repo_platform == "GitHub":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
-
-    subprocess.run(["git", "add", "."], check=True)    
-    subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
+    git_commit("Initial commit")
     print("Created an initial commit.")
     return True
 
@@ -319,9 +317,7 @@ def dvc_init(remote_storage,repo_platform,repo_name):
     if repo_platform == "GitHub":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
-
-    subprocess.run(["git", "add", "."], check=True)    
-    subprocess.run(["git", "commit", "-m", "Initial commit"], check=True)
+    git_commit("Initial commit")
     print("Created an initial commit.")
 
 def dvc_deic_storage(remote_directory =None):
