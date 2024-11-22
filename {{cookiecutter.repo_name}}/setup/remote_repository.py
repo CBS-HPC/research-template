@@ -22,7 +22,7 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import add_to_path,is_installed,load_from_env,set_from_env
+from utils import add_to_path,is_installed,load_from_env,set_from_env,creating_readme
 
 def setup_remote_repository(version_control,repo_platform,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -376,7 +376,13 @@ repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
 version_control = "{{cookiecutter.version_control}}"
 repo_platform = "{{ cookiecutter.repository_platform}}"
+version_control = "{{cookiecutter.version_control}}"
+project_name = "{{cookiecutter.project_name}}"
+project_description = "{{cookiecutter.description}}"
+author_name = "{{cookiecutter.author_name}}"
 
 # Create Remote Repository
 setup_remote_repository(version_control,repo_platform,repo_name,description)
 
+# Updating README
+creating_readme(version_control,repo_name ,project_name, project_description,repo_platform,author_name)

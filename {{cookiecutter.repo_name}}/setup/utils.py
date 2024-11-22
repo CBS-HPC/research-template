@@ -361,6 +361,27 @@ def create_notebooks(language, folder_path):
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
 
+def creating_readme(repo_name ,project_name, project_description,repo_platform,author_name):
+
+    if repo_platform in ["Github","Gitlab"]:
+        web_repo = repo_platform.lower()
+        setup = f"""git clone https://{web_repo}.com/username/{repo_name}.git"" \
+        cd {repo_name} \
+        python setup.py"""
+    else: 
+        setup = f"""cd {repo_name} \
+        python setup.py"""
+    usage = """python src/workflow.py"""
+    contact = f"{author_name}"
+
+    # Create and update README and Project Tree:
+    update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
+    generate_readme(project_name, project_description,setup,usage,contact,"README.md")
+    create_tree("README.md", ['.git','.datalad','.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
+    
+    # Pushing to Git 
+    git_push("README.md added")
+
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """
     Generates a README.md file with the project structure (from a tree command),
@@ -611,4 +632,16 @@ def get_hardware_info():
         print(f"Error retrieving hardware information: {e}")
 
 
+# Git related:
+def git_push(msg:str=""):
+    
+    if os.path.isdir(".datalad"):
+        subprocess.run(["datalad", "save", "-m", msg], check=True)
+    elif os.path.isdir(".git"):
+        subprocess.run(["git", "add", "."], check=True)    
+        subprocess.run(["git", "commit", "-m", msg], check=True)
+    
+    branch = subprocess.run(["git", "branch", "--show-current"], check=True)
+    if branch:
+        subprocess.run(["git", "push", "origin", branch], check=True)
 
