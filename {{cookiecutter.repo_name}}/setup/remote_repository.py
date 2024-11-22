@@ -385,4 +385,4 @@ author_name = "{{cookiecutter.author_name}}"
 setup_remote_repository(version_control,repo_platform,repo_name,description)
 
 # Updating README
-creating_readme(version_control,repo_name ,project_name, project_description,repo_platform,author_name)
+creating_readme(repo_name ,project_name, project_description,repo_platform,author_name)
