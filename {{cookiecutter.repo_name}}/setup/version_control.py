@@ -454,7 +454,7 @@ def install_git_annex():
             
             # Parse the output for the installation path
             install_path = None
-            for line in result.stdout.splitlines():
+            for line in result.stderr.splitlines():
                 if "git-annex is now installed at" in line:
                     install_path = line.split("at")[-1].strip()
                     break
@@ -481,9 +481,6 @@ def install_git_annex():
     except subprocess.CalledProcessError as e:
         print(f"Error configuring git-annex filter process: {e}")
         return False
-
-  
-
 
 def install_git_annex_old():
     
