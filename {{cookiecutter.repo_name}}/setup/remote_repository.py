@@ -207,34 +207,27 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
 
     if repo_platform == "GitHub":
         token = get_gh_token()
-        tag = "GITHUB"
         token_tag = "GH"
         hostname = None
    
     elif repo_platform == "GitLab":
         token = get_glab_token()
         hostname = get_glab_hostname()
-        tag = "GITLAB"
         token_tag = "GLAB"
   
     if not username and not token:
         print(f"Failed to retrieve {repo_platform}. Make sure you're logged in to {repo_platform}.")
         return
     
-    # Check if .env file exists
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
+    save_to_env(username,f"{repo_platform}_USER") 
+    save_to_env(repo_name,f"{repo_platform}_REPO")     
+
+    if token:
+        save_to_env(token,f"{token_tag}_TOKEN")    
+    if hostname:
+        save_to_env(hostname,f"{token_tag}_HOSTNAME")
     
-    # Write the credentials to the .env file
-    with open(env_file, 'a') as file:
-        file.write(f"{tag}_USER={username}\n")
-        file.write(f"{tag}_REPO={repo_name}\n")
-        if token:
-            file.write(f"{token_tag}_TOKEN={token}\n")
-        if hostname:
-            file.write(f"{token_tag}_HOSTNAME={hostname}\n")
-    
-    print(f"{tag} username and token added to {env_file}")
+    print(f"{repo_platform} username and token added to {env_file}")
 
 def setup_repo(repo_platform,repo_name,description):
     

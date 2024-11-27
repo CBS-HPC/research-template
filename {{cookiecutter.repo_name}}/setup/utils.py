@@ -61,7 +61,7 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     if env_var is None:
         return
     # Standardize the variable name for comparison
-    env_name_upper = env_name.upper()
+    env_name_upper = env_name.strip().upper()
     
     # Read the existing .env file if it exists
     env_lines = []
@@ -76,15 +76,13 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
         if "=" in line:
             existing_name, _ = line.split("=", 1)
             if existing_name.strip().upper() == env_name_upper:
-                print("HELLLLOOOOOO")
-                print(env_name_upper)
-                env_lines[i] = f"{env_name}={env_var}\n"  # Preserve original case in name
+                env_lines[i] = f"{env_name_upper}={env_var}\n"  # Preserve original case in name
                 variable_exists = True
                 break
 
     # If the variable does not exist, append it
     if not variable_exists:
-        env_lines.append(f"{env_name}={env_var}\n")
+        env_lines.append(f"{env_name_upper}={env_var}\n")
     
     # Write the updated lines back to the file
     with open(env_file, 'w') as file:
