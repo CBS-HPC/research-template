@@ -673,7 +673,7 @@ def git_user_info():
         save_to_env(git_email,'GIT_EMAIL')
         return git_name, git_email
 
-def git_repo_user(repo_platform):
+def git_repo_user(repo_name,repo_platform):
     if repo_platform in ["GitHub","GitLab"]: 
         repo_user = None 
         privacy_setting = None
@@ -685,8 +685,9 @@ def git_repo_user(repo_platform):
                 print("Invalid choice. Defaulting to 'private'.")
                 privacy_setting = None
 
-        save_to_env(repo_user,f"{repo_platform.upper()}_USER")
-        save_to_env(privacy_setting,f"{repo_platform.upper()}_PRIVACY")
+        save_to_env(repo_user,f"{repo_platform}_USER")
+        save_to_env(privacy_setting,f"{repo_platform}_PRIVACY")
+        save_to_env(repo_name,f"{repo_platform}_REPO") 
         
         return repo_user, privacy_setting
     else:

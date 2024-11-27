@@ -53,7 +53,6 @@ def setup_git(version_control,repo_platform):
             save_to_env(git_name,"GIT_USER") 
             save_to_env(git_email,"GIT_EMAIL")    
     
-        
         return check
     else:
         return False
