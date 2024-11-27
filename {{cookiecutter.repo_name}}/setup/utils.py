@@ -77,6 +77,7 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
             existing_name, _ = line.split("=", 1)
             if existing_name.strip().upper() == env_name_upper:
                 print("HELLLLOOOOOO")
+                print(env_name_upper)
                 env_lines[i] = f"{env_name}={env_var}\n"  # Preserve original case in name
                 variable_exists = True
                 break
