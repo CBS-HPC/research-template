@@ -462,9 +462,11 @@ def install_git_annex():
             if not install_path:
                 print("Could not determine git-annex installation path.")
                 return False
-            
+            print("HELLO")
+            print(install_path)
             exe_to_path('git-annex',install_path)
             if not is_installed('git-annex', 'Git-Annex'):
+                print("dre")
                 return False
             
         except subprocess.CalledProcessError as e:
