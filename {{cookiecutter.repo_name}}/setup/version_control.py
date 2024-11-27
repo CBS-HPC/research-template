@@ -464,7 +464,7 @@ def install_git_annex():
                 return False
             print("HELLO")
             print(install_path)
-            exe_to_path('git-annex',install_path)
+            exe_to_path('git-annex',os.path.dirname(install_path))
             if not is_installed('git-annex', 'Git-Annex'):
                 print("dre")
                 return False
