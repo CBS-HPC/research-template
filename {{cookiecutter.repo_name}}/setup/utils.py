@@ -49,7 +49,45 @@ def load_from_env(env_var: str, env_file=".env"):
     # Get the environment variable for the executable (uppercase)
     return os.getenv(env_var.upper())
 
-def save_to_env(env_var:str,env_name:str,env_file=".env"):
+
+def save_to_env(env_var: str, env_name: str, env_file=".env"):
+    """
+    Saves or updates an environment variable in a .env file (case-insensitive for variable names).
+    
+    Args:
+        env_var (str): The value of the environment variable to save.
+        env_name (str): The name of the environment variable (case-insensitive).
+        env_file (str): The path to the .env file. Defaults to ".env".
+    """
+    # Standardize the variable name for comparison
+    env_name_upper = env_name.upper()
+    
+    # Read the existing .env file if it exists
+    env_lines = []
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as file:
+            env_lines = file.readlines()
+
+    # Check if the variable exists (case-insensitive) and update it
+    variable_exists = False
+    for i, line in enumerate(env_lines):
+        # Split each line to isolate the variable name
+        if "=" in line:
+            existing_name, _ = line.split("=", 1)
+            if existing_name.strip().upper() == env_name_upper:
+                env_lines[i] = f"{env_name}={env_var}\n"  # Preserve original case in name
+                variable_exists = True
+                break
+
+    # If the variable does not exist, append it
+    if not variable_exists:
+        env_lines.append(f"{env_name}={env_var}\n")
+    
+    # Write the updated lines back to the file
+    with open(env_file, 'w') as file:
+        file.writelines(env_lines)
+
+def save_to_env_old(env_var:str,env_name:str,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
