@@ -49,7 +49,16 @@ def load_from_env(env_var: str, env_file=".env"):
     # Get the environment variable for the executable (uppercase)
     return os.getenv(env_var.upper())
 
-def set_from_env(executable: str, env_file=".env"):
+def save_to_env(env_var:str,env_name:str,env_file=".env"):
+    # Check if .env file exists
+    if not os.path.exists(env_file):
+        print(f"{env_file} does not exist. Creating a new one.")
+    
+    # Write the credentials to the .env file
+    with open(env_file, 'a') as file:  
+        file.write(f"{env_name.upper()}={env_var}\n")
+
+def exe_from_env(executable: str, env_file=".env"):
     """
     Tries to load the environment variable for the given executable from the .env file.
     If the variable exists and points to a valid binary path, adds it to the system PATH.
@@ -64,13 +73,13 @@ def set_from_env(executable: str, env_file=".env"):
 
     # Construct the binary path
     if os.path.exists(env_var):    
-        if add_to_path(executable, os.path.dirname(env_var)):
+        if exe_to_path(executable, os.path.dirname(env_var)):
             if shutil.which(executable):
                 print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
                 return True
     return False
 
-def add_to_path(executable: str = None,bin_path: str = None):
+def exe_to_path(executable: str = None,bin_path: str = None):
         """
         Adds the path of an executalbe binary to the system PATH permanently.
         """
@@ -94,7 +103,7 @@ def add_to_path(executable: str = None,bin_path: str = None):
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
         
-def add_to_env(executable: str = None,env_file=".env"):
+def exe_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
@@ -107,11 +116,11 @@ def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
         raise ValueError("Both 'executable' and 'name' must be strings.")
-    if not set_from_env(executable):
+    if not exe_from_env(executable):
         # Check if the executable is on the PATH
         path = shutil.which(executable)
         if path:
-            add_to_env(executable)
+            exe_to_env(executable)
             return True
         else: 
             print(f"{name} is not on Path")
@@ -367,7 +376,7 @@ def create_notebooks(language, folder_path):
 # README
 def creating_readme(repo_name ,project_name, project_description,repo_platform,author_name):
 
-    if repo_platform in ["Github","Gitlab"]:
+    if repo_platform.lower() in ["github","gitlab"]:
         web_repo = repo_platform.lower()
         setup = f"""git clone https://{web_repo}.com/username/{repo_name}.git"" \
         cd {repo_name} \
@@ -531,10 +540,8 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
     Returns:
     - None
     """
-    if not os.path.exists(readme_path):
-        return 
- 
-    # Read existing descriptions if the JSON file exists
+
+       # Read existing descriptions if the JSON file exists
     if os.path.exists(json_file):
         with open(json_file, "r", encoding="utf-8") as f:
             file_descriptions = json.load(f)
@@ -563,10 +570,12 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
             "build_features.py": "Script to build features for modeling.",
             "predict_model.py": "Script to make predictions using trained models."
         }
-        print("Hello")
         # Save to JSON file
         with open(json_file, "w", encoding="utf-8") as file:
             json.dump(file_descriptions, file, indent=4, ensure_ascii=False)
+
+    if not os.path.exists(readme_path):
+        return 
 
     # Read the README.md and extract the "Project Tree" section
     with open(readme_path, "r", encoding="utf-8") as f:
@@ -621,12 +630,43 @@ def git_push(msg:str=""):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
+def git_user_info():
+        git_name = None
+        git_email = None
+        while not git_name or not git_email:
+            git_name = input("Enter your Git user name: ").strip()
+            git_email = input("Enter your Git user email: ").strip()
+            # Check if inputs are valid
+            if not git_name or not git_email:
+                print("Both name and email are required.")
+        save_to_env(git_name ,'GIT_USER')
+        save_to_env(git_email,'GIT_EMAIL')
+        return git_name, git_email
+
+def git_repo_user(repo_platform):
+    if repo_platform in ["GitHub","GitLab"]: 
+        repo_user = None 
+        privacy_setting = None
+        while not repo_user or not privacy_setting:
+            repo_user = input(f"Enter your {repo_platform} username:").strip()
+            privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
+
+            if privacy_setting not in ["private", "public"]:
+                print("Invalid choice. Defaulting to 'private'.")
+                privacy_setting = None
+
+        save_to_env(repo_user,f"{repo_platform.upper()}_USER")
+        save_to_env(privacy_setting,f"{repo_platform.upper()}_PRIVACY")
+        
+        return repo_user, privacy_setting
+    else:
+        return None, None
 
 # Conda Functions:
 def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
     
     # Set frpm .env file
-    set_from_env('conda')
+    exe_from_env('conda')
 
     if not is_installed('conda','Conda'):
         if install_miniconda(install_path):

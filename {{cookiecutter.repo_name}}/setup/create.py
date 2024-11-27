@@ -158,6 +158,10 @@ author_name = "{{cookiecutter.author_name}}"
 create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
 
+# Set git user info
+git_user_info()
+git_repo_user(repo_platform)
+
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
 

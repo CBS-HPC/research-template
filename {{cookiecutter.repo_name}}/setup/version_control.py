@@ -6,7 +6,6 @@ import zipfile
 import urllib.request
 import importlib
 import shutil
-import re
 
 required_libraries = ['requests'] 
 for lib in required_libraries:
@@ -23,7 +22,7 @@ script_dir = "setup"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 
-from utils import ask_yes_no,add_to_path,is_installed,load_from_env,set_from_env,git_commit
+from utils import *
 
 def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
     """Handle repository creation and log-in based on selected platform."""
@@ -71,7 +70,7 @@ def install_git(install_path=None):
     - bool: True if installation is successful, False otherwise.
     """
     # Set from .env file
-    if set_from_env('git'):
+    if exe_from_env('git'):
         return True
     
     if is_installed('git', 'Git'):
@@ -99,7 +98,7 @@ def install_git(install_path=None):
             subprocess.run([installer_path, "/VERYSILENT", f"/DIR={install_path}", "/NORESTART"], check=True)
 
             # Add Git to PATH¨
-            add_to_path('Git',os.path.join(install_path, "bin"))
+            exe_to_path('Git',os.path.join(install_path, "bin"))
 
         elif os_type == "linux":
             # Install Git on Linux using apt
@@ -147,10 +146,10 @@ def check_git_config():
         # Check .env file
         env_name = load_from_env('GIT_USER')
         env_email= load_from_env('GIT_EMAIL')
-
+    
         # Test
         if env_name and env_email:
-            return True, env_name, env_email
+            return False, env_name, env_email
 
         # Check the current Git user configuration
         current_name = subprocess.run(
@@ -197,14 +196,16 @@ def setup_git_config(git_name,git_email):
     - bool: True if the configuration is successful, False otherwise.
     """
     try:
-        # Prompt user for name and email
-        git_name = input("Enter your Git user name: ").strip()
-        git_email = input("Enter your Git user email: ").strip()
+        if not git_name or not git_email:
+            git_name,git_email = git_user_info()
+            # Prompt user for name and email
+            #git_name = input("Enter your Git user name: ").strip()
+            #git_email = input("Enter your Git user email: ").strip()
 
         # Check if inputs are valid
-        if not git_name or not git_email:
-            print("Both name and email are required.")
-            return False,git_name,git_email
+        #if not git_name or not git_email:
+            #print("Both name and email are required.")
+            #return False,git_name,git_email
 
         # Configure Git user name and email globally
         subprocess.run(["git", "config", "--global", "user.name", git_name], check=True)
@@ -272,7 +273,7 @@ def install_dvc():
     Install DVC using pip.
     """
     # Set from .env file
-    if set_from_env('dvc'):
+    if exe_from_env('dvc'):
         return True
     
     if not is_installed('dvc','DVC'):
@@ -432,7 +433,7 @@ def setup_datalad(version_control,remote_storage,repo_platform,repo_name):
 
 def install_datalad():   
         # Set from .env file
-        if set_from_env('datalad'):
+        if exe_from_env('datalad'):
             return True
         
         if not is_installed('datalad','Datalad'):
@@ -456,7 +457,7 @@ def install_datalad():
 def install_git_annex():
     
     # Set from .env file
-    if set_from_env('git-annex'):
+    if exe_from_env('git-annex'):
         return True
         
     if not is_installed('git-annex','Git-Annex'):
@@ -542,22 +543,22 @@ def install_rclone(install_path):
         return repo_path
     
     # Set from .env file
-    if set_from_env('rclone'):
+    if exe_from_env('rclone'):
         return True
     
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
-        add_to_path('rclone',rclone_path)
+        exe_to_path('rclone',rclone_path)
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     
     # Set from .env file
-    if set_from_env('git-annex-remote-rclone'):
+    if exe_from_env('git-annex-remote-rclone'):
         return True
     
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
-        add_to_path('git-annex-remote-rclone',repo_path)
+        exe_to_path('git-annex-remote-rclone',repo_path)
 
 def datalad_create():
 
