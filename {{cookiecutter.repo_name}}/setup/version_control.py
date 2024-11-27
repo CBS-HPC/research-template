@@ -50,7 +50,9 @@ def setup_git(version_control,repo_platform):
             check = git_init(repo_platform)
         
         if check:
-            git_to_env(git_name, git_email)    
+            save_to_env(git_name,"GIT_USER") 
+            save_to_env(git_email,"GIT_EMAIL")    
+    
         
         return check
     else:
@@ -198,14 +200,6 @@ def setup_git_config(git_name,git_email):
     try:
         if not git_name or not git_email:
             git_name,git_email = git_user_info()
-            # Prompt user for name and email
-            #git_name = input("Enter your Git user name: ").strip()
-            #git_email = input("Enter your Git user email: ").strip()
-
-        # Check if inputs are valid
-        #if not git_name or not git_email:
-            #print("Both name and email are required.")
-            #return False,git_name,git_email
 
         # Configure Git user name and email globally
         subprocess.run(["git", "config", "--global", "user.name", git_name], check=True)
@@ -231,31 +225,7 @@ def git_init(repo_platform):
     print("Created an initial commit.")
     return True
 
-def git_to_env(git_name, git_email,env_file=".env"):
-    """
-    Adds Git username and email to the specified .env file. 
-    Creates the file if it doesn't exist.
-    
-    Parameters:
-    - env_file (str): The path to the .env file. Default is ".env".
-    """ 
-    if not git_name or not git_email:
-        print("Failed to retrieve Git user information. Make sure Git is configured.")
-        return
-    
-    # Check if .env file exists and create if not
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
-        with open(env_file, 'w') as file:
-            file.write("# Created .env file for storing Git user credentials.\n")
-    
-    # Write the credentials to the .env file
-    with open(env_file, 'a') as file:
-        file.write(f"GIT_USER={git_name}\n")
-        file.write(f"GIT_EMAIL={git_email}\n")
-    
-    print(f"Git user information added to {env_file}")
-
+  
 # DVC Setup Functions
 def setup_dvc(version_control,remote_storage,repo_platform,repo_name):
 

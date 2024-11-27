@@ -49,7 +49,6 @@ def load_from_env(env_var: str, env_file=".env"):
     # Get the environment variable for the executable (uppercase)
     return os.getenv(env_var.upper())
 
-
 def save_to_env(env_var: str, env_name: str, env_file=".env"):
     """
     Saves or updates an environment variable in a .env file (case-insensitive for variable names).
@@ -59,6 +58,8 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
         env_name (str): The name of the environment variable (case-insensitive).
         env_file (str): The path to the .env file. Defaults to ".env".
     """
+    if env_var is None:
+        return
     # Standardize the variable name for comparison
     env_name_upper = env_name.upper()
     
@@ -86,15 +87,6 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     # Write the updated lines back to the file
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
-
-def save_to_env_old(env_var:str,env_name:str,env_file=".env"):
-    # Check if .env file exists
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
-    
-    # Write the credentials to the .env file
-    with open(env_file, 'a') as file:  
-        file.write(f"{env_name.upper()}={env_var}\n")
 
 def exe_from_env(executable: str, env_file=".env"):
     """
@@ -700,6 +692,7 @@ def git_repo_user(repo_platform):
     else:
         return None, None
 
+
 # Conda Functions:
 def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
     
@@ -893,8 +886,8 @@ def generate_yml(env_name,requirements_path):
         yml_file.write(yml_content)
     print(f"Generated environment.yml file using {requirements_path}.")
 
-# Other
 
+# Other
 def get_hardware_info():
     """
     Extract hardware information and save it to a file.
