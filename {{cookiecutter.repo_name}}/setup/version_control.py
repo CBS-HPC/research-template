@@ -423,7 +423,69 @@ def install_datalad():
                 return False           
         return True
 
+
 def install_git_annex():
+    """
+    Installs git-annex using datalad-installer if not already installed.
+    Configures git to use the git-annex filter process.
+    
+    Returns:
+        str: The installation path of git-annex if installed successfully.
+        None: If the installation fails.
+    """
+    # Set from .env file
+    if exe_from_env('git-annex'):
+        return True
+
+    # Check if git-annex is installed
+    if not is_installed('git-annex', 'Git-Annex'):
+        try:
+            # Ensure datalad-installer is available
+            if not shutil.which('datalad-installer'):
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
+            
+            # Install git-annex using datalad-installer and capture the output
+            command = "echo y | datalad-installer git-annex -m datalad/git-annex:release"
+            result = subprocess.run(command, shell=True, text=True, capture_output=True)
+            
+            if result.returncode != 0:
+                print(f"Error during git-annex installation: {result.stderr}")
+                return None
+            
+            # Parse the output for the installation path
+            install_path = None
+            for line in result.stdout.splitlines():
+                if "git-annex is now installed at" in line:
+                    install_path = line.split("at")[-1].strip()
+                    break
+            
+            if not install_path:
+                print("Could not determine git-annex installation path.")
+                return False
+            
+            exe_to_path('git-annex',install_path)
+            if not is_installed('git-annex', 'Git-Annex'):
+                return False
+            
+        except subprocess.CalledProcessError as e:
+            print(f"Error during git-annex installation: {e}")
+            return False
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return False
+    # Configure git to use the git-annex filter process
+    try:
+        subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
+        print(f"git-annex installed successfully")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error configuring git-annex filter process: {e}")
+        return False
+
+  
+
+
+def install_git_annex_old():
     
     # Set from .env file
     if exe_from_env('git-annex'):
