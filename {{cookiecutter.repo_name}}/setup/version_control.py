@@ -423,7 +423,6 @@ def install_datalad():
                 return False           
         return True
 
-
 def install_git_annex():
     """
     Installs git-annex using datalad-installer if not already installed.
@@ -462,8 +461,7 @@ def install_git_annex():
             if not install_path:
                 print("Could not determine git-annex installation path.")
                 return False
-            print("HELLO")
-            print(install_path)
+  
             exe_to_path('git-annex',os.path.dirname(install_path))
             if not is_installed('git-annex', 'Git-Annex'):
                 print("dre")
@@ -484,27 +482,6 @@ def install_git_annex():
         print(f"Error configuring git-annex filter process: {e}")
         return False
 
-def install_git_annex_old():
-    
-    # Set from .env file
-    if exe_from_env('git-annex'):
-        return True
-        
-    if not is_installed('git-annex','Git-Annex'):
-        try:
-            if not shutil.which('datalad-installer'):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'datalad-installer'])
-            subprocess.check_call("echo y | datalad-installer git-annex -m datalad/git-annex:release", shell=True)
-            print("git-annex installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error during git-annex installation: {e}")
-            return False
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            return False 
-    subprocess.check_call(['git', 'config', '--global', 'filter.annex.process', 'git-annex filter-process'])
-    return True
-    
 def install_rclone(install_path):
     """Download and extract rclone to the specified bin folder."""
 
@@ -578,8 +555,9 @@ def install_rclone(install_path):
     
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
-        exe_to_path('rclone',rclone_path)
-
+        exe_to_path('rclone', os.path.dirname(rclone_path))
+        if not is_installed('rclone','Rclone'):
+            return False
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     
     # Set from .env file
@@ -589,6 +567,9 @@ def install_rclone(install_path):
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
         exe_to_path('git-annex-remote-rclone',repo_path)
+        if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
+            return False
+
 
 def datalad_create():
 
