@@ -543,9 +543,9 @@ def install_rclone(install_path):
         else:
             print(f"Cloning {repo_url} into {repo_path}...")
             subprocess.run(["git", "clone", repo_url, repo_path], check=True)
-            print(f"Repository cloned successfully to {repo_path}.")
 
         repo_path = os.path.abspath(repo_path)  # Convert to absolute path
+        print(f"Repository cloned successfully to {repo_path}.")
         return repo_path
     
     # Set from .env file

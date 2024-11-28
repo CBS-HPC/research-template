@@ -639,6 +639,14 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
     print(f"File descriptions updated in {json_file}")
 
 
+
+def set_from_env():
+    exe_from_env('git')
+    exe_from_env('datalad')
+    exe_from_env('git-annex')
+    exe_from_env('rclone')
+
+
 # Git Functions:
 def git_commit(msg:str=""):
     
@@ -663,9 +671,10 @@ def git_push(msg:str=""):
         elif os.path.isdir(".git"):
             git_commit(msg)
             result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
-            branch = result.stdout.strip()  # Remove any extra whitespace or newlin
-            if branch:
-                subprocess.run(["git", "push", "origin", branch], check=True)
+            #branch = result.stdout.strip()  # Remove any extra whitespace or newlin
+            #if branch:
+            #    subprocess.run(["git", "push", "origin", branch], check=True)
+            subprocess.run(["git", "push", "all"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
