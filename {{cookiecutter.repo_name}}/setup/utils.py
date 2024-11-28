@@ -659,7 +659,41 @@ def git_commit(msg:str=""):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-def git_push(msg:str=""):    
+def git_push(msg:str=""):
+
+    def push_all(remote="origin"):
+        try:
+            # Get the name of the current branch
+            current_branch = subprocess.check_output(
+                ["git", "branch", "--show-current"],
+                text=True
+            ).strip()
+            
+            # Get all local branches
+            branches = subprocess.check_output(
+                ["git", "branch"],
+                text=True
+            ).strip().splitlines()
+            
+            # Clean up branch names
+            branches = [branch.strip().replace("* ", "") for branch in branches]
+            
+            # Filter out the current branch
+            branches_to_push = [branch for branch in branches if branch != current_branch]
+            
+            # Push each branch except the current one
+            for branch in branches_to_push:
+                subprocess.run(
+                    ["git", "push", remote, branch],
+                    check=True
+                )
+            
+            print(f"Successfully pushed all branches except '{current_branch}'")
+        except subprocess.CalledProcessError as e:
+            print(f"Error occurred while pushing branches: {e}")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
     try:
         if os.path.isdir(".datalad"):
             # Set from .env file
@@ -668,7 +702,7 @@ def git_push(msg:str=""):
             exe_from_env('git-annex')
             exe_from_env('rclone')
             subprocess.run(["datalad", "save", "-m", msg], check=True)
-            subprocess.run(["git", "push", "--all"], check=True)
+            push_all()
 
         elif os.path.isdir(".git"):
             git_commit(msg)

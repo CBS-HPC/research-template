@@ -43,7 +43,7 @@ def repo_details(repo_platform):
     privacy_setting = load_from_env(f"{repo_platform.upper()}_PRIVACY")
 
     if not username  or not privacy_setting:
-        username, privacy_setting = git_repo_user(repo_platform)
+        username, privacy_setting = git_repo_user(repo_name,repo_platform)
 
     return username, privacy_setting
 
