@@ -663,12 +663,13 @@ def git_push(msg:str=""):
     try:
         if os.path.isdir(".datalad"):
             # Set from .env file
+            exe_from_env('git')
             exe_from_env('datalad')
             exe_from_env('git-annex')
             exe_from_env('rclone')
             subprocess.run(["datalad", "save", "-m", msg], check=True)
-            subprocess.run(["git", "push", "all"], check=True)
-            
+            subprocess.run(["git", "push", "--all"], check=True)
+
         elif os.path.isdir(".git"):
             git_commit(msg)
             result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
@@ -676,7 +677,7 @@ def git_push(msg:str=""):
             if branch:
                 subprocess.run(["git", "push", "origin", branch], check=True)
             else:
-                subprocess.run(["git", "push", "all"], check=True)
+                subprocess.run(["git", "push", "--all"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
