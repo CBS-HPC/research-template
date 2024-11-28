@@ -668,13 +668,15 @@ def git_push(msg:str=""):
             exe_from_env('rclone')
 
             subprocess.run(["datalad", "save", "-m", msg], check=True)
+            subprocess.run(["git", "push", "all"], check=True)
         elif os.path.isdir(".git"):
             git_commit(msg)
             result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
-            #branch = result.stdout.strip()  # Remove any extra whitespace or newlin
-            #if branch:
-            #    subprocess.run(["git", "push", "origin", branch], check=True)
-            subprocess.run(["git", "push", "all"], check=True)
+            branch = result.stdout.strip()  # Remove any extra whitespace or newlin
+            if branch:
+                subprocess.run(["git", "push", "origin", branch], check=True)
+            else:
+                subprocess.run(["git", "push", "all"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
