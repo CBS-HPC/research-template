@@ -452,19 +452,18 @@ def install_git_annex():
                 return None
             
             # Parse the output for the installation path
-            exe_path = None
+            install_path = None
             for line in result.stderr.splitlines():
                 if "git-annex is now installed at" in line:
-                     exe_path = line.split("at")[-1].strip()
+                    install_path = line.split("at")[-1].strip()
                     break
             
-            if not exe_path:
+            if not install_path:
                 print("Could not determine git-annex installation path.")
                 return False
   
-            exe_to_path('git-annex',os.path.dirname(exe_path))
+            exe_to_path('git-annex',os.path.dirname(install_path))
             if not is_installed('git-annex', 'Git-Annex'):
-                print("dre")
                 return False
             
         except subprocess.CalledProcessError as e:
@@ -569,6 +568,7 @@ def install_rclone(install_path):
         exe_to_path('git-annex-remote-rclone',repo_path)
         if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
             return False
+
 
 def datalad_create():
 
