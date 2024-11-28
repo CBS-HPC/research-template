@@ -566,7 +566,7 @@ def install_rclone(install_path):
     
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
-        exe_to_path('git-annex-remote-rclone',repo_path)
+        exe_to_path('git-annex-remote-rclone',os.path.dirname(repo_path))
         if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
             return False
 

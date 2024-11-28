@@ -641,15 +641,21 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
 
 # Git Functions:
 def git_commit(msg:str=""):
+    
+    # Set from .env file
+    exe_from_env('git')
+
     try:
         subprocess.run(["git", "add", "."], check=True)    
         subprocess.run(["git", "commit", "-m", msg], check=True)
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-def git_push(msg:str=""):
+def git_push(msg:str=""):    
     try:
         if os.path.isdir(".datalad"):
+            # Set from .env file
+            exe_from_env('datalad')
             subprocess.run(["datalad", "save", "-m", msg], check=True)
         elif os.path.isdir(".git"):
             git_commit(msg)
