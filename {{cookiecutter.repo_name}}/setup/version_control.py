@@ -569,7 +569,6 @@ def install_rclone(install_path):
         if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
             return False
 
-
 def datalad_create():
 
     def unlock_files(files_to_unlock):
@@ -580,7 +579,7 @@ def datalad_create():
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        files_to_unlock = ["README.md", "LICENSE", "hardware_information.txt"]
+        files_to_unlock = ["src","setup","notebooks","docs","config","README.md", "LICENSE","environment.yml","setup.py","hardware_information.txt"]
         subprocess.run(["datalad", "create","--force"], check=True)
         unlock_files(files_to_unlock )
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
