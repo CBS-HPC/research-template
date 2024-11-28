@@ -666,9 +666,9 @@ def git_push(msg:str=""):
             exe_from_env('datalad')
             exe_from_env('git-annex')
             exe_from_env('rclone')
-
             subprocess.run(["datalad", "save", "-m", msg], check=True)
             subprocess.run(["git", "push", "all"], check=True)
+            
         elif os.path.isdir(".git"):
             git_commit(msg)
             result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
