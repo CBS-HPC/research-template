@@ -771,8 +771,8 @@ def git_repo_user(repo_name,repo_platform):
 # Conda Functions:
 def setup_conda(virtual_environment,repo_name,install_path = None, install_packages = [], env_file = None):
     
-    # Set frpm .env file
-    exe_from_env('conda')
+    # Set from .env file
+    #exe_from_env('conda')
 
     install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
 
