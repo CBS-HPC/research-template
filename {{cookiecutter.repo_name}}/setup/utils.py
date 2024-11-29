@@ -161,11 +161,11 @@ def exe_to_env(executable: str = None,env_file=".env"):
     path = get_relative_path(shutil.which(executable))
 
     if path:
-        save_to_env(path ,executable.upper())
+        #save_to_env(path ,executable.upper())
 
         # Write the credentials to the .env file
-        #with open(env_file, 'a') as file:  
-        #    file.write(f"{executable.upper()}={path}\n")
+        with open(env_file, 'a') as file:  
+            file.write(f"{executable.upper()}={path}\n")
 
 def exe_to_env_old(executable: str = None,env_file=".env"):
     # Check if .env file exists
