@@ -33,7 +33,10 @@ def get_relative_path(target_path):
         if os.path.commonpath([current_dir, absolute_target_path]) == current_dir:
             # Create a relative path if it is a subpath
             relative_path = os.path.relpath(absolute_target_path, current_dir)
-            return relative_path
+
+    if relative_path:
+        return relative_path
+
     return target_path
 
 def ask_yes_no(question):
@@ -116,7 +119,7 @@ def exe_from_env(executable: str, env_file=".env"):
 
     # Construct the binary path
     env_var = os.path.abspath(env_var)
-    
+
     if os.path.exists(env_var):    
         if exe_to_path(executable, os.path.dirname(env_var)):
             if shutil.which(executable):
@@ -159,7 +162,7 @@ def exe_to_env(executable: str = None,env_file=".env"):
     if path:
         # Write the credentials to the .env file
         with open(env_file, 'a') as file:  
-            file.write(f"{executable.upper()}={shutil.which(executable)}\n")
+            file.write(f"{executable.upper()}={path}\n")
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
