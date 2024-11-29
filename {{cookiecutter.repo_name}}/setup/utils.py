@@ -113,23 +113,18 @@ def exe_from_env(executable: str, env_file=".env"):
         executable (str): The name of the executable.
         env_file (str): The path to the .env file. Defaults to '.env'.
     """
-    print(os.path.abspath(env_file))
+ 
     env_var = load_from_env(executable, env_file)
-    print('dre')
-    print(env_var)
+
     if not env_var:
-        print("dre2")
         return False
 
     # Construct the binary path
     #env_var = os.path.abspath(env_var)
 
     if os.path.exists(env_var):
-        print("dre3")
         if exe_to_path(executable, os.path.dirname(env_var)):
-            print("dre4")
             if shutil.which(executable):
-                print("dre5")
                 print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
                 return True
             
@@ -180,9 +175,6 @@ def exe_to_env(executable: str = None,env_file=".env"):
     with open(env_file, 'a') as file:  
         file.write(f"{executable.upper()}={shutil.which(executable)}\n")
 
-
-
-
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
@@ -192,12 +184,10 @@ def is_installed(executable: str = None, name: str = None):
         path = shutil.which(executable)
         if path:
             exe_to_env(executable)
-            return True
         else: 
             print(f"{name} is not on Path")
             return False
-    else:
-        print("Hello4")
+    return True
 
 # Scripts creation
 def create_step_script(language, folder_path, script_name, purpose):
