@@ -94,7 +94,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         if repo_platform == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
              install_packages.extend(['gh'])     
             
-        check = setup_conda(virtual_environment,repo_name,install_path,install_packages,env_file)
+        check = setup_conda(install_path,virtual_environment,repo_name,install_packages,env_file)
 
         if check is False and virtual_environment == 'Python':
             if subprocess.call(['which', 'virtualenv']) == 0:

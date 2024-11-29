@@ -181,15 +181,19 @@ def is_installed(executable: str = None, name: str = None):
     if not isinstance(executable, str) or not isinstance(name, str):
         raise ValueError("Both 'executable' and 'name' must be strings.")
     if not exe_from_env(executable):
+        print("Hello2")
         # Check if the executable is on the PATH
         path = shutil.which(executable)
+        print(path)
         if path:
+            print("Hello3")
             exe_to_env(executable)
             return True
         else: 
             print(f"{name} is not on Path")
             return False
-  
+    else:
+        print("Hello4")
 
 # Scripts creation
 def create_step_script(language, folder_path, script_name, purpose):
@@ -787,7 +791,7 @@ def git_repo_user(repo_name,repo_platform):
 
 
 # Conda Functions:
-def setup_conda(virtual_environment,repo_name, install_path = None, install_packages = [], env_file = None):
+def setup_conda(install_path ,virtual_environment,repo_name, install_packages = [], env_file = None):
     
     # Set from .env file
     exe_from_env('conda')
