@@ -34,8 +34,8 @@ def get_relative_path(target_path):
             # Create a relative path if it is a subpath
             relative_path = os.path.relpath(absolute_target_path, current_dir)
 
-    if relative_path:
-        return relative_path
+        if relative_path:
+            return relative_path
 
     return target_path
 
@@ -177,7 +177,7 @@ def exe_to_path(executable: str = None,bin_path: str = None):
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
 
-def exe_to_env(executable: str = None,env_file=".env"):
+def exe_to_env_new(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
@@ -189,7 +189,7 @@ def exe_to_env(executable: str = None,env_file=".env"):
         with open(env_file, 'a') as file:  
             file.write(f"{executable.upper()}={path}\n")
 
-def exe_to_env_old(executable: str = None,env_file=".env"):
+def exe_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
