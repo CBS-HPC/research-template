@@ -127,7 +127,6 @@ def exe_from_env(executable: str, env_file=".env"):
             
     return False
 
-
 def exe_from_env_new(executable: str, env_file=".env"):
     """
     Tries to load the environment variable for the given executable from the .env file.
@@ -154,8 +153,7 @@ def exe_from_env_new(executable: str, env_file=".env"):
             
     return False
 
-
-def exe_to_path(executable: str = None,bin_path: str = None):
+def exe_to_path_old(executable: str = None,bin_path: str = None):
         """
         Adds the path of an executalbe binary to the system PATH permanently.
         """
@@ -179,7 +177,7 @@ def exe_to_path(executable: str = None,bin_path: str = None):
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
 
-def exe_to_env_new(executable: str = None,env_file=".env"):
+def exe_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
