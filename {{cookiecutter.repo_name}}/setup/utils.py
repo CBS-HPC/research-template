@@ -114,15 +114,21 @@ def exe_from_env(executable: str, env_file=".env"):
         env_file (str): The path to the .env file. Defaults to '.env'.
     """
     env_var = load_from_env(executable, env_file)
+    print('dre')
+    print(env_var)
     if not env_var:
+        print("dre2")
         return False
 
     # Construct the binary path
     #env_var = os.path.abspath(env_var)
 
-    if os.path.exists(env_var):    
+    if os.path.exists(env_var):
+        print("dre3")
         if exe_to_path(executable, os.path.dirname(env_var)):
+            print("dre4")
             if shutil.which(executable):
+                print("dre5")
                 print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
                 return True
             
@@ -181,12 +187,9 @@ def is_installed(executable: str = None, name: str = None):
     if not isinstance(executable, str) or not isinstance(name, str):
         raise ValueError("Both 'executable' and 'name' must be strings.")
     if not exe_from_env(executable):
-        print("Hello2")
         # Check if the executable is on the PATH
         path = shutil.which(executable)
-        print(path)
         if path:
-            print("Hello3")
             exe_to_env(executable)
             return True
         else: 
