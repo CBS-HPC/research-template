@@ -196,6 +196,9 @@ def exe_to_env(executable: str = None,env_file=".env"):
     
     # Write the credentials to the .env file
     with open(env_file, 'a') as file:  
+        print(executable)
+        print(shutil.which(executable))
+        print(env_file)
         file.write(f"{executable.upper()}={shutil.which(executable)}\n")
 
 def is_installed(executable: str = None, name: str = None):
