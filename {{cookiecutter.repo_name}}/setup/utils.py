@@ -120,14 +120,12 @@ def exe_from_env(executable: str, env_file=".env"):
     if not env_var:
         return False
 
-    if os.path.exists(env_var):
-        if exe_to_path(executable, os.path.dirname(env_var)):
-            if shutil.which(executable):
-                exe_to_env(executable)
-                print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
-                return True
-            
-    return False
+    if exe_to_path(executable, os.path.dirname(env_var)):
+        exe_to_env(executable)
+        print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
+        return True
+    else:    
+        return False
 
 def exe_to_path(executable: str = None,bin_path: str = None):
         """
@@ -141,41 +139,31 @@ def exe_to_path(executable: str = None,bin_path: str = None):
             if os_type == "windows":
                 # Use setx to set the environment variable permanently in Windows
                 subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
-                return True
             else:
                 # On macOS/Linux, you can add the path to the shell profile file
                 profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
                 with open(profile_file, "a") as file:
                     file.write(f'\nexport PATH="{bin_path}:$PATH"')
-                print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
+                #print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
+            
+            if shutil.which(executable):
+                print(f"{executable} binary is added to PATH: {bin_path}")
                 return True
+            else:
+                print(f"{executable} binary is not found on the following PATH: {bin_path}")
+                return False    
         else:
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
 
-def exe_to_env_new(executable: str = None,env_file=".env"):
-    # Check if .env file exists
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
-    
+def exe_to_env_new(executable: str = None):
     path = get_relative_path(shutil.which(executable))
-
     if path:
-        #save_to_env(path ,executable.upper())
+        save_to_env(path ,executable.upper())
 
-        # Write the credentials to the .env file
-        with open(env_file, 'a') as file:  
-            file.write(f"{executable.upper()}={path}\n")
-
-def exe_to_env(executable: str = None,env_file=".env"):
-    # Check if .env file exists
-    if not os.path.exists(env_file):
-        print(f"{env_file} does not exist. Creating a new one.")
-    
-    # Write the credentials to the .env file
+def exe_to_env(executable: str = None):
     save_to_env(shutil.which(executable) ,executable.upper())
-    #with open(env_file, 'a') as file:  
-    #    file.write(f"{executable.upper()}={shutil.which(executable)}\n")
+
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
