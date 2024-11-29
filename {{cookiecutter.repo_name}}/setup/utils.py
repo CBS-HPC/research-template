@@ -774,7 +774,7 @@ def setup_conda(virtual_environment,repo_name,install_path = None, install_packa
     # Set from .env file
     #exe_from_env('conda')
 
-    install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
+    #install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
 
     if not is_installed('conda','Conda'):
         if install_miniconda(install_path):
