@@ -120,7 +120,7 @@ def exe_from_env(executable: str, env_file=".env"):
         return False
 
     # Construct the binary path
-    #env_var = os.path.abspath(env_var)
+    env_var = os.path.abspath(env_var)
 
     if os.path.exists(env_var):
         if exe_to_path(executable, os.path.dirname(env_var)):
@@ -154,7 +154,7 @@ def exe_to_path(executable: str = None,bin_path: str = None):
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
 
-def exe_to_env2(executable: str = None,env_file=".env"):
+def exe_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
@@ -166,7 +166,7 @@ def exe_to_env2(executable: str = None,env_file=".env"):
         with open(env_file, 'a') as file:  
             file.write(f"{executable.upper()}={path}\n")
 
-def exe_to_env(executable: str = None,env_file=".env"):
+def exe_to_env_old(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
@@ -785,18 +785,13 @@ def git_repo_user(repo_name,repo_platform):
 
 
 # Conda Functions:
-def setup_conda(install_path ,virtual_environment,repo_name, install_packages = [], env_file = None):
+def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
     
-    # Set from .env file
-    exe_from_env('conda')
-
-    #install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
+    install_path = os.path.abspath(install_path)
 
     if not is_installed('conda','Conda'):
-        print("HELLO")
         if install_miniconda(install_path):
             if exe_to_path("Conda",os.path.join(install_path, "bin")):
-            #if add_miniconda_to_path(install_path): # FIX ME!!
                 if not init_conda():
                     return False
             else:
@@ -911,36 +906,6 @@ def install_miniconda(install_path):
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
         print(f"Failed to install Miniconda: {e}")
-        return False
-
-def add_miniconda_to_path(install_path):
-    """
-    Adds Miniconda's bin (Linux/Mac) or Scripts (Windows) directory to the system PATH.
-
-    Parameters:
-    - install_path (str): The absolute path where Miniconda is installed.
-
-    Returns:
-    - bool: True if addition to PATH is successful, False otherwise.
-    """
-
-    os_type = platform.system().lower()
-    conda_bin_path = os.path.join(install_path, 'Scripts' if os_type == 'windows' else 'bin')
-    
-    try:
-        if os_type == 'windows':
-            subprocess.run(f'setx PATH "%PATH%;{conda_bin_path}"', shell=True, check=True)
-            print("Miniconda path added to system PATH (permanent for Windows).")
-        else:
-            shell_profile = os.path.expanduser("~/.bashrc" if os_type == "linux" else "~/.zshrc")
-            with open(shell_profile, "a") as file:
-                file.write(f'\n# Miniconda path\nexport PATH="{conda_bin_path}:$PATH"\n')
-            os.environ["PATH"] = f"{conda_bin_path}:{os.environ['PATH']}"
-            print(f"Miniconda path added to PATH. Please restart your terminal or source your {shell_profile} to apply.")
-        return True
-        
-    except Exception as e:
-        print(f"Failed to add Miniconda to PATH: {e}")
         return False
 
 def create_conda_env(command,msg):
