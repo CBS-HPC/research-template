@@ -94,7 +94,7 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
         if repo_platform == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
              install_packages.extend(['gh'])     
             
-        check = setup_conda(install_path,virtual_environment,repo_name, install_packages,env_file)
+        check = setup_conda(virtual_environment,repo_name,install_path,install_packages,env_file)
 
         if check is False and virtual_environment == 'Python':
             if subprocess.call(['which', 'virtualenv']) == 0:
@@ -139,8 +139,8 @@ def run_powershell_script(script_path, repo_name=None, setup_version_control_pat
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
-setup_bash_script = "setup/create.sh"
-setup_powershell_script = "setup/create.ps1"
+setup_create_bash = "setup/create.sh"
+setup_create_powershell = "setup/create.ps1"
 
 miniconda_path =  "bin/miniconda"
 
@@ -168,6 +168,6 @@ repo_name = setup_virtual_environment(version_control,virtual_environment,repo_p
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    run_powershell_script(setup_powershell_script, repo_name, setup_version_control, setup_remote_repository)
+    run_powershell_script(setup_create_powershell, repo_name, setup_version_control, setup_remote_repository)
 elif os_type == "darwin" or os_type == "linux":
-    run_bash_script(setup_bash_script, repo_name, setup_version_control, setup_remote_repository)
+    run_bash_script(setup_create_bash, repo_name, setup_version_control, setup_remote_repository)
