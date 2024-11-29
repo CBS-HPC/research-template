@@ -59,9 +59,7 @@ def ask_yes_no(question):
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
 def load_from_env(env_var: str, env_file=".env"):
-    
-    if not os.path.exists(env_file):
-        return None
+       
     # Load the .env file
     load_dotenv(env_file)
 
