@@ -123,6 +123,7 @@ def exe_from_env(executable: str, env_file=".env"):
     if os.path.exists(env_var):
         if exe_to_path(executable, os.path.dirname(env_var)):
             if shutil.which(executable):
+                exe_to_env(executable)
                 print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
                 return True
             
@@ -197,9 +198,6 @@ def exe_to_env(executable: str = None,env_file=".env"):
     
     # Write the credentials to the .env file
     with open(env_file, 'a') as file:  
-        print(executable)
-        print(shutil.which(executable))
-        print(env_file)
         file.write(f"{executable.upper()}={shutil.which(executable)}\n")
 
 def is_installed(executable: str = None, name: str = None):
