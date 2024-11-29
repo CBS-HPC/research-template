@@ -104,6 +104,7 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
 
+
 def exe_from_env(executable: str, env_file=".env"):
     """
     Tries to load the environment variable for the given executable from the .env file.
@@ -118,7 +119,7 @@ def exe_from_env(executable: str, env_file=".env"):
         return False
 
     # Construct the binary path
-    env_var = os.path.abspath(env_var)
+    #env_var = os.path.abspath(env_var)
 
     if os.path.exists(env_var):    
         if exe_to_path(executable, os.path.dirname(env_var)):
@@ -172,6 +173,9 @@ def exe_to_env(executable: str = None,env_file=".env"):
 
     with open(env_file, 'a') as file:  
         file.write(f"{executable.upper()}={shutil.which(executable)}\n")
+
+
+
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
@@ -784,7 +788,7 @@ def git_repo_user(repo_name,repo_platform):
 
 
 # Conda Functions:
-def setup_conda(virtual_environment,repo_name,install_path = None, install_packages = [], env_file = None):
+def setup_conda(virtual_environment,repo_name, install_path = None, install_packages = [], env_file = None):
     
     # Set from .env file
     #exe_from_env('conda')
