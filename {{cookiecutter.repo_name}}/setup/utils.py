@@ -144,8 +144,7 @@ def exe_to_path(executable: str = None,bin_path: str = None):
                 profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
                 with open(profile_file, "a") as file:
                     file.write(f'\nexport PATH="{bin_path}:$PATH"')
-                #print(f"Added {bin_path} to PATH. Restart the terminal or source {profile_file} to apply.")
-            
+
             if shutil.which(executable):
                 print(f"{executable} binary is added to PATH: {bin_path}")
                 return True
@@ -162,7 +161,9 @@ def exe_to_env_new(executable: str = None):
         save_to_env(path ,executable.upper())
 
 def exe_to_env(executable: str = None):
-    save_to_env(shutil.which(executable) ,executable.upper())
+    #path = shutil.which(executable)
+    path = os.path.dirname(shutil.which(executable))
+    save_to_env(path ,executable.upper())
 
 
 def is_installed(executable: str = None, name: str = None):
