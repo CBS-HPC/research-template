@@ -113,6 +113,7 @@ def exe_from_env(executable: str, env_file=".env"):
         executable (str): The name of the executable.
         env_file (str): The path to the .env file. Defaults to '.env'.
     """
+    print(os.path.abspath(env_file))
     env_var = load_from_env(executable, env_file)
     print('dre')
     print(env_var)
