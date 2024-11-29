@@ -115,11 +115,14 @@ def exe_from_env(executable: str, env_file=".env"):
         return False
 
     # Construct the binary path
+    env_var = os.path.abspath(env_var)
+    
     if os.path.exists(env_var):    
         if exe_to_path(executable, os.path.dirname(env_var)):
             if shutil.which(executable):
                 print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
                 return True
+            
     return False
 
 def exe_to_path(executable: str = None,bin_path: str = None):
