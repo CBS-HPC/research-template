@@ -129,32 +129,6 @@ def exe_from_env(executable: str, env_file=".env"):
             
     return False
 
-def exe_from_env_new(executable: str, env_file=".env"):
-    """
-    Tries to load the environment variable for the given executable from the .env file.
-    If the variable exists and points to a valid binary path, adds it to the system PATH.
-
-    Args:
-        executable (str): The name of the executable.
-        env_file (str): The path to the .env file. Defaults to '.env'.
-    """
- 
-    env_var = load_from_env(executable, env_file)
-
-    if not env_var:
-        return False
-
-    # Construct the binary path
-    env_var = os.path.abspath(env_var)
-
-    if os.path.exists(env_var):
-        if exe_to_path(executable, os.path.dirname(env_var)):
-            if shutil.which(executable):
-                print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
-                return True
-            
-    return False
-
 def exe_to_path(executable: str = None,bin_path: str = None):
         """
         Adds the path of an executalbe binary to the system PATH permanently.
@@ -179,7 +153,7 @@ def exe_to_path(executable: str = None,bin_path: str = None):
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
 
-def exe_to_env_new(executable: str = None,env_file=".env"):
+def exe_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
@@ -187,11 +161,13 @@ def exe_to_env_new(executable: str = None,env_file=".env"):
     path = get_relative_path(shutil.which(executable))
 
     if path:
-        # Write the credentials to the .env file
-        with open(env_file, 'a') as file:  
-            file.write(f"{executable.upper()}={path}\n")
+        save_to_env(path ,executable.upper())
 
-def exe_to_env(executable: str = None,env_file=".env"):
+        # Write the credentials to the .env file
+        #with open(env_file, 'a') as file:  
+        #    file.write(f"{executable.upper()}={path}\n")
+
+def exe_to_env_old(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
