@@ -152,7 +152,7 @@ def exe_to_path(executable: str = None,bin_path: str = None):
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
 
-def exe_to_env(executable: str = None,env_file=".env"):
+def exe_to_env2(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
@@ -163,6 +163,15 @@ def exe_to_env(executable: str = None,env_file=".env"):
         # Write the credentials to the .env file
         with open(env_file, 'a') as file:  
             file.write(f"{executable.upper()}={path}\n")
+
+def exe_to_env(executable: str = None,env_file=".env"):
+    # Check if .env file exists
+    if not os.path.exists(env_file):
+        print(f"{env_file} does not exist. Creating a new one.")
+    
+
+    with open(env_file, 'a') as file:  
+        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
