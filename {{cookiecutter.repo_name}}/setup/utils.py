@@ -23,6 +23,19 @@ from dotenv import load_dotenv
 import requests
 
 
+def get_relative_path(target_path):
+
+    if target_path:
+        current_dir = os.getcwd()
+        absolute_target_path = os.path.abspath(target_path)
+        
+        # Check if target_path is a subpath of current_dir
+        if os.path.commonpath([current_dir, absolute_target_path]) == current_dir:
+            # Create a relative path if it is a subpath
+            relative_path = os.path.relpath(absolute_target_path, current_dir)
+            return relative_path
+    return target_path
+
 def ask_yes_no(question):
     """
     Prompt the user with a yes/no question and validate the input.
@@ -132,15 +145,18 @@ def exe_to_path(executable: str = None,bin_path: str = None):
         else:
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
-        
+
 def exe_to_env(executable: str = None,env_file=".env"):
     # Check if .env file exists
     if not os.path.exists(env_file):
         print(f"{env_file} does not exist. Creating a new one.")
     
-    # Write the credentials to the .env file
-    with open(env_file, 'a') as file:  
-        file.write(f"{executable.upper()}={shutil.which(executable)}\n")
+    path = get_relative_path(shutil.which(executable))
+
+    if path:
+        # Write the credentials to the .env file
+        with open(env_file, 'a') as file:  
+            file.write(f"{executable.upper()}={shutil.which(executable)}\n")
 
 def is_installed(executable: str = None, name: str = None):
     # Check if both executable and name are provided as strings
