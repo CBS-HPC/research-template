@@ -252,12 +252,6 @@ def install_glab(install_path=None):
             print(f"Error retrieving the latest glab version: {e}")
             return None
 
-     # Set from .env file
-    
-    # Set from .env file
-    if exe_from_env('glab'):
-        return True
-    
     if is_installed('glab',"GitLab CLI (glab)"):
         return True
 
@@ -325,10 +319,7 @@ def install_gh(install_path=None):
     Returns:
     - bool: True if installation is successful, False otherwise.
     """
-    # Set from .env file
-    if exe_from_env('gh'):
-        return True
-
+   
     if is_installed('gh', "GitHub CLI (gh)"):
         return True
 

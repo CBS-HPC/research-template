@@ -70,10 +70,7 @@ def install_git(install_path=None):
     Returns:
     - bool: True if installation is successful, False otherwise.
     """
-    # Set from .env file
-    if exe_from_env('git'):
-        return True
-    
+
     if is_installed('git', 'Git'):
         return True 
     
@@ -241,10 +238,7 @@ def install_dvc():
     """
     Install DVC using pip.
     """
-    # Set from .env file
-    if exe_from_env('dvc'):
-        return True
-    
+
     if not is_installed('dvc','DVC'):
         try:
             # Install DVC via pip
@@ -401,10 +395,7 @@ def setup_datalad(version_control,remote_storage,repo_platform,repo_name):
         datalad_deic_storage(repo_name)
 
 def install_datalad():   
-        # Set from .env file
-        if exe_from_env('datalad'):
-            return True
-        
+
         if not is_installed('datalad','Datalad'):
             try:
                 if not shutil.which('datalad-installer'):
@@ -432,10 +423,6 @@ def install_git_annex():
         str: The installation path of git-annex if installed successfully.
         None: If the installation fails.
     """
-    # Set from .env file
-    if exe_from_env('git-annex'):
-        return True
-
     # Check if git-annex is installed
     if not is_installed('git-annex', 'Git-Annex'):
         try:
@@ -548,20 +535,12 @@ def install_rclone(install_path):
         print(f"Repository cloned successfully to {repo_path}.")
         return repo_path
     
-    # Set from .env file
-    if exe_from_env('rclone'):
-        return True
-    
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
         exe_to_path('rclone', os.path.dirname(rclone_path))
         if not is_installed('rclone','Rclone'):
             return False
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
-    
-    # Set from .env file
-    if exe_from_env('git-annex-remote-rclone'):
-        return True
     
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)

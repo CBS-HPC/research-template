@@ -161,7 +161,7 @@ def exe_to_env_new(executable: str = None):
         save_to_env(path ,executable.upper())
 
 def exe_to_env(executable: str = None):
-    #path = shutil.which(executable)
+    #path = shutil.which(executable) # FIX ME !!!
     path = os.path.dirname(shutil.which(executable))
     save_to_env(path ,executable.upper())
 
