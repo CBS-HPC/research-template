@@ -58,10 +58,12 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
+
 def load_from_env(env_var: str, env_file=".env"):
        
     # Load the .env file
-    load_dotenv(env_file)
+    load_dotenv(env_file,override=True)
+    #load_dotenv(env_file)
 
     # Get the environment variable for the executable (uppercase)
     return os.getenv(env_var.upper())
