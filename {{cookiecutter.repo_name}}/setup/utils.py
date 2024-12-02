@@ -121,9 +121,9 @@ def exe_from_env(executable: str, env_file=".env"):
 
     if not env_var:
         return False
-
+    print("Hello")
+    print(shutil.which(executable))
     if exe_to_path(executable, env_var):
-    #if exe_to_path(executable, os.path.dirname(env_var)):
         exe_to_env(executable)
         print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
         return True
@@ -164,7 +164,6 @@ def exe_to_env_new(executable: str = None):
         save_to_env(path ,executable.upper())
 
 def exe_to_env(executable: str = None):
-    #path = shutil.which(executable) # FIX ME !!!
     path = os.path.dirname(shutil.which(executable))
     save_to_env(path ,executable.upper())
 
