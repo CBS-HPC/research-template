@@ -120,10 +120,8 @@ def exe_from_env(executable: str, env_file=".env"):
     if not env_var:
         return False
 
-    print("hello")
-    print(env_var)
-    print(os.path.dirname(env_var))
-    if exe_to_path(executable, os.path.dirname(env_var)):
+    if exe_to_path(executable, env_var):
+    #if exe_to_path(executable, os.path.dirname(env_var)):
         exe_to_env(executable)
         print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
         return True
