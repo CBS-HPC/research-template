@@ -136,7 +136,7 @@ def exe_to_path(executable: str = None,bin_path: str = None):
 
 def exe_to_env(executable: str = None,path:str = None, env_file:str = ".env"):
     
-    if os.path.exists(path): 
+    if not os.path.exists(path): 
         path = os.path.dirname(shutil.which(executable))
     
     if path:
