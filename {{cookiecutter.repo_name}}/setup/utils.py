@@ -59,7 +59,7 @@ def ask_yes_no(question):
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
 
-def load_from_env(env_var: str, env_file=".env"):
+def load_from_env_notused(env_var: str, env_file=".env"):
        
     # Load the .env file
     load_dotenv(env_file,override=True)
@@ -107,7 +107,7 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
 
-def exe_from_env(executable: str, env_file=".env"):
+def exe_from_env_notused(executable: str, env_file=".env"):
     """
     Tries to load the environment variable for the given executable from the .env file.
     If the variable exists and points to a valid binary path, adds it to the system PATH.
@@ -121,8 +121,7 @@ def exe_from_env(executable: str, env_file=".env"):
 
     if not env_var:
         return False
-    print("Hello")
-    print(shutil.which(executable))
+
     if exe_to_path(executable, env_var):
         exe_to_env(executable)
         print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
@@ -163,12 +162,44 @@ def exe_to_env_new(executable: str = None):
     if path:
         save_to_env(path ,executable.upper())
 
-def exe_to_env(executable: str = None):
-    path = os.path.dirname(shutil.which(executable))
-    save_to_env(path ,executable.upper())
+def exe_to_env(executable: str = None,path:str = None, env_file:str = ".env"):
+    
+    if not path or not os.path.exists(path): 
+        path = os.path.dirname(shutil.which(executable))
+    
+    if path:  
+        save_to_env(path ,executable.upper())  
+        # Load the .env file  
+        load_dotenv(env_file,override=True)  
+        if shutil.which(executable):
+            return True
+    return False
 
 
-def is_installed(executable: str = None, name: str = None):
+
+
+
+def is_installed(executable: str = None, name: str = None,env_file:str = ".env"):
+    
+    if name is None:
+        name = executable
+
+    # Check if both executable and name are provided as strings
+    if not isinstance(executable, str) or not isinstance(name, str):
+        raise ValueError("Both 'executable' and 'name' must be strings.")
+    
+    # Load the .env file
+    load_dotenv(env_file,override=True)
+
+    if shutil.which(executable):
+        exe_to_env(executable)
+        print(f"{name} has been set to path: {shutil.which(executable)})")
+    else: 
+        print(f"{name} is not on Path")
+        return False
+
+def is_installed_old(executable: str = None, name: str = None):
+    
     # Check if both executable and name are provided as strings
     if not isinstance(executable, str) or not isinstance(name, str):
         raise ValueError("Both 'executable' and 'name' must be strings.")
@@ -669,17 +700,18 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
 
 
 def set_from_env():
-    exe_from_env('git')
-    exe_from_env('datalad')
-    exe_from_env('git-annex')
-    exe_from_env('rclone')
+  
+    is_installed('git')
+    is_installed('datalad')
+    is_installed('git-annex')
+    is_installed('rclone')
 
 
 # Git Functions:
 def git_commit(msg:str=""):
     
     # Set from .env file
-    exe_from_env('git')
+    is_installed('git')
 
     try:
         subprocess.run(["git", "add", "."], check=True)    
@@ -725,10 +757,10 @@ def git_push(msg:str=""):
     try:
         if os.path.isdir(".datalad"):
             # Set from .env file
-            exe_from_env('git')
-            exe_from_env('datalad')
-            exe_from_env('git-annex')
-            exe_from_env('rclone')
+            is_installed('git')
+            is_installed('datalad')
+            is_installed('git-annex')
+            is_installed('rclone')
             subprocess.run(["datalad", "save", "-m", msg], check=True)
             push_all()
 
@@ -783,15 +815,8 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
     install_path = os.path.abspath(install_path)
 
     if not is_installed('conda','Conda'):
-        if install_miniconda(install_path):
-            if exe_to_path("Conda",os.path.join(install_path, "bin")):
-                if not init_conda():
-                    return False
-            else:
-                return False
-        else:
+        if not install_miniconda(install_path):
             return False
-        is_installed('conda','Conda')
 
     if virtual_environment in ['Python','R']:
         command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
@@ -892,9 +917,21 @@ def install_miniconda(install_path):
         subprocess.run(install_command, check=True)
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
-        print("Miniconda installation complete.")
-        return True
         
+        
+        if exe_to_env("Conda",os.path.join(install_path,"bin")):
+        #if exe_to_path("Conda",os.path.join(install_path, "bin")): 
+            if not init_conda():
+                return False
+        else:
+            return False
+        
+        if is_installed('conda','Conda'):
+            print("Miniconda installation complete.")
+            return True
+        else:
+            return False
+    
     except Exception as e:
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
