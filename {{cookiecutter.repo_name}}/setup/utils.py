@@ -10,7 +10,7 @@ import re
 import zipfile
 import urllib.request
 
-required_libraries = ['python-dotenv','nbformat','requests'] 
+required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat','requests'] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -106,28 +106,6 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
 
-def exe_from_env_notused(executable: str, env_file=".env"):
-    """
-    Tries to load the environment variable for the given executable from the .env file.
-    If the variable exists and points to a valid binary path, adds it to the system PATH.
-
-    Args:
-        executable (str): The name of the executable.
-        env_file (str): The path to the .env file. Defaults to '.env'.
-    """
- 
-    env_var = load_from_env(executable, env_file)
-
-    if not env_var:
-        return False
-
-    if exe_to_path(executable, env_var):
-        exe_to_env(executable)
-        print(f"{executable.upper()} from .env file has been set to path: {shutil.which(executable)})")
-        return True
-    else:    
-        return False
-
 def exe_to_path(executable: str = None,bin_path: str = None):
         """
         Adds the path of an executalbe binary to the system PATH permanently.
@@ -156,17 +134,13 @@ def exe_to_path(executable: str = None,bin_path: str = None):
             print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
             return False
 
-def exe_to_env_new(executable: str = None):
-    path = get_relative_path(shutil.which(executable))
-    if path:
-        save_to_env(path ,executable.upper())
-
 def exe_to_env(executable: str = None,path:str = None, env_file:str = ".env"):
     
-    if not path or not os.path.exists(path): 
+    if os.path.exists(path): 
         path = os.path.dirname(shutil.which(executable))
     
-    if path:  
+    if path:
+        #path = get_relative_path(path)  
         save_to_env(path ,executable.upper())  
         # Load the .env file  
         load_dotenv(env_file,override=True)  
@@ -193,21 +167,6 @@ def is_installed(executable: str = None, name: str = None,env_file:str = ".env")
     else: 
         print(f"{name} is not on Path")
         return False
-
-def is_installed_old(executable: str = None, name: str = None):
-    
-    # Check if both executable and name are provided as strings
-    if not isinstance(executable, str) or not isinstance(name, str):
-        raise ValueError("Both 'executable' and 'name' must be strings.")
-    if not exe_from_env(executable):
-        # Check if the executable is on the PATH
-        path = shutil.which(executable)
-        if path:
-            exe_to_env(executable)
-        else: 
-            print(f"{name} is not on Path")
-            return False
-    return True
 
 # Scripts creation
 def create_step_script(language, folder_path, script_name, purpose):
