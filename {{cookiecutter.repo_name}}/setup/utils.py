@@ -891,13 +891,13 @@ def install_miniconda(install_path):
         installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
         url = f"https://repo.anaconda.com/miniconda/{installer_name}"
         installer_path = os.path.join(download_dir, installer_name)
-        install_command = ["bash", installer_path, "-b","-f ","-p", install_path]
+        install_command = ["bash", installer_path, "-b","-f","-p", install_path]
         
     elif os_type == "linux":
         installer_name = "Miniconda3-latest-Linux-x86_64.sh"
         url = f"https://repo.anaconda.com/miniconda/{installer_name}"
         installer_path = os.path.join(download_dir, installer_name)
-        install_command = ["bash", installer_path, "-b","-f ","-p", install_path]
+        install_command = ["bash", installer_path, "-b","-f","-p", install_path]
         
     else:
         print("Unsupported operating system.")
