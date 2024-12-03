@@ -694,7 +694,6 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
     print(f"File descriptions updated in {json_file}")
 
 
-
 def set_from_env():
   
     is_installed('git')
@@ -869,10 +868,10 @@ def init_conda():
 
 def install_miniconda(install_path):
     """
-    Downloads and installs Miniconda to a specified location based on the operating system.
+    Downloads and installs Miniconda3 to a specified location based on the operating system.
     
     Parameters:
-    - install_path (str): The absolute path where Miniconda should be installed.
+    - install_path (str): The absolute path where Miniconda3 should be installed.
 
     Returns:
     - bool: True if installation is successful, False otherwise.
@@ -892,13 +891,13 @@ def install_miniconda(install_path):
         installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
         url = f"https://repo.anaconda.com/miniconda/{installer_name}"
         installer_path = os.path.join(download_dir, installer_name)
-        install_command = ["bash", installer_path, "-b", "-p", install_path]
+        install_command = ["bash", installer_path, "-b","-f ","-p", install_path]
         
     elif os_type == "linux":
         installer_name = "Miniconda3-latest-Linux-x86_64.sh"
         url = f"https://repo.anaconda.com/miniconda/{installer_name}"
         installer_path = os.path.join(download_dir, installer_name)
-        install_command = ["bash", installer_path, "-b", "-p", install_path]
+        install_command = ["bash", installer_path, "-b","-f ","-p", install_path]
         
     else:
         print("Unsupported operating system.")
@@ -909,7 +908,7 @@ def install_miniconda(install_path):
         urllib.request.urlretrieve(url, installer_path)
         print("Download complete.")
         
-        print("Installing Miniconda...")
+        print("Installing Miniconda3...")
         subprocess.run(install_command, check=True)
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
@@ -922,7 +921,7 @@ def install_miniconda(install_path):
             return False
         
         if is_installed('conda','Conda'):
-            print("Miniconda installation complete.")
+            print("Miniconda3 installation complete.")
             return True
         else:
             return False
@@ -930,7 +929,7 @@ def install_miniconda(install_path):
     except Exception as e:
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
-        print(f"Failed to install Miniconda: {e}")
+        print(f"Failed to install Miniconda3: {e}")
         return False
 
 def create_conda_env(command,msg):

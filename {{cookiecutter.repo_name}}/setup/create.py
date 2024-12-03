@@ -11,7 +11,7 @@ if script_dir not in sys.path:
 
 from utils import *
 
-def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda"):
+def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
     
@@ -142,7 +142,7 @@ setup_remote_repository = "setup/remote_repository.py"
 setup_create_bash = "setup/create.sh"
 setup_create_powershell = "setup/create.ps1"
 
-miniconda_path =  "bin/miniconda"
+miniconda_path =  "bin/miniconda3"
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
 repo_name = "{{ cookiecutter.repo_name }}"
