@@ -914,9 +914,8 @@ def install_miniconda(install_path):
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
         
-        
-        if exe_to_env("Conda",os.path.join(install_path,"bin")):
-        #if exe_to_path("Conda",os.path.join(install_path, "bin")): 
+        #if exe_to_env("conda",os.path.join(install_path,"bin")):
+        if exe_to_path("Conda",os.path.join(install_path, "bin")): 
             if not init_conda():
                 return False
         else:

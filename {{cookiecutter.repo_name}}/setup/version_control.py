@@ -509,7 +509,7 @@ def install_rclone(install_path):
             zip_ref.extractall(install_path)
 
         # Clean up by deleting the zip file
-        os.remove(local_zip)
+        #os.remove(local_zip)
         print(f"rclone installed successfully at {os.path.join(install_path, rclone_executable)}.")
 
         rclone_path = os.path.abspath(os.path.join(install_path, rclone_executable))
@@ -541,17 +541,16 @@ def install_rclone(install_path):
         rclone_path = download_rclone(install_path)
         #exe_to_path('rclone', os.path.dirname(rclone_path))
         exe_to_env('rclone', os.path.dirname(rclone_path)) 
-        
-        if not is_installed('rclone','Rclone'):
-            return False
+        is_installed('rclone','Rclone')
+
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
         exe_to_env('git-annex-remote-rclone',repo_path)
         #exe_to_path('git-annex-remote-rclone',repo_path)
-        if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
-            return False
+        is_installed('git-annex-remote-rclone','git-annex-remote-rclone')
+   
 
 def datalad_create():
 
