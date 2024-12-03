@@ -305,8 +305,8 @@ def install_glab(install_path=None):
     extract_method()
 
     # Add the extracted glab to the system PATH
-    #exe_to_path('GitLab CLI',os.path.join(install_path, "bin"))
-    exe_to_env('GitLab CLI',os.path.join(install_path, "bin"))
+    exe_to_path('GitLab CLI',os.path.join(install_path, "bin"))
+    #exe_to_env('GitLab CLI',os.path.join(install_path, "bin"))
     return True
    
 def install_gh(install_path=None):
@@ -353,8 +353,8 @@ def install_gh(install_path=None):
             return False
 
         # Add the extracted gh
-        #exe_to_path("GitHub CLI",os.path.join(install_path, "bin"))
-        exe_to_env("GitHub CLI",os.path.join(install_path, "bin"))
+        exe_to_path("GitHub CLI",os.path.join(install_path, "bin"))
+        #exe_to_env("GitHub CLI",os.path.join(install_path, "bin"))
         return True
 
     except subprocess.CalledProcessError as e:

@@ -58,7 +58,6 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
-
 def load_from_env_notused(env_var: str, env_file=".env"):
        
     # Load the .env file
@@ -916,8 +915,8 @@ def install_miniconda(install_path):
             os.remove(installer_path)
         
         
-        if exe_to_env("Conda",os.path.join(install_path,"bin")):
-        #if exe_to_path("Conda",os.path.join(install_path, "bin")): 
+        #if exe_to_env("Conda",os.path.join(install_path,"bin")):
+        if exe_to_path("Conda",os.path.join(install_path, "bin")): 
             if not init_conda():
                 return False
         else:
