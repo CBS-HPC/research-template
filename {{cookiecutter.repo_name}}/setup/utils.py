@@ -175,10 +175,6 @@ def exe_to_env(executable: str = None,path:str = None, env_file:str = ".env"):
             return True
     return False
 
-
-
-
-
 def is_installed(executable: str = None, name: str = None,env_file:str = ".env"):
     
     if name is None:
@@ -194,6 +190,7 @@ def is_installed(executable: str = None, name: str = None,env_file:str = ".env")
     if shutil.which(executable):
         exe_to_env(executable)
         print(f"{name} has been set to path: {shutil.which(executable)})")
+        return True
     else: 
         print(f"{name} is not on Path")
         return False
