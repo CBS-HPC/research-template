@@ -106,47 +106,75 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
 
-def exe_to_path(executable: str = None,bin_path: str = None):
-        """
-        Adds the path of an executalbe binary to the system PATH permanently.
-        """
-        os_type = platform.system().lower() 
-        if os.path.exists(bin_path):
-                    # Add to current session PATH
-            os.environ["PATH"] += os.pathsep + bin_path
-
-            if os_type == "windows":
-                # Use setx to set the environment variable permanently in Windows
-                subprocess.run(["setx", "PATH", f"{bin_path};%PATH%"], check=True)
-            else:
-                # On macOS/Linux, you can add the path to the shell profile file
-                profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on shell
-                with open(profile_file, "a") as file:
-                    file.write(f'\nexport PATH="{bin_path}:$PATH"')
-
-            if shutil.which(executable):
-                print(f"{executable} binary is added to PATH: {bin_path}")
-                return True
-            else:
-                print(f"{executable} binary is not found on the following PATH: {bin_path}")
-                return False    
-        else:
-            print(f"{executable} binary not found in {bin_path}, unable to add to PATH.")
-            return False
-
-def exe_to_env(executable: str = None,path:str = None, env_file:str = ".env"):
+def exe_to_path(executable: str = None, path: str = None):
+    """
+    Adds the path of an executable binary to the system PATH permanently.
+    """
+    os_type = platform.system().lower()
     
-    if not path or not os.path.exists(path): 
+    if not executable or not path:
+        print("Executable and path must be provided.")
+        return False
+
+    if os.path.exists(path):
+        # Add to current session PATH
+        os.environ["PATH"] += os.pathsep + path
+
+        if os_type == "windows":
+            # Use setx to set the environment variable permanently in Windows
+            subprocess.run(["setx", "PATH", f"{path};%PATH%"], check=True)
+        else:
+            # On macOS/Linux, add the path to the shell profile file
+            profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on the shell
+            with open(profile_file, "a") as file:
+                file.write(f'\nexport PATH="{path}:$PATH"')
+
+        # Check if executable is found in the specified path
+        resolved_path = shutil.which(executable)
+        if resolved_path and os.path.dirname(resolved_path) == path:
+            print(f"{executable} binary is added to PATH and resolved correctly: {path}")
+            return True
+        elif resolved_path:
+            print(f"{executable} binary available at a wrong path: {resolved_path}")
+            return True
+        else:
+            print(f"{executable} binary is not found in the specified PATH: {path}")
+            return False
+    else:
+        print(f"Path does not exist: {path}")
+        return False
+
+def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env"):
+    """
+    Adds the path of an executable binary to an environment file.
+    """
+    if not executable:
+        print("Executable must be provided.")
+        return False
+
+    # Attempt to resolve path if not provided
+    if not path or not os.path.exists(path):
         path = os.path.dirname(shutil.which(executable))
     
     if path:
-        #path = get_relative_path(path)  
-        save_to_env(path ,executable.upper())  
-        # Load the .env file  
-        load_dotenv(env_file,override=True)  
-        if shutil.which(executable):
+        # Save to environment file
+        save_to_env(path, executable.upper())  # Assuming `save_to_env` is defined elsewhere
+        load_dotenv(env_file, override=True)  # Reload the .env file
+
+        # Check if executable is found in the specified path
+        resolved_path = shutil.which(executable)
+        if resolved_path and os.path.dirname(resolved_path) == path:
+            print(f"{executable} binary is added to the environment and resolved correctly: {path}")
             return True
-    return False
+        elif resolved_path:
+            print(f"{executable} binary available at a wrong path: {resolved_path}")
+            return True
+        else:
+            print(f"{executable} binary is not found in the specified environment PATH: {path}")
+            return False
+    else:
+        print(f"Path does not exist: {path}")
+        return False
 
 def is_installed(executable: str = None, name: str = None,env_file:str = ".env"):
     
