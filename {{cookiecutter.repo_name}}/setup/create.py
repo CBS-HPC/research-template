@@ -83,10 +83,13 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
              install_packages.extend(['r-base'])
 
         if version_control in ['Git','DVC','Datalad'] and not is_installed('git', 'Git'):
-             install_packages.extend(['git'])   
+            print("hello")
+            install_packages.extend(['git'])   
            
-        elif version_control == 'Datalad'and not is_installed('rclone', 'Rclone'):    
-            install_packages.extend(['rclone'])
+        if version_control == 'Datalad':
+    
+            if not is_installed('rclone', 'Rclone'):    
+                install_packages.extend(['rclone'])
  
             if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
                 install_packages.extend(['git-annex'])

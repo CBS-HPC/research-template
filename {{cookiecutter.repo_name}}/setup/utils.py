@@ -154,7 +154,6 @@ def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
             return True
         elif resolved_path:
             print(f"{executable} binary available at a wrong path: {resolved_path}")
-            print(f"Instead of: {path}")
             resolved_path = get_relative_path(os.path.dirname(resolved_path))
             save_to_env(resolved_path, executable.upper())
             load_dotenv(env_file, override=True)
