@@ -131,13 +131,13 @@ def exe_to_path(executable: str = None, path: str = None):
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
         if resolved_path and os.path.dirname(resolved_path) == path:
-            print(f"{executable} binary is added to PATH and resolved correctly: {path}")
+            print(f"{executable} binary is added to PATH and resolved correctly_dre: {path}")
             return True
         elif resolved_path:
-            print(f"{executable} binary available at a wrong path: {resolved_path}")
+            print(f"{executable} binary available at a wrong path_dre: {resolved_path}")
             return True
         else:
-            print(f"{executable} binary is not found in the specified PATH: {path}")
+            print(f"{executable} binary is not found in the specified PATH_dre: {path}")
             return False
     else:
         print(f"Path does not exist_dre: {path}")
