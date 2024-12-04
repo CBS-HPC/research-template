@@ -143,6 +143,67 @@ def exe_to_path(executable: str = None, path: str = None):
         print(f"Path does not exist_dre: {path}")
         return False
 
+
+
+def path_from_env(path: str):
+    """
+    Removes a specific path from the system PATH for the current session and permanently if applicable.
+    
+    Args:
+        path (str): The path to remove from the PATH environment variable.
+
+    Returns:
+        bool: True if the path was successfully removed, False otherwise.
+    """
+    if not path:
+        print("No path provided to remove.")
+        return False
+
+    # Normalize the path for comparison
+    path = os.path.normpath(path)
+    
+    # Split the current PATH into a list
+    current_paths = os.environ["PATH"].split(os.pathsep)
+    
+    if path not in map(os.path.normpath, current_paths):
+        print(f"Path {path} is not in the current PATH.")
+        return False
+
+    # Remove the specified path
+    filtered_paths = [p for p in current_paths if os.path.normpath(p) != path]
+    os.environ["PATH"] = os.pathsep.join(filtered_paths)
+
+    # Update PATH permanently
+    os_type = platform.system().lower()
+    if os_type == "windows":
+        # Use setx to update PATH permanently on Windows
+        try:
+            subprocess.run(["setx", "PATH", os.environ["PATH"]], check=True)
+            print(f"Path {path} removed permanently on Windows.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to update PATH permanently on Windows: {e}")
+            return False
+    else:
+        # On macOS/Linux, remove the path from the shell profile file
+        profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on the shell
+        if os.path.exists(profile_file):
+            try:
+                with open(profile_file, "r") as file:
+                    lines = file.readlines()
+                with open(profile_file, "w") as file:
+                    for line in lines:
+                        if f'export PATH="{path}:$PATH"' not in line.strip():
+                            file.write(line)
+                print(f"Path {path} removed permanently in {profile_file}.")
+            except Exception as e:
+                print(f"Failed to update {profile_file}: {e}")
+                return False
+
+    print(f"Path {path} removed successfully.")
+    return True
+
+
+
 def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env"):
     """
     Adds the path of an executable binary to an environment file.
@@ -186,9 +247,13 @@ def is_installed(executable: str = None, name: str = None,env_file:str = ".env")
     
     path = load_from_env(executable)
 
-    if path:
+    if path and os.path.exists(path):
         return exe_to_path(executable, path)
-    elif shutil.which(executable):
+    
+    elif path and not os.path.exists(path):
+        path_from_env(path)
+    
+    if not path and shutil.which(executable):
         exe_to_env(executable)
     else:
         print(f"{name} is not on Path")
