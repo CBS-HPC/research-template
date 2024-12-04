@@ -146,7 +146,7 @@ def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
         if resolved_path:
             resolved_path = os.path.dirname(resolved_path)
 
-        if resolved_path and os.path.dirname(resolved_path) == path:
+        if resolved_path == path:
             print(f"{executable} binary is added to PATH and resolved correctly: {path}")
             path = get_relative_path(path)
             save_to_env(path, executable.upper())
