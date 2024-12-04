@@ -131,21 +131,21 @@ def exe_to_path(executable: str = None, path: str = None):
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
         if resolved_path and os.path.dirname(resolved_path) == path:
-            print(f"{executable} binary is added to PATH and resolved correctly_dre: {path}")
+            print(f"{executable} binary is added to PATH and resolved correctly: {path}")
             return True
         elif resolved_path:
-            print(f"{executable} binary available at a wrong path_dre: {resolved_path}")
+            print(f"{executable} binary available at a wrong path: {resolved_path}")
             return True
         else:
-            print(f"{executable} binary is not found in the specified PATH_dre: {path}")
+            print(f"{executable} binary is not found in the specified PATH: {path}")
             return False
     else:
-        print(f"Path does not exist_dre: {path}")
+        print(f"{executable}: path does not exist1: {path}")
         return False
 
 
 
-def path_from_env(path: str):
+def remove_from_env(path: str):
     """
     Removes a specific path from the system PATH for the current session and permanently if applicable.
     
@@ -203,7 +203,6 @@ def path_from_env(path: str):
     return True
 
 
-
 def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env"):
     """
     Adds the path of an executable binary to an environment file.
@@ -233,7 +232,7 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
             print(f"{executable} binary is not found in the specified environment PATH: {path}")
             return False
     else:
-        print(f"Path does not exist_dre2: {path}")
+        print(f"{executable}:path does not exist2: {path}")
         return False
 
 def is_installed(executable: str = None, name: str = None,env_file:str = ".env"):
@@ -251,11 +250,12 @@ def is_installed(executable: str = None, name: str = None,env_file:str = ".env")
         return exe_to_path(executable, path)
     
     elif path and not os.path.exists(path):
-        path_from_env(path)
+        remove_from_env(path)
     
     if not path and shutil.which(executable):
         exe_to_env(executable)
     else:
+
         print(f"{name} is not on Path")
         return False
 
