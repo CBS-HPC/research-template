@@ -23,17 +23,22 @@ if [ -f ".env" ]; then
         # Use grep to check if the line for the app exists
         line=$(grep -E "^${app}=" .env)
         if [ -n "$line" ]; then
-            # Extract the value and get the directory of the executable
+            # Extract the value
             value=$(echo "$line" | cut -d'=' -f2 | tr -d '"')
 
+            # Resolve relative paths to absolute paths
+            if [[ "$value" != /* ]]; then
+                value=$(realpath "$value" 2>/dev/null || echo "")
+            fi
+
             # Ensure the file exists
-            if [ -f "$value" ]; then
+            if [ -x "$value" ]; then
                 # Create a symbolic link in /usr/bin/
                 symlink_path="/usr/bin/${app,,}" # Lowercase app name for consistency
                 sudo ln -sf "$value" "$symlink_path"
                 echo "Created symbolic link: $symlink_path -> $value"
             else
-                echo "Executable for $app not found at $value. Skipping..."
+                echo "Executable for $app not found or is not executable at: $value. Skipping..."
             fi
         else
             echo "$app not found in .env."
@@ -46,7 +51,7 @@ if [ -f ".env" ]; then
         exit 1
     else
         echo "Conda is available in the path."
-        # Initiate Conda and reboot
+        # Initialize Conda and restart the shell
         conda init && exec bash -i
     fi
 

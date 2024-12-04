@@ -330,7 +330,6 @@ if __name__ == "__main__":
     # Write the script content to the file
     with open(file_path, "w") as file:
         file.write(content)
-    print(f"Created: {file_path}")
 
 def create_workflow_script(language, folder_path):
     """
@@ -396,7 +395,6 @@ visualization.run()
     # Write the workflow script content to the file
     with open(workflow_file_path, "w") as file:
         file.write(content)
-    print(f"Created: {workflow_file_path}")
 
 def create_scripts(language, folder_path):
     """
@@ -475,7 +473,6 @@ def create_notebooks(language, folder_path):
         # Write the notebook to a file
         with open(file_path, "w") as f:
             nbf.write(nb, f)
-        print(f"Created: {file_path}")
 
     elif language.lower() == "r":
         file_name = "workflow.Rmd"
@@ -518,7 +515,6 @@ def create_notebooks(language, folder_path):
         # Write the RMarkdown content to a file
         with open(file_path, "w") as file:
             file.write(content)
-        print(f"Created: {file_path}")
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
 

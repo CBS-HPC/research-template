@@ -24,21 +24,36 @@ if (Test-Path ".env") {
         # Use Select-String to check if the line for the app exists
         $line = Select-String -Path ".env" -Pattern "^$app="
         if ($line) {
-            # Extract the value and set it as an environment variable
+            # Extract the value
             $value = $line.Line.Split('=')[1].Trim('"')
-	    $value = [System.IO.Path]::GetDirectoryName($value)
-	    $env:PATH = "$value;$env:PATH"
-            
-            # Dynamically set the environment variable for the current session
-            $envVariableName = "env:" + $app
-            Set-Item -Path $envVariableName -Value $value
-
-            # Set the environment variable persistently for the user (for future sessions)
-            [System.Environment]::SetEnvironmentVariable($app, $value, [System.EnvironmentVariableTarget]::User)
+        
+            # Resolve relative paths (even if they don't have "./")
+            if (-not ([System.IO.Path]::IsPathRooted($value))) {
+                $value = [System.IO.Path]::Combine((Get-Location).Path, $value)
+            }
+        
+            $value = [System.IO.Path]::GetFullPath($value)  # Normalize the path
+        
+            # Check if the path exists
+            if (Test-Path $value) {
+                $env:PATH = "$value;$env:PATH"
+                
+                # Dynamically set the environment variable for the current session
+                $envVariableName = "env:" + $app
+                Set-Item -Path $envVariableName -Value $value
+        
+                # Set the environment variable persistently for the user (for future sessions)
+                [System.Environment]::SetEnvironmentVariable($app, $value, [System.EnvironmentVariableTarget]::User)
+        
+                Write-Host "Added $value to PATH."
+            }
+            else {
+                Write-Host "Path '$value' does not exist. Skipping..."
+            }
         }
         else {
             Write-Host "$app not found in .env."
-        }
+        }        
     }
 
     # Check if Conda is in the path
