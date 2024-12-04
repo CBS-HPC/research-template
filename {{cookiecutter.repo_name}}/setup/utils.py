@@ -62,7 +62,6 @@ def load_from_env(env_var: str, env_file=".env"):
        
     # Load the .env file
     load_dotenv(env_file,override=True)
-    #load_dotenv(env_file)
 
     # Get the environment variable for the executable (uppercase)
     return os.getenv(env_var.upper())
@@ -185,14 +184,13 @@ def is_installed(executable: str = None, name: str = None,env_file:str = ".env")
     if not isinstance(executable, str) or not isinstance(name, str):
         raise ValueError("Both 'executable' and 'name' must be strings.")
     
-    # Load the .env file
-    load_dotenv(env_file,override=True)
+    path = load_from_env(executable)
 
-    if shutil.which(executable):
+    if path:
+        return exe_to_path(executable, path)
+    elif shutil.which(executable):
         exe_to_env(executable)
-        print(f"{name} has been set to path: {shutil.which(executable)})")
-        return True
-    else: 
+    else:
         print(f"{name} is not on Path")
         return False
 
