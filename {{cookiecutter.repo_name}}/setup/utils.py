@@ -34,9 +34,8 @@ def get_relative_path(target_path):
             # Create a relative path if it is a subpath
             relative_path = os.path.relpath(absolute_target_path, current_dir)
 
-        if relative_path:
-            return relative_path
-
+            if relative_path:
+                return relative_path
     return target_path
 
 def ask_yes_no(question):
