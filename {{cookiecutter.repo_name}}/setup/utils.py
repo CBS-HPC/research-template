@@ -254,7 +254,8 @@ def is_installed(executable: str = None, name: str = None):
         remove_from_env(path)
 
     if shutil.which(executable):
-        return exe_to_env(executable)
+        return exe_to_path(executable, shutil.which(executable))
+        #return exe_to_env(executable)
     else:
         print(f"{name} is not on Path")
         return False
