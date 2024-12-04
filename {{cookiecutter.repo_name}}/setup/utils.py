@@ -137,7 +137,7 @@ def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
             return True
         elif resolved_path:
             print(f"{executable} binary available at a wrong path: {resolved_path}")
-            save_to_env(resolved_path, executable.upper())
+            save_to_env(os.path.dirname(resolved_path), executable.upper())
             load_dotenv(env_file, override=True)
             return True
         else:
@@ -227,7 +227,7 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
             return True
         elif resolved_path:
             print(f"{executable} binary available at a wrong path: {resolved_path}")
-            save_to_env(resolved_path, executable.upper())
+            save_to_env(os.path.dirname(resolved_path), executable.upper())
             load_dotenv(env_file, override=True) 
             return True
         else:
@@ -751,6 +751,7 @@ def set_from_env():
     is_installed('datalad')
     is_installed('git-annex')
     is_installed('rclone')
+    is_installed('git-annex-remote-rclone')
 
 
 # Git Functions:

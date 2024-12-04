@@ -97,7 +97,6 @@ def install_git(install_path=None):
 
             # Add Git to PATH¨
             exe_to_path('git',os.path.join(install_path, "bin"))
-            #exe_to_env('git',os.path.join(install_path, "bin"))
         elif os_type == "linux":
             # Install Git on Linux using apt
             print("Installing Git on Linux using 'sudo apt install git-all'...")
@@ -449,10 +448,8 @@ def install_git_annex():
                 print("Could not determine git-annex installation path.")
                 return False
   
-            exe_to_path('git-annex',os.path.dirname(install_path))
-            #exe_to_env('git-annex',os.path.dirname(install_path))
-
-            if not is_installed('git-annex', 'Git-Annex'):
+            if not exe_to_path('git-annex',os.path.dirname(install_path)):
+            #if not is_installed('git-annex', 'Git-Annex'):    
                 return False
             
         except subprocess.CalledProcessError as e:
@@ -540,16 +537,13 @@ def install_rclone(install_path):
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
         exe_to_path('rclone', os.path.dirname(rclone_path))
-        #exe_to_env('rclone', os.path.dirname(rclone_path)) 
-        is_installed('rclone','Rclone')
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
         repo_path = clone_git_annex_remote_rclone(install_path)
-        #exe_to_env('git-annex-remote-rclone',repo_path)
         exe_to_path('git-annex-remote-rclone',repo_path)
-        is_installed('git-annex-remote-rclone','git-annex-remote-rclone')
+
    
 
 def datalad_create():

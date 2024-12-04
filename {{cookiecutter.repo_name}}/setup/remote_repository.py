@@ -304,10 +304,7 @@ def install_glab(install_path=None):
     print(f"Extracting {glab_path}...")
     extract_method()
 
-    # Add the extracted glab to the system PATH
-    exe_to_path('glab',os.path.join(install_path, "bin"))
-    #exe_to_env('glab',os.path.join(install_path, "bin"))
-    return True
+    return exe_to_path('glab',os.path.join(install_path, "bin"))
    
 def install_gh(install_path=None):
     """
@@ -352,10 +349,7 @@ def install_gh(install_path=None):
             print("Unsupported operating system.")
             return False
 
-        # Add the extracted gh
-        exe_to_path("gh",os.path.join(install_path, "bin"))
-        #exe_to_env("gh",os.path.join(install_path, "bin"))
-        return True
+        return exe_to_path("gh",os.path.join(install_path, "bin"))
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to install GitHub CLI: {e}")
