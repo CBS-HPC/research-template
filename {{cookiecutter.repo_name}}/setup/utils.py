@@ -130,14 +130,17 @@ def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
 
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
+
         if resolved_path and os.path.dirname(resolved_path) == path:
             print(f"{executable} binary is added to PATH and resolved correctly: {path}")
+            path = get_relative_path(path)
             save_to_env(path, executable.upper())
             load_dotenv(env_file, override=True)
             return True
         elif resolved_path:
             print(f"{executable} binary available at a wrong path: {resolved_path}")
-            save_to_env(os.path.dirname(resolved_path), executable.upper())
+            resolved_path = get_relative_path(os.path.dirname(resolved_path))
+            save_to_env(resolved_path, executable.upper())
             load_dotenv(env_file, override=True)
             return True
         else:
@@ -146,8 +149,6 @@ def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
     else:
         print(f"{executable}: path does not exist: {path}")
         return False
-
-
 
 def remove_from_env(path: str):
     """
@@ -200,7 +201,6 @@ def remove_from_env(path: str):
                 return False
     return True
 
-
 def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env"):
     """
     Adds the path of an executable binary to an environment file.
@@ -247,6 +247,8 @@ def is_installed(executable: str = None, name: str = None):
         raise ValueError("Both 'executable' and 'name' must be strings.")
     
     path = load_from_env(executable)
+    if path:
+        path = os.path.abspath(path)
 
     if path and os.path.exists(path):
         return exe_to_path(executable, path)    
@@ -255,7 +257,6 @@ def is_installed(executable: str = None, name: str = None):
 
     if shutil.which(executable):
         return exe_to_path(executable, shutil.which(executable))
-        #return exe_to_env(executable)
     else:
         print(f"{name} is not on Path")
         return False
@@ -965,7 +966,6 @@ def install_miniconda(install_path):
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
         
-        #if exe_to_env("conda",os.path.join(install_path,"bin")):
         if exe_to_path("conda",os.path.join(install_path, "bin")): 
             if not init_conda():
                 return False
