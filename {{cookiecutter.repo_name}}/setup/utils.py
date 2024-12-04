@@ -142,6 +142,9 @@ def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
 
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
+        
+        if resolved_path:
+            resolved_path = os.path.dirname(resolved_path)
 
         if resolved_path and os.path.dirname(resolved_path) == path:
             print(f"{executable} binary is added to PATH and resolved correctly: {path}")
@@ -269,7 +272,7 @@ def is_installed(executable: str = None, name: str = None):
         remove_from_env(path)
 
     if shutil.which(executable):
-        return exe_to_path(executable, shutil.which(executable))
+        return exe_to_path(executable, os.path.dirname(shutil.which(executable)))
     else:
         print(f"{name} is not on Path")
         return False
