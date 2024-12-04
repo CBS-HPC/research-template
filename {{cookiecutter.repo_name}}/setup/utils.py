@@ -167,7 +167,7 @@ def remove_from_env(path: str):
     
     if path not in map(os.path.normpath, current_paths):
         print(f"Path {path} is not in the current PATH.")
-        return False
+        #return False
 
     # Remove the specified path
     filtered_paths = [p for p in current_paths if os.path.normpath(p) != path]
