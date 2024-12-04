@@ -140,7 +140,7 @@ def exe_to_path(executable: str = None, path: str = None):
             print(f"{executable} binary is not found in the specified PATH: {path}")
             return False
     else:
-        print(f"Path does not exist: {path}")
+        print(f"Path does not exist_dre: {path}")
         return False
 
 def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env"):
@@ -172,7 +172,7 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
             print(f"{executable} binary is not found in the specified environment PATH: {path}")
             return False
     else:
-        print(f"Path does not exist: {path}")
+        print(f"Path does not exist_dre2: {path}")
         return False
 
 def is_installed(executable: str = None, name: str = None,env_file:str = ".env"):
