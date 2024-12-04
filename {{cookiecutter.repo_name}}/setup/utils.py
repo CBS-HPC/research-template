@@ -105,7 +105,7 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
 
-def exe_to_path(executable: str = None, path: str = None):
+def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
     """
     Adds the path of an executable binary to the system PATH permanently.
     """
@@ -132,15 +132,19 @@ def exe_to_path(executable: str = None, path: str = None):
         resolved_path = shutil.which(executable)
         if resolved_path and os.path.dirname(resolved_path) == path:
             print(f"{executable} binary is added to PATH and resolved correctly: {path}")
+            save_to_env(path, executable.upper())
+            load_dotenv(env_file, override=True)
             return True
         elif resolved_path:
             print(f"{executable} binary available at a wrong path: {resolved_path}")
+            save_to_env(resolved_path, executable.upper())
+            load_dotenv(env_file, override=True)
             return True
         else:
             print(f"{executable} binary is not found in the specified PATH: {path}")
             return False
     else:
-        print(f"{executable}: path does not exist1: {path}")
+        print(f"{executable}: path does not exist: {path}")
         return False
 
 
@@ -194,8 +198,6 @@ def remove_from_env(path: str):
             except Exception as e:
                 print(f"Failed to update {profile_file}: {e}")
                 return False
-
-    print(f"Path {path} removed successfully.")
     return True
 
 
@@ -214,24 +216,28 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
     if path:
         # Save to environment file
         save_to_env(path, executable.upper())  # Assuming `save_to_env` is defined elsewhere
-        load_dotenv(env_file, override=True)  # Reload the .env file
+        load_dotenv(env_file, override=True)
 
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
         if resolved_path and os.path.dirname(resolved_path) == path:
             print(f"{executable} binary is added to the environment and resolved correctly: {path}")
+            save_to_env(path, executable.upper())  # Assuming `save_to_env` is defined elsewhere
+            load_dotenv(env_file, override=True)
             return True
         elif resolved_path:
             print(f"{executable} binary available at a wrong path: {resolved_path}")
+            save_to_env(resolved_path, executable.upper())
+            load_dotenv(env_file, override=True) 
             return True
         else:
             print(f"{executable} binary is not found in the specified environment PATH: {path}")
             return False
     else:
-        print(f"{executable}:path does not exist2: {path}")
+        print(f"{executable}:path does not exist: {path}")
         return False
 
-def is_installed(executable: str = None, name: str = None,env_file:str = ".env"):
+def is_installed(executable: str = None, name: str = None):
     
     if name is None:
         name = executable
@@ -246,7 +252,7 @@ def is_installed(executable: str = None, name: str = None,env_file:str = ".env")
         return exe_to_path(executable, path)    
     elif path and not os.path.exists(path):
         remove_from_env(path)
-        
+
     if shutil.which(executable):
         return exe_to_env(executable)
     else:
