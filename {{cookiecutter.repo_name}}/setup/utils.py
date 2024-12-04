@@ -165,10 +165,6 @@ def remove_from_env(path: str):
     # Split the current PATH into a list
     current_paths = os.environ["PATH"].split(os.pathsep)
     
-    if path not in map(os.path.normpath, current_paths):
-        print(f"Path {path} is not in the current PATH.")
-        #return False
-
     # Remove the specified path
     filtered_paths = [p for p in current_paths if os.path.normpath(p) != path]
     os.environ["PATH"] = os.pathsep.join(filtered_paths)
@@ -247,15 +243,13 @@ def is_installed(executable: str = None, name: str = None,env_file:str = ".env")
     path = load_from_env(executable)
 
     if path and os.path.exists(path):
-        return exe_to_path(executable, path)
-    
+        return exe_to_path(executable, path)    
     elif path and not os.path.exists(path):
         remove_from_env(path)
-    
-    if not path and shutil.which(executable):
-        exe_to_env(executable)
+        
+    if shutil.which(executable):
+        return exe_to_env(executable)
     else:
-
         print(f"{name} is not on Path")
         return False
 
