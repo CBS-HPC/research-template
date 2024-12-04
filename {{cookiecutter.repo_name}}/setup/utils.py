@@ -19,7 +19,7 @@ for lib in required_libraries:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
 import nbformat as nbf  # For creating Jupyter notebooks
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 import requests
 
 
@@ -58,11 +58,24 @@ def ask_yes_no(question):
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
 def load_from_env(env_var: str, env_file=".env"):
-       
-    # Load the .env file
-    load_dotenv(env_file,override=True)
-
-    # Get the environment variable for the executable (uppercase)
+    """
+    Loads an environment variable's value from a .env file.
+    
+    Args:
+        env_var (str): The name of the environment variable to load.
+        env_file (str): The path to the .env file (default is ".env").
+        
+    Returns:
+        str or None: The value of the environment variable if found, otherwise None.
+    """
+    # Attempt to read directly from the .env file
+    if os.path.exists(env_file):
+        env_values = dotenv_values(env_file)
+        if env_var.upper() in env_values:
+            return env_values[env_var.upper()]
+    
+    # If not found directly, load the .env file into the environment
+    load_dotenv(env_file, override=True)
     return os.getenv(env_var.upper())
 
 def save_to_env(env_var: str, env_name: str, env_file=".env"):
