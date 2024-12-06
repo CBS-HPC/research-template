@@ -147,7 +147,7 @@ miniconda_path =  "bin/miniconda3"
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
 repo_name = "{{ cookiecutter.repo_name }}"
-code_repo = "{{ cookiecutter.repository_platform}}"
+code_repo = "{{ cookiecutter.code_repository}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
