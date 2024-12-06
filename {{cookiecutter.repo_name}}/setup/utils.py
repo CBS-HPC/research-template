@@ -9,7 +9,6 @@ import json
 import re
 import zipfile
 import urllib.request
-import yaml
 
 required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat','requests','pyyaml'] 
 for lib in required_libraries:
