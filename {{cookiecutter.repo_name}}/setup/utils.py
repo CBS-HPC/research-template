@@ -11,7 +11,7 @@ import zipfile
 import urllib.request
 import yaml
 
-required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat','requests'] 
+required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat','requests','pyyaml'] 
 for lib in required_libraries:
     try:
         importlib.import_module(lib)
@@ -22,7 +22,7 @@ for lib in required_libraries:
 import nbformat as nbf  # For creating Jupyter notebooks
 from dotenv import dotenv_values, load_dotenv
 import requests
-
+import yaml
 
 def get_relative_path(target_path):
 
