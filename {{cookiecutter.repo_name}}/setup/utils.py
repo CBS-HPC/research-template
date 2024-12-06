@@ -759,7 +759,96 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
 
     print(f"File descriptions updated in {json_file}")
 
-def create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None):
+
+
+def create_citation_file(
+    project_name,
+    version,
+    authors,
+    orcids,
+    version_control,
+    doi=None,
+    release_date=None,
+):
+    """
+    Create a CITATION.cff file based on inputs from cookiecutter.json and environment variables for URL.
+
+    Args:
+        project_name (str): Name of the project.
+        version (str): Version of the project.
+        authors (str): Semicolon-separated list of author names.
+        orcids (str): Semicolon-separated list of ORCID IDs corresponding to the authors.
+        version_control (str): Either "GitHub" or "GitLab" (or None).
+        doi (str): DOI of the project. Optional.
+        release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
+    """
+    # Split authors and ORCIDs into lists
+    author_names = authors.split(";") if authors else []
+    orcid_list = orcids.split(";") if orcids else []
+
+    # Create a structured list of author dictionaries
+    author_data_list = []
+    for i, name in enumerate(author_names):
+        name = name.strip()
+        if not name:
+            continue  # Skip empty names
+        name_parts = name.split(" ")
+        if len(name_parts) < 2:
+            raise ValueError(f"Author name '{name}' must include both given and family names.")
+        
+        given_names = " ".join(name_parts[:-1])
+        family_names = name_parts[-1]
+        author_data = {"family-names": family_names, "given-names": given_names}
+
+        # Add ORCID if available
+        if i < len(orcid_list):
+            orcid = orcid_list[i].strip()
+            if orcid:
+                if not orcid.startswith("https://orcid.org/"):
+                    orcid = f"https://orcid.org/{orcid}"
+                author_data["orcid"] = orcid
+
+        author_data_list.append(author_data)
+
+    # Generate URL based on version control
+    if version_control == "GitHub":
+        user = load_from_env(["GITHUB_USER"])
+        repo = load_from_env(["GITHUB_REPO"])
+        base_url = "https://github.com"
+    elif version_control == "GitLab":
+        user = load_from_env(["GITLAB_USER"])
+        repo = load_from_env(["GITLAB_REPO"])
+        base_url = "https://gitlab.com"
+    else:
+        user = None
+        repo = None
+        base_url = None
+
+    if user and repo and base_url:
+        url = f"{base_url}/{user}/{repo}"
+    else:
+        url = ""
+
+    # Build the citation data
+    citation_data = {
+        "cff-version": "1.2.0",
+        "message": "If you use this software, please cite it as below.",
+        "title": project_name,
+        "version": version,
+        "authors": author_data_list,
+        "doi": doi if doi else "",
+        "date-released": release_date if release_date else "",
+        "url": url,
+    }
+
+    # Write to CITATION.cff
+    with open("CITATION.cff", "w") as cff_file:
+        yaml.dump(citation_data, cff_file, sort_keys=False)
+
+    print("CITATION.cff file created successfully.")
+
+
+def create_citation_file_old(project_name,version,authors,orcids,version_control, doi=None, release_date=None):
     """
     Create a CITATION.cff file based on inputs from cookiecutter.json and environment variables for URL.
 
