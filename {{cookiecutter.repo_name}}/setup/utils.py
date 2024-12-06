@@ -773,7 +773,6 @@ def create_citation_file(project_name,version,authors,orcids,version_control, do
     authors = authors.split(";")
     orcids = orcids.split(";")
     
-    authors = []
     for i, name in enumerate(authors):
         name_parts = name.strip().split(" ")
         given_names = " ".join(name_parts[:-1])
