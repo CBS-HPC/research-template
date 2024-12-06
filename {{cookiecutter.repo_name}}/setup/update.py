@@ -18,7 +18,7 @@ miniconda_path =  "bin/miniconda"
 
 virtual_environment = "Python"
 repo_name = "ghe_"
-repo_platform = "GitHub"
+code_repo = "GitHub"
 version_control = "Git"
 remote_storage = "None"
 project_name = "ghe_"

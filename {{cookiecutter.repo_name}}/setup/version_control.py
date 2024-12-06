@@ -24,21 +24,21 @@ if script_dir not in sys.path:
 
 from utils import *
 
-def setup_version_control(version_control,remote_storage,repo_platform,repo_name):
+def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     """Handle repository creation and log-in based on selected platform."""
 
     if version_control == None:
         return
     elif version_control == "Git":
-        if not setup_git(version_control,repo_platform):
+        if not setup_git(version_control,code_repo):
             return
     if version_control == "Datalad":
-        setup_datalad(version_control,remote_storage,repo_platform,repo_name)
+        setup_datalad(version_control,remote_storage,code_repo,repo_name)
     elif version_control == "DVC":
-        setup_dvc(version_control,remote_storage,repo_platform,repo_name)
+        setup_dvc(version_control,remote_storage,code_repo,repo_name)
 
 # Git Setup Functions
-def setup_git(version_control,repo_platform):
+def setup_git(version_control,code_repo):
 
     if install_git("bin/git"):  
         check, git_name, git_email = check_git_config()
@@ -47,7 +47,7 @@ def setup_git(version_control,repo_platform):
             check, git_name, git_email = setup_git_config(git_name, git_email)
         
         if check and version_control == "Git":  
-            check = git_init(repo_platform)
+            check = git_init(code_repo)
         
         if check:
             save_to_env(git_name,"GIT_USER") 
@@ -95,8 +95,9 @@ def install_git(install_path=None):
             # Run the silent installation
             subprocess.run([installer_path, "/VERYSILENT", f"/DIR={install_path}", "/NORESTART"], check=True)
 
-            # Add Git to PATH¨
+            # Add Git to PATH
             exe_to_path('git',os.path.join(install_path, "bin"))
+            
         elif os_type == "linux":
             # Install Git on Linux using apt
             print("Installing Git on Linux using 'sudo apt install git-all'...")
@@ -206,14 +207,14 @@ def setup_git_config(git_name,git_email):
         print(f"Failed to configure Git: {e}")
         return False,git_name,git_email
         
-def git_init(repo_platform):
+def git_init(code_repo):
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".git"):
         subprocess.run(["git", "init"], check=True)
         print("Initialized a new Git repository.")
 
-    if repo_platform == "GitHub":
+    if code_repo == "GitHub":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
     git_commit("Initial commit")
@@ -222,16 +223,16 @@ def git_init(repo_platform):
 
   
 # DVC Setup Functions
-def setup_dvc(version_control,remote_storage,repo_platform,repo_name):
+def setup_dvc(version_control,remote_storage,code_repo,repo_name):
 
     # Install Git
-    if not setup_git(version_control,repo_platform):
+    if not setup_git(version_control,code_repo):
         return
     
     # Install datalad
     if not install_dvc():
         return
-    dvc_init(remote_storage,repo_platform,repo_name)
+    dvc_init(remote_storage,code_repo,repo_name)
 
 def install_dvc():
     """
@@ -254,7 +255,7 @@ def install_dvc():
             return False
     return True
 
-def dvc_init(remote_storage,repo_platform,repo_name):
+def dvc_init(remote_storage,code_repo,repo_name):
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".git"):
@@ -277,7 +278,7 @@ def dvc_init(remote_storage,repo_platform,repo_name):
     for folder in folders:
         subprocess.run(["dvc", "add",folder], check=True)
 
-    if repo_platform == "GitHub":
+    if code_repo == "GitHub":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
     git_commit("Initial commit")
@@ -370,10 +371,10 @@ def dvc_local_storage(repo_name):
         subprocess.run(["dvc", "remote","add","-d","remote_storage",dvc_remote], check=True)
     
 # Datalad Setup Functions
-def setup_datalad(version_control,remote_storage,repo_platform,repo_name):
+def setup_datalad(version_control,remote_storage,code_repo,repo_name):
 
     # Install Git
-    if not setup_git(version_control,repo_platform):
+    if not setup_git(version_control,code_repo):
         return
     # Install git-annex
     if not install_git_annex():
@@ -556,7 +557,7 @@ def datalad_create():
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        files_to_unlock = ["src/**","setup/**","notebooks/**","docs/**","config/**","README.md", "LICENSE","environment.yml","setup.py","hardware_information.txt"]
+        files_to_unlock = ["src/**","setup/**","notebooks/**","docs/**","config/**","README.md", "LICENSE","environment.yml","setup.py","setup.ps1","setup.sh","CITATION.cff","hardware_information.txt"]
         subprocess.run(["datalad", "create","--force"], check=True)
         unlock_files(files_to_unlock )
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
@@ -672,11 +673,11 @@ def datalad_local_storage(repo_name):
 
 version_control = "{{cookiecutter.version_control}}"
 repo_name = "{{ cookiecutter.repo_name }}"
-repo_platform = "{{cookiecutter.repository_platform }}"
+code_repo = "{{cookiecutter.code_repository}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 author_name = "{{cookiecutter.author_name}}"
 
 # Setup Version Control
-setup_version_control(version_control,remote_storage,repo_platform,repo_name)
+setup_version_control(version_control,remote_storage,code_repo,repo_name)

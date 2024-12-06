@@ -11,7 +11,7 @@ if script_dir not in sys.path:
 
 from utils import *
 
-def setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,install_path = "bin/miniconda3"):
+def setup_virtual_environment(version_control,virtual_environment,code_repo,repo_name,install_path = "bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
     
@@ -83,18 +83,16 @@ def setup_virtual_environment(version_control,virtual_environment,repo_platform,
              install_packages.extend(['r-base'])
 
         if version_control in ['Git','DVC','Datalad'] and not is_installed('git', 'Git'):
-            print("hello")
             install_packages.extend(['git'])   
            
         if version_control == 'Datalad':
-    
             if not is_installed('rclone', 'Rclone'):    
                 install_packages.extend(['rclone'])
  
             if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
                 install_packages.extend(['git-annex'])
 
-        if repo_platform == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
+        if code_repo == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
              install_packages.extend(['gh'])     
             
         check = setup_conda(install_path,virtual_environment,repo_name,install_packages,env_file)
@@ -149,13 +147,14 @@ miniconda_path =  "bin/miniconda3"
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
 repo_name = "{{ cookiecutter.repo_name }}"
-repo_platform = "{{ cookiecutter.repository_platform}}"
+code_repo = "{{ cookiecutter.repository_platform}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
-author_name = "{{cookiecutter.author_name}}"
-
+authors = "{{cookiecutter.author_name}}"
+orcids = "{{cookiecutter.orcid}}"
+version = "{{cookiecutter.version}}"
 
 # Create scripts and notebook
 create_scripts(virtual_environment, "src")
@@ -163,10 +162,13 @@ create_notebooks(virtual_environment, "notebooks")
 
 # Set git user info
 git_user_info()
-git_repo_user(repo_name,repo_platform)
+git_repo_user(repo_name,code_repo)
+
+# Create a citation file
+create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None)
 
 # Create Virtual Environment
-repo_name = setup_virtual_environment(version_control,virtual_environment,repo_platform,repo_name,miniconda_path)
+repo_name = setup_virtual_environment(version_control,virtual_environment,code_repo,repo_name,miniconda_path)
 
 os_type = platform.system().lower()
 

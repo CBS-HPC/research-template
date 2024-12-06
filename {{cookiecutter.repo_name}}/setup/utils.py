@@ -9,6 +9,7 @@ import json
 import re
 import zipfile
 import urllib.request
+import yaml
 
 required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat','requests'] 
 for lib in required_libraries:
@@ -520,10 +521,10 @@ def create_notebooks(language, folder_path):
 
 
 # README
-def creating_readme(repo_name ,project_name, project_description,repo_platform,author_name):
+def creating_readme(repo_name ,project_name, project_description,code_repo,author_name):
 
-    if repo_platform.lower() in ["github","gitlab"]:
-        web_repo = repo_platform.lower()
+    if code_repo.lower() in ["github","gitlab"]:
+        web_repo = code_repo.lower()
         setup = f"""git clone https://{web_repo}.com/username/{repo_name}.git"" \
         cd {repo_name} \
         python setup.py"""
@@ -535,7 +536,7 @@ def creating_readme(repo_name ,project_name, project_description,repo_platform,a
     # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    create_tree("README.md", ['.git','.datalad','.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
+    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """
@@ -590,7 +591,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
     - file_descriptions (dict): Descriptions for files and directories.
     - root_folder (str): The root folder to generate the tree structure from. Defaults to the current working directory.
     """
-    def generate_tree(folder_path, prefix=""):
+    def generate_tree(folder_path, prefix="",span_style:bool = True):
         """
         Recursively generates a tree structure of the folder.
 
@@ -599,7 +600,8 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         - prefix (str): The prefix for the current level of the tree.
         """
         tree = []
-        tree.append('<span style="font-size: 9px;">')
+        if span_style:
+            tree.append('<span style="font-size: 9px;">')
         items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
         for index, item in enumerate(items):
             if item in ignore_list:
@@ -611,9 +613,9 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
             tree.append(f"{prefix}{tree_symbol}{item}{description}<br> ") # Add spaces for a line break
             if os.path.isdir(item_path):
                 child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path, prefix=child_prefix))
-        
-        tree.append("</span>")
+                tree.extend(generate_tree(item_path, prefix=child_prefix,span_style=False))
+        if span_style:
+            tree.append("</span>")
         return tree
 
     if not readme_file:
@@ -757,6 +759,73 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
 
     print(f"File descriptions updated in {json_file}")
 
+def create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None):
+    """
+    Create a CITATION.cff file based on inputs from cookiecutter.json and environment variables for URL.
+
+    Args:
+        cookiecutter_data (dict): Dictionary parsed from cookiecutter.json.
+        doi (str): DOI of the project. Optional.
+        url (str): URL of the project repository. Optional, will be generated if not provided.
+        release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
+    """    
+    # Handle authors
+    authors = authors.split(";")
+    orcids = orcids.split(";")
+    
+    authors = []
+    for i, name in enumerate(authors):
+        name_parts = name.strip().split(" ")
+        given_names = " ".join(name_parts[:-1])
+        family_names = name_parts[-1]
+        author_data = {"family-names": family_names, "given-names": given_names}
+        
+        if i < len(orcids):
+            orcid = orcids[i].strip()
+            # Add ORCID only if it's not empty
+            if orcid:
+                if not orcid.startswith("https://orcid.org/"):
+                    orcid = f"https://orcid.org/{orcid}"
+                author_data["orcid"] = orcid
+        
+        authors.append(author_data)
+
+    # Check if URL is provided, else generate it from environment variables
+    if version_control == "GitHub":
+        # Try to load GitHub or GitLab user/repo from environment
+        user = load_from_env(["GITHUB_USER"])
+        repo = load_from_env(["GITHUB_REPO"])
+        url  = "https://github.com"
+    elif version_control == "GitLab":
+        user = load_from_env(["GITHUB_USER"])
+        repo = load_from_env(["GITHUB_REPO"])
+        url  = "https://gitlab.com"
+    else: 
+        user = None
+        repo = None
+        repo = None
+    
+    if user and repo and url:
+        url = f"{url}/{user}/{repo }"
+    else:
+        url = ""  # Fallback to empty if no environment variables found
+    
+    # Build the citation data
+    citation_data = {
+        "cff-version": "1.2.0",
+        "message": "If you use this software, please cite it as below.",
+        "title": project_name,
+        "version": version,
+        "authors": authors,
+        "doi": doi if doi else "",
+        "date-released": release_date if release_date else "",
+        "url": url,
+    }
+    
+    # Write to CITATION.cff
+    with open("CITATION.cff", "w") as cff_file:
+        yaml.dump(citation_data, cff_file, sort_keys=False)
+    
 
 def set_from_env():
   
@@ -848,21 +917,21 @@ def git_user_info():
         save_to_env(git_email,'GIT_EMAIL')
         return git_name, git_email
 
-def git_repo_user(repo_name,repo_platform):
-    if repo_platform in ["GitHub","GitLab"]: 
+def git_repo_user(repo_name,code_repo):
+    if code_repo in ["GitHub","GitLab"]: 
         repo_user = None 
         privacy_setting = None
         while not repo_user or not privacy_setting:
-            repo_user = input(f"Enter your {repo_platform} username:").strip()
+            repo_user = input(f"Enter your {code_repo} username:").strip()
             privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
 
             if privacy_setting not in ["private", "public"]:
                 print("Invalid choice. Defaulting to 'private'.")
                 privacy_setting = None
 
-        save_to_env(repo_user,f"{repo_platform}_USER")
-        save_to_env(privacy_setting,f"{repo_platform}_PRIVACY")
-        save_to_env(repo_name,f"{repo_platform}_REPO") 
+        save_to_env(repo_user,f"{code_repo}_USER")
+        save_to_env(privacy_setting,f"{code_repo}_PRIVACY")
+        save_to_env(repo_name,f"{code_repo}_REPO") 
         
         return repo_user, privacy_setting
     else:

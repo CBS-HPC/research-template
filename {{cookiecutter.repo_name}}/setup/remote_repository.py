@@ -24,33 +24,33 @@ if script_dir not in sys.path:
 
 from utils import *
 
-def setup_remote_repository(version_control,repo_platform,repo_name,description):
+def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 
     if version_control == None or not os.path.isdir(".git"):
         return
-    if repo_platform == "GitHub":
+    if code_repo == "GitHub":
         check = install_gh("bin/gh")     
-    elif repo_platform == "GitLab":
+    elif code_repo == "GitLab":
         check = install_glab("bin/glab")
     else:
         return    
     if check:    
-        setup_repo(repo_platform,repo_name,description)      
+        setup_repo(code_repo,repo_name,description)      
 
-def repo_details(repo_platform):
-    username = load_from_env(f"{repo_platform.upper()}_USER")
-    privacy_setting = load_from_env(f"{repo_platform.upper()}_PRIVACY")
+def repo_details(code_repo):
+    username = load_from_env(f"{code_repo.upper()}_USER")
+    privacy_setting = load_from_env(f"{code_repo.upper()}_PRIVACY")
 
     if not username  or not privacy_setting:
-        username, privacy_setting = git_repo_user(repo_name,repo_platform)
+        username, privacy_setting = git_repo_user(repo_name,code_repo)
 
     return username, privacy_setting
 
-def repo_login(repo_platform):
+def repo_login(code_repo):
 
     try: 
-        if repo_platform == "GitHub":
+        if code_repo == "GitHub":
             user = load_from_env('GITHUB_USER')
             token = load_from_env('GH_TOKEN')
             command = ['gh', 'auth', 'login', '--with-token']
@@ -62,7 +62,7 @@ def repo_login(repo_platform):
                 return True
             else:
                 return False
-        elif repo_platform == "GitLab":
+        elif code_repo == "GitLab":
             user = load_from_env('GITLAB_USER')
             token = load_from_env('GH_TOKEN')
             hostname = load_from_env('GH_HOSTNAME')
@@ -84,11 +84,11 @@ def repo_login(repo_platform):
     except Exception as e:
         return False
   
-def repo_init(repo_platform):    
+def repo_init(code_repo):    
     
-    if repo_platform == "GitHub":
+    if code_repo == "GitHub":
         exe = "gh"
-    elif repo_platform == "GitLab":
+    elif code_repo == "GitLab":
         exe = "glab"
     else:
         return False
@@ -105,16 +105,16 @@ def repo_init(repo_platform):
             print(f"{exe} auth login failed: {e}")
             return False
 
-def repo_create(repo_platform,username, privacy_setting, repo_name, description):
+def repo_create(code_repo,username, privacy_setting, repo_name, description):
     
     try:
-        if repo_platform ==  "GitHub":    
+        if code_repo ==  "GitHub":    
             # Create the GitHub repository
             subprocess.run([
                 'gh', "repo", "create", f"{username}/{repo_name}",
                 f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
             ], check=True)
-        elif repo_platform == "GitLab":
+        elif code_repo == "GitLab":
              subprocess.run([
                 'glab', "repo", "create",
                 f"--{privacy_setting}", "--description", description], check=True)
@@ -125,7 +125,7 @@ def repo_create(repo_platform,username, privacy_setting, repo_name, description)
         print(f"Failed to create '{username}/{repo_name}' on Github")
         return False, None, None 
 
-def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
+def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     """
     Adds GitHub username and token from `gh auth status` to the .env file. If the file does not exist,
     it will be created.
@@ -205,38 +205,38 @@ def repo_to_env_file(repo_platform,username,repo_name, env_file=".env"):
             print(f"Failed to get GitHub token: {e}")
             return None
 
-    if repo_platform == "GitHub":
+    if code_repo == "GitHub":
         token = get_gh_token()
         token_tag = "GH"
         hostname = None
    
-    elif repo_platform == "GitLab":
+    elif code_repo == "GitLab":
         token = get_glab_token()
         hostname = get_glab_hostname()
         token_tag = "GLAB"
   
     if not username and not token:
-        print(f"Failed to retrieve {repo_platform}. Make sure you're logged in to {repo_platform}.")
+        print(f"Failed to retrieve {code_repo}. Make sure you're logged in to {code_repo}.")
         return
     
-    save_to_env(username,f"{repo_platform}_USER") 
-    save_to_env(repo_name,f"{repo_platform}_REPO")     
+    save_to_env(username,f"{code_repo}_USER") 
+    save_to_env(repo_name,f"{code_repo}_REPO")     
 
     if token:
         save_to_env(token,f"{token_tag}_TOKEN")    
     if hostname:
         save_to_env(hostname,f"{token_tag}_HOSTNAME")
     
-    print(f"{repo_platform} username and token added to {env_file}")
+    print(f"{code_repo} username and token added to {env_file}")
 
-def setup_repo(repo_platform,repo_name,description):
+def setup_repo(code_repo,repo_name,description):
     
-    if not repo_login(repo_platform):
-        username,privacy_setting = repo_details(repo_platform)
-        if repo_init(repo_platform):
-            check, username, repo_name = repo_create(repo_platform,username,privacy_setting,repo_name,description)
+    if not repo_login(code_repo):
+        username,privacy_setting = repo_details(code_repo)
+        if repo_init(code_repo):
+            check, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
             if check:
-                repo_to_env_file(repo_platform,username,repo_name)
+                repo_to_env_file(code_repo,username,repo_name)
  
 def install_glab(install_path=None):
     
@@ -364,20 +364,20 @@ def install_gh(install_path=None):
 repo_name = "{{ cookiecutter.repo_name }}"
 description = "{{ cookiecutter.description }}"
 version_control = "{{cookiecutter.version_control}}"
-repo_platform = "{{ cookiecutter.repository_platform}}"
+code_repo = "{{ cookiecutter.code_repository}}"
 version_control = "{{cookiecutter.version_control}}"
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 author_name = "{{cookiecutter.author_name}}"
 
 # Create Remote Repository
-setup_remote_repository(version_control,repo_platform,repo_name,description)
+setup_remote_repository(version_control,code_repo,repo_name,description)
 
 # Updating environment.yaml
 export_conda_env(repo_name)
 
 # Updating README
-creating_readme(repo_name,project_name, project_description,repo_platform,author_name)
+creating_readme(repo_name,project_name, project_description,code_repo,author_name)
 
 # Pushing to Git 
 git_push("environment.yaml updated and README.md added ")
