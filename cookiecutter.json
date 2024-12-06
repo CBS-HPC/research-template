@@ -9,6 +9,6 @@
 	"virtual_environment":["Python","R","environment.yaml","requirements.txt","None"],
 	"version_control":["Git","Datalad","DVC","None"],
 	"remote_storage": ["Dropbox","Deic Storage","Local Path","None"],
-    "code_repository": ["GitHub","GitLab","None"]
+    "code_repository": ["GitHub","GitLab","None"],
 	"data_repository": ["Zenodo","Dataverse","None"]
 }
