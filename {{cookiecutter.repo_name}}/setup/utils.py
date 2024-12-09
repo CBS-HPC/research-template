@@ -277,8 +277,78 @@ def is_installed(executable: str = None, name: str = None):
         print(f"{name} is not on Path")
         return False
 
-# Scripts creation
+
+import os
+
 def create_step_script(language, folder_path, script_name, purpose):
+    """
+    Creates an individual script (R or Python) with the necessary structure.
+    
+    Parameters:
+    language (str): "r" for R, "python" for Python.
+    folder_path (str): The directory where the script will be saved.
+    script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
+    purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
+    """
+
+    # Prepare the script content based on the language
+    if language.lower() == "r":
+        extension = ".R"
+        content = f"""# {% raw %}
+# {purpose} code
+
+import os
+
+base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
+raw_data <- file.path(base_path, "data", "raw")
+interim_data <- file.path(base_path, "data", "interrim")
+processed_data <- file.path(base_path, "data", "processed")
+
+run_{script_name} <- function() {{
+    # {purpose} code
+    print('Running {script_name}...')
+}}
+
+# If you want to test this script independently, you can call the run() function directly.
+if (interactive()) {{
+    run_{script_name}()
+}}
+# {% endraw %}
+"""
+    elif language.lower() == "python":
+        extension = ".py"
+        content = f"""# {% raw %}
+# {purpose} code
+
+raw_data = os.path.join(base_path, "data", "raw")
+interim_data = os.path.join(base_path, "data", "interrim")
+processed_data = os.path.join(base_path, "data", "processed")
+
+def run():
+    # {purpose} code
+    print("Running {script_name}...")
+
+# If you want to test this script independently, you can call the run() function directly.
+if __name__ == "__main__":
+    run()
+# {% endraw %}
+"""
+    else:
+        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
+
+    # Define the file path for saving the script
+    file_name = f"{script_name}{extension}"
+    file_path = os.path.join(folder_path, file_name)
+
+    # Write the script content to the file
+    with open(file_path, "w") as file:
+        file.write(content)
+
+    print(f"Script '{file_name}' created successfully at '{file_path}'")
+
+
+# Scripts creation
+def create_step_script_old(language, folder_path, script_name,purpose ):
     """
     Creates an individual script (R or Python) with the necessary structure.
     
@@ -759,8 +829,6 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
 
     print(f"File descriptions updated in {json_file}")
 
-
-
 def create_citation_file(
     project_name,
     version,
@@ -792,13 +860,19 @@ def create_citation_file(
         name = name.strip()
         if not name:
             continue  # Skip empty names
-        name_parts = name.split(" ")
-        if len(name_parts) < 2:
-            raise ValueError(f"Author name '{name}' must include both given and family names.")
         
-        given_names = " ".join(name_parts[:-1])
-        family_names = name_parts[-1]
-        author_data = {"family-names": family_names, "given-names": given_names}
+        name_parts = name.split(" ")
+        if len(name_parts) == 1:
+            # If only a given name is provided
+            given_names = name_parts[0]
+            family_names = ""
+        else:
+            given_names = " ".join(name_parts[:-1])
+            family_names = name_parts[-1]
+        
+        author_data = {"given-names": given_names}
+        if family_names:
+            author_data["family-names"] = family_names
 
         # Add ORCID if available
         if i < len(orcid_list):
@@ -832,8 +906,8 @@ def create_citation_file(
     # Build the citation data
     citation_data = {
         "cff-version": "1.2.0",
-        "message": "If you use this software, please cite it as below.",
         "title": project_name,
+        "message": "If you use this software, please cite it as below.",
         "version": version,
         "authors": author_data_list,
         "doi": doi if doi else "",
@@ -844,76 +918,6 @@ def create_citation_file(
     # Write to CITATION.cff
     with open("CITATION.cff", "w") as cff_file:
         yaml.dump(citation_data, cff_file, sort_keys=False)
-
-    print("CITATION.cff file created successfully.")
-
-
-def create_citation_file_old(project_name,version,authors,orcids,version_control, doi=None, release_date=None):
-    """
-    Create a CITATION.cff file based on inputs from cookiecutter.json and environment variables for URL.
-
-    Args:
-        cookiecutter_data (dict): Dictionary parsed from cookiecutter.json.
-        doi (str): DOI of the project. Optional.
-        url (str): URL of the project repository. Optional, will be generated if not provided.
-        release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
-    """    
-    # Handle authors
-    authors = authors.split(";")
-    orcids = orcids.split(";")
-    
-    for i, name in enumerate(authors):
-        name_parts = name.strip().split(" ")
-        given_names = " ".join(name_parts[:-1])
-        family_names = name_parts[-1]
-        author_data = {"family-names": family_names, "given-names": given_names}
-        
-        if i < len(orcids):
-            orcid = orcids[i].strip()
-            # Add ORCID only if it's not empty
-            if orcid:
-                if not orcid.startswith("https://orcid.org/"):
-                    orcid = f"https://orcid.org/{orcid}"
-                author_data["orcid"] = orcid
-        
-        authors.append(author_data)
-
-    # Check if URL is provided, else generate it from environment variables
-    if version_control == "GitHub":
-        # Try to load GitHub or GitLab user/repo from environment
-        user = load_from_env(["GITHUB_USER"])
-        repo = load_from_env(["GITHUB_REPO"])
-        url  = "https://github.com"
-    elif version_control == "GitLab":
-        user = load_from_env(["GITHUB_USER"])
-        repo = load_from_env(["GITHUB_REPO"])
-        url  = "https://gitlab.com"
-    else: 
-        user = None
-        repo = None
-        repo = None
-    
-    if user and repo and url:
-        url = f"{url}/{user}/{repo }"
-    else:
-        url = ""  # Fallback to empty if no environment variables found
-    
-    # Build the citation data
-    citation_data = {
-        "cff-version": "1.2.0",
-        "message": "If you use this software, please cite it as below.",
-        "title": project_name,
-        "version": version,
-        "authors": authors,
-        "doi": doi if doi else "",
-        "date-released": release_date if release_date else "",
-        "url": url,
-    }
-    
-    # Write to CITATION.cff
-    with open("CITATION.cff", "w") as cff_file:
-        yaml.dump(citation_data, cff_file, sort_keys=False)
-    
 
 def set_from_env():
   
