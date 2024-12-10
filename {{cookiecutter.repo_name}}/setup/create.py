@@ -148,6 +148,7 @@ miniconda_path =  "bin/miniconda3"
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
 repo_name = "{{cookiecutter.repo_name}}"
 code_repo = "{{cookiecutter.code_repository}}"
+data_repo = "{{cookiecutter.data_repository}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
@@ -155,12 +156,27 @@ project_description = "{{cookiecutter.description}}"
 authors = "{{cookiecutter.author_name}}"
 orcids = "{{cookiecutter.orcid}}"
 version = "{{cookiecutter.version}}"
+license = "{{cookiecutter.open_source_license}}"
 
 # Create scripts and notebook
 create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
 
-# Set project path to .env
+# Set project info to .cookiecutter
+save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
+save_to_env(repo_name,"REPO_NAME",".cookiecutter")
+save_to_env(project_description,"PROJECT_DESCRIPTION",".cookiecutter")
+save_to_env(version,"VERSION",".cookiecutter")
+save_to_env(authors,"AUTHORS",".cookiecutter")
+save_to_env(orcids,"ORCIDS",".cookiecutter")
+save_to_env(license,"LICENSE",".cookiecutter")
+save_to_env(virtual_environment,"VIRTUAL_ENV",".cookiecutter")
+save_to_env(version_control,"VERSION_CONTROL",".cookiecutter")
+save_to_env(remote_storage,"REMOTE_STORAGE",".cookiecutter")
+save_to_env(code_repo,"CODE_REPO",".cookiecutter")
+save_to_env(data_repo,"DATA_REPO",".cookiecutter")
+
+# Set to .env
 save_to_env(os.getcwd(),"PROJECT_PATH")
 
 # Set git user info
