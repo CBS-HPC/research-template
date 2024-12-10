@@ -1,3 +1,11 @@
+
+# Get the directory of this script
+$ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
+
+# Navigate to the project root (parent directory of setup/)
+Set-Location (Join-Path $ScriptDir "..")
+
+
 # List of applications to check in .env
 $apps = @()
 

@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Get the directory of this script
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# Navigate to the project root (parent directory of setup/)
+cd "$SCRIPT_DIR/.." || exit
+
 # List of applications to check in .env
 APPS=()
 

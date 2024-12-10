@@ -8,19 +8,10 @@ import requests
 import zipfile
 import tarfile
 
-
-required_libraries = [] 
-for lib in required_libraries:
-    try:
-        importlib.import_module(lib)
-    except ImportError:
-        print(f"Installing {lib}...")
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-
 # Add the directory to sys.path
-script_dir = "setup"
-if script_dir not in sys.path:
-    sys.path.append(script_dir)
+#script_dir = "setup"
+#if script_dir not in sys.path:
+#    sys.path.append(script_dir)
 
 from utils import *
 

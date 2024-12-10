@@ -18,9 +18,9 @@ for lib in required_libraries:
 import requests
 
 # Add the directory to sys.path
-script_dir = "setup"
-if script_dir not in sys.path:
-    sys.path.append(script_dir)
+#script_dir = "setup"
+#if script_dir not in sys.path:
+#    sys.path.append(script_dir)
 
 from utils import *
 

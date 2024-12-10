@@ -5,11 +5,11 @@ import platform
 import os
 
 # Add the directory to sys.path
-script_dir = "setup"
-if script_dir not in sys.path:
-    sys.path.append(script_dir)
+#script_dir = "setup"
+#if script_dir not in sys.path:
+#    sys.path.append(script_dir)
 
-from utils import *
+from src.utils import *
 
 def setup_virtual_environment(version_control,virtual_environment,code_repo,repo_name,install_path = "bin/miniconda3"):
     """
@@ -138,10 +138,10 @@ def run_powershell_script(script_path, repo_name=None, setup_version_control_pat
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-setup_version_control = "setup/version_control.py"
-setup_remote_repository = "setup/remote_repository.py"
-setup_create_bash = "setup/create.sh"
-setup_create_powershell = "setup/create.ps1"
+setup_version_control = "setup/src/version_control.py"
+setup_remote_repository = "setup/src/remote_repository.py"
+setup_create_bash = "setup/src/create.sh"
+setup_create_powershell = "setup/src/create.ps1"
 
 miniconda_path =  "bin/miniconda3"
 

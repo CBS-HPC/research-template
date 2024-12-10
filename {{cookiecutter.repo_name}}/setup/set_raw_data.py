@@ -4,6 +4,12 @@ import argparse
 import subprocess
 from datetime import datetime
 import sys
+import pathlib
+
+
+# Change to project root directory
+project_root = pathlib.Path(__file__).resolve().parent.parent
+os.chdir(project_root)
 
 # Add the directory to sys.path
 script_dir = "setup"
@@ -184,7 +190,7 @@ def generate_markdown_table(json_file_path):
 def append_to_readme(markdown_table, readme_path:str= 'README.md'):
     """
     Appends the generated markdown table to the README file under the 
-    'Data Availability and Provenance Statements' heading.
+    'Dataset List' heading.
 
     Parameters:
         markdown_table (str): The markdown table to be appended.
@@ -197,7 +203,7 @@ def append_to_readme(markdown_table, readme_path:str= 'README.md'):
     # Check if the 'Data Availability and Provenance Statements' section exists
     heading_found = False
     for i, line in enumerate(content):
-        if "Data Availability and Provenance Statements" in line:
+        if "Dataset List" in line:
             heading_found = True
             # Insert the markdown table below the heading
             content.insert(i + 1, markdown_table + "\n")
@@ -205,7 +211,7 @@ def append_to_readme(markdown_table, readme_path:str= 'README.md'):
     
     # If the heading is not found, add it at the end
     if not heading_found:
-        content.append("\n# Data Availability and Provenance Statements\n")
+        content.append("\n# Dataset List\n")
         content.append(markdown_table + "\n")
 
     # Write the updated content back to the README
@@ -218,7 +224,6 @@ def save_datalist(full_table ,markdown_file_path="dataset_list.md"):
     # Save the markdown table to a file
     with open(markdown_file_path, 'w') as markdown_file:
             markdown_file.write(full_table)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")

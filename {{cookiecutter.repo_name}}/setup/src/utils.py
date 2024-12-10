@@ -567,6 +567,9 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
 {project_description}
 
+## Contact Information
+{contact}
+
 ## Installation
 ```
 {setup}
@@ -575,8 +578,7 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 ```
 {usage}
 ```
-## Contact Information
-{contact}
+## Dataset list
 
 ## Project Tree
 ------------

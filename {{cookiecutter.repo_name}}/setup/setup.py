@@ -2,7 +2,11 @@ import os
 import subprocess
 import sys
 import platform
+import pathlib
 
+# Change to project root directory
+project_root = pathlib.Path(__file__).resolve().parent.parent
+os.chdir(project_root)
 
 # Add the directory to sys.path
 script_dir = "setup"
