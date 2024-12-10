@@ -140,8 +140,8 @@ def run_powershell_script(script_path, repo_name=None, setup_version_control_pat
 
 setup_version_control = "setup/src/version_control.py"
 setup_remote_repository = "setup/src/remote_repository.py"
-setup_create_bash = "setup/src/create.sh"
-setup_create_powershell = "setup/src/create.ps1"
+setup_bash = "setup/src/setup_conda.sh"
+setup_powershell = "setup/src/setup_conda.ps1"
 
 miniconda_path =  "bin/miniconda3"
 
@@ -192,6 +192,6 @@ repo_name = setup_virtual_environment(version_control,virtual_environment,code_r
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    run_powershell_script(setup_create_powershell, repo_name, setup_version_control, setup_remote_repository)
+    run_powershell_script(setup_powershell, repo_name, setup_version_control, setup_remote_repository)
 elif os_type == "darwin" or os_type == "linux":
-    run_bash_script(setup_create_bash, repo_name, setup_version_control, setup_remote_repository)
+    run_bash_script(setup_bash, repo_name, setup_version_control, setup_remote_repository)
