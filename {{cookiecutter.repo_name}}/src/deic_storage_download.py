@@ -1,10 +1,27 @@
 import requests
-from bs4 import BeautifulSoup
+import subprocess
 import re
 import os
 import urllib.parse
 import multiprocessing
 import argparse
+import importlib
+import sys
+
+# Check and install required libraries
+
+required_libraries = ['bs4'] 
+for lib in required_libraries:
+    try:
+        importlib.import_module(lib)
+    except ImportError:
+        print(f"Installing {lib}...")
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+subprocess.run(['pip', 'install', '-U', 'ipywidgets'])
+
+from bs4 import BeautifulSoup
+
+
 
 def links_deic_storage(url):
     """

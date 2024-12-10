@@ -545,8 +545,6 @@ def install_rclone(install_path):
         repo_path = clone_git_annex_remote_rclone(install_path)
         exe_to_path('git-annex-remote-rclone',repo_path)
 
-   
-
 def datalad_create():
 
     def unlock_files(files_to_unlock):
@@ -557,7 +555,7 @@ def datalad_create():
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        files_to_unlock = ["src/**","setup/**","notebooks/**","docs/**","config/**","README.md", "LICENSE.txt","environment.yml","setup.py","setup.ps1","setup.sh","CITATION.cff","hardware_information.txt"]
+        files_to_unlock = ["src/**","setup/**","notebooks/**","docs/**","config/**","README.md", "LICENSE.txt","environment.yml","setup.py","setup.ps1","setup.sh","CITATION.cff","datasets.json","hardware_information.txt"]
         subprocess.run(["datalad", "create","--force"], check=True)
         unlock_files(files_to_unlock )
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
@@ -671,13 +669,19 @@ def datalad_local_storage(repo_name):
     if datalad_remote:
         subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
 
+virtual_environment = "{{ cookiecutter.virtual_environment}}"
 version_control = "{{cookiecutter.version_control}}"
-repo_name = "{{ cookiecutter.repo_name }}"
+repo_name = "{{cookiecutter.repo_name}}"
 code_repo = "{{cookiecutter.code_repository}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 author_name = "{{cookiecutter.author_name}}"
+
+# Set to .env
+is_installed('python','Python')
+if virtual_environment in ['R']:
+    is_installed(virtual_environment.lower(),virtual_environment)
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)

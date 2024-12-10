@@ -277,9 +277,7 @@ def is_installed(executable: str = None, name: str = None):
         print(f"{name} is not on Path")
         return False
 
-
-import os
-
+# Scripts creation
 def create_step_script(language, folder_path, script_name, purpose):
     """
     Creates an individual script (R or Python) with the necessary structure.
@@ -296,8 +294,6 @@ def create_step_script(language, folder_path, script_name, purpose):
         extension = ".R"
         content = f"""# {% raw %}
 # {purpose} code
-
-import os
 
 base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
 raw_data <- file.path(base_path, "data", "raw")
@@ -320,6 +316,8 @@ if (interactive()) {{
         content = f"""# {% raw %}
 # {purpose} code
 
+import os
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 raw_data = os.path.join(base_path, "data", "raw")
 interim_data = os.path.join(base_path, "data", "interrim")
 processed_data = os.path.join(base_path, "data", "processed")
@@ -345,61 +343,6 @@ if __name__ == "__main__":
         file.write(content)
 
     print(f"Script '{file_name}' created successfully at '{file_path}'")
-
-
-# Scripts creation
-def create_step_script_old(language, folder_path, script_name,purpose ):
-    """
-    Creates an individual script (R or Python) with the necessary structure.
-    
-    Parameters:
-    language (str): "r" for R, "python" for Python.
-    folder_path (str): The directory where the script will be saved.
-    script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
-    purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
-    """
-    if language.lower() == "r":
-        extension = ".R"
-        # Wrap the entire R script content in the raw block
-        content = f"""# {% raw %}
-# {purpose} code
-
-run_{script_name} <- function() {{
-    # {purpose} code
-    print('Running {script_name}...')
-}}
-
-# If you want to test this script independently, you can call the run() function directly.
-if (interactive()) {{
-    run_{script_name}()
-}}
-# {% endraw %}
-"""
-    elif language.lower() == "python":
-        extension = ".py"
-        # Wrap the entire Python script content in the raw block
-        content = f"""# {% raw %}
-# {purpose} code
-
-def run():
-    # {purpose} code
-    print("Running {script_name}...")
-
-# If you want to test this script independently, you can call the run() function directly.
-if __name__ == "__main__":
-    run()
-# {% endraw %}
-"""
-    else:
-        raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
-
-    # Define the file path for saving the script
-    file_name = f"{script_name}{extension}"
-    file_path = os.path.join(folder_path, file_name)
-
-    # Write the script content to the file
-    with open(file_path, "w") as file:
-        file.write(content)
 
 def create_workflow_script(language, folder_path):
     """
