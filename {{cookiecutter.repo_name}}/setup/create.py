@@ -146,8 +146,8 @@ setup_create_powershell = "setup/create.ps1"
 miniconda_path =  "bin/miniconda3"
 
 virtual_environment = "{{ cookiecutter.virtual_environment}}"
-repo_name = "{{ cookiecutter.repo_name }}"
-code_repo = "{{ cookiecutter.code_repository}}"
+repo_name = "{{cookiecutter.repo_name}}"
+code_repo = "{{cookiecutter.code_repository}}"
 version_control = "{{cookiecutter.version_control}}"
 remote_storage = "{{cookiecutter.remote_storage}}"
 project_name = "{{cookiecutter.project_name}}"
@@ -159,6 +159,9 @@ version = "{{cookiecutter.version}}"
 # Create scripts and notebook
 create_scripts(virtual_environment, "src")
 create_notebooks(virtual_environment, "notebooks")
+
+# Set project path to .env
+save_to_env(os.getcwd(),"PROJECT_PATH")
 
 # Set git user info
 git_user_info()

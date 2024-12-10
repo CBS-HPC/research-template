@@ -5,126 +5,115 @@ import subprocess
 from datetime import datetime
 import sys
 
-def set_raw_data(data_name, remote_path, run_command, destination=None):
+# Add the directory to sys.path
+script_dir = "setup"
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
+from utils import *
+
+
+def set_raw_data(data_name, source, run_command, destination=None, doi=None):
     """
     Executes a data download process and tracks created files in the specified path.
 
     Parameters:
         data_name (str): Name of the dataset.
-        remote_path (str): The remote URL or path to the dataset.
+        source (str): The remote URL or path to the dataset.
         run_command (str): A command for executing the download function/script.
-                           The script will ensure {remote_path} and {destination} are appended.
+                           The script will ensure {source} and {destination} are appended.
         destination (str): The path where the data will be stored. Defaults to './data/raw/data_name' if None.
     """
-    
+
     def sanitize_folder_name(name):
-        """
-        Sanitizes the folder name to be filesystem compatible by removing or replacing invalid characters.
-        
-        Parameters:
-            name (str): The folder name to be sanitized.
-        
-        Returns:
-            str: A sanitized folder name.
-        """
-        # Replace invalid characters with underscores
         return name.replace(" ", "_").replace("/", "_").replace("\\", "_").replace(":", "_")
     
     def get_file_info(destination):
-        """
-        Get information about the files in the destination directory:
-        - number of files
-        - total size in MB
-        - unique file formats (extensions)
-
-        Parameters:
-            destination (str): The path where the data is stored.
-
-        Returns:
-            tuple: (number_of_files, total_size_in_mb, file_formats)
-        """
-        # Get a list of files in the destination directory
         files = [f for f in os.listdir(destination) if os.path.isfile(os.path.join(destination, f))]
-
-        # Count the number of files
         number_of_files = len(files)
-
-        # Calculate the total size in MB
         total_size = sum(os.path.getsize(os.path.join(destination, f)) for f in files) / (1024 * 1024)
-
-        # Extract file formats (extensions)
         file_formats = set(os.path.splitext(f)[1].lower() for f in files)
-
         return number_of_files, total_size, file_formats
 
+    def add_to_json(json_file_path, entry):
+        """
+        Adds or updates an entry in the JSON file.
 
-    # Set default destination to './data/raw/data_name' if None
+        Parameters:
+            json_file_path (str): Path to the JSON file.
+            entry (dict): The dataset metadata to add or update.
+        """
+        if os.path.exists(json_file_path):
+            with open(json_file_path, "r") as json_file:
+                datasets = json.load(json_file)
+        else:
+            datasets = []
+
+        # Check if the dataset already exists
+        existing_entry = next((item for item in datasets if item["data_name"] == entry["data_name"] and item["destination"] == entry["destination"]), None)
+        if existing_entry:
+            # Update the existing entry
+            datasets[datasets.index(existing_entry)] = entry
+            print(f"Updated existing dataset entry for {entry['data_name']}.")
+        else:
+            # Add a new entry
+            datasets.append(entry)
+            print(f"Added new dataset entry for {entry['data_name']}.")
+
+        # Write updated datasets to the JSON file
+        with open(json_file_path, "w") as json_file:
+            json.dump(datasets, json_file, indent=4)
+        print(f"Metadata saved to {json_file_path}")
+
     if destination is None:
         destination = f"./data/raw/{sanitize_folder_name(data_name)}"
-        # Define the output JSON file path
-        json_file_path = f"./datasets.json"
-    else:
-        json_file_path = os.path.join(destination, f"{data_name}_metadata.json")
-    
+    json_file_path = "./datasets.json"
 
-    # Ensure the destination directory exists
     os.makedirs(destination, exist_ok=True)
 
-    # Get the initial list of files in the destination directory
     initial_files = set(os.listdir(destination))
+    command_parts = run_command.split()
+    command_list = command_parts + [source, destination]
 
-    # Get the path of the current Python interpreter
-    python_executable = sys.executable # FIX ME !!!
+    if is_installed(command_parts[0]):
+        try:
+            result = subprocess.run(command_list, check=True, text=True, capture_output=True)
+            print(f"Command output:\n{result.stdout}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error executing command: {e}")
+            print(f"Command output:\n{e.output}")
+            return
+    else:
+        raise FileNotFoundError(f"The executable '{command_parts[0]}' was not found in the PATH.")
 
-    # Prepare the command with the correct Python executable
-    command_list = [python_executable, run_command, remote_path, destination]
-    command_str = " ".join(command_list)
-
-    try:
-        # Execute the run_command
-        result = subprocess.run(command_list, check=True, text=True, capture_output=True)
-        print(f"Command output:\n{result.stdout}")
-    except subprocess.CalledProcessError as e:
-        print(f"Error executing command: {e}")
-        print(f"Command output:\n{e.output}")
-        return
-
-    # Get the updated list of files in the destination directory
     updated_files = set(os.listdir(destination))
-    
-    # Determine the newly created files
     data_files = list(updated_files - initial_files)
-    
-    # Get the file statistics (number of files, total size, and file formats)
     number_of_files, total_size, file_formats = get_file_info(destination)
 
-    # Create a JSON structure to store the information
-    output = {
+    new_entry = {
         "data_name": data_name,
-        "remote_path": remote_path,
+        "source": source,
         "destination": destination,
-        "run_command": " ".join([run_command, remote_path, destination]),
+        "run_command": " ".join(command_list),
         "number_of_files": number_of_files,
         "total_size_mb": total_size,
         "file_formats": list(file_formats),
         "data_files": data_files,
         "timestamp": datetime.now().isoformat(),
     }
-    
-    # Write the JSON structure to the file
-    with open(json_file_path, 'w') as json_file:
-        json.dump(output, json_file, indent=4)
-        
-    print(f"Metadata saved to {json_file_path}")
+
+    if doi:
+        new_entry["DOI"] = doi
+
+    # Add or update the JSON metadata
+    add_to_json(json_file_path, new_entry)
 
     try:
-        # Generate markdown table from the JSON file
-        markdown_table = generate_markdown_table(json_file_path)
-        
-        print(markdown_table)
-        # Append the table to the README
+        markdown_table, full_table = generate_markdown_table(json_file_path)
         append_to_readme(markdown_table)
-        
+
+        with open("dataset_list.md", 'w') as markdown_file:
+            markdown_file.write(full_table)
     except Exception as e:
         print(e)
 
@@ -146,22 +135,51 @@ def generate_markdown_table(json_file_path):
     # Read the JSON file
     with open(json_file_path, 'r') as json_file:
         data = json.load(json_file)
-    
-    # Extract required information from the JSON data
-    data_name = data.get("data_name", "N/A")
-    data_files = "; ".join(data.get("data_files", ["Not available"]))
-    location = data.get("destination", "N/A")
-    provided = "TRUE" if data.get("data_files") else "FALSE"
-    citation = data.get("citation", "N/A")
-    
-    # Format the markdown table
-    markdown_table = (
-        f"| Data.Name             | Data.Files                             | Location        | Provided | Citation              |\n"
-        f"|-----------------------|----------------------------------------|-----------------|----------|-----------------------|\n"
-        f"| {data_name}           | {data_files}                           | {location}      | {provided} | {citation}            |\n"
-    )
-    
-    return markdown_table
+
+    # If the data is a list, loop through each dataset entry
+    if isinstance(data, list):
+        markdown_table = (
+            f"| Name             | Location        | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Notes                  |\n"
+            f"|------------------|-----------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|\n"
+        )
+
+        full_table = (
+            f"| Name                  | Files                             | Location        | Provided        | Run Command               | Source           | DOI             | Notes                |\n"
+            f"|-----------------------|-----------------------------------|-----------------|-----------------|---------------------------|------------------|-----------------|----------------------|\n"
+        )
+
+        for entry in data:
+            if isinstance(entry, dict):  # Only process dictionary entries
+                # Extract required information from the JSON data
+                data_name = entry.get("data_name", "N/A")
+                data_files = " ; ".join(entry.get("data_files", ["Not available"]))  # Newline separated
+                location = entry.get("destination", "N/A")
+                provided = "Provided" if entry.get("data_files") else "Can be re-created"
+                run_command = entry.get("run_command", "N/A")
+                number_of_files = entry.get("number_of_files", 0)
+                total_size_mb = entry.get("total_size_mb", 0)
+                file_formats = "; ".join(entry.get("file_formats", ["Not available"]))
+                source = entry.get("source", "N/A")
+                doi = entry.get("DOI", "Not provided")
+                notes = entry.get("notes", "No additional notes")
+
+
+                 # Format pdf table
+                data_files = entry.get("data_files", ["Not available"])
+                for file in data_files:
+                    full_table += (f"|{data_name}| {file}|{location}|{provided}|{run_command}|{source}|{doi}| {notes}|\n")
+
+                # Format the markdown table for this entry
+                markdown_table += (f"|{data_name}| {location}| {provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{notes}|\n")
+       
+
+        
+        return markdown_table,full_table
+
+
+    else:
+        # If the data is not a list, raise an error
+        raise TypeError(f"Expected a list of datasets but got {type(data)}.")
 
 def append_to_readme(markdown_table, readme_path:str= 'README.md'):
     """
@@ -195,16 +213,24 @@ def append_to_readme(markdown_table, readme_path:str= 'README.md'):
         readme_file.writelines(content)
     print(f"Appended data to {readme_path}")
 
+def save_datalist(full_table ,markdown_file_path="dataset_list.md"):
+
+    # Save the markdown table to a file
+    with open(markdown_file_path, 'w') as markdown_file:
+            markdown_file.write(full_table)
+
 
 if __name__ == "__main__":
-    # Command-line argument parser
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")
-    parser.add_argument("data_name", help="Name of the dataset")
-    parser.add_argument("remote_path", help="Remote URL or path to the dataset")
-    parser.add_argument("run_command", help="Command for executing the download function/script")
-    parser.add_argument("destination", nargs="?", default=None, help="Path where data will be stored (optional). Defaults to './data/raw/data_name'")
-    
+    parser.add_argument("--data_name", required=True, help="Name of the dataset.")
+    parser.add_argument("--source", required=True, help="Remote URL or path to the dataset.")
+    parser.add_argument("--run_command", required=True, help="Command for executing the download function/script.")
+    parser.add_argument("--destination", default=None, help="Path where data will be stored (optional).")
+    parser.add_argument("--doi", default=None, help="DOI of the dataset (optional).")
     args = parser.parse_args()
 
     # Execute the function with command-line arguments
-    set_raw_data(args.data_name, args.remote_path, args.run_command, args.destination)
+    set_raw_data(args.data_name, args.source, args.run_command, args.destination, args.doi)
+
+
+#python set_raw_data.py deic_dataset1 "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f" "./src/deic_storage_download.py"

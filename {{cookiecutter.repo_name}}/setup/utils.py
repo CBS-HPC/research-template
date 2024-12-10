@@ -1011,6 +1011,8 @@ def export_conda_env(env_name, output_file='environment.yml'):
             subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)
         
         print(f"Conda environment '{env_name}' exported to {output_file}.")
+        # Set to .env
+        save_to_env(env_name,"CONDA_ENV")
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to export conda environment: {e}")
@@ -1137,7 +1139,6 @@ def generate_yml(env_name,requirements_path):
     with open('environment.yml', 'w') as yml_file:
         yml_file.write(yml_content)
     print(f"Generated environment.yml file using {requirements_path}.")
-
 
 # Other
 def get_hardware_info():
