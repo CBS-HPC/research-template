@@ -80,97 +80,101 @@ def create_step_script(language, folder_path, script_name, purpose):
 
 def create_r_script(folder_path, script_name, purpose):
     extension = ".R"
-    content = dedent(f"""
+    content = f"""
+# {purpose} code
+
+base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
+raw_data <- file.path(base_path, "data", "raw")
+interim_data <- file.path(base_path, "data", "interrim")
+processed_data <- file.path(base_path, "data", "processed")
+
+main <- function() {{
     # {purpose} code
+    print('Running {script_name}...')
+}}
 
-    base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-    raw_data <- file.path(base_path, "data", "raw")
-    interim_data <- file.path(base_path, "data", "interrim")
-    processed_data <- file.path(base_path, "data", "processed")
-
-    main <- function() {{
-        print('Running {script_name}...')
-    }}
-
-    if (interactive()) {{
-        main()
-    }}
-    """)
+if (interactive()) {{
+    main()
+}}
+"""
+    
     write_script(folder_path, script_name, extension, content)
 
 def create_python_script(folder_path, script_name, purpose):
     extension = ".py"
-    content = dedent(f"""
+    content = f"""
+# {purpose} code
+
+import os
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+raw_data = os.path.join(base_path, "data", "raw")
+interim_data = os.path.join(base_path, "data", "interrim")
+processed_data = os.path.join(base_path, "data", "processed")
+
+def main():
     # {purpose} code
+    print("Running {script_name}...")
 
-    import os
-    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    raw_data = os.path.join(base_path, "data", "raw")
-    interim_data = os.path.join(base_path, "data", "interrim")
-    processed_data = os.path.join(base_path, "data", "processed")
-
-    def main():
-        print("Running {script_name}...")
-
-    if __name__ == "__main__":
-        main()
-    """)
+if __name__ == "__main__":
+    main()
+"""
     write_script(folder_path, script_name, extension, content)
 
 def create_stata_script(folder_path, script_name, purpose):
     extension = ".do"
-    content = dedent(f"""
-    * {purpose} code
+    content = f"""
+* {purpose} code
 
-    global base_path ".."
-    global raw_data "$base_path/data/raw"
-    global interim_data "$base_path/data/interrim"
-    global processed_data "$base_path/data/processed"
+global base_path ".."
+global raw_data "$base_path/data/raw"
+global interim_data "$base_path/data/interrim"
+global processed_data "$base_path/data/processed"
 
-    program define {script_name}_main
-        display "Running {script_name}..."
-    end
+program define {script_name}_main
+    display "Running {script_name}..."
+end
 
-    main
-    """)
+main
+"""
     write_script(folder_path, script_name, extension, content)
 
 def create_matlab_script(folder_path, script_name, purpose):
     extension = ".m"
-    content = dedent(f"""
+    content = f"""
+% {purpose} code
+
+base_path = fullfile(fileparts(mfilename('fullpath')), '..');
+raw_data = fullfile(base_path, 'data', 'raw');
+interim_data = fullfile(base_path, 'data', 'interrim');
+processed_data = fullfile(base_path, 'data', 'processed');
+
+function {script_name}_main()
     % {purpose} code
+    disp('Running {script_name}...');
+end
 
-    base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-    raw_data = fullfile(base_path, 'data', 'raw');
-    interim_data = fullfile(base_path, 'data', 'interrim');
-    processed_data = fullfile(base_path, 'data', 'processed');
-
-    function {script_name}_main()
-        disp('Running {script_name}...');
-    end
-
-    if ~isdeployed
-        {script_name}_main();
-    end
-    """)
+if ~isdeployed
+    {script_name}_main();
+end
+"""
     write_script(folder_path, script_name, extension, content)
 
 def create_sas_script(folder_path, script_name, purpose):
     extension = ".sas"
-    content = dedent(f"""
-    * {purpose} code;
+    content = f"""
+* {purpose} code;
 
-    %let base_path = ..;
-    %let raw_data = &base_path./data/raw;
-    %let interim_data = &base_path./data/interrim;
-    %let processed_data = &base_path./data/processed;
+%let base_path = ..;
+%let raw_data = &base_path./data/raw;
+%let interim_data = &base_path./data/interrim;
+%let processed_data = &base_path./data/processed;
 
-    %macro {script_name}_main();
-        %put Running {script_name}...;
-    %mend {script_name}_main;
+%macro {script_name}_main();
+    %put Running {script_name}...;
+%mend {script_name}_main;
 
-    %{script_name}_main;
-    """)
+%{script_name}_main;
+"""
     write_script(folder_path, script_name, extension, content)
 
 def write_script(folder_path, script_name, extension, content):
@@ -221,121 +225,121 @@ def create_main(language, folder_path):
 
 def create_r_main(folder_path):
     extension = ".R"
-    content = dedent("""
-    # Main: Running all steps in order
+    content = """
+# Main: Running all steps in order
 
-    # Load Scripts
-    source('data_collection.R')
-    source('preprocessing.R')
-    source('modeling.R')
-    source('visualization.R')
+# Load Scripts
+source('data_collection.R')
+source('preprocessing.R')
+source('modeling.R')
+source('visualization.R')
 
-    ## Run data collection
-    data_collection::main()
+## Run data collection
+data_collection::main()
 
-    ## Run preprocessing
-    preprocessing::main()
+## Run preprocessing
+preprocessing::main()
 
-    ## Run modeling
-    modeling::main()
+## Run modeling
+modeling::main()
 
-    ## Run visualization
-    visualization::main()
-    """)
+## Run visualization
+visualization::main()
+"""
     write_script(folder_path, "main", extension, content)
 
 def create_python_main(folder_path):
     extension = ".py"
-    content = dedent("""
-    # Main: Running all steps in order
+    content = """
+# Main: Running all steps in order
 
-    # Load Scripts
-    import data_collection
-    import preprocessing
-    import modeling
-    import visualization
+# Load Scripts
+import data_collection
+import preprocessing
+import modeling
+import visualization
 
-    # Run data collection
-    data_collection.main()
+# Run data collection
+data_collection.main()
 
-    # Run preprocessing
-    preprocessing.main()
+# Run preprocessing
+preprocessing.main()
 
-    # Run modeling
-    modeling.main()
+# Run modeling
+modeling.main()
 
-    # Run visualization
-    visualization.main()
-    """)
+# Run visualization
+visualization.main()
+"""
     write_script(folder_path, "main", extension, content)
 
 def create_stata_main(folder_path):
     extension = ".do"
-    content = dedent("""
-    * Main: Running all steps in order
+    content = """
+* Main: Running all steps in order
 
-    * Load Scripts
-    do "data_collection.do"
-    do "preprocessing.do"
-    do "modeling.do"
-    do "visualization.do"
+* Load Scripts
+do "data_collection.do"
+do "preprocessing.do"
+do "modeling.do"
+do "visualization.do"
 
-    * Run data collection
-    data_collection_main
+* Run data collection
+data_collection_main
 
-    * Run preprocessing
-    preprocessing_main
+* Run preprocessing
+preprocessing_main
 
-    * Run modeling
-    modeling_main
+* Run modeling
+modeling_main
 
-    * Run visualization
-    visualization_main
-    """)
+* Run visualization
+visualization_main
+"""
     write_script(folder_path, "main", extension, content)
 
 def create_matlab_main(folder_path):
     extension = ".m"
-    content = dedent("""
-    % Main: Running all steps in order
+    content = """
+% Main: Running all steps in order
 
-    % Run data collection
-    data_collection_main();
+% Run data collection
+data_collection_main();
 
-    % Run preprocessing
-    preprocessing_main();
+% Run preprocessing
+preprocessing_main();
 
-    % Run modeling
-    modeling_main();
+% Run modeling
+modeling_main();
 
-    % Run visualization
-    visualization_main();
-    """)
+% Run visualization
+visualization_main();
+"""
     write_script(folder_path, "main", extension, content)
 
 def create_sas_main(folder_path):
     extension = ".sas"
-    content = dedent("""
-    * Main: Running all steps in order;
+    content ="""
+* Main: Running all steps in order;
 
-    * Load Scripts;
-    %include "data_collection.sas";
-    %include "preprocessing.sas";
-    %include "modeling.sas";
-    %include "visualization.sas";
+* Load Scripts;
+%include "data_collection.sas";
+%include "preprocessing.sas";
+%include "modeling.sas";
+%include "visualization.sas";
 
-    * Run data collection;
-    %data_collection_main;
+* Run data collection;
+%data_collection_main;
 
-    * Run preprocessing;
-    %preprocessing_main;
+* Run preprocessing;
+%preprocessing_main;
 
-    * Run modeling;
-    %modeling_main;
+* Run modeling;
+%modeling_main;
 
-    * Run visualization;
-    %visualization_main;
-    """)
+* Run visualization;
+%visualization_main;
+"""
     write_script(folder_path, "main", extension, content)
 
 
@@ -369,7 +373,7 @@ def create_notebooks(language, folder_path):
     print(f"Notebook(s) created successfully at '{folder_path}'")
 
 def create_python_notebook(folder_path):
-    file_name = "workflow_notebook.ipynb"
+    file_name = "workflow.ipynb"
     file_path = os.path.join(folder_path, file_name)
 
     nb = nbf.v4.new_notebook()
@@ -444,7 +448,7 @@ def create_r_notebook(folder_path):
         file.write(content)
 
 def create_stata_notebook(folder_path):
-    file_name = "workflow_notebook.ipynb"
+    file_name = "workflow.ipynb"
     file_path = os.path.join(folder_path, file_name)
     
     nb = nbf.v4.new_notebook()
@@ -482,7 +486,7 @@ def create_stata_notebook(folder_path):
 
 def create_matlab_notebooks(folder_path):
     # Create MATLAB notebook (.mlx) and Jupyter notebook
-    mlx_file_name = "workflow_notebook.mlx"
+    mlx_file_name = "workflow.mlx"
     mlx_file_path = os.path.join(folder_path, mlx_file_name)
     
     # Create Jupyter notebook using jupyter-matlab-proxy
@@ -536,7 +540,7 @@ def create_matlab_notebooks(folder_path):
         f.write(mlx_content)
 
 def create_sas_notebook(folder_path):
-    file_name = "workflow_notebook.ipynb"
+    file_name = "workflow.ipynb"
     file_path = os.path.join(folder_path, file_name)
     
     nb = nbf.v4.new_notebook()
