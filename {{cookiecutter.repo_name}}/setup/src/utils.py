@@ -300,14 +300,14 @@ raw_data <- file.path(base_path, "data", "raw")
 interim_data <- file.path(base_path, "data", "interrim")
 processed_data <- file.path(base_path, "data", "processed")
 
-run_{script_name} <- function() {{
+main <- function() {{
     # {purpose} code
     print('Running {script_name}...')
 }}
 
 # If you want to test this script independently, you can call the run() function directly.
 if (interactive()) {{
-    run_{script_name}()
+    main()
 }}
 # {% endraw %}
 """
@@ -322,13 +322,13 @@ raw_data = os.path.join(base_path, "data", "raw")
 interim_data = os.path.join(base_path, "data", "interrim")
 processed_data = os.path.join(base_path, "data", "processed")
 
-def run():
+def main():
     # {purpose} code
     print("Running {script_name}...")
 
-# If you want to test this script independently, you can call the run() function directly.
+# If you want to test this script independently, you can call the main() function directly.
 if __name__ == "__main__":
-    run()
+    main()
 # {% endraw %}
 """
     else:
@@ -344,7 +344,7 @@ if __name__ == "__main__":
 
     print(f"Script '{file_name}' created successfully at '{file_path}'")
 
-def create_workflow_script(language, folder_path):
+def create_main(language, folder_path):
     """
     Creates a workflow script that runs all steps in order.
     
@@ -357,19 +357,26 @@ def create_workflow_script(language, folder_path):
         # Wrap the entire R workflow script content in the raw block
         content = """
 # {% raw %}
-# Workflow: Running all steps in order
+# Main: Running all steps in order
 
-# Run data collection
+# Load Scripts
 source('data_collection.R')
-
-# Run preprocessing
 source('preprocessing.R')
-
-# Run modeling
 source('modeling.R')
-
-# Run visualization
 source('visualization.R')
+
+## Run data collection
+data_collection::main()
+
+## Run preprocessing
+preprocessing::main()
+
+## Run modeling
+modeling::main()
+
+## Run visualization
+visualization::main()
+
 # {% endraw %}
 """
     elif language.lower() == "python":
@@ -377,7 +384,7 @@ source('visualization.R')
         # Wrap the entire Python workflow script content in the raw block
         content = """
 # {% raw %}
-# Workflow: Running all steps in order
+# Main: Running all steps in order
 
 # Load Scripts
 import data_collection
@@ -386,23 +393,23 @@ import modeling
 import visualization
 
 # Run data collection
-data_collection.run()
+data_collection.main()
 
 # Run preprocessing
-preprocessing.run()
+preprocessing.main()
 
 # Run modeling
-modeling.run()
+modeling.main()
 
 # Run visualization
-visualization.run()
+visualization.main()
 # {% endraw %}
 """
     else:
         raise ValueError("Invalid language choice. Please specify 'r' or 'python'.")
 
     # Define the file path for the workflow script
-    workflow_file_name = f"workflow{extension}"
+    workflow_file_name = f"main{extension}"
     workflow_file_path = os.path.join(folder_path, workflow_file_name)
 
     # Write the workflow script content to the file
@@ -436,7 +443,7 @@ def create_scripts(language, folder_path):
         create_step_script(language, folder_path, script_name, purpose)
 
     # Create the workflow script that runs all steps
-    create_workflow_script(language, folder_path)
+    create_main(language, folder_path)
 
 def create_notebooks(language, folder_path):
     """
@@ -473,13 +480,13 @@ def create_notebooks(language, folder_path):
                 "import visualization\n"
             ),
             nbf.v4.new_markdown_cell("### Run data collection"),
-            nbf.v4.new_code_cell("""data_collection.run()"""),
+            nbf.v4.new_code_cell("""data_collection.main()"""),
             nbf.v4.new_markdown_cell("### Run preprocessing"),
-            nbf.v4.new_code_cell("""preprocessing.run()"""),
+            nbf.v4.new_code_cell("""preprocessing.main()"""),
             nbf.v4.new_markdown_cell("### Run modeling"),
-            nbf.v4.new_code_cell("""modeling.run()"""),
+            nbf.v4.new_code_cell("""modeling.main()"""),
             nbf.v4.new_markdown_cell("### Run visualization"),
-            nbf.v4.new_code_cell("""visualization.run()""")
+            nbf.v4.new_code_cell("""visualization.main()""")
         ]
         nb.cells.extend(cells)
 
@@ -509,19 +516,19 @@ def create_notebooks(language, folder_path):
         ```
         ## Run data collection
         ```{r}
-        run_data_collection()
+        data_collection::main()
         ```
         ## Run preprocessing
         ```{r}
-        run_preprocessing()
+        preprocessing::main()
         ```
         ## Run modeling
         ```{r}
-        run_modeling()
+        modeling::main()
         ```
         ## Run visualization
         ```{r}
-        run_visualization()
+        visualization::main()
         ```
         {% endraw %}""")
 

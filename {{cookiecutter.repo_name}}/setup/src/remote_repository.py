@@ -365,7 +365,7 @@ author_name = "{{cookiecutter.author_name}}"
 setup_remote_repository(version_control,code_repo,repo_name,description)
 
 # Updating environment.yaml
-export_conda_env(repo_name)
+#export_conda_env(repo_name)
 
 # Updating README
 creating_readme(repo_name,project_name, project_description,code_repo,author_name)

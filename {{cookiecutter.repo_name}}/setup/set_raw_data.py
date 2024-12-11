@@ -19,7 +19,7 @@ if script_dir not in sys.path:
 from utils import *
 
 
-def set_raw_data(data_name, source, run_command, destination=None, doi=None):
+def set_data(data_name, source, run_command, destination:str=None, doi:str = None,citation:str = None,license:str=None):
     """
     Executes a data download process and tracks created files in the specified path.
 
@@ -96,6 +96,9 @@ def set_raw_data(data_name, source, run_command, destination=None, doi=None):
     data_files = list(updated_files - initial_files)
     number_of_files, total_size, file_formats = get_file_info(destination)
 
+    if number_of_files > 1000: # FIX ME !!
+        print("It is recommended to zip datasets with >1000 files when creating a replication package: https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html#data-structure-of-a-replication-package")
+
     new_entry = {
         "data_name": data_name,
         "source": source,
@@ -111,6 +114,12 @@ def set_raw_data(data_name, source, run_command, destination=None, doi=None):
     if doi:
         new_entry["DOI"] = doi
 
+    if citation:
+        new_entry["citation"] = citation
+    
+    if license:
+        new_entry["license"] = license
+
     # Add or update the JSON metadata
     add_to_json(json_file_path, new_entry)
 
@@ -122,6 +131,13 @@ def set_raw_data(data_name, source, run_command, destination=None, doi=None):
             markdown_file.write(full_table)
     except Exception as e:
         print(e)
+
+def set_raw_data(data_name, source, run_command, destination:str=None, doi:str = None,citation:str = None,license:str=None):
+    
+    if destination is None:
+        destination = f"./data/raw/{sanitize_folder_name(data_name)}"
+    
+    set_data(data_name, source, run_command, destination, doi,citation,license)
 
 def generate_markdown_table(json_file_path):
     """
@@ -145,13 +161,13 @@ def generate_markdown_table(json_file_path):
     # If the data is a list, loop through each dataset entry
     if isinstance(data, list):
         markdown_table = (
-            f"| Name             | Location        | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Notes                  |\n"
-            f"|------------------|-----------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|\n"
+            f"| Name             | Location        | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |\n"
+            f"|------------------|-----------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|\n"
         )
 
         full_table = (
-            f"| Name                  | Files                             | Location        | Provided        | Run Command               | Source           | DOI             | Notes                |\n"
-            f"|-----------------------|-----------------------------------|-----------------|-----------------|---------------------------|------------------|-----------------|----------------------|\n"
+            f"| Name             | Files                             | Location        | Provided        | Run Command               | Source           | DOI             | Citation               | License               | Notes                |\n"
+            f"|------------------|-----------------------------------|-----------------|-----------------|---------------------------|------------------|-----------------|------------------------|-----------------------|----------------------|\n"
         )
 
         for entry in data:
@@ -167,22 +183,20 @@ def generate_markdown_table(json_file_path):
                 file_formats = "; ".join(entry.get("file_formats", ["Not available"]))
                 source = entry.get("source", "N/A")
                 doi = entry.get("DOI", "Not provided")
+                citation = entry.get("citation", "Not provided")
+                license = entry.get("license", "Not provided")
                 notes = entry.get("notes", "No additional notes")
 
 
                  # Format pdf table
                 data_files = entry.get("data_files", ["Not available"])
                 for file in data_files:
-                    full_table += (f"|{data_name}| {file}|{location}|{provided}|{run_command}|{source}|{doi}| {notes}|\n")
+                    full_table += (f"|{data_name}| {file}|{location}|{provided}|{run_command}|{source}|{doi}|{citation}|{license}|{notes}|\n")
 
                 # Format the markdown table for this entry
-                markdown_table += (f"|{data_name}| {location}| {provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{notes}|\n")
+                markdown_table += (f"|{data_name}| {location}| {provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{citation}|{license}|{notes}|\n")
        
-
-        
         return markdown_table,full_table
-
-
     else:
         # If the data is not a list, raise an error
         raise TypeError(f"Expected a list of datasets but got {type(data)}.")
@@ -227,15 +241,17 @@ def save_datalist(full_table ,markdown_file_path="dataset_list.md"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")
-    parser.add_argument("--data_name", required=True, help="Name of the dataset.")
+    parser.add_argument("--name", required=True, help="Name of the dataset.")
     parser.add_argument("--source", required=True, help="Remote URL or path to the dataset.")
-    parser.add_argument("--run_command", required=True, help="Command for executing the download function/script.")
+    parser.add_argument("--command", required=True, help="Command for executing the download function/script.")
     parser.add_argument("--destination", default=None, help="Path where data will be stored (optional).")
     parser.add_argument("--doi", default=None, help="DOI of the dataset (optional).")
+    parser.add_argument("--citation", default=None, help="Citation of the dataset (optional).")
+    parser.add_argument("--license", default=None, help="License of the dataset (optional).")
     args = parser.parse_args()
 
     # Execute the function with command-line arguments
-    set_raw_data(args.data_name, args.source, args.run_command, args.destination, args.doi)
+    set_raw_data(args.data_name, args.source, args.command, args.destination, args.doi, args.citation,args.license)
 
 
 #python set_raw_data.py deic_dataset1 "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f" "./src/deic_storage_download.py"
