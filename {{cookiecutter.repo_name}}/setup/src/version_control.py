@@ -16,6 +16,8 @@ for lib in required_libraries:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
 
 import requests
+
+sys.path.append('/setup/src')
 from utils import *
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):

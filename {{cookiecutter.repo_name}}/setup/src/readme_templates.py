@@ -16,6 +16,7 @@ for lib in required_libraries:
 from dotenv import dotenv_values, load_dotenv
 
 import yaml
+sys.path.append('/setup/src')
 from utils import *
 
 # README.md
