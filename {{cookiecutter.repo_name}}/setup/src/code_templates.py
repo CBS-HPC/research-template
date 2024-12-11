@@ -81,6 +81,7 @@ def create_step_script(language, folder_path, script_name, purpose):
 def create_r_script(folder_path, script_name, purpose):
     extension = ".R"
     content = f"""
+rawx
 # {purpose} code
 
 base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
@@ -96,6 +97,7 @@ main <- function() {{
 if (interactive()) {{
     main()
 }}
+rawx
 """
     
     write_script(folder_path, script_name, extension, content)
