@@ -4,7 +4,7 @@ import sys
 import platform
 import os
 
-sys.path.append('/setup/src')
+sys.path.append('setup/src')
 from src.utils import *
 from src.code_templates import *
 from src.readme_templates import *
