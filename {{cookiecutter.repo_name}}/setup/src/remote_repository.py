@@ -1,19 +1,12 @@
 import os
 import subprocess
-import sys
 import platform
-import importlib
 import shutil
 import requests
 import zipfile
 import tarfile
-
-# Add the directory to sys.path
-#script_dir = "setup"
-#if script_dir not in sys.path:
-#    sys.path.append(script_dir)
-
 from utils import *
+from readme_templates import *
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -364,7 +357,7 @@ author_name = "{{cookiecutter.author_name}}"
 # Create Remote Repository
 setup_remote_repository(version_control,code_repo,repo_name,description)
 
-# Updating environment.yaml
+# Updating environment.yaml  # FIX ME
 #export_conda_env(repo_name)
 
 # Updating README
