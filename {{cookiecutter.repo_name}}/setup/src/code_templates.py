@@ -89,7 +89,6 @@ def create_r_script(folder_path, script_name, purpose):
     processed_data <- file.path(base_path, "data", "processed")
 
     main <- function() {{
-        # {purpose} code
         print('Running {script_name}...')
     }}
 
@@ -111,7 +110,6 @@ def create_python_script(folder_path, script_name, purpose):
     processed_data = os.path.join(base_path, "data", "processed")
 
     def main():
-        # {purpose} code
         print("Running {script_name}...")
 
     if __name__ == "__main__":
@@ -148,7 +146,6 @@ def create_matlab_script(folder_path, script_name, purpose):
     processed_data = fullfile(base_path, 'data', 'processed');
 
     function {script_name}_main()
-        % {purpose} code
         disp('Running {script_name}...');
     end
 
