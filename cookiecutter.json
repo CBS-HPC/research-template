@@ -6,7 +6,7 @@
 	"orcid": "Provide your ORCID (multiple ORCID can be added by using a ';' delimiter)",
 	"version": "0.0.1",
     "open_source_license": ["MIT", "BSD-3-Clause", "None"],
-	"virtual_environment":["Python","R","environment.yaml","requirements.txt","None"],
+	"virtual_environment":["Python","R","Stata","environment.yaml","requirements.txt","None"],
 	"version_control":["Git","Datalad","DVC","None"],
 	"remote_storage": ["Dropbox","Deic Storage","Local Path","None"],
     "code_repository": ["GitHub","GitLab","None"],
