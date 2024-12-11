@@ -1,18 +1,22 @@
 import os
 import subprocess
 import sys
-
 from textwrap import dedent
-import importlib
 
 
 required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat'] 
+installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
+
 for lib in required_libraries:
     try:
-        importlib.import_module(lib)
-    except ImportError:
-        print(f"Installing {lib}...")
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+        # Check if the library is already installed
+        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
+            print(f"Installing {lib}...")
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+        else:
+            print(f"{lib} is already installed.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install {lib}: {e}")
 
 import nbformat as nbf  # For creating Jupyter notebooks
 from dotenv import dotenv_values, load_dotenv
@@ -492,7 +496,7 @@ def create_matlab_notebooks(folder_path):
     mlx_file_path = os.path.join(folder_path, mlx_file_name)
     
     # Create Jupyter notebook using jupyter-matlab-proxy
-    ipynb_file_name = "workflow_notebook.ipynb"
+    ipynb_file_name = "workflow.ipynb"
     ipynb_file_path = os.path.join(folder_path, ipynb_file_name)
 
     nb = nbf.v4.new_notebook()

@@ -1,17 +1,22 @@
 import os
 import subprocess
 import sys
-import importlib
 import json
 import re
 
 required_libraries = ['python-dotenv','pyyaml'] 
+installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
+
 for lib in required_libraries:
     try:
-        importlib.import_module(lib)
-    except ImportError:
-        print(f"Installing {lib}...")
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+        # Check if the library is already installed
+        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
+            print(f"Installing {lib}...")
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+        else:
+            print(f"{lib} is already installed.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install {lib}: {e}")
 
 from dotenv import dotenv_values, load_dotenv
 

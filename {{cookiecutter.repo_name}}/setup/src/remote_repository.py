@@ -6,7 +6,7 @@ import requests
 import zipfile
 import tarfile
 
-sys.path.append('/setup/src')
+sys.path.append('setup/src')
 from utils import *
 from readme_templates import *
 
