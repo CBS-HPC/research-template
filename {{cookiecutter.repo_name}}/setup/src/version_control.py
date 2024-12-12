@@ -671,36 +671,21 @@ def datalad_local_storage(repo_name):
 programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
 version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
 repo_name = load_from_env("REPO_NAME",".cookiecutter")
-programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+code_repo = load_from_env("CODE_REPO",".cookiecutter")
+remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
+project_name = load_from_env("PROJECT_NAME",".cookiecutter")
+project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
+author_name = load_from_env("AUTHORS",".cookiecutter")
 
-# Set project info to .cookiecutter
-save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
-save_to_env(repo_name,"REPO_NAME",".cookiecutter")
-save_to_env(project_description,"PROJECT_DESCRIPTION",".cookiecutter")
-save_to_env(version,"VERSION",".cookiecutter")
-save_to_env(authors,"AUTHORS",".cookiecutter")
-save_to_env(orcids,"ORCIDS",".cookiecutter")
-save_to_env(license,"LICENSE",".cookiecutter")
-save_to_env(programming_language,"PROGRAMMING_LANGUAGE",".cookiecutter")
-save_to_env(environment_manager,"ENVIRONMENT_MANAGER",".cookiecutter")
-save_to_env(version_control,"VERSION_CONTROL",".cookiecutter")
-save_to_env(remote_storage,"REMOTE_STORAGE",".cookiecutter")
-save_to_env(code_repo,"CODE_REPO",".cookiecutter")
-
-
-
-
-programming_language = "{{cookiecutter.programming_language}}"
-programming_language.replace(" (Pre-installation required)", "")
-version_control = "{{cookiecutter.version_control}}"
-repo_name = "{{cookiecutter.repo_name}}"
-code_repo = "{{cookiecutter.code_repository}}"
-remote_storage = "{{cookiecutter.remote_storage}}"
-project_name = "{{cookiecutter.project_name}}"
-project_description = "{{cookiecutter.description}}"
-author_name = "{{cookiecutter.author_name}}"
+#programming_language = "{{cookiecutter.programming_language}}"
+#programming_language.replace(" (Pre-installation required)", "")
+#version_control = "{{cookiecutter.version_control}}"
+#repo_name = "{{cookiecutter.repo_name}}"
+#code_repo = "{{cookiecutter.code_repository}}"
+#remote_storage = "{{cookiecutter.remote_storage}}"
+#project_name = "{{cookiecutter.project_name}}"
+#project_description = "{{cookiecutter.description}}"
+#author_name = "{{cookiecutter.author_name}}"
 
 # Set to .env
 is_installed('python','Python')
