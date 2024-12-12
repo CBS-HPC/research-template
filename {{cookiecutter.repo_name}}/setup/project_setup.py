@@ -26,14 +26,14 @@ def setup_virtual_environment(version_control,programming_language,environment_m
     if not confirm:
         print("Virtual environment creation canceled.")
         return
-    print(environment_manager.lower())
-    if environment_manager.lower == "conda":
+
+    if environment_manager.lower() == "conda":
         install_packages = set_packages(version_control,programming_language,code_repo)
         env_file = load_env_file()
         setup_conda(install_path,repo_name,install_packages,env_file)
-    elif environment_manager.lower == "venv":
+    elif environment_manager.lower() == "venv":
         create_venv_env(repo_name)    
-    elif environment_manager.lower == "virtualenv":
+    elif environment_manager.lower() == "virtualenv":
         create_virtualenv_env(repo_name)
 
     return repo_name
