@@ -145,10 +145,11 @@ setup_version_control = "setup/src/version_control.py"
 setup_remote_repository = "setup/src/remote_repository.py"
 setup_bash = "setup/src/setup_conda.sh"
 setup_powershell = "setup/src/setup_conda.ps1"
-
 miniconda_path =  "bin/miniconda3"
 
+
 programming_language = "{{cookiecutter.programming_language}}"
+programming_language.replace(" (Pre-installation required)", "")
 environment_manager = "{{cookiecutter.environment_manager}}"
 repo_name = "{{cookiecutter.repo_name}}"
 code_repo = "{{cookiecutter.code_repository}}"
