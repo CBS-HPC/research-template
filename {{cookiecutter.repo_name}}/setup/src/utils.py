@@ -368,8 +368,8 @@ def git_user_info(version_control):
         return None, None
     
 
-def git_repo_user(repo_name,code_repo):
-    if code_repo in ["GitHub","GitLab"]: 
+def git_repo_user(version_control,repo_name,code_repo):
+    if code_repo in ["GitHub","GitLab"] and version_control in ["Git","Datalad","DVC"]: 
         repo_user = None 
         privacy_setting = None
         while not repo_user or not privacy_setting:
