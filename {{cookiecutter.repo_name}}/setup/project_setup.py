@@ -162,6 +162,7 @@ orcids = "{{cookiecutter.orcid}}"
 version = "{{cookiecutter.version}}"
 license = "{{cookiecutter.open_source_license}}"
 
+print(programming_language)
 # Create scripts and notebook
 create_scripts(programming_language, "src")
 create_notebooks(programming_language, "notebooks")
