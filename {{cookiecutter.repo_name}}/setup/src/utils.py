@@ -351,7 +351,8 @@ def git_push(msg:str=""):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-def git_user_info():
+def git_user_info(version_control):
+    if version_control in ["Git","Datalad","DVC"]:    
         git_name = None
         git_email = None
         while not git_name or not git_email:
@@ -363,6 +364,9 @@ def git_user_info():
         save_to_env(git_name ,'GIT_USER')
         save_to_env(git_email,'GIT_EMAIL')
         return git_name, git_email
+    else:
+        return None, None
+    
 
 def git_repo_user(repo_name,code_repo):
     if code_repo in ["GitHub","GitLab"]: 

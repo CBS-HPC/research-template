@@ -185,8 +185,8 @@ save_to_env(code_repo,"CODE_REPO",".cookiecutter")
 save_to_env(os.getcwd(),"PROJECT_PATH")
 
 # Set git user info
-git_user_info()
-git_repo_user(repo_name,code_repo)
+git_user_info(version_control)
+git_repo_user(version_control,repo_name,code_repo)
 
 # Create a citation file
 create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None)

@@ -22,14 +22,14 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
     else:
         return    
     if check:    
-        setup_repo(code_repo,repo_name,description)      
+        setup_repo(version_control,code_repo,repo_name,description)      
 
-def repo_details(code_repo):
+def repo_details(version_control,code_repo,repo_name):
     username = load_from_env(f"{code_repo.upper()}_USER")
     privacy_setting = load_from_env(f"{code_repo.upper()}_PRIVACY")
 
     if not username  or not privacy_setting:
-        username, privacy_setting = git_repo_user(repo_name,code_repo)
+        username, privacy_setting = git_repo_user(version_control,repo_name,code_repo)
 
     return username, privacy_setting
 
@@ -215,10 +215,10 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     
     print(f"{code_repo} username and token added to {env_file}")
 
-def setup_repo(code_repo,repo_name,description):
+def setup_repo(version_control,code_repo,repo_name,description):
     
     if not repo_login(code_repo):
-        username,privacy_setting = repo_details(code_repo)
+        username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         if repo_init(code_repo):
             check, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
             if check:

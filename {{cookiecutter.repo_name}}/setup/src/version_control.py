@@ -43,7 +43,7 @@ def setup_git(version_control,code_repo):
         check, git_name, git_email = check_git_config()
 
         if not check:
-            check, git_name, git_email = setup_git_config(git_name, git_email)
+            check, git_name, git_email = setup_git_config(version_control,git_name, git_email)
         
         if check and version_control == "Git":  
             check = git_init(code_repo)
@@ -185,7 +185,7 @@ def check_git_config():
         print(f"Unexpected error: {e}")
         return False, None, None   # Return False for any other unexpected errors
 
-def setup_git_config(git_name,git_email):
+def setup_git_config(version_control,git_name,git_email):
     """
     Prompts the user for their name and email, then configures Git with these details.
 
@@ -194,7 +194,7 @@ def setup_git_config(git_name,git_email):
     """
     try:
         if not git_name or not git_email:
-            git_name,git_email = git_user_info()
+            git_name,git_email = git_user_info(version_control)
 
         # Configure Git user name and email globally
         subprocess.run(["git", "config", "--global", "user.name", git_name], check=True)
