@@ -10,5 +10,5 @@
 	"environment_manager":["Conda","Venv","Virtualenv","None"],
 	"version_control":["Git","Datalad","DVC","None"],
 	"remote_storage": ["Dropbox","Deic Storage","Local Path","None"],
-    "code_repository": ["GitHub","GitLab","None"],
+    "code_repository": ["GitHub","GitLab","None"]
 }
