@@ -10,7 +10,6 @@ import sys
 # Check and install required libraries
 
 required_libraries = ['bs4'] 
-
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
 for lib in required_libraries:
@@ -19,8 +18,6 @@ for lib in required_libraries:
         if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
             print(f"Installing {lib}...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-        else:
-            print(f"{lib} is already installed.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {lib}: {e}")
 

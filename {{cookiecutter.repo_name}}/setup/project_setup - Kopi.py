@@ -9,37 +9,15 @@ from src.utils import *
 from src.code_templates import *
 from src.readme_templates import *
 
-def setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,install_path = "bin/miniconda3"):
+def setup_virtual_environment(version_control,virtual_environment,code_repo,repo_name,install_path = "bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
     
     Parameters:
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
-    """    
-    if environment_manager is None:
-        return
-    
-    # Ask for user confirmation
-    confirm = ask_yes_no(f"Do you want to create a virtual environment named '{repo_name}' using {environment_manager}? (yes/no):")
+    """
 
-    if not confirm:
-        print("Virtual environment creation canceled.")
-        return
-    
-    if environment_manager.lower == "conda":
-        install_packages = set_packages(version_control,programming_language,code_repo)
-        env_file = load_env_file()
-        setup_conda(install_path,repo_name,install_packages,env_file)
-    elif environment_manager.lower == "venv":
-        create_venv_env(repo_name)    
-    elif environment_manager.lower == "virtualenv":
-        create_virtualenv_env(repo_name)
-
-    return repo_name
-
-def load_env_file():
-    
     def get_file_path():
         """
         Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
@@ -64,49 +42,66 @@ def load_env_file():
         
         # If both checks pass, return the valid file path
         return file_path
+   
+    def create_venv_env(env_name):
+        """Create a Python virtual environment using venv."""
+        subprocess.run([sys.executable, '-m', 'venv', env_name], check=True)
+        print(f'Venv environment "{repo_name}" for Python created successfully.')
 
-    confirm = ask_yes_no(f"Do you want to create a virtual environment from a pre-existing 'environment.yaml' or 'requirements.txt' file? (yes/no):")
+    def create_virtualenv_env(env_name):
+        """Create a Python virtual environment using virtualenv."""
+        subprocess.run(['virtualenv', env_name], check=True)
+        print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
 
-    if confirm:
-        env_file = get_file_path()
-        if env_file is None:
-            print("no 'environment.yaml' or 'requirements.txt' file was loaded")
-        return env_file
-    else:
-        return None
-
-def set_packages(version_control,programming_language,code_repo):
     os_type = platform.system().lower()    
-    
     install_packages = ['python','python-dotenv']
 
-    if programming_language == 'R':
-        install_packages.extend(['r-base'])
+    env_file  = None
 
-    if version_control in ['Git','DVC','Datalad'] and not is_installed('git', 'Git'):
-        install_packages.extend(['git'])   
+    if virtual_environment not in ['Python','R','environment.yaml','requirements.txt']:
+        return
     
-    if version_control == 'Datalad':
-        if not is_installed('rclone', 'Rclone'):    
-            install_packages.extend(['rclone'])
+    # Ask for user confirmation
+   #confirm = input(f"Do you want to create a virtual environment named '{repo_name}' for/from {virtual_environment}? (yes/no): ").strip().lower()
+    
+    confirm = ask_yes_no(f"Do you want to create a virtual environment named '{repo_name}' for/from {virtual_environment}? (yes/no):")
 
-        if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
-            install_packages.extend(['git-annex'])
+    if not confirm:
+        print("Virtual environment creation canceled.")
+        return
+    
+    if virtual_environment in ['environment.yaml','requirements.txt']:
+        env_file = get_file_path()
+        if env_file is None:
+            return None
 
-    if code_repo == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
-        install_packages.extend(['gh']) 
+    if virtual_environment in ['Python','R','environment.yaml','requirements.txt']:
+        
+        if virtual_environment == 'R':
+             install_packages.extend(['r-base'])
 
-    return  install_packages
+        if version_control in ['Git','DVC','Datalad'] and not is_installed('git', 'Git'):
+            install_packages.extend(['git'])   
+           
+        if version_control == 'Datalad':
+            if not is_installed('rclone', 'Rclone'):    
+                install_packages.extend(['rclone'])
+ 
+            if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
+                install_packages.extend(['git-annex'])
 
-def create_venv_env(env_name):
-    """Create a Python virtual environment using venv."""
-    subprocess.run([sys.executable, '-m', 'venv', env_name], check=True)
-    print(f'Venv environment "{repo_name}" for Python created successfully.')
+        if code_repo == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
+             install_packages.extend(['gh'])     
+            
+        check = setup_conda(install_path,virtual_environment,repo_name,install_packages,env_file)
 
-def create_virtualenv_env(env_name):
-    """Create a Python virtual environment using virtualenv."""
-    subprocess.run(['virtualenv', env_name], check=True)
-    print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
+        if check is False and virtual_environment == 'Python':
+            if subprocess.call(['which', 'virtualenv']) == 0:
+                create_virtualenv_env(repo_name)
+            else:
+                create_venv_env(repo_name)
+    
+        return repo_name
 
 def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
@@ -148,8 +143,7 @@ setup_powershell = "setup/src/setup_conda.ps1"
 
 miniconda_path =  "bin/miniconda3"
 
-programming_language = "{{cookiecutter.programming_language}}"
-environment_manager = "{{cookiecutter.environment_manager}}"
+virtual_environment = "{{ cookiecutter.virtual_environment}}"
 repo_name = "{{cookiecutter.repo_name}}"
 code_repo = "{{cookiecutter.code_repository}}"
 version_control = "{{cookiecutter.version_control}}"
@@ -162,8 +156,8 @@ version = "{{cookiecutter.version}}"
 license = "{{cookiecutter.open_source_license}}"
 
 # Create scripts and notebook
-create_scripts(programming_language, "src")
-create_notebooks(programming_language, "notebooks")
+create_scripts(virtual_environment, "src")
+create_notebooks(virtual_environment, "notebooks")
 
 # Set project info to .cookiecutter
 save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
@@ -173,8 +167,7 @@ save_to_env(version,"VERSION",".cookiecutter")
 save_to_env(authors,"AUTHORS",".cookiecutter")
 save_to_env(orcids,"ORCIDS",".cookiecutter")
 save_to_env(license,"LICENSE",".cookiecutter")
-save_to_env(programming_language,"PROGRAMMING_LANGUAGE",".cookiecutter")
-save_to_env(environment_manager,"ENVIRONMENT_MANAGER",".cookiecutter")
+save_to_env(virtual_environment,"VIRTUAL_ENV",".cookiecutter")
 save_to_env(version_control,"VERSION_CONTROL",".cookiecutter")
 save_to_env(remote_storage,"REMOTE_STORAGE",".cookiecutter")
 save_to_env(code_repo,"CODE_REPO",".cookiecutter")
@@ -190,7 +183,7 @@ git_repo_user(repo_name,code_repo)
 create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None)
 
 # Create Virtual Environment
-repo_name = setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,miniconda_path)
+repo_name = setup_virtual_environment(version_control,virtual_environment,code_repo,repo_name,miniconda_path)
 
 os_type = platform.system().lower()
 

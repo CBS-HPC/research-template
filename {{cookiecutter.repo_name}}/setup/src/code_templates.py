@@ -13,8 +13,6 @@ for lib in required_libraries:
         if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
             print(f"Installing {lib}...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-        else:
-            print(f"{lib} is already installed.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {lib}: {e}")
 
@@ -79,8 +77,6 @@ def create_step_script(language, folder_path, script_name, purpose):
         create_sas_script(folder_path, script_name, purpose)
     else:
         raise ValueError("Invalid language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
-
-    print(f"Script '{script_name}' created successfully at '{folder_path}'")
 
 def create_r_script(folder_path, script_name, purpose):
     extension = ".R"
@@ -226,8 +222,6 @@ def create_main(language, folder_path):
         create_sas_main(folder_path)
     else:
         raise ValueError("Invalid language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
-
-    print(f"Workflow script created successfully at '{folder_path}'")
 
 def create_r_main(folder_path):
     extension = ".R"
@@ -375,8 +369,6 @@ def create_notebooks(language, folder_path):
         create_sas_notebook(folder_path)
     else:
         raise ValueError("Invalid language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
-
-    print(f"Notebook(s) created successfully at '{folder_path}'")
 
 def create_python_notebook(folder_path):
     file_name = "workflow.ipynb"

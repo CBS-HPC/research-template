@@ -15,8 +15,6 @@ for lib in required_libraries:
         if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
             print(f"Installing {lib}...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-        else:
-            print(f"{lib} is already installed.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {lib}: {e}")
 
@@ -670,7 +668,7 @@ def datalad_local_storage(repo_name):
     if datalad_remote:
         subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
 
-virtual_environment = "{{ cookiecutter.virtual_environment}}"
+programming_language = "{{ cookiecutter.programming_language}}"
 version_control = "{{cookiecutter.version_control}}"
 repo_name = "{{cookiecutter.repo_name}}"
 code_repo = "{{cookiecutter.code_repository}}"
@@ -681,8 +679,8 @@ author_name = "{{cookiecutter.author_name}}"
 
 # Set to .env
 is_installed('python','Python')
-if virtual_environment in ['R']:
-    is_installed(virtual_environment.lower(),virtual_environment)
+if programming_language in ['R']:
+    is_installed(programming_language.lower(),programming_language)
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)

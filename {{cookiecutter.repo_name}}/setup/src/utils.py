@@ -6,7 +6,7 @@ import platform
 import shutil
 import urllib.request
 
-required_libraries = ['python-dotenv'] 
+required_libraries = ['python-dotenv','pyyaml'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
 for lib in required_libraries:
@@ -15,13 +15,11 @@ for lib in required_libraries:
         if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
             print(f"Installing {lib}...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-        else:
-            print(f"{lib} is already installed.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {lib}: {e}")
 
 from dotenv import dotenv_values, load_dotenv
-
+import yaml
 
 def get_relative_path(target_path):
 
@@ -387,7 +385,7 @@ def git_repo_user(repo_name,code_repo):
         return None, None
 
 # Conda Functions:
-def setup_conda(install_path,virtual_environment,repo_name, install_packages = [], env_file = None):
+def setup_conda(install_path,repo_name, install_packages = [], env_file = None):
     
     install_path = os.path.abspath(install_path)
 
@@ -395,15 +393,18 @@ def setup_conda(install_path,virtual_environment,repo_name, install_packages = [
         if not install_miniconda(install_path):
             return False
 
-    if virtual_environment in ['Python','R']:
+    if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
+        if env_file.endswith('.txt'):
+            env_file = generate_env_yml(repo_name,env_file)
+        update_env_yaml(env_file, repo_name, install_packages)
+        command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
+        msg = f'Conda environment "{repo_name}" created successfully from {env_file}.'
+    else:
         command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
         command.extend(install_packages)
-        msg = f'Conda environment "{repo_name}" for {virtual_environment} created successfully. The following packages were installed: {install_packages}'
-    elif virtual_environment in ['environment.yaml','requirements.txt']:
-        if virtual_environment == 'requirements.txt':
-            generate_yml(repo_name,env_file)
-        command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
-        msg = f'Conda environment "{repo_name}" created successfully from {virtual_environment}.'
+        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: {install_packages}'
+    
+ 
     
     create_conda_env(command,msg)
     export_conda_env(repo_name)
@@ -536,8 +537,9 @@ def create_conda_env(command,msg):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-def generate_yml(env_name,requirements_path):
+def generate_env_yml(env_name,requirements_path):
     """Generate an environment.yml file using a requirements.txt file."""
+    env_file = 'environment.yml'
     yml_content = f"""
         name: {env_name}
         channels:
@@ -549,9 +551,52 @@ def generate_yml(env_name,requirements_path):
         - pip:
             - -r file:{requirements_path}
         """
-    with open('environment.yml', 'w') as yml_file:
+    with open(env_file, 'w') as yml_file:
         yml_file.write(yml_content)
     print(f"Generated environment.yml file using {requirements_path}.")
+    return env_file
+
+def update_env_yaml(env_file, repo_name, install_packages):
+    """
+    Updates an existing environment.yml file to:
+    - Change the environment name to `repo_name`
+    - Add additional packages from `install_packages` list
+
+    Parameters:
+    env_file (str): Path to the existing environment.yml file
+    repo_name (str): The new environment name (usually repo name)
+    install_packages (list): List of additional packages to install
+
+    Returns:
+    None
+    """
+    # Load the existing environment.yml file
+    with open(env_file, 'r') as file:
+        env_data = yaml.safe_load(file)
+
+    # Change the environment name based on the repo_name
+    env_data['name'] = repo_name
+
+    # If there is a 'dependencies' section, add packages to it
+    if 'dependencies' in env_data:
+        # Make sure dependencies is a list, if not initialize it as an empty list
+        if not isinstance(env_data['dependencies'], list):
+            env_data['dependencies'] = []
+        
+        # Add the additional packages
+        for package in install_packages:
+            if package not in env_data['dependencies']:
+                env_data['dependencies'].append(package)
+    else:
+        # If no dependencies section exists, create it
+        env_data['dependencies'] = install_packages
+
+    # Save the updated environment.yml
+    with open(env_file, 'w') as file:
+        yaml.dump(env_data, file, default_flow_style=False)
+
+    print(f"Updated {env_file} with new environment name '{repo_name}' and added packages.")
+
 
 # Other
 def get_hardware_info():
