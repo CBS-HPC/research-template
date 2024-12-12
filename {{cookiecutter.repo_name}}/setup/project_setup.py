@@ -149,7 +149,7 @@ miniconda_path =  "bin/miniconda3"
 
 
 programming_language = "{{cookiecutter.programming_language}}"
-programming_language.replace(" (Pre-installation required)", "")
+programming_language = programming_language.replace(" (Pre-installation required)", "")
 environment_manager = "{{cookiecutter.environment_manager}}"
 repo_name = "{{cookiecutter.repo_name}}"
 code_repo = "{{cookiecutter.code_repository}}"
