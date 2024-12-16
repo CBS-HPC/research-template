@@ -296,25 +296,18 @@ def search_applications(pattern: str):
     found_paths = []
     system_paths = os.environ["PATH"].split(os.pathsep)  # Split PATH into directories
 
-    # Debugging: Confirm the input pattern
-    print(f"Searching for: '{pattern}'")  # <-- Add this to confirm the actual input
-    
     for directory in system_paths:
         if os.path.isdir(directory):  # Check if the PATH directory exists
             try:
                 for file in os.listdir(directory):
-                    # Debugging: Show file names being checked
-                    print(f"Checking file: {file}")  # <-- Add this to see every file name
-
                     # Match only if the entire pattern is in the filename
                     if pattern.lower() in file.lower():
-                        print(f"Matched: {file}")  # <-- Show matched files
                         full_path = os.path.join(directory, file)
                         if os.access(full_path, os.X_OK):  # Check if file is executable
                             found_paths.append(full_path)
             except PermissionError:
                 continue  # Skip directories with permission issues
-    
+
     if not found_paths:
         print(f"No executables found for pattern '{pattern}'.")
     return found_paths

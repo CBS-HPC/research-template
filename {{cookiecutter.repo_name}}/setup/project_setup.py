@@ -240,6 +240,11 @@ create_citation_file(project_name,version,authors,orcids,version_control, doi=No
 repo_name = setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,miniconda_path)
 
 print(programming_language)
+# Path to add
+stata_path = r"C:\Program Files\Stata18"
+
+# Add to PATH
+os.environ["PATH"] += os.pathsep + stata_path
 found_apps = search_applications(programming_language)
 
 choose_path(found_apps)
