@@ -239,7 +239,7 @@ create_citation_file(project_name,version,authors,orcids,version_control, doi=No
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,miniconda_path)
 
-
+print(programming_language)
 found_apps = search_applications(programming_language)
 
 choose_path(found_apps)
