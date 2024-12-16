@@ -247,7 +247,7 @@ stata_path = r"C:\Program Files\Stata18"
 os.environ["PATH"] += os.pathsep + stata_path
 found_apps = search_applications(programming_language)
 
-choose_path(found_apps)
+choose_path(programming_language,found_apps)
 
 os_type = platform.system().lower()
 
