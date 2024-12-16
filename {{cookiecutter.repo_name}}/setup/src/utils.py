@@ -283,7 +283,7 @@ def set_from_env():
     is_installed('rclone')
     is_installed('git-annex-remote-rclone')
 
-def search_applications(pattern: str):
+def search_applications(app: str):
     """
     Search for executables matching partial app names in the system's PATH.
 
@@ -301,7 +301,7 @@ def search_applications(pattern: str):
             try:
                 for file in os.listdir(directory):
                     # Match only if the entire pattern is in the filename
-                    if pattern.lower() in file.lower():
+                    if app.lower() in file.lower():
                         full_path = os.path.join(directory, file)
                         if os.access(full_path, os.X_OK):  # Check if file is executable
                             found_paths.append(full_path)
@@ -309,10 +309,10 @@ def search_applications(pattern: str):
                 continue  # Skip directories with permission issues
 
     if not found_paths:
-        print(f"No executables found for pattern '{pattern}'.")
+        print(f"No executables found for app '{app}'.")
     return found_paths
 
-def choose_path(found_apps):
+def choose_path(app: str,found_apps:list):
     """
     Prompt the user to choose one path for each application pattern.
 
@@ -324,22 +324,20 @@ def choose_path(found_apps):
     """
     selected_paths = {}
 
-    for app, paths in found_apps.items():
-        print(f"\nMultiple paths found for '{app}':")
-        for i, path in enumerate(paths):
-            print(f"  [{i + 1}] {path}")
+    for i, path in enumerate(found_apps):
+        print(f"  [{i + 1}] {path}")
         
-        while True:
-            try:
-                choice = int(input(f"Choose a path for '{app}' (1-{len(paths)}): "))
-                if 1 <= choice <= len(paths):
-                    selected_paths[app] = paths[choice - 1]
-                    print(f"Selected: {paths[choice - 1]}")
-                    break
-                else:
-                    print("Invalid choice. Please enter a number within the range.")
-            except ValueError:
-                print("Invalid input. Please enter a valid number.")
+    while True:
+        try:
+            choice = int(input(f"Choose a path for '{app}' (1-{len(found_apps)}): "))
+            if 1 <= choice <= len(path):
+                selected_paths[app] = found_apps[choice - 1]
+                print(f"Selected: {found_apps[choice - 1]}")
+                break
+            else:
+                print("Invalid choice. Please enter a number within the range.")
+        except ValueError:
+            print("Invalid input. Please enter a valid number.")
     
     return selected_paths
 
