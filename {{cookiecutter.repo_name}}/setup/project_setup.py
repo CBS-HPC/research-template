@@ -27,10 +27,10 @@ def setup_virtual_environment(version_control,programming_language,environment_m
         print("Virtual environment creation canceled.")
         return
 
-    pip_packages = pip_packages(version_control,programming_language)
+    pip_packages = set_pip_packages(version_control,programming_language)
 
     if environment_manager.lower() == "conda":
-        conda_packages = conda_packages(version_control,programming_language,code_repo)
+        conda_packages = set_conda_packages(version_control,programming_language,code_repo)
         env_file = load_env_file()
         setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
     elif environment_manager.lower() == "venv":
@@ -90,7 +90,7 @@ def load_env_file(ext = ['.yml', '.txt']):
     else:
         return None
 
-def conda_packages(version_control,programming_language,code_repo):
+def set_conda_packages(version_control,programming_language,code_repo):
     os_type = platform.system().lower()    
     
     install_packages = ['python','python-dotenv']
@@ -113,7 +113,7 @@ def conda_packages(version_control,programming_language,code_repo):
 
     return install_packages
 
-def pip_packages(version_control,programming_language):
+def set_pip_packages(version_control,programming_language):
 
     install_packages = []
     if programming_language.lower()  == 'python':
@@ -129,6 +129,7 @@ def pip_packages(version_control,programming_language):
         install_packages.extend(['dvc[all]'])
     elif version_control.lower()  == "datalad" and not is_installed('datalad','Datalad'):
         install_packages.extend(['datalad-installer','datalad','pyopenssl'])
+    
     return install_packages
 
 def create_venv_env(env_name, pip_packages=None):
@@ -207,7 +208,6 @@ orcids = "{{cookiecutter.orcid}}"
 version = "{{cookiecutter.version}}"
 license = "{{cookiecutter.open_source_license}}"
 
-print(programming_language)
 # Create scripts and notebook
 create_scripts(programming_language, "src")
 create_notebooks(programming_language, "notebooks")
