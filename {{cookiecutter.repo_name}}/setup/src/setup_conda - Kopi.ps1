@@ -1,4 +1,3 @@
-# PowerShell script to set up environment and run specified Python scripts
 
 # Get parameters passed from PowerShell
 param (

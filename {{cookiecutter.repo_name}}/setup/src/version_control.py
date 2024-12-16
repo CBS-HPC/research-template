@@ -28,12 +28,12 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
 
     if version_control == None:
         return
-    elif version_control == "Git":
+    elif version_control.lower()  == "git":
         if not setup_git(version_control,code_repo):
             return
-    if version_control == "Datalad":
+    if version_control.lower() == "datalad":
         setup_datalad(version_control,remote_storage,code_repo,repo_name)
-    elif version_control == "DVC":
+    elif version_control.lower() == "dvc":
         setup_dvc(version_control,remote_storage,code_repo,repo_name)
 
 # Git Setup Functions
@@ -213,7 +213,7 @@ def git_init(code_repo):
         subprocess.run(["git", "init"], check=True)
         print("Initialized a new Git repository.")
 
-    if code_repo == "GitHub":
+    if code_repo.lower() == "github":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
     git_commit("Initial commit")
@@ -277,7 +277,7 @@ def dvc_init(remote_storage,code_repo,repo_name):
     for folder in folders:
         subprocess.run(["dvc", "add",folder], check=True)
 
-    if code_repo == "GitHub":
+    if code_repo.lower() == "github":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
     git_commit("Initial commit")

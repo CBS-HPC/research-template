@@ -283,6 +283,69 @@ def set_from_env():
     is_installed('rclone')
     is_installed('git-annex-remote-rclone')
 
+def search_applications(app_patterns):
+    """
+    Search for executables matching partial app names in the system's PATH.
+
+    Args:
+        app_patterns (list): List of partial application names to search for.
+
+    Returns:
+        dict: A dictionary with app patterns as keys and a list of matching paths as values.
+    """
+    found_apps = {}
+    system_paths = os.environ["PATH"].split(os.pathsep)  # Split PATH into directories
+
+    for pattern in app_patterns:
+        found_paths = []
+        for directory in system_paths:
+            if os.path.isdir(directory):  # Check if the PATH directory exists
+                try:
+                    for file in os.listdir(directory):
+                        if pattern.lower() in file.lower():  # Partial case-insensitive match
+                            full_path = os.path.join(directory, file)
+                            if os.access(full_path, os.X_OK):  # Check if file is executable
+                                found_paths.append(full_path)
+                except PermissionError:
+                    continue  # Skip directories with permission issues
+        
+        if found_paths:
+            found_apps[pattern] = found_paths
+
+    return found_apps
+
+def choose_path(found_apps):
+    """
+    Prompt the user to choose one path for each application pattern.
+
+    Args:
+        found_apps (dict): Dictionary with app patterns as keys and matching paths as values.
+
+    Returns:
+        dict: A dictionary with app patterns as keys and the selected paths as values.
+    """
+    selected_paths = {}
+
+    for app, paths in found_apps.items():
+        print(f"\nMultiple paths found for '{app}':")
+        for i, path in enumerate(paths):
+            print(f"  [{i + 1}] {path}")
+        
+        while True:
+            try:
+                choice = int(input(f"Choose a path for '{app}' (1-{len(paths)}): "))
+                if 1 <= choice <= len(paths):
+                    selected_paths[app] = paths[choice - 1]
+                    print(f"Selected: {paths[choice - 1]}")
+                    break
+                else:
+                    print("Invalid choice. Please enter a number within the range.")
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+    
+    return selected_paths
+
+
 # Git Functions:
 def git_commit(msg:str=""):
     
@@ -352,7 +415,7 @@ def git_push(msg:str=""):
         print(f"An error occurred: {e}")
 
 def git_user_info(version_control):
-    if version_control in ["Git","Datalad","DVC"]:    
+    if version_control.lower() in ["git","datalad","dvc"]:    
         git_name = None
         git_email = None
         while not git_name or not git_email:
@@ -367,9 +430,8 @@ def git_user_info(version_control):
     else:
         return None, None
     
-
 def git_repo_user(version_control,repo_name,code_repo):
-    if code_repo in ["GitHub","GitLab"] and version_control in ["Git","Datalad","DVC"]: 
+    if code_repo.lower() in ["github","gitlab"] and version_control.lower() in ["git","datalad","dvc"]: 
         repo_user = None 
         privacy_setting = None
         while not repo_user or not privacy_setting:
@@ -389,7 +451,7 @@ def git_repo_user(version_control,repo_name,code_repo):
         return None, None
 
 # Conda Functions:
-def setup_conda(install_path,repo_name, install_packages = [], env_file = None):
+def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_packages:list = [], env_file:str = None):
     
     install_path = os.path.abspath(install_path)
 
@@ -400,21 +462,49 @@ def setup_conda(install_path,repo_name, install_packages = [], env_file = None):
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
             env_file = generate_env_yml(repo_name,env_file)
-        update_env_yaml(env_file, repo_name, install_packages)
+        update_env_yaml(env_file, repo_name, conda_packages)
         command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
         msg = f'Conda environment "{repo_name}" created successfully from {env_file}.'
     else:
         command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
-        command.extend(install_packages)
-        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: {install_packages}'
-    
- 
-    
+        command.extend(conda_packages)
+        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
+
     create_conda_env(command,msg)
+    pip_install(repo_name, pip_packages)
     export_conda_env(repo_name)
     
     return True
-    
+
+def pip_install(repo_name, pip_packages):
+    """
+    Activates a Conda environment and installs packages using pip.
+
+    Parameters:
+    repo_name (str): Name of the Conda environment to activate.
+    pip_packages (list): List of pip packages to install.
+
+    Returns:
+    None
+    """
+    if not pip_packages:
+        return
+
+    try:
+        # Construct the pip install command
+        pip_command = [
+            "conda", "run", "-n", repo_name, sys.executable, "-m", "pip", "install"
+        ] + pip_packages
+
+        # Execute the pip install command
+        subprocess.run(pip_command, check=True)
+
+        print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{repo_name}'.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error installing pip packages in Conda environment '{repo_name}': {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
 def export_conda_env(env_name, output_file='environment.yml'):
     """
     Export the details of a conda environment to a YAML file.
@@ -560,16 +650,18 @@ def generate_env_yml(env_name,requirements_path):
     print(f"Generated environment.yml file using {requirements_path}.")
     return env_file
 
-def update_env_yaml(env_file, repo_name, install_packages):
+def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_packages:list=[]):
     """
     Updates an existing environment.yml file to:
     - Change the environment name to `repo_name`
-    - Add additional packages from `install_packages` list
+    - Add additional packages from `conda_packages` list
+    - Add additional pip packages from `pip_packages` list
 
     Parameters:
     env_file (str): Path to the existing environment.yml file
     repo_name (str): The new environment name (usually repo name)
-    install_packages (list): List of additional packages to install
+    conda_packages (list): List of additional Conda packages to install
+    pip_packages (list): List of additional pip packages to install
 
     Returns:
     None
@@ -581,25 +673,44 @@ def update_env_yaml(env_file, repo_name, install_packages):
     # Change the environment name based on the repo_name
     env_data['name'] = repo_name
 
-    # If there is a 'dependencies' section, add packages to it
+    # If there is a 'dependencies' section, add Conda packages to it
     if 'dependencies' in env_data:
-        # Make sure dependencies is a list, if not initialize it as an empty list
+        # Make sure dependencies is a list
         if not isinstance(env_data['dependencies'], list):
             env_data['dependencies'] = []
         
-        # Add the additional packages
-        for package in install_packages:
+        # Add Conda packages if not already present
+        for package in conda_packages:
             if package not in env_data['dependencies']:
                 env_data['dependencies'].append(package)
     else:
         # If no dependencies section exists, create it
-        env_data['dependencies'] = install_packages
+        env_data['dependencies'] = conda_packages
+
+    # Add pip packages under the pip section
+    pip_section = None
+    for item in env_data['dependencies']:
+        # Check if there's an existing pip section
+        if isinstance(item, dict) and 'pip' in item:
+            pip_section = item['pip']
+            break
+
+    if pip_section is not None:
+        # Append pip packages to the existing pip section
+        for pip_package in pip_packages:
+            if pip_package not in pip_section:
+                pip_section.append(pip_package)
+    else:
+        # Create a new pip section
+        if pip_packages:
+            env_data['dependencies'].append({'pip': pip_packages})
 
     # Save the updated environment.yml
     with open(env_file, 'w') as file:
         yaml.dump(env_data, file, default_flow_style=False)
 
-    print(f"Updated {env_file} with new environment name '{repo_name}' and added packages.")
+    print(f"Updated {env_file} with new environment name '{repo_name}', added Conda packages, and added pip packages.")
+
 
 
 # Other

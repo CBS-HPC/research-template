@@ -12,14 +12,14 @@ from src.readme_templates import *
 def setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,install_path = "bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
-    
+
     Parameters:
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """    
     if environment_manager is None:
         return
-    
+
     # Ask for user confirmation
     confirm = ask_yes_no(f"Do you want to create a virtual environment named '{repo_name}' using {environment_manager}? (yes/no):")
 
@@ -27,20 +27,25 @@ def setup_virtual_environment(version_control,programming_language,environment_m
         print("Virtual environment creation canceled.")
         return
 
-    if environment_manager.lower() == "conda":
-        install_packages = set_packages(version_control,programming_language,code_repo)
-        env_file = load_env_file()
-        setup_conda(install_path,repo_name,install_packages,env_file)
-    elif environment_manager.lower() == "venv":
-        create_venv_env(repo_name)    
-    elif environment_manager.lower() == "virtualenv":
-        create_virtualenv_env(repo_name)
+    pip_packages = pip_packages(version_control,programming_language)
 
+    if environment_manager.lower() == "conda":
+        conda_packages = conda_packages(version_control,programming_language,code_repo)
+        env_file = load_env_file()
+        setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
+    elif environment_manager.lower() == "venv":
+        create_venv_env(repo_name,pip_packages)    
+    elif environment_manager.lower() == "virtualenv":
+        create_virtualenv_env(repo_name,pip_packages)
+    else:
+        subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
+        print(f'Packages {pip_packages} installed successfully in the current environment.')
+        
     return repo_name
 
-def load_env_file():
+def load_env_file(ext = ['.yml', '.txt']):
     
-    def get_file_path():
+    def get_file_path(ext = ['.yml', '.txt']):
         """
         Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
         
@@ -58,68 +63,106 @@ def load_env_file():
             
         # Check the file extension
         _, file_extension = os.path.splitext(file_path)
-        if file_extension.lower() not in {'.yml', '.txt'}:
-            print("Invalid file format. The file must be a .yml or .txt file.")
+        if file_extension.lower() not in ext:
+            print(f"Invalid file format. The file must be a {ext}")
             return None
         
         # If both checks pass, return the valid file path
         return file_path
 
-    confirm = ask_yes_no(f"Do you want to create a virtual environment from a pre-existing 'environment.yaml' or 'requirements.txt' file? (yes/no):")
+    if all(ext in ['.yml', '.txt']):
+        msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' or 'requirements.txt' file? (yes/no):" 
+        error= "no 'environment.yaml' or 'requirements.txt' file was loaded"
+    elif ext in ['.txt']:
+        msg = "Do you want to create a virtual environment from a pre-existing 'requirements.txt' file? (yes/no):"
+        error= "no 'requirements.txt' file was loaded"
+    elif ext in ['.yml']:
+        msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' file? (yes/no):"
+        error= "no 'environment.yaml' file was loaded"
+    
+    confirm = ask_yes_no(msg)
 
     if confirm:
-        env_file = get_file_path()
+        env_file = get_file_path(ext)
         if env_file is None:
-            print("no 'environment.yaml' or 'requirements.txt' file was loaded")
+            print(error)
         return env_file
     else:
         return None
 
-def set_packages(version_control,programming_language,code_repo):
+def conda_packages(version_control,programming_language,code_repo):
     os_type = platform.system().lower()    
     
     install_packages = ['python','python-dotenv']
 
-    if programming_language == 'R':
+    if programming_language.lower()  == 'r':
         install_packages.extend(['r-base'])
 
-    if version_control in ['Git','DVC','Datalad'] and not is_installed('git', 'Git'):
+    if version_control.lower() in ['git','dvc','datalad'] and not is_installed('git', 'Git'):
         install_packages.extend(['git'])   
     
-    if version_control == 'Datalad':
+    if version_control.lower()  == "datalad":
         if not is_installed('rclone', 'Rclone'):    
             install_packages.extend(['rclone'])
 
         if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
             install_packages.extend(['git-annex'])
 
-    if code_repo == 'GitHub' and not is_installed('gh', 'GitHub Cli'):
+    if code_repo.lower() == "github" and not is_installed('gh', 'GitHub Cli'):
         install_packages.extend(['gh']) 
 
-    return  install_packages
+    return install_packages
 
-def create_venv_env(env_name):
-    """Create a Python virtual environment using venv."""
+def pip_packages(version_control,programming_language):
+
+    install_packages = []
+    if programming_language.lower()  == 'python':
+        install_packages.extend(['jupyterlab'])
+    elif programming_language.lower()  == 'stata':
+        install_packages.extend(['jupyterlab','stata_setup'])
+    elif programming_language.lower()  == 'matlab':
+        install_packages.extend(['jupyterlab','jupyter-matlab-proxy'])
+    elif programming_language.lower() == 'sas':
+        install_packages.extend(['jupyterlab','saspy'])
+
+    if version_control.lower()  == "dvc" and not is_installed('dvc','DVC'):
+        install_packages.extend(['dvc[all]'])
+    elif version_control.lower()  == "datalad" and not is_installed('datalad','Datalad'):
+        install_packages.extend(['datalad-installer','datalad','pyopenssl'])
+    return install_packages
+
+def create_venv_env(env_name, pip_packages=None):
+    """Create a Python virtual environment using venv and install packages."""
     subprocess.run([sys.executable, '-m', 'venv', env_name], check=True)
-    print(f'Venv environment "{repo_name}" for Python created successfully.')
+    print(f'Venv environment "{env_name}" for Python created successfully.')
 
-def create_virtualenv_env(env_name):
-    """Create a Python virtual environment using virtualenv."""
+    if pip_packages:
+        pip_path = f'{env_name}/bin/pip' if sys.platform != 'win32' else f'{env_name}\\Scripts\\pip'
+        subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+        print(f'Packages {pip_packages} installed successfully in the venv environment.')
+
+def create_virtualenv_env(env_name, pip_packages=None):
+    """Create a Python virtual environment using virtualenv and install packages."""
     subprocess.run(['virtualenv', env_name], check=True)
-    print(f'Virtualenv environment "{repo_name}" for Python created successfully.')
+    print(f'Virtualenv environment "{env_name}" for Python created successfully.')
 
-def run_bash_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
+    if pip_packages:
+        pip_path = f'{env_name}/bin/pip' if sys.platform != 'win32' else f'{env_name}\\Scripts\\pip'
+        subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+        print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
+
+def run_bash_script(script_path, repo_name=None, environment_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
         # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, repo_name, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
+        subprocess.check_call(['bash', '-i', script_path, repo_name, environment_manager, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
         print(f"Script {script_path} executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def run_powershell_script(script_path, repo_name=None, setup_version_control_path=None, setup_remote_repository_path=None):
+def run_powershell_script(script_path, repo_name=None, environment_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
         # Prepare the command to execute the PowerShell script with arguments
         command = [
@@ -129,6 +172,8 @@ def run_powershell_script(script_path, repo_name=None, setup_version_control_pat
         # Append arguments if they are provided
         if repo_name:
             command.append(repo_name)
+        if environment_manager:
+            command.append(environment_manager)
         if setup_version_control_path:
             command.append(setup_version_control_path)
         if setup_remote_repository_path:
@@ -143,8 +188,8 @@ def run_powershell_script(script_path, repo_name=None, setup_version_control_pat
 
 setup_version_control = "setup/src/version_control.py"
 setup_remote_repository = "setup/src/remote_repository.py"
-setup_bash = "setup/src/setup_conda.sh"
-setup_powershell = "setup/src/setup_conda.ps1"
+setup_bash = "setup/src/run_setup.sh"
+setup_powershell = "setup/src/run_setup.ps1"
 miniconda_path =  "bin/miniconda3"
 
 
@@ -193,6 +238,11 @@ create_citation_file(project_name,version,authors,orcids,version_control, doi=No
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,miniconda_path)
+
+
+found_apps = search_applications(programming_language)
+
+choose_path(found_apps)
 
 os_type = platform.system().lower()
 

@@ -270,7 +270,7 @@ def create_citation_file(
     version,
     authors,
     orcids,
-    version_control,
+    code_repo,
     doi=None,
     release_date=None,
 ):
@@ -282,7 +282,7 @@ def create_citation_file(
         version (str): Version of the project.
         authors (str): Semicolon-separated list of author names.
         orcids (str): Semicolon-separated list of ORCID IDs corresponding to the authors.
-        version_control (str): Either "GitHub" or "GitLab" (or None).
+        code_repo (str): Either "GitHub" or "GitLab" (or None).
         doi (str): DOI of the project. Optional.
         release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
     """
@@ -321,11 +321,11 @@ def create_citation_file(
         author_data_list.append(author_data)
 
     # Generate URL based on version control
-    if version_control == "GitHub":
+    if code_repo.lower() == "github":
         user = load_from_env(["GITHUB_USER"])
         repo = load_from_env(["GITHUB_REPO"])
         base_url = "https://github.com"
-    elif version_control == "GitLab":
+    elif code_repo.lower() == "gitlab":
         user = load_from_env(["GITLAB_USER"])
         repo = load_from_env(["GITLAB_REPO"])
         base_url = "https://gitlab.com"

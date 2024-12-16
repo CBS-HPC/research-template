@@ -16,9 +16,9 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
 
     if version_control == None or not os.path.isdir(".git"):
         return
-    if code_repo == "GitHub":
+    if code_repo.lower() == "github":
         check = install_gh("bin/gh")     
-    elif code_repo == "GitLab":
+    elif code_repo.lower() == "gitlab":
         check = install_glab("bin/glab")
     else:
         return    
@@ -37,7 +37,7 @@ def repo_details(version_control,code_repo,repo_name):
 def repo_login(code_repo):
 
     try: 
-        if code_repo == "GitHub":
+        if code_repo.lower() == "github":
             user = load_from_env('GITHUB_USER')
             token = load_from_env('GH_TOKEN')
             command = ['gh', 'auth', 'login', '--with-token']
@@ -49,7 +49,7 @@ def repo_login(code_repo):
                 return True
             else:
                 return False
-        elif code_repo == "GitLab":
+        elif code_repo.lower() == "gitlab":
             user = load_from_env('GITLAB_USER')
             token = load_from_env('GH_TOKEN')
             hostname = load_from_env('GH_HOSTNAME')
@@ -73,9 +73,9 @@ def repo_login(code_repo):
   
 def repo_init(code_repo):    
     
-    if code_repo == "GitHub":
+    if code_repo.lower() == "github":
         exe = "gh"
-    elif code_repo == "GitLab":
+    elif code_repo.lower() == "gitlab":
         exe = "glab"
     else:
         return False
@@ -95,13 +95,13 @@ def repo_init(code_repo):
 def repo_create(code_repo,username, privacy_setting, repo_name, description):
     
     try:
-        if code_repo ==  "GitHub":    
+        if code_repo.lower() ==  "github":    
             # Create the GitHub repository
             subprocess.run([
                 'gh', "repo", "create", f"{username}/{repo_name}",
                 f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
             ], check=True)
-        elif code_repo == "GitLab":
+        elif code_repo.lower() == "gitlab":
              subprocess.run([
                 'glab', "repo", "create",
                 f"--{privacy_setting}", "--description", description], check=True)
@@ -192,12 +192,12 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
             print(f"Failed to get GitHub token: {e}")
             return None
 
-    if code_repo == "GitHub":
+    if code_repo.lower() == "github":
         token = get_gh_token()
         token_tag = "GH"
         hostname = None
    
-    elif code_repo == "GitLab":
+    elif code_repo.lower() == "gitlab":
         token = get_glab_token()
         hostname = get_glab_hostname()
         token_tag = "GLAB"
