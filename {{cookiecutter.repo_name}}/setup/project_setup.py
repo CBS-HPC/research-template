@@ -33,16 +33,18 @@ def setup_virtual_environment(version_control,programming_language,environment_m
     if environment_manager.lower() == "conda":
         conda_packages = set_conda_packages(version_control,programming_language,code_repo)
         env_file = load_env_file()
-        setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
+        python_env = setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
     elif environment_manager.lower() == "venv":
         python_env = create_venv_env(repo_name,pip_packages)    
     elif environment_manager.lower() == "virtualenv":
         python_env = create_virtualenv_env(repo_name,pip_packages)
     
-    if not python_env:
+    if not python_env: 
         python_env = sys.executable
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
+
+    save_to_env(python_env,"PYTHON")
         
     return repo_name
 
@@ -222,7 +224,7 @@ def run_powershell_script(script_path, repo_name=None, environment_manager=None,
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def set_programming_language(programming_language): # FIX ME !!
+def set_programming_language(programming_language):
 
     # Add to PATH
     stata_path = r"C:\Program Files\Stata18"

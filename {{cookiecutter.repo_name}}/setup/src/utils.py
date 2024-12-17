@@ -505,12 +505,12 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
         command.extend(conda_packages)
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
-
-    create_conda_env(command,msg)
+    
+    python_env = create_conda_env(repo_name,command,msg)
     pip_install(repo_name, pip_packages)
     export_conda_env(repo_name)
     
-    return True
+    return python_env
 
 def pip_install(repo_name, pip_packages):
     """
@@ -646,7 +646,7 @@ def install_miniconda(install_path):
         print(f"Failed to install Miniconda3: {e}")
         return False
 
-def create_conda_env(command,msg):
+def create_conda_env(repo_name,command,msg):
     """
     Create a conda environment from an environment.yml file with a specified name.
     
@@ -659,6 +659,9 @@ def create_conda_env(command,msg):
         # Run the command
         subprocess.run(command, check=True)
         print(msg)
+        # Run the command and get the Python executable path within the environment
+        python_env = subprocess.check_output(["conda", "run", "-n", repo_name, sys.executable, "-c", "import sys; print(sys.executable)"], text=True).strip()
+        return python_env
         
     except subprocess.CalledProcessError as e:
         print(f"Failed to create conda environment: {e}")
@@ -666,6 +669,8 @@ def create_conda_env(command,msg):
         print("Conda is not installed or not found in the system path.")
     except Exception as e:
         print(f"An error occurred: {e}")
+
+    return None
 
 def generate_env_yml(env_name,requirements_path):
     """Generate an environment.yml file using a requirements.txt file."""
