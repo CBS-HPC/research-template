@@ -688,9 +688,9 @@ author_name = load_from_env("AUTHORS",".cookiecutter")
 #author_name = "{{cookiecutter.author_name}}"
 
 # Set to .env
-is_installed('python','Python')
-if programming_language in ['R']:
-    is_installed(programming_language.lower(),programming_language)
+#is_installed('python','Python')
+#if programming_language in ['R']:
+#    is_installed(programming_language.lower(),programming_language)
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)

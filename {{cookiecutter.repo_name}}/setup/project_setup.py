@@ -33,7 +33,9 @@ def setup_virtual_environment(version_control,programming_language,environment_m
     if environment_manager.lower() == "conda":
         conda_packages = set_conda_packages(version_control,programming_language,code_repo)
         env_file = load_env_file()
-        python_env = setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
+        python_env,r_env = setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
+        if r_env and programming_language == "R":
+            save_to_env(r_env,"R")
     elif environment_manager.lower() == "venv":
         python_env = create_venv_env(repo_name,pip_packages)    
     elif environment_manager.lower() == "virtualenv":
@@ -44,7 +46,8 @@ def setup_virtual_environment(version_control,programming_language,environment_m
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
-    save_to_env(python_env,"PYTHON")
+    if python_env:
+        save_to_env(python_env,"PYTHON")
 
     return repo_name
 

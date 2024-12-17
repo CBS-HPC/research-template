@@ -505,12 +505,12 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
         command.extend(conda_packages)
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
-    
-    python_env = create_conda_env(repo_name,command,msg)
+
+    python_env, r_env = create_conda_env(repo_name,command,msg)
     pip_install(repo_name, pip_packages)
     export_conda_env(repo_name)
     
-    return python_env
+    return python_env,r_env
 
 def pip_install(repo_name, pip_packages):
     """
@@ -659,9 +659,19 @@ def create_conda_env(repo_name,command,msg):
         # Run the command
         subprocess.run(command, check=True)
         print(msg)
+
         # Run the command and get the Python executable path within the environment
-        python_env = subprocess.check_output(["conda", "run", "-n", repo_name, sys.executable, "-c", "import sys; print(sys.executable)"], text=True).strip()
-        return python_env
+        try:
+            python_env = subprocess.check_output(["conda", "run", "-n", repo_name, sys.executable, "-c", "import sys; print(sys.executable)"], text=True).strip()
+        except Exception as e:
+            python_env = None
+
+        # Run the command and get R home path
+        try:
+            r_env = subprocess.check_output(["conda", "run", "-n", repo_name, "R", "-e", "cat(R.home())"], text=True).strip()
+        except Exception as e:
+            r_env = None
+        return python_env,r_env
         
     except subprocess.CalledProcessError as e:
         print(f"Failed to create conda environment: {e}")
@@ -670,7 +680,7 @@ def create_conda_env(repo_name,command,msg):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-    return None
+    return None, None
 
 def generate_env_yml(env_name,requirements_path):
     """Generate an environment.yml file using a requirements.txt file."""
