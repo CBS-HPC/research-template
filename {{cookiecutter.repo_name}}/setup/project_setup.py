@@ -45,7 +45,7 @@ def setup_virtual_environment(version_control,programming_language,environment_m
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
     save_to_env(python_env,"PYTHON")
-        
+
     return repo_name
 
 def load_env_file(extensions = ['.yml', '.txt']):
@@ -300,6 +300,6 @@ repo_name = setup_virtual_environment(version_control,programming_language,envir
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    run_powershell_script(setup_powershell, repo_name, setup_version_control, setup_remote_repository)
+    run_powershell_script(setup_powershell, repo_name, environment_manager, setup_version_control, setup_remote_repository)
 elif os_type == "darwin" or os_type == "linux":
-    run_bash_script(setup_bash, repo_name, setup_version_control, setup_remote_repository)
+    run_bash_script(setup_bash, repo_name, environment_manager, setup_version_control, setup_remote_repository)
