@@ -283,7 +283,7 @@ def set_from_env():
     is_installed('rclone')
     is_installed('git-annex-remote-rclone')
 
-def search_applications(app: str):
+def search_apps(app: str):
     """
     Search for executables matching partial app names in the system's PATH.
 
@@ -312,34 +312,74 @@ def search_applications(app: str):
         print(f"No executables found for app '{app}'.")
     return found_paths
 
-def choose_path(app: str,found_apps:list):
+def choose_apps(app: str, found_apps: list):
     """
-    Prompt the user to choose one path for each application pattern.
+    Prompt the user to choose one path for each application pattern, 
+    with an option to select 'None'.
 
     Args:
-        found_apps (dict): Dictionary with app patterns as keys and matching paths as values.
+        app (str): The application name to choose a path for.
+        found_apps (list): List of matching paths for the application.
 
     Returns:
-        dict: A dictionary with app patterns as keys and the selected paths as values.
+        tuple: A tuple containing the filename without extension and the selected path.
+               Returns (None, None) if 'Select None' is chosen.
     """
-    selected_paths = {}
-
+    print(f"\nChoose a path for '{app}':")
+    
+    # Add the 'Select None' option
+    print("  [0] Select None")
+    
     for i, path in enumerate(found_apps):
         print(f"  [{i + 1}] {path}")
         
     while True:
         try:
-            choice = int(input(f"Choose a path for '{app}' (1-{len(found_apps)}): "))
-            if 1 <= choice <= len(path):
-                selected_paths[app] = found_apps[choice - 1]
-                print(f"Selected: {found_apps[choice - 1]}")
-                break
+            choice = int(input(f"Enter your choice (0-{len(found_apps)}): "))
+            
+            if choice == 0:  # Select None option
+                print("No path selected.")
+                return None, None
+            elif 1 <= choice <= len(found_apps):  # Valid path selection
+                selected_path = found_apps[choice - 1]
+                print(f"Selected: {selected_path}")
+                
+                # Extract filename without extension
+                filename_with_extension = os.path.basename(selected_path)
+                filename = os.path.splitext(filename_with_extension)[0]
+                
+                return filename, selected_path
             else:
                 print("Invalid choice. Please enter a number within the range.")
         except ValueError:
             print("Invalid input. Please enter a valid number.")
-    
-    return selected_paths
+            return None, None
+
+def manual_apps():
+    """
+    Allow manual input of the executable path if no path is chosen 
+    and automatically resolve the application name.
+
+    Returns:
+        tuple: A tuple containing the resolved application name and selected path.
+    """
+    print("\nNo path was selected. Please input the executable path manually.")
+
+    # Prompt the user to input the path to the executable
+    while True:
+        selected_path = input("Enter the full path to the executable (e.g., C:\\Program Files\\Stata18\\StataSE-64.exe): ").strip()
+        if os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
+            break
+        else:
+            print("Invalid path. Please ensure the file exists and is executable. Try again.")
+            return None, None
+
+    # Resolve the application name by extracting the filename without extension
+    filename_with_extension = os.path.basename(selected_path)
+    filename = os.path.splitext(filename_with_extension)[0]
+
+    return filename, selected_path
+
 
 
 # Git Functions:
@@ -467,6 +507,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
 
     create_conda_env(command,msg)
+    print(sys.executable)
     pip_install(repo_name, pip_packages)
     export_conda_env(repo_name)
     

@@ -17,27 +17,30 @@ def setup_virtual_environment(version_control,programming_language,environment_m
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """    
-    if environment_manager is None:
-        return
+    #if environment_manager is None:
+    #    return
 
     # Ask for user confirmation
-    confirm = ask_yes_no(f"Do you want to create a virtual environment named '{repo_name}' using {environment_manager}? (yes/no):")
+    #confirm = ask_yes_no(f"Do you want to create a virtual environment named '{repo_name}' using {environment_manager}? (yes/no):")
 
-    if not confirm:
-        print("Virtual environment creation canceled.")
-        return
+    #if not confirm:
+    #    print("Virtual environment creation canceled.")
+    #    return
 
     pip_packages = set_pip_packages(version_control,programming_language)
 
+    python_env = None
     if environment_manager.lower() == "conda":
         conda_packages = set_conda_packages(version_control,programming_language,code_repo)
         env_file = load_env_file()
         setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
     elif environment_manager.lower() == "venv":
-        create_venv_env(repo_name,pip_packages)    
+        python_env = create_venv_env(repo_name,pip_packages)    
     elif environment_manager.lower() == "virtualenv":
-        create_virtualenv_env(repo_name,pip_packages)
-    else:
+        python_env = create_virtualenv_env(repo_name,pip_packages)
+    
+    if not python_env:
+        python_env = sys.executable
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
         
@@ -134,23 +137,55 @@ def set_pip_packages(version_control,programming_language):
 
 def create_venv_env(env_name, pip_packages=None):
     """Create a Python virtual environment using venv and install packages."""
-    subprocess.run([sys.executable, '-m', 'venv', env_name], check=True)
-    print(f'Venv environment "{env_name}" for Python created successfully.')
+    try:
+        # Get the absolute path to the environment
+        env_path = os.path.abspath(env_name)
+        
+        # Create the virtual environment
+        subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
+        print(f'Venv environment "{env_path}" for Python created successfully.')
 
-    if pip_packages:
-        pip_path = f'{env_name}/bin/pip' if sys.platform != 'win32' else f'{env_name}\\Scripts\\pip'
-        subprocess.run([pip_path, 'install'] + pip_packages, check=True)
-        print(f'Packages {pip_packages} installed successfully in the venv environment.')
+        # Install pip packages if provided
+        if pip_packages:
+            pip_path = os.path.join(env_path, 'bin', 'pip') if sys.platform != 'win32' else os.path.join(env_path, 'Scripts', 'pip')
+            subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+            print(f'Packages {pip_packages} installed successfully in the venv environment.')
+        
+        # Return the path to the virtual environment
+        return env_path
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: An unexpected error occurred: {e}")
+        return None
 
 def create_virtualenv_env(env_name, pip_packages=None):
     """Create a Python virtual environment using virtualenv and install packages."""
-    subprocess.run(['virtualenv', env_name], check=True)
-    print(f'Virtualenv environment "{env_name}" for Python created successfully.')
+    try:
+        # Get the absolute path to the environment
+        env_path = os.path.abspath(env_name)
+        
+        # Create the virtual environment
+        subprocess.run(['virtualenv', env_path], check=True)
+        print(f'Virtualenv environment "{env_path}" for Python created successfully.')
 
-    if pip_packages:
-        pip_path = f'{env_name}/bin/pip' if sys.platform != 'win32' else f'{env_name}\\Scripts\\pip'
-        subprocess.run([pip_path, 'install'] + pip_packages, check=True)
-        print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
+        # Install pip packages if provided
+        if pip_packages:
+            pip_path = os.path.join(env_path, 'bin', 'pip') if sys.platform != 'win32' else os.path.join(env_path, 'Scripts', 'pip')
+            subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+            print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
+        
+        # Return the path to the virtual environment
+        return env_path
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: An unexpected error occurred: {e}")
+        return None
 
 def run_bash_script(script_path, repo_name=None, environment_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
@@ -186,6 +221,23 @@ def run_powershell_script(script_path, repo_name=None, environment_manager=None,
     
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
+
+def set_programming_language(programming_language): # FIX ME !!
+
+    # Add to PATH
+    stata_path = r"C:\Program Files\Stata18"
+    os.environ["PATH"] += os.pathsep + stata_path
+
+    found_apps = search_apps(programming_language)
+    programming_language, selected_path = choose_apps(programming_language,found_apps)
+
+    if not programming_language and not selected_path: 
+        programming_language, selected_path =manual_apps()
+
+    if programming_language and selected_path:    
+        save_to_env(selected_path,programming_language.upper())
+        save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
+
 
 setup_version_control = "setup/src/version_control.py"
 setup_remote_repository = "setup/src/remote_repository.py"
@@ -239,15 +291,9 @@ create_citation_file(project_name,version,authors,orcids,version_control, doi=No
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,miniconda_path)
 
-print(programming_language)
-# Path to add
-stata_path = r"C:\Program Files\Stata18"
+#set_programming_language(programming_language)
 
-# Add to PATH
-os.environ["PATH"] += os.pathsep + stata_path
-found_apps = search_applications(programming_language)
 
-choose_path(programming_language,found_apps)
 
 os_type = platform.system().lower()
 

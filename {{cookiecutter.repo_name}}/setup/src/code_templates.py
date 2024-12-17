@@ -20,13 +20,13 @@ import nbformat as nbf  # For creating Jupyter notebooks
 from dotenv import dotenv_values, load_dotenv
 
 
-def create_scripts(language, folder_path):
+def create_scripts(programming_language, folder_path):
     """
     Creates a project structure with specific scripts for data science tasks
     and a workflow script in R or Python.
     
     Parameters:
-    language (str): "r" for R, "python" for Python.
+    programming_language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the scripts will be saved.
     """
     # Ensure the folder exists
@@ -44,18 +44,18 @@ def create_scripts(language, folder_path):
 
     # Create the individual step scripts
     for script_name, purpose in scripts.items():
-        create_step_script(language, folder_path, script_name, purpose)
+        create_step_script(programming_language, folder_path, script_name, purpose)
 
     # Create the workflow script that runs all steps
-    create_main(language, folder_path)
+    create_main(programming_language, folder_path)
 
 # Create Step Scripts
-def create_step_script(language, folder_path, script_name, purpose):
+def create_step_script(programming_language, folder_path, script_name, purpose):
     """
     Main function to create a step script (R, Python, Stata, Matlab, or SAS) with the necessary structure.
     
     Parameters:
-    language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
+    programming_language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
     folder_path (str): The directory where the script will be saved.
     script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
     purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
@@ -65,18 +65,18 @@ def create_step_script(language, folder_path, script_name, purpose):
         os.makedirs(folder_path)
     
     # Call the appropriate function based on the language
-    if language.lower() == "r":
+    if programming_language.lower() == "r":
         create_r_script(folder_path, script_name, purpose)
-    elif language.lower() == "python":
+    elif programming_language.lower() == "python":
         create_python_script(folder_path, script_name, purpose)
-    elif language.lower() == "stata":
+    elif programming_language.lower() == "stata":
         create_stata_script(folder_path, script_name, purpose)
-    elif language.lower() == "matlab":
+    elif programming_language.lower() == "matlab":
         create_matlab_script(folder_path, script_name, purpose)
-    elif language.lower() == "sas":
+    elif programming_language.lower() == "sas":
         create_sas_script(folder_path, script_name, purpose)
     else:
-        raise ValueError("Invalid language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
 def create_r_script(folder_path, script_name, purpose):
     extension = ".R"
@@ -197,12 +197,12 @@ def write_script(folder_path, script_name, extension, content):
 
 
 # Create Main()
-def create_main(language, folder_path):
+def create_main(programming_language, folder_path):
     """
-    Main function to create a workflow script that runs all steps in order for the specified language.
+    Main function to create a workflow script that runs all steps in order for the specified programming_language.
     
     Parameters:
-    language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
+    programming_language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
     folder_path (str): The directory where the workflow script will be saved.
     """
     # Ensure the folder path exists
@@ -210,18 +210,18 @@ def create_main(language, folder_path):
         os.makedirs(folder_path)
     
     # Call the appropriate function based on the language
-    if language.lower() == "r":
+    if programming_language.lower() == "r":
         create_r_main(folder_path)
-    elif language.lower() == "python":
+    elif programming_language.lower() == "python":
         create_python_main(folder_path)
-    elif language.lower() == "stata":
+    elif programming_language.lower() == "stata":
         create_stata_main(folder_path)
-    elif language.lower() == "matlab":
+    elif programming_language.lower() == "matlab":
         create_matlab_main(folder_path)
-    elif language.lower() == "sas":
+    elif programming_language.lower() == "sas":
         create_sas_main(folder_path)
     else:
-        raise ValueError("Invalid language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
 def create_r_main(folder_path):
     extension = ".R"
@@ -344,12 +344,12 @@ def create_sas_main(folder_path):
 
 
 # Create Notebooks
-def create_notebooks(language, folder_path):
+def create_notebooks(programming_language, folder_path):
     """
-    Main function to create a notebook for the specified language.
+    Main function to create a notebook for the specified programming_language.
     
     Parameters:
-    language (str): The language for which to create the notebook.
+    programming_language (str): The language for which to create the notebook.
     folder_path (str): The directory where the notebook will be saved.
     """
     # Ensure the notebooks folder exists
@@ -357,18 +357,18 @@ def create_notebooks(language, folder_path):
         os.makedirs(folder_path)
 
     # Call the appropriate function based on the language
-    if language.lower() == "python":
+    if programming_language.lower() == "python":
         create_python_notebook(folder_path)
-    elif language.lower() == "r":
+    elif programming_language.lower() == "r":
         create_r_notebook(folder_path)
-    elif language.lower() == "stata":
+    elif programming_language.lower() == "stata":
         create_stata_notebook(folder_path)
-    elif language.lower() == "matlab":
+    elif programming_language.lower() == "matlab":
         create_matlab_notebooks(folder_path)
-    elif language.lower() == "sas":
+    elif programming_language.lower() == "sas":
         create_sas_notebook(folder_path)
     else:
-        raise ValueError("Invalid language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
 def create_python_notebook(folder_path):
     file_name = "workflow.ipynb"
