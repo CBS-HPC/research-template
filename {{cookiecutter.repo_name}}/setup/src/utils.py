@@ -288,7 +288,7 @@ def search_apps(app: str):
     Search for executables matching partial app names in the system's PATH.
 
     Args:
-        pattern (str): Partial name of the application to search for.
+        app (str): Partial name of the application to search for.
 
     Returns:
         list: A list of paths matching the executable pattern.
@@ -300,8 +300,8 @@ def search_apps(app: str):
         if os.path.isdir(directory):  # Check if the PATH directory exists
             try:
                 for file in os.listdir(directory):
-                    # Match only if the entire pattern is in the filename
-                    if app.lower() in file.lower():
+                    # Only check if the app name matches part of the filename (not the full path)
+                    if app.lower() in os.path.basename(file).lower():
                         full_path = os.path.join(directory, file)
                         if os.access(full_path, os.X_OK):  # Check if file is executable
                             found_paths.append(full_path)
