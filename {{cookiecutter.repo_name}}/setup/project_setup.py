@@ -46,9 +46,9 @@ def setup_virtual_environment(version_control,programming_language,environment_m
         
     return repo_name
 
-def load_env_file(ext = ['.yml', '.txt']):
+def load_env_file(extensions = ['.yml', '.txt']):
     
-    def get_file_path(ext = ['.yml', '.txt']):
+    def get_file_path(extensions = ['.yml', '.txt']):
         """
         Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
         
@@ -66,27 +66,27 @@ def load_env_file(ext = ['.yml', '.txt']):
             
         # Check the file extension
         _, file_extension = os.path.splitext(file_path)
-        if file_extension.lower() not in ext:
-            print(f"Invalid file format. The file must be a {ext}")
+        if file_extension.lower() not in extensions:
+            print(f"Invalid file format. The file must be a {extensions}")
             return None
         
         # If both checks pass, return the valid file path
         return file_path
 
-    if all(ext in ['.yml', '.txt'] for ext in extensions):
+    if '.txt' in extensions and '.yml' in extensions:
         msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' or 'requirements.txt' file? (yes/no):" 
         error= "no 'environment.yaml' or 'requirements.txt' file was loaded"
-    elif ext in ['.txt']:
+    elif '.txt' in extensions:
         msg = "Do you want to create a virtual environment from a pre-existing 'requirements.txt' file? (yes/no):"
         error= "no 'requirements.txt' file was loaded"
-    elif ext in ['.yml']:
+    elif '.yml' in extensions:
         msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' file? (yes/no):"
         error= "no 'environment.yaml' file was loaded"
     
     confirm = ask_yes_no(msg)
 
     if confirm:
-        env_file = get_file_path(ext)
+        env_file = get_file_path(extensions)
         if env_file is None:
             print(error)
         return env_file
