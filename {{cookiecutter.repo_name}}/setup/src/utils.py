@@ -296,15 +296,28 @@ def search_apps(app: str):
     found_paths = []
     system_paths = os.environ["PATH"].split(os.pathsep)  # Split PATH into directories
 
+    # Check if the app is a single letter
+    is_single_letter_app = len(app) == 1
+
     for directory in system_paths:
         if os.path.isdir(directory):  # Check if the PATH directory exists
             try:
                 for file in os.listdir(directory):
-                    # Only check if the app name matches part of the filename (not the full path)
-                    if app.lower() in os.path.basename(file).lower():
-                        full_path = os.path.join(directory, file)
-                        if os.access(full_path, os.X_OK):  # Check if file is executable
-                            found_paths.append(full_path)
+                    # Extract the filename without extension
+                    filename_without_ext = os.path.splitext(os.path.basename(file))[0].lower()
+
+                    # Match exactly if the app is a single letter, or partially if it's longer
+                    if is_single_letter_app:
+                        if filename_without_ext == app.lower():
+                            full_path = os.path.join(directory, file)
+                            if os.access(full_path, os.X_OK):  # Check if file is executable
+                                found_paths.append(full_path)
+                    else:
+                        if app.lower() in filename_without_ext:
+                            full_path = os.path.join(directory, file)
+                            if os.access(full_path, os.X_OK):  # Check if file is executable
+                                found_paths.append(full_path)
+
             except PermissionError:
                 continue  # Skip directories with permission issues
 
