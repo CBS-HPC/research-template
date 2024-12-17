@@ -29,25 +29,19 @@ def setup_virtual_environment(version_control,programming_language,environment_m
 
     pip_packages = set_pip_packages(version_control,programming_language)
 
-    python_env = None
     if environment_manager.lower() == "conda":
         conda_packages = set_conda_packages(version_control,programming_language,code_repo)
         env_file = load_env_file()
-        python_env,r_env = setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
-        if r_env and programming_language == "R":
-            save_to_env(r_env,"R")
+        repo_name = setup_conda(install_path,repo_name,conda_packages,pip_packages,env_file)
+
     elif environment_manager.lower() == "venv":
-        python_env = create_venv_env(repo_name,pip_packages)    
+        repo_name = create_venv_env(repo_name,pip_packages)    
     elif environment_manager.lower() == "virtualenv":
-        python_env = create_virtualenv_env(repo_name,pip_packages)
+        repo_name = create_virtualenv_env(repo_name,pip_packages)
     
-    if not python_env: 
-        python_env = sys.executable
+    if not repo_name or not environment_manager: 
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
-
-    if python_env:
-        save_to_env(python_env,"PYTHON")
 
     return repo_name
 
@@ -157,7 +151,7 @@ def create_venv_env(env_name, pip_packages=None):
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
         # Return the path to the virtual environment
-        return env_path
+        return env_name
 
     except subprocess.CalledProcessError as e:
         print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
@@ -183,7 +177,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
             print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
         
         # Return the path to the virtual environment
-        return env_path
+        return env_name
 
     except subprocess.CalledProcessError as e:
         print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
@@ -227,21 +221,7 @@ def run_powershell_script(script_path, repo_name=None, environment_manager=None,
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def set_programming_language(programming_language):
 
-    # Add to PATH
-    stata_path = r"C:\Program Files\Stata18"
-    os.environ["PATH"] += os.pathsep + stata_path
-
-    found_apps = search_apps(programming_language)
-    programming_language, selected_path = choose_apps(programming_language,found_apps)
-
-    if not programming_language and not selected_path: 
-        programming_language, selected_path =manual_apps()
-
-    if programming_language and selected_path:    
-        save_to_env(selected_path,programming_language.upper())
-        save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
 
 
 setup_version_control = "setup/src/version_control.py"
@@ -295,10 +275,6 @@ create_citation_file(project_name,version,authors,orcids,version_control, doi=No
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,miniconda_path)
-
-#set_programming_language(programming_language)
-
-
 
 os_type = platform.system().lower()
 

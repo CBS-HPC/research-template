@@ -380,7 +380,22 @@ def manual_apps():
 
     return filename, selected_path
 
+def set_programming_language(programming_language):
 
+    # Add to PATH
+    #stata_path = r"C:\Program Files\Stata18"
+    #os.environ["PATH"] += os.pathsep + stata_path
+
+    found_apps = search_apps(programming_language)
+    programming_language, selected_path = choose_apps(programming_language,found_apps)
+
+    if not programming_language and not selected_path: 
+        programming_language, selected_path =manual_apps()
+
+    if programming_language and selected_path:    
+        save_to_env(selected_path,programming_language.upper())
+        save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
+    return programming_language
 
 # Git Functions:
 def git_commit(msg:str=""):
@@ -506,12 +521,13 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         command.extend(conda_packages)
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
 
-    python_env, r_env = create_conda_env(repo_name,command,msg)
-    pip_install(repo_name, pip_packages)
-    export_conda_env(repo_name)
-    
-    return python_env,r_env
-
+    if create_conda_env(command,msg):
+        pip_install(repo_name, pip_packages)
+        export_conda_env(repo_name)
+        return repo_name
+    else:
+        return None
+   
 def pip_install(repo_name, pip_packages):
     """
     Activates a Conda environment and installs packages using pip.
@@ -646,7 +662,7 @@ def install_miniconda(install_path):
         print(f"Failed to install Miniconda3: {e}")
         return False
 
-def create_conda_env(repo_name,command,msg):
+def create_conda_env(command,msg):
     """
     Create a conda environment from an environment.yml file with a specified name.
     
@@ -659,28 +675,14 @@ def create_conda_env(repo_name,command,msg):
         # Run the command
         subprocess.run(command, check=True)
         print(msg)
-
-        # Run the command and get the Python executable path within the environment
-        try:
-            python_env = subprocess.check_output(["conda", "run", "-n", repo_name, sys.executable, "-c", "import sys; print(sys.executable)"], text=True).strip()
-        except Exception as e:
-            python_env = None
-
-        # Run the command and get R home path
-        try:
-            r_env = subprocess.check_output(["conda", "run", "-n", repo_name, "R", "-e", "cat(R.home())"], text=True).strip()
-        except Exception as e:
-            r_env = None
-        return python_env,r_env
-        
+        return True
     except subprocess.CalledProcessError as e:
         print(f"Failed to create conda environment: {e}")
     except FileNotFoundError:
         print("Conda is not installed or not found in the system path.")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-    return None, None
+    return False
 
 def generate_env_yml(env_name,requirements_path):
     """Generate an environment.yml file using a requirements.txt file."""

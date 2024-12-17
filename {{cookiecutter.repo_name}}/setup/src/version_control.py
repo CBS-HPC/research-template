@@ -220,7 +220,6 @@ def git_init(code_repo):
     print("Created an initial commit.")
     return True
 
-  
 # DVC Setup Functions
 def setup_dvc(version_control,remote_storage,code_repo,repo_name):
 
@@ -677,20 +676,11 @@ project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 author_name = load_from_env("AUTHORS",".cookiecutter")
 
-#programming_language = "{{cookiecutter.programming_language}}"
-#programming_language.replace(" (Pre-installation required)", "")
-#version_control = "{{cookiecutter.version_control}}"
-#repo_name = "{{cookiecutter.repo_name}}"
-#code_repo = "{{cookiecutter.code_repository}}"
-#remote_storage = "{{cookiecutter.remote_storage}}"
-#project_name = "{{cookiecutter.project_name}}"
-#project_description = "{{cookiecutter.description}}"
-#author_name = "{{cookiecutter.author_name}}"
-
 # Set to .env
-#is_installed('python','Python')
-#if programming_language in ['R']:
-#    is_installed(programming_language.lower(),programming_language)
+is_installed('python','Python')
+if programming_language.lower() in ['r','stata','matlab','sas']:
+    programming_language = set_programming_language(programming_language)
+    is_installed(programming_language.lower(),programming_language)
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)

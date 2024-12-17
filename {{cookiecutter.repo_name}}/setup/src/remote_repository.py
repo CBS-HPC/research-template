@@ -348,7 +348,6 @@ def install_gh(install_path=None):
             os.remove(installer_name)
             print(f"Installer {installer_name} removed.")
 
-
 version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
 repo_name = load_from_env("REPO_NAME",".cookiecutter")
 code_repo = load_from_env("CODE_REPO",".cookiecutter")
@@ -356,13 +355,6 @@ remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
 project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 author_name = load_from_env("AUTHORS",".cookiecutter")
-
-#version_control = "{{cookiecutter.version_control}}"
-#repo_name = "{{cookiecutter.repo_name}}"
-#code_repo = "{{cookiecutter.code_repository}}"
-#project_name = "{{cookiecutter.project_name}}"
-#project_description = "{{cookiecutter.description}}"
-#author_name = "{{cookiecutter.author_name}}"
 
 # Create Remote Repository
 setup_remote_repository(version_control,code_repo,repo_name,project_description )
