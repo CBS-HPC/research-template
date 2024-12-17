@@ -507,7 +507,6 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
 
     create_conda_env(command,msg)
-    print(sys.executable)
     pip_install(repo_name, pip_packages)
     export_conda_env(repo_name)
     

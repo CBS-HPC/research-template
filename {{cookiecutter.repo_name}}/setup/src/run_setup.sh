@@ -6,12 +6,6 @@ env_manager=$2
 version_control_path=$3
 remote_repository_path=$4
 
-# Ensure the script runs on Linux/Mac
-if [[ "$(uname -s)" != "Linux" && "$(uname -s)" != "Darwin" ]]; then
-    echo "Error: This script is designed to run on Linux or MacOS only. Exiting."
-    exit 1
-fi
-
 # Activate environment based on the environment manager
 if [ "$repo_name" != "None" ]; then
     case "$env_manager" in

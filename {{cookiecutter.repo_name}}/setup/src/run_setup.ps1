@@ -8,12 +8,6 @@ param (
     [string]$remote_repository_path
 )
 
-# Ensure the script only runs on Windows
-if (-Not $IsWindows) {
-    Write-Output "Error: This script is designed to run on Windows only. Exiting."
-    exit 1
-}
-
 # Activate environment based on the environment manager
 if ($repo_name -ne "None") {
     switch ($env_manager.ToLower()) {
