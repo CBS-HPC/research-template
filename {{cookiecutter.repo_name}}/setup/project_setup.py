@@ -73,7 +73,7 @@ def load_env_file(ext = ['.yml', '.txt']):
         # If both checks pass, return the valid file path
         return file_path
 
-    if all(ext in ['.yml', '.txt']):
+    if all(ext in ['.yml', '.txt'] for ext in extensions):
         msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' or 'requirements.txt' file? (yes/no):" 
         error= "no 'environment.yaml' or 'requirements.txt' file was loaded"
     elif ext in ['.txt']:
