@@ -397,15 +397,6 @@ import os
 import subprocess
 
 def get_dependencies(folder_path=None):
-    """
-    Generate a requirements.txt file by scanning all .py files within a folder using pipreqs.
-
-    Parameters:
-    folder_path (str): Path to the folder containing Python scripts.
-
-    Outputs:
-    requirements.txt: A file listing all dependencies detected in the folder.
-    """
     # If folder_path is not provided, use the folder of the current script
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
