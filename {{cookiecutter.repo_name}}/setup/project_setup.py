@@ -17,16 +17,7 @@ def setup_virtual_environment(version_control,programming_language,environment_m
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """    
-    #if environment_manager is None:
-    #    return
-
-    # Ask for user confirmation
-    #confirm = ask_yes_no(f"Do you want to create a virtual environment named '{repo_name}' using {environment_manager}? (yes/no):")
-
-    #if not confirm:
-    #    print("Virtual environment creation canceled.")
-    #    return
-
+    
     pip_packages = set_pip_packages(version_control,programming_language)
 
     if environment_manager.lower() == "conda":
@@ -220,9 +211,6 @@ def run_powershell_script(script_path, repo_name=None, environment_manager=None,
     
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
-
-
-
 
 setup_version_control = "setup/src/version_control.py"
 setup_remote_repository = "setup/src/remote_repository.py"

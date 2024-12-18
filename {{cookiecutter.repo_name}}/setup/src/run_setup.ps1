@@ -9,7 +9,7 @@ param (
 )
 
 # Activate environment based on the environment manager
-if ($repo_name -ne "None") {
+if ($repo_name -ne "None" -and $env_manager -ne "None") {
     switch ($env_manager.ToLower()) {
         "conda" {
             Write-Output "Activating Conda environment: $repo_name"
@@ -42,7 +42,7 @@ if ($repo_name -ne "None") {
         }
     }
 } else {
-    Write-Output "No repo_name provided. Skipping environment activation."
+    Write-Output "No valid repo_name or env_manager provided. Skipping environment activation."
 }
 
 # Check if the script paths are provided and run them

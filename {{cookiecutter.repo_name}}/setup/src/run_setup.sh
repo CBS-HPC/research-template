@@ -7,7 +7,7 @@ version_control_path=$3
 remote_repository_path=$4
 
 # Activate environment based on the environment manager
-if [ "$repo_name" != "None" ]; then
+if [ "$repo_name" != "None" ] && [ "$env_manager" != "None" ]; then
     case "$env_manager" in
         "conda")
             echo "Activating Conda environment: $repo_name"
@@ -39,11 +39,10 @@ if [ "$repo_name" != "None" ]; then
             ;;
         *)
             echo "Error: Unsupported environment manager '$env_manager'. Supported values are: Conda, venv, virtualenv."
-            exit 1
             ;;
     esac
 else
-    echo "No repo_name provided. Skipping environment activation."
+    echo "No valid repo_name or env_manager provided. Skipping environment activation."
 fi
 
 # Check if the script paths are provided and run them
