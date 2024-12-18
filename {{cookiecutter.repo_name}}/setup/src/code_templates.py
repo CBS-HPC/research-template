@@ -398,37 +398,90 @@ def create_get_python_dependencies(folder_path):
 {% raw %}
 import os
 import subprocess
+import ast
+from datetime import datetime
 
 def get_dependencies(folder_path=None):
     # If folder_path is not provided, use the folder of the current script
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
+    print(f"Scanning folder: {folder_path}")
 
-    # Ensure pipreqs is installed
+    # Ensure pip is up-to-date
     try:
-        subprocess.check_call([os.sys.executable, '-m', 'pip', 'install', 'pipreqs'])
+        subprocess.check_call([os.sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
     except subprocess.CalledProcessError as e:
-        print(f"Failed to install pipreqs: {e}")
+        print(f"Failed to upgrade pip: {e}")
         return
 
-    # Run pipreqs to generate the requirements.txt
-    try:
-        print(f"Running pipreqs on folder: {folder_path}...")
-        subprocess.check_call(['pipreqs', '--force', folder_path])
-        print("requirements.txt successfully generated.")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to generate requirements.txt: {e}")
-    except FileNotFoundError:
-        print("pipreqs not found. Ensure it is installed and accessible.")
+    # Find all .py files in the folder and subfolders
+    python_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".py"):
+                python_files.append(os.path.join(root, file))
 
-# Example usage:
-# Replace "path/to/folder" with the path to your Python project folder.
-# get_dependencies("path/to/folder")
+    if not python_files:
+        print("No Python files found in the specified folder.")
+        return
 
+    # Scan the Python files for imported packages
+    used_packages = set()
+    for file in python_files:
+        with open(file, "r") as f:
+            tree = ast.parse(f.read(), filename=file)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        used_packages.add(alias.name)
+                elif isinstance(node, ast.ImportFrom):
+                    used_packages.add(node.module)
 
+    # Install and fetch versions for the used packages
+    installed_packages = {}
+    for package in used_packages:
+        try:
+            # Try to get the version of the package
+            version = subprocess.check_output([os.sys.executable, '-m', 'pip', 'show', package]).decode('utf-8')
+            version_line = [line for line in version.splitlines() if line.startswith('Version')][0]
+            installed_packages[package] = version_line.split(" ")[1]
+        except subprocess.CalledProcessError:
+            # If the package is not installed, add it with 'Not available'
+            installed_packages[package] = "Not available"
+
+    # Check for Python scripts corresponding to "Not available" packages
+    python_script_names = {os.path.splitext(os.path.basename(file))[0] for file in python_files}
+    valid_packages = {}
+
+    for package, version in installed_packages.items():
+        if version == "Not available" and package in python_script_names:
+            print(f"Removing dependency '{package}' as it corresponds to a Python script.")
+        else:
+            valid_packages[package] = version
+
+    # Collect Python version
+    python_version = subprocess.check_output([os.sys.executable, '--version']).decode().strip()
+
+    # Get the current timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Collect the list of files checked (relative paths)
+    relative_python_files = [os.path.relpath(file, folder_path) for file in python_files]
+
+    # Write the required information to the python_dependencies.txt
+    output_file = os.path.join(folder_path, "python_dependencies.txt")
+    with open(output_file, "w") as f:
+        f.write(f"{python_version}\n\n")
+        f.write(f"Timestamp: {timestamp}\n\n")
+        f.write("Files checked:\n")
+        f.write("\n".join(relative_python_files) + "\n\n")
+        f.write("Dependencies:\n")
+        for package, version in valid_packages.items():
+            f.write(f"{package}=={version}\n")
+
+    print(f"python_dependencies.txt successfully generated at {output_file}")
 if __name__ == "__main__":
-    folder_path = input("Enter the path to the folder containing Python scripts: ")
-    get_dependencies(folder_path)
+    get_dependencies(None)
 {% endraw %}
 """
     write_script(folder_path, "get_dependencies", extension, content)
@@ -553,6 +606,7 @@ if (interactive()) {
     
     write_script(folder_path, "get_dependencies", extension, content)
 
+# FIX ME 
 def create_get_stata_dependencies(folder_path):
 
     extension = ".do"
@@ -640,7 +694,6 @@ def create_get_matlab_dependencies(folder_path):
     content = """
 {% raw %}      
 function get_dependencies(folder_path)
-    
     % If folder_path is not provided, use the folder of the current script
     if nargin < 1
         folder_path = fileparts(mfilename('fullpath'));
@@ -651,19 +704,23 @@ function get_dependencies(folder_path)
         error("The specified folder does not exist.");
     end
 
-    % Find all .m files in the folder
-    m_files = dir(fullfile(folder_path, '*.m'));
+    % Find all .m files in the folder and its subfolders
+    m_files = dir(fullfile(folder_path, '**', '*.m'));
     if isempty(m_files)
         error("No .m files found in the specified folder.");
     end
 
-    % Initialize a list to store unique dependencies
+    % Initialize containers for unique dependencies
     unique_files = {};
     unique_products = containers.Map;
 
     % Analyze each .m file
+    file_paths = strings(length(m_files), 1);
     for i = 1:length(m_files)
-        file_path = fullfile(folder_path, m_files(i).name);
+        file_path = fullfile(m_files(i).folder, m_files(i).name);
+        file_paths(i) = file_path;
+
+        % Get required files and products
         [required_files, required_products] = matlab.codetools.requiredFilesAndProducts(file_path);
 
         % Collect required files
@@ -677,33 +734,46 @@ function get_dependencies(folder_path)
         end
     end
 
-    % Write dependencies to requirements.txt
-    output_file = fullfile(folder_path, 'requirements.txt');
+    % Create the output file
+    output_file = fullfile(folder_path, 'matlab_dependencies.txt');
     fid = fopen(output_file, 'w');
     if fid == -1
-        error("Unable to create requirements.txt in the specified folder.");
+        error("Unable to create matlab_dependencies.txt in the specified folder.");
     end
 
-    % Write toolboxes
-    fprintf(fid, "MATLAB Toolboxes:\\n");
+    % Write header information
+    fprintf(fid, "MATLAB version: %s\n\n", version);
+    fprintf(fid, "Timestamp: %s\n\n", datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+
+    % Write files checked
+    fprintf(fid, "Files checked:\n");
+    for i = 1:length(file_paths)
+        fprintf(fid, "%s\n", file_paths(i));
+    end
+    fprintf(fid, "\n");
+
+    % Write dependencies
+    fprintf(fid, "Dependencies:\n");
+    % Add toolboxes
     product_names = keys(unique_products);
     for i = 1:length(product_names)
-        fprintf(fid, "%s==%s\\n", product_names{i}, unique_products(product_names{i}));
+        fprintf(fid, "%s==%s\n", product_names{i}, unique_products(product_names{i}));
     end
 
-    % Write required files
-    fprintf(fid, "\\nRequired Files:\\n");
+    % Add required files
     for i = 1:length(unique_files)
-        fprintf(fid, "%s\\n", unique_files{i});
+        [~, name, ext] = fileparts(unique_files{i});
+        fprintf(fid, "%s%s==Not available\n", name, ext);
     end
 
     fclose(fid);
-    fprintf("requirements.txt successfully generated in %s.\\n", folder_path);
+    fprintf("matlab_dependencies.txt successfully generated in %s.\n", folder_path);
 end
 {% endraw %}
 """
     write_script(folder_path, "get_dependencies", extension, content)
 
+# FIX ME 
 def create_get_sas_dependencies(folder_path):
     extension = ".m"
     content = """
@@ -813,28 +883,89 @@ def create_install_python_dependencies(folder_path):
     """
     extension = ".py"
     content = """
-# Install dependencies for Python
-
 import subprocess
 import sys
+import re
+import importlib.util
 
-def main(required_libraries):
+def parse_dependencies(file_path='python_dependencies.txt'):""
+    required_libraries = []
+    try:
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        
+        # Flag to start reading dependencies section
+        reading_dependencies = False
+        
+        for line in lines:
+            # Check for the start of the dependencies section
+            if 'Dependencies:' in line:
+                reading_dependencies = True
+                continue  # Skip the "Dependencies:" line
+            
+            # If we are in the dependencies section, extract the library names
+            if reading_dependencies:
+                # Stop reading if we encounter an empty line or another section
+                if line.strip() == '':
+                    break
+                
+                # Regex to match package names and versions
+                match = re.match(r'(\S+)(==\S+)?', line.strip())
+                if match:
+                    lib_name = match.group(1)
+                    version = match.group(2) if match.group(2) else None
+                    
+                    # Ignore libraries with 'Not available' as they don't need to be installed
+                    if version != 'Not available':
+                        required_libraries.append(f"{lib_name}{version if version else ''}")
+                
+    except FileNotFoundError:
+        print(f"Error: The file {file_path} was not found.")
+        return []
+
+    return required_libraries
+
+def is_standard_library(lib_name):
+    spec = importlib.util.find_spec(lib_name)
+    return spec is not None and spec.origin is None  # Origin None means it's built-in
+
+def install_dependencies(required_libraries):
     # Get list of installed libraries
     installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
     # Check and install missing libraries
     for lib in required_libraries:
         try:
+            # Extract library name (without version) for checking
+            lib_name = lib.split('==')[0]
+            
+            # Skip installation for standard libraries
+            if is_standard_library(lib_name):
+                print(f"Skipping installation of standard library: {lib_name}")
+                continue
+
             # Check if the library is already installed
             if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
                 print(f"Installing {lib}...")
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+            else:
+                print(f"{lib} is already installed.")
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
+def main(dependencies_file='python_dependencies.txt'):
+    # Parse the dependencies from the text file
+    required_libraries = parse_dependencies(dependencies_file)
+    
+    # Install the missing dependencies
+    if required_libraries:
+        install_dependencies(required_libraries)
+    else:
+        print("No dependencies found to install.")
+
 if __name__ == "__main__":
-    required_libraries = []  # Add more libraries as needed
-    main(required_libraries)
+    main('python_dependencies.txt')  # Specify the dependencies file here
+
 """
     write_script(folder_path, "install_dependencies", extension, content)
 
@@ -904,6 +1035,7 @@ install_dependencies <- function(file_path = NULL) {
 """
     write_script(folder_path, "install_dependencies", extension, content)
 
+# FIX ME 
 def create_install_stata_dependencies(folder_path):
     """
     Create the install_dependencies script for Stata to install required dependencies.
@@ -931,21 +1063,84 @@ def create_install_matlab_dependencies(folder_path):
     """
     extension = ".m"
     content = """
-% Install Matlab dependencies
-
-% Example of installing a package (replace with actual package names)
-try
-    if ~exist('my_package', 'dir')
-        disp('Installing my_package...');
-        % Assuming the package is on GitHub
-        system('git clone https://github.com/username/my_package');
+function install_dependencies(dependency_file)
+    % Default dependency file
+    if nargin < 1
+        dependency_file = 'matlab_dependencies.txt';
     end
-catch
-    disp('Error during installation of dependencies');
+
+    % Check if the dependency file exists
+    if ~isfile(dependency_file)
+        error("Dependency file '%s' does not exist.", dependency_file);
+    end
+
+    % Read the dependency file
+    fid = fopen(dependency_file, 'r');
+    if fid == -1
+        error("Unable to open the dependency file '%s'.", dependency_file);
+    end
+    dependency_lines = textscan(fid, '%s', 'Delimiter', '\n');
+    fclose(fid);
+    dependency_lines = dependency_lines{1};
+
+    % Extract MATLAB version from the file
+    matlab_version_line = dependency_lines{startsWith(dependency_lines, 'MATLAB version:')};
+    expected_version = strtrim(strrep(matlab_version_line, 'MATLAB version:', ''));
+
+    % Check MATLAB version
+    current_version = version;
+    if ~strcmp(current_version, expected_version)
+        error("MATLAB version mismatch! Current version: %s, Expected version: %s.", current_version, expected_version);
+    end
+    fprintf("MATLAB version check passed: %s\n", current_version);
+
+    % Extract dependencies
+    dependencies_start = find(startsWith(dependency_lines, 'Dependencies:')) + 1;
+    dependencies = dependency_lines(dependencies_start:end);
+
+    % Attempt to install missing toolboxes
+    for i = 1:length(dependencies)
+        line = strtrim(dependencies{i});
+        if isempty(line)
+            continue;
+        end
+
+        % Parse toolbox or file
+        tokens = regexp(line, '^(.*?)==(.+)$', 'tokens');
+        if isempty(tokens)
+            continue;
+        end
+        dependency_name = strtrim(tokens{1}{1});
+        dependency_version = strtrim(tokens{1}{2});
+
+        % Skip if the dependency is a file
+        if strcmp(dependency_version, 'Not available')
+            fprintf("Skipping file dependency: %s\n", dependency_name);
+            continue;
+        end
+
+        % Check if the toolbox is installed
+        installed_toolboxes = matlab.addons.installedAddons();
+        if any(strcmp(installed_toolboxes.Name, dependency_name))
+            fprintf("Toolbox '%s' is already installed.\n", dependency_name);
+        else
+            % Attempt to install the toolbox
+            fprintf("Installing toolbox: %s (Version: %s)...\n", dependency_name, dependency_version);
+            try
+                matlab.addons.installToolbox(dependency_name);
+                fprintf("Successfully installed toolbox: %s\n", dependency_name);
+            catch e
+                fprintf("Failed to install toolbox '%s': %s\n", dependency_name, e.message);
+            end
+        end
+    end
+
+    fprintf("Dependency installation process completed.\n");
 end
 """
     write_script(folder_path, "install_dependencies", extension, content)
 
+# FIX ME 
 def create_install_sas_dependencies(folder_path):
     """
     Create the install_dependencies script for SAS to install required dependencies.
