@@ -52,6 +52,9 @@ def create_scripts(programming_language, folder_path):
     # Create get_dependencies
     create_get_dependencies(programming_language, folder_path)
 
+    # Create Install_dependencies
+    create_install_dependencies(programming_language, folder_path)
+
 # Create Step Scripts
 def create_step_script(programming_language, folder_path, script_name, purpose):
     """
@@ -439,7 +442,9 @@ get_dependencies <- function(folder_path = NULL) {
   # If folder_path is not provided, use the folder of the current script
   if (is.null(folder_path)) {
     folder_path <- dirname(rstudioapi::getSourceEditorContext()$path)
-  }  
+  }
+  
+  print(folder_path)
   
   # Ensure renv is installed
   if (!requireNamespace("renv", quietly = TRUE)) {
@@ -451,10 +456,11 @@ get_dependencies <- function(folder_path = NULL) {
     stop("The specified folder does not exist.")
   }
   
-  # List all .R files in the folder
-  r_files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE)
+  # List all .R files in the folder and subfolders (use relative paths)
+  r_files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+  
   if (length(r_files) == 0) {
-    stop("No .R files found in the specified folder.")
+    stop("No .R files found in the specified folder or its subfolders.")
   }
   
   # Detect dependencies using renv
@@ -464,21 +470,83 @@ get_dependencies <- function(folder_path = NULL) {
   # Extract relevant columns (package and version)
   dependency_list <- unique(dependencies[, c("Package", "Version")])
   
-  # Create a requirements.txt file
-  output_file <- file.path(folder_path, "requirements.txt")
-  message("Writing dependencies to requirements.txt...")
+  # Check if the version is available, if not, use packageVersion() to get it
+  dependency_list$Version[is.na(dependency_list$Version) | dependency_list$Version == ""] <- sapply(
+    dependency_list$Package[is.na(dependency_list$Version) | dependency_list$Version == ""],
+    function(pkg) {
+      if (requireNamespace(pkg, quietly = TRUE)) {
+        version <- tryCatch({
+          pkg_version <- packageVersion(pkg)
+          if (is.null(pkg_version)) {
+            return("Not available")
+          } else {
+            return(as.character(pkg_version))
+          }
+        }, error = function(e) {
+          return("Not available")
+        })
+        return(version)
+      } else {
+        return("Not available")
+      }
+    }
+  )
   
+  # Remove dependencies with "Not available" that are not used in any .R file
+  not_available_dependencies <- dependency_list$Package[dependency_list$Version == "Not available"]
+  
+  for (pkg in not_available_dependencies) {
+    # Check if the package is referenced in the 'Files checked' list, and if an .R file exists for it
+    pkg_script <- file.path(folder_path, paste0(pkg, ".R"))
+    
+    if (!file.exists(pkg_script) || !pkg %in% basename(r_files)) {
+      # If the corresponding script does not exist or is not listed, remove it from the dependency list
+      message("Removing dependency '", pkg, "' as it is not used in any R script and no corresponding .R file was found.")
+      dependency_list <- dependency_list[dependency_list$Package != pkg, ]
+    }
+  }
+  
+  # Create a R_dependencies.txt file
+  output_file <- file.path(folder_path, "R_dependencies.txt")
+  message("Writing dependencies to 'R_dependencies.txt'...")
+  
+  # Collect the R version
+  r_version <- paste(R.version$version.string)
+  
+  # Collect the list of files checked (relative paths)
+  checked_files <- paste(r_files, collapse = "\n")
+  
+  # Get the current timestamp
+  timestamp <- Sys.time()
+  formatted_timestamp <- format(timestamp, "%Y-%m-%d %H:%M:%S")
+  
+  # Write to the R_dependencies.txt file
   writeLines(
-    paste0(dependency_list$Package, ifelse(!is.na(dependency_list$Version), paste0("==", dependency_list$Version), "")),
+    c(
+      r_version,
+      "",
+      paste("Timestamp:", formatted_timestamp),
+      "",
+      "Files checked:",
+      checked_files,
+      "",
+      "Dependencies:"
+    ),
     con = output_file
   )
   
-  message("requirements.txt successfully generated.")
+  # Append dependencies to the file (excluding "Not available" packages)
+  write(
+    paste0(dependency_list$Package, ifelse(!is.na(dependency_list$Version) & dependency_list$Version != "", paste0("==", dependency_list$Version), "")),
+    file = output_file,
+    append = TRUE
+  )
+  
+  message("'R_dependencies.txt' successfully generated.")
 }
 
 if (interactive()) {
-  folder_path <- readline(prompt = "Enter the path to the folder containing R scripts: ")
-  get_dependencies(folder_path)
+  get_dependencies(NULL)
 }
 {% endraw %}
 """
@@ -779,16 +847,59 @@ def create_install_r_dependencies(folder_path):
     """
     extension = ".R"
     content = """
-# Install R dependencies
-
-# List of required packages
-required_packages <- c('tidyr', 'rdrobust', 'ggplot2', 'dplyr')
-
-# Install packages if they are not already installed
-for (pkg in required_packages) {
-    if (!require(pkg, character.only = TRUE)) {
-        install.packages(pkg)
+install_dependencies <- function(file_path = NULL) {
+  # If no file_path is specified, look for R_dependencies.txt in the script folder
+  if (is.null(file_path)) {
+    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "R_dependencies.txt")
+  }
+  
+  # Define a function to read dependencies from a text file and return them as a list
+  get_txt_dependencies <- function(file_path) {
+    # Check if the file exists
+    if (!file.exists(file_path)) {
+      stop("Dependency file not found at: ", file_path)
     }
+    
+    # Read the file
+    lines <- readLines(file_path)
+    
+    # Find the lines that contain package dependencies (they will have '==')
+    dependency_lines <- grep("==", lines, value = TRUE)
+    
+    # Split the lines into package names and versions
+    dependencies <- sapply(dependency_lines, function(line) {
+      parts <- strsplit(line, "==")[[1]]
+      package_name <- trimws(parts[1])
+      package_version <- trimws(parts[2])
+      list(name = package_name, version = package_version)
+    }, simplify = FALSE)
+    
+    return(dependencies)
+  }
+
+  # Get the dependencies from the file
+  dependencies <- get_txt_dependencies(file_path)
+  
+  # Extract package names and versions into vectors
+  required_packages <- sapply(dependencies, function(dep) dep$name)
+  package_versions <- sapply(dependencies, function(dep) dep$version)
+
+  # Install packages if they are not already installed or if the installed version is different
+  for (i in 1:length(required_packages)) {
+    pkg <- required_packages[i]
+    version <- package_versions[i]
+    
+    # Check if package is installed
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg)
+    }
+    
+    # Check if the installed version is correct, and reinstall if needed
+    current_version <- packageVersion(pkg)
+    if (as.character(current_version) != version) {
+      install.packages(pkg)
+    }
+  }
 }
 """
     write_script(folder_path, "install_dependencies", extension, content)
