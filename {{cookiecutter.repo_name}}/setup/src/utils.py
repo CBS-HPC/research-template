@@ -384,7 +384,7 @@ def manual_apps():
     """
     print("\nNo path was selected. Please input the executable path manually.")
 
-    msg = "Enter the full path to the executable with double backslashes ('\\') or forward slashes('/') e.g. 'C:\\Program Files\\Stata18\\StataSE-64.exe':"
+    msg = "Enter the full path to the executable with forward slashes('/') e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
     # Prompt the user to input the path to the executable
     while True:
         selected_path = input(msg).strip()
@@ -393,7 +393,7 @@ def manual_apps():
         # Check if the path contains any single backslashes
         if "\\" in selected_path:
             #print("The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes('/').")
-            msg = "The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes ('/')."
+            msg = "The path contains single backslashes or double backslashes ('\') . Please use single forward slashes ('/')."
             continue  # Re-prompt the user if single backslashes are detected
         elif os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
             break  # Exit loop if the file exists and is executable
@@ -401,7 +401,7 @@ def manual_apps():
             answer = ask_yes_no("Invalid path. Do you want to input a new path? (yes/no)")
             
             if answer:
-                msg = f"The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes ('/'): "
+                msg = "Enter the full path to the executable with forward slashes('/') e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
                 continue  # Re-prompt the user if single backslashes are detected   
             else:
                 return None, None
@@ -646,8 +646,8 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
 
     if create_conda_env(command,msg):
-        conda_pip_install(repo_name, pip_packages)
-        export_conda_env(repo_name)
+        conda_pip_install(env_path, pip_packages)
+        export_conda_env(env_path)
         
         env_path = os.path.relpath(env_path)
         save_to_env(env_path,"CONDA_ENV_PATH")
@@ -655,7 +655,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
     else:
         return None
    
-def conda_pip_install(repo_name, pip_packages):
+def conda_pip_install(repo_path, pip_packages):
     """
     Activates a Conda environment and installs packages using pip.
 
@@ -671,20 +671,23 @@ def conda_pip_install(repo_name, pip_packages):
 
     try:
         # Construct the pip install command
-        pip_command = [
-            "conda", "run", "-n", repo_name, sys.executable, "-m", "pip", "install"
-        ] + pip_packages
+        #pip_command = [
+        #    "conda", "run", "-n", repo_name, sys.executable, "-m", "pip", "install"
+        #] + pip_packages
 
+        pip_command = [
+            "conda", "run", "--prefix", "/path/to/your/env", sys.executable, "-m", "pip", "install"
+        ] + pip_packages
         # Execute the pip install command
         subprocess.run(pip_command, check=True)
 
-        print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{repo_name}'.")
+        print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{repo_path}'.")
     except subprocess.CalledProcessError as e:
-        print(f"Error installing pip packages in Conda environment '{repo_name}': {e}")
+        print(f"Error installing pip packages in Conda environment '{repo_path}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-def export_conda_env(env_name, output_file='environment.yml'):
+def export_conda_env(env_path, output_file='environment.yml'):
     """
     Export the details of a conda environment to a YAML file.
     
@@ -695,8 +698,9 @@ def export_conda_env(env_name, output_file='environment.yml'):
     try:
         # Use subprocess to run the conda export command
         with open(output_file, 'w') as f:
-            subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)        
-        print(f"Conda environment '{env_name}' exported to {output_file}.")
+            #subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)  
+            subprocess.run(['conda', 'env', 'export', '--prefix', env_path], stdout=f, check=True)      
+        print(f"Conda environment '{env_path}' exported to {output_file}.")
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to export conda environment: {e}")
