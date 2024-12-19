@@ -6,6 +6,7 @@ import platform
 import shutil
 import urllib.request
 
+
 required_libraries = ['python-dotenv','pyyaml'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
@@ -283,6 +284,8 @@ def set_from_env():
     is_installed('rclone')
     is_installed('git-annex-remote-rclone')
 
+
+# Setting programming language 
 def search_apps(app: str):
     """
     Search for executables matching partial app names in the system's PATH.
@@ -368,8 +371,6 @@ def choose_apps(app: str, found_apps: list):
             print("Invalid input. Please enter a valid number.")
             return None, None
 
-
-
 def manual_apps():
     """
     Allow manual input of the executable path if no path is chosen 
@@ -408,37 +409,7 @@ def manual_apps():
 
     return filename, selected_path
 
-
-def manual_apps_old():
-    """
-    Allow manual input of the executable path if no path is chosen 
-    and automatically resolve the application name.
-
-    Returns:
-        tuple: A tuple containing the resolved application name and selected path.
-    """
-    print("\nNo path was selected. Please input the executable path manually.")
-
-    # Prompt the user to input the path to the executable
-    while True:
-        selected_path = input("Enter the full path to the executable (e.g., C:\\Program Files\\Stata18\\StataSE-64.exe): ").strip()
-        if os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
-            break
-        else:
-            print("Invalid path. Please ensure the file exists and is executable. Try again.")
-            return None, None
-
-    # Resolve the application name by extracting the filename without extension
-    filename_with_extension = os.path.basename(selected_path)
-    filename = os.path.splitext(filename_with_extension)[0]
-
-    return filename, selected_path
-
 def set_programming_language(programming_language):
-
-    # Add to PATH
-    #stata_path = r"C:\Program Files\Stata18"
-    #os.environ["PATH"] += os.pathsep + stata_path
 
     found_apps = search_apps(programming_language)
     programming_language, selected_path = choose_apps(programming_language,found_apps)
@@ -555,7 +526,97 @@ def git_repo_user(version_control,repo_name,code_repo):
     else:
         return None, None
 
+# Common Env Functions
+def load_env_file(extensions = ['.yml', '.txt']):
+    
+    def get_file_path(extensions = ['.yml', '.txt']):
+        """
+        Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
+        
+        Returns:
+        - str: Validated file path if the file exists and has the correct extension.
+        """
+
+        # Prompt the user for the file path
+        file_path = input("Please enter the path to a .yml or .txt file: ").strip()
+            
+        # Check if the file exists
+        if not os.path.isfile(file_path):
+            print("The file does not exist. Please try again.")
+            return None
+            
+        # Check the file extension
+        _, file_extension = os.path.splitext(file_path)
+        if file_extension.lower() not in extensions:
+            print(f"Invalid file format. The file must be a {extensions}")
+            return None
+        
+        # If both checks pass, return the valid file path
+        return file_path
+
+    if '.txt' in extensions and '.yml' in extensions:
+        msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' or 'requirements.txt' file? (yes/no):" 
+        error= "no 'environment.yaml' or 'requirements.txt' file was loaded"
+    elif '.txt' in extensions:
+        msg = "Do you want to create a virtual environment from a pre-existing 'requirements.txt' file? (yes/no):"
+        error= "no 'requirements.txt' file was loaded"
+    elif '.yml' in extensions:
+        msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' file? (yes/no):"
+        error= "no 'environment.yaml' file was loaded"
+    
+    confirm = ask_yes_no(msg)
+
+    if confirm:
+        env_file = get_file_path(extensions)
+        if env_file is None:
+            print(error)
+        return env_file
+    else:
+        return None
+
+def set_pip_packages(version_control,programming_language):
+
+    install_packages = []
+    if programming_language.lower()  == 'python':
+        install_packages.extend(['jupyterlab'])
+    elif programming_language.lower()  == 'stata':
+        install_packages.extend(['jupyterlab','stata_setup'])
+    elif programming_language.lower()  == 'matlab':
+        install_packages.extend(['jupyterlab','jupyter-matlab-proxy'])
+    elif programming_language.lower() == 'sas':
+        install_packages.extend(['jupyterlab','saspy'])
+
+    if version_control.lower()  == "dvc" and not is_installed('dvc','DVC'):
+        install_packages.extend(['dvc[all]'])
+    elif version_control.lower()  == "datalad" and not is_installed('datalad','Datalad'):
+        install_packages.extend(['datalad-installer','datalad','pyopenssl'])
+    
+    return install_packages
+
 # Conda Functions:
+def set_conda_packages(version_control,programming_language,code_repo):
+    os_type = platform.system().lower()    
+    
+    install_packages = ['python','python-dotenv']
+
+    if programming_language.lower()  == 'r':
+        install_packages.extend(['r-base'])
+
+    if version_control.lower() in ['git','dvc','datalad'] and not is_installed('git', 'Git'):
+        install_packages.extend(['git'])   
+    
+    if version_control.lower()  == "datalad":
+        if not is_installed('rclone', 'Rclone'):    
+            install_packages.extend(['rclone'])
+
+        if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
+            install_packages.extend(['git-annex'])
+
+    if code_repo.lower() == "github" and not is_installed('gh', 'GitHub Cli'):
+        install_packages.extend(['gh']) 
+
+    return install_packages
+
 def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_packages:list = [], env_file:str = None):
     
     install_path = os.path.abspath(install_path)
@@ -564,25 +625,33 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         if not install_miniconda(install_path):
             return False
 
+    # Get the absolute path to the environment
+    env_path = os.path.abspath(os.path.join("bin", "conda", repo_name))
+
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
             env_file = generate_env_yml(repo_name,env_file)
         update_env_yaml(env_file, repo_name, conda_packages)
-        command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
+        command = ['conda', 'env', 'create', '-f', env_file, '--prefix', env_path]
+        #command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
         msg = f'Conda environment "{repo_name}" created successfully from {env_file}.'
     else:
-        command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
+        #command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
+        command = ['conda', 'create', '--yes', '--prefix', env_path, '-c', 'conda-forge']
+
         command.extend(conda_packages)
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
 
     if create_conda_env(command,msg):
-        pip_install(repo_name, pip_packages)
+        conda_pip_install(repo_name, pip_packages)
         export_conda_env(repo_name)
+
+        save_to_env(env_path,"CONDA_ENV_PATH")
         return repo_name
     else:
         return None
    
-def pip_install(repo_name, pip_packages):
+def conda_pip_install(repo_name, pip_packages):
     """
     Activates a Conda environment and installs packages using pip.
 
@@ -622,11 +691,8 @@ def export_conda_env(env_name, output_file='environment.yml'):
     try:
         # Use subprocess to run the conda export command
         with open(output_file, 'w') as f:
-            subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)
-        
+            subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)        
         print(f"Conda environment '{env_name}' exported to {output_file}.")
-        # Set to .env
-        save_to_env(env_name,"CONDA_ENV")
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to export conda environment: {e}")
@@ -818,7 +884,62 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
 
     print(f"Updated {env_file} with new environment name '{repo_name}', added Conda packages, and added pip packages.")
 
+# Venv and Virtualenv Functions
+def create_venv_env(env_name, pip_packages=None):
+    """Create a Python virtual environment using venv and install packages."""
+    try:
+        # Get the absolute path to the environment
+        env_path = os.path.abspath(os.path.join("bin", "venv", env_name))
+        
+        # Create the virtual environment
+        subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
+        print(f'Venv environment "{env_path}" for Python created successfully.')
 
+        # Install pip packages if provided
+        if pip_packages:
+            pip_path = os.path.join(env_path, 'bin', 'pip') if sys.platform != 'win32' else os.path.join(env_path, 'Scripts', 'pip')
+            subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+            print(f'Packages {pip_packages} installed successfully in the venv environment.')
+        
+        save_to_env(env_path,"VENV_ENV_PATH")
+
+        # Return the path to the virtual environment
+        return env_name
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: An unexpected error occurred: {e}")
+        return None
+
+def create_virtualenv_env(env_name, pip_packages=None):
+    """Create a Python virtual environment using virtualenv and install packages."""
+    try:
+        # Get the absolute path to the environment
+        env_path = os.path.abspath(os.path.join("bin", "virtualenv", env_name))
+        
+        # Create the virtual environment
+        subprocess.run(['virtualenv', env_path], check=True)
+        print(f'Virtualenv environment "{env_path}" for Python created successfully.')
+
+        # Install pip packages if provided
+        if pip_packages:
+            pip_path = os.path.join(env_path, 'bin', 'pip') if sys.platform != 'win32' else os.path.join(env_path, 'Scripts', 'pip')
+            subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+            print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
+        
+        save_to_env(env_path,"VIRTUALENV_ENV_PATH")
+
+        # Return the path to the virtual environment
+        return env_name
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: An unexpected error occurred: {e}")
+        return None
 
 # Other
 def get_hardware_info():
