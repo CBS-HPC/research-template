@@ -23,7 +23,7 @@ if ($repo_name -ne "None" -and $env_manager -ne "None") {
                 Write-Output "Activating venv using $venv_activate"
                 & $venv_activate
             } else {
-                Write-Output "Error: venv activation script not found."
+                Write-Output "Error: venv activation script not found : $venv_activate"
             }
         }
         "virtualenv" {
@@ -34,7 +34,7 @@ if ($repo_name -ne "None" -and $env_manager -ne "None") {
                 Write-Output "Activating virtualenv using $virtualenv_activate"
                 & $virtualenv_activate
             } else {
-                Write-Output "Error: virtualenv activation script not found."
+                Write-Output "Error: virtualenv activation script not found: $virtualenv_activate"
             }
         }
         default {
