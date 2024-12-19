@@ -394,7 +394,7 @@ def create_get_dependencies(programming_language, folder_path):
 
 def create_get_python_dependencies(folder_path):
     extension = ".py"
-    content = """
+    content = r"""
 {% raw %}
 import os
 import subprocess
@@ -471,18 +471,14 @@ def get_dependencies(folder_path=None):
     # Write the required information to the python_dependencies.txt
     output_file = os.path.join(folder_path, "python_dependencies.txt")
     with open(output_file, "w") as f:
-        f.write(f"{python_version}")
-        f.write("")
-        f.write(f"Timestamp: {timestamp}")
-        f.write("")
-        f.write("Files checked:")
-        f.write("")
-        f.write("\n".join(relative_python_files))
-        f.write("")
-        f.write("Dependencies:")
-        f.write("")
+        f.write(f"{python_version}\n\n")
+        f.write(f"Timestamp: {timestamp}\n\n")
+        f.write("Files checked:\n")
+        f.write("\n".join(relative_python_files) + "\n\n")
+        f.write("Dependencies:\n")
         for package, version in valid_packages.items():
             f.write(f"{package}=={version}\n")
+
 
     print(f"python_dependencies.txt successfully generated at {output_file}")
 if __name__ == "__main__":
@@ -894,7 +890,7 @@ import sys
 import re
 import importlib.util
 
-def parse_dependencies(file_path='python_dependencies.txt'):""
+def parse_dependencies(file_path='python_dependencies.txt'):
     required_libraries = []
     try:
         with open(file_path, 'r') as f:
