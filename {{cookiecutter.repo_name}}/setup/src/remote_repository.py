@@ -362,7 +362,8 @@ setup_remote_repository(version_control,code_repo,repo_name,project_description 
 
 # Updating requirements.txt/environment.yaml  # FIX ME
 if environment_manager.lower() == "conda":
-    export_conda_env(repo_name)
+    #export_conda_env(repo_name)
+    print("skip step")
 else:
     create_requirements_txt()
 
