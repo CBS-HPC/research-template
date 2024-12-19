@@ -2,22 +2,31 @@
 
 # Get parameters passed from PowerShell
 param (
-    [string]$repo_name,
+    [string]$repo_path,
     [string]$env_manager,  # Environment manager: Conda, venv, or virtualenv
     [string]$version_control_path,
     [string]$remote_repository_path
 )
 
 # Activate environment based on the environment manager
-if ($repo_name -ne "None" -and $env_manager -ne "None") {
+if ($repo_path -ne "None" -and $env_manager -ne "None") {
+
+    $repo_path = $repo_path -replace '\\', '/'
     switch ($env_manager.ToLower()) {
         "conda" {
-            Write-Output "Activating Conda environment: $repo_name"
-            conda activate $repo_name
+            Write-Output "Activating Conda environment: $repo_path"
+            conda activate $repo_path
         }
         "venv" {
-            Write-Output "Activating venv environment: $repo_name"
-            $venv_activate = "./$repo_name/Scripts/activate"  # For Windows
+            Write-Output "Activating venv environment: $repo_path"
+
+            if ($repo_path -match '^[a-zA-Z]:\\') {
+                # It's an absolute path (e.g., C:\Users\kg...)
+                $venv_activate = "$repo_path/Scripts/activate"
+            } else {
+                # It's a relative path
+                $venv_activate = "./$repo_path/Scripts/activate"
+            }
 
             if (Test-Path $venv_activate) {
                 Write-Output "Activating venv using $venv_activate"
@@ -27,8 +36,15 @@ if ($repo_name -ne "None" -and $env_manager -ne "None") {
             }
         }
         "virtualenv" {
-            Write-Output "Activating virtualenv environment: $repo_name"
-            $virtualenv_activate = "./$repo_name/Scripts/activate"  # For Windows
+            Write-Output "Activating virtualenv environment: $repo_path"
+
+            if ($repo_path -match '^[a-zA-Z]:\\') {
+                # It's an absolute path (e.g., C:\Users\kg...)
+                $virtualenv_activate = "$repo_path/Scripts/activate"
+            } else {
+                # It's a relative path
+                $virtualenv_activate = "./$repo_path/Scripts/activate"
+            }
 
             if (Test-Path $virtualenv_activate) {
                 Write-Output "Activating virtualenv using $virtualenv_activate"
