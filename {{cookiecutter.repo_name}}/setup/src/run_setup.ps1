@@ -12,6 +12,7 @@ param (
 if ($repo_path -ne "None" -and $env_manager -ne "None") {
 
     $repo_path = $repo_path -replace '\\', '/'
+
     switch ($env_manager.ToLower()) {
         "conda" {
             Write-Output "Activating Conda environment: $repo_path"
@@ -20,13 +21,7 @@ if ($repo_path -ne "None" -and $env_manager -ne "None") {
         "venv" {
             Write-Output "Activating venv environment: $repo_path"
 
-            if ($repo_path -match '^[a-zA-Z]:\\') {
-                # It's an absolute path (e.g., C:\Users\kg...)
-                $venv_activate = "$repo_path/Scripts/activate"
-            } else {
-                # It's a relative path
-                $venv_activate = "./$repo_path/Scripts/activate"
-            }
+            $venv_activate = "./$repo_path/Scripts/activate"
 
             if (Test-Path $venv_activate) {
                 Write-Output "Activating venv using $venv_activate"
@@ -38,13 +33,7 @@ if ($repo_path -ne "None" -and $env_manager -ne "None") {
         "virtualenv" {
             Write-Output "Activating virtualenv environment: $repo_path"
 
-            if ($repo_path -match '^[a-zA-Z]:\\') {
-                # It's an absolute path (e.g., C:\Users\kg...)
-                $virtualenv_activate = "$repo_path/Scripts/activate"
-            } else {
-                # It's a relative path
-                $virtualenv_activate = "./$repo_path/Scripts/activate"
-            }
+            $virtualenv_activate = "./$repo_path/Scripts/activate"
 
             if (Test-Path $virtualenv_activate) {
                 Write-Output "Activating virtualenv using $virtualenv_activate"

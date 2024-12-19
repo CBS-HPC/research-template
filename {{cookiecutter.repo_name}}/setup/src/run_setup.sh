@@ -1,23 +1,24 @@
 #!/bin/bash
 
-# Get the repo_name, env_manager, and script paths passed from input
-repo_name=$1
+# Get the repo_path, env_manager, and script paths passed from input
+repo_path=$1
 env_manager=$2
 version_control_path=$3
 remote_repository_path=$4
 
 # Activate environment based on the environment manager
-if [ "$repo_name" != "None" ] && [ "$env_manager" != "None" ]; then
+if [ "$repo_path" != "None" ] && [ "$env_manager" != "None" ]; then
     case "$env_manager" in
         "conda")
-            echo "Activating Conda environment: $repo_name"
+            echo "Activating Conda environment: $repo_path"
             # Adjust the source path to match your Conda installation
             source ~/anaconda3/etc/profile.d/conda.sh
-            conda activate "$repo_name"
+            conda activate "$repo_path"
             ;;
         "venv")
-            echo "Activating venv environment: $repo_name"
-            venv_activate="./$repo_name/bin/activate"
+            echo "Activating venv environment: $repo_path"
+            
+            venv_activate="./$repo_path/bin/activate"
 
             if [ -f "$venv_activate" ]; then
                 echo "Activating venv using $venv_activate"
@@ -27,8 +28,9 @@ if [ "$repo_name" != "None" ] && [ "$env_manager" != "None" ]; then
             fi
             ;;
         "virtualenv")
-            echo "Activating virtualenv environment: $repo_name"
-            virtualenv_activate="./$repo_name/bin/activate"
+            echo "Activating virtualenv environment: $repo_path"
+            
+            virtualenv_activate="./$repo_path/bin/activate"
 
             if [ -f "$virtualenv_activate" ]; then
                 echo "Activating virtualenv using $virtualenv_activate"
@@ -42,7 +44,7 @@ if [ "$repo_name" != "None" ] && [ "$env_manager" != "None" ]; then
             ;;
     esac
 else
-    echo "No valid repo_name or env_manager provided. Skipping environment activation."
+    echo "No valid repo_path or env_manager provided. Skipping environment activation."
 fi
 
 # Check if the script paths are provided and run them
