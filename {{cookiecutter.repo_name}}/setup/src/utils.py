@@ -340,8 +340,11 @@ def choose_apps(app: str, found_apps: list):
         tuple: A tuple containing the filename without extension and the selected path.
                Returns (None, None) if 'Select None' is chosen.
     """
-    print(f"\nChoose a path for '{app}':")
     
+    if len(found_apps) == 0:
+        return None, None
+    
+    print(f"\nChoose a path for '{app}':")
     # Add the 'Select None' option
     print("  [0] Select None")
     
@@ -418,7 +421,7 @@ def set_programming_language(programming_language):
         programming_language, selected_path =manual_apps()
 
     if programming_language and selected_path:    
-        save_to_env(selected_path,programming_language.upper())
+        save_to_env(os.path.dirname(selected_path),programming_language.upper())
         save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
     return programming_language
 
