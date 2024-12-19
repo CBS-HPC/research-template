@@ -679,8 +679,10 @@ author_name = load_from_env("AUTHORS",".cookiecutter")
 # Set to .env
 is_installed('python','Python')
 if programming_language.lower() in ['r','stata','matlab','sas']:
-    programming_language = set_programming_language(programming_language)
-    is_installed(programming_language.lower(),programming_language)
-
+    selected_app = set_programming_language(programming_language)
+    if selected_app: 
+        is_installed(programming_language.lower(),programming_language)
+    else:
+        print(f"{programming_language} path has not been set")
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)

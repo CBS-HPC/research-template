@@ -368,7 +368,48 @@ def choose_apps(app: str, found_apps: list):
             print("Invalid input. Please enter a valid number.")
             return None, None
 
+
+
 def manual_apps():
+    """
+    Allow manual input of the executable path if no path is chosen 
+    and automatically resolve the application name. Re-prompts if the path 
+    contains single backslashes.
+
+    Returns:
+        tuple: A tuple containing the resolved application name and selected path.
+    """
+    print("\nNo path was selected. Please input the executable path manually.")
+
+    msg = "Enter the full path to the executable with double backslashes ('\\') or or forward slashes('/') e.g. 'C:\\Program Files\\Stata18\\StataSE-64.exe':"
+    # Prompt the user to input the path to the executable
+    while True:
+        selected_path = input(msg).strip()
+
+        # Check if the path contains any single backslashes
+        if "\\" in selected_path:
+            #print("The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes('/').")
+            msg = "The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes ('/')."
+            continue  # Re-prompt the user if single backslashes are detected
+        elif os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
+            break  # Exit loop if the file exists and is executable
+        else:
+            answer = ask_yes_no("Invalid path. Do you want to input a new path? (yes/no)")
+            
+            if answer:
+                msg = "The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes ('/')."
+                continue  # Re-prompt the user if single backslashes are detected   
+            else:
+                return None, None
+
+    # Resolve the application name by extracting the filename without extension
+    filename_with_extension = os.path.basename(selected_path)
+    filename = os.path.splitext(filename_with_extension)[0]
+
+    return filename, selected_path
+
+
+def manual_apps_old():
     """
     Allow manual input of the executable path if no path is chosen 
     and automatically resolve the application name.
