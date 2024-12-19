@@ -676,7 +676,7 @@ def conda_pip_install(repo_path, pip_packages):
         #] + pip_packages
 
         pip_command = [
-            "conda", "run", "--prefix", "/path/to/your/env", sys.executable, "-m", "pip", "install"
+            "conda", "run", "--prefix", repo_path, sys.executable, "-m", "pip", "install"
         ] + pip_packages
         # Execute the pip install command
         subprocess.run(pip_command, check=True)
