@@ -471,11 +471,16 @@ def get_dependencies(folder_path=None):
     # Write the required information to the python_dependencies.txt
     output_file = os.path.join(folder_path, "python_dependencies.txt")
     with open(output_file, "w") as f:
-        f.write(f"{python_version}\n\n")
-        f.write(f"Timestamp: {timestamp}\n\n")
-        f.write("Files checked:\n")
-        f.write("\n".join(relative_python_files) + "\n\n")
-        f.write("Dependencies:\n")
+        f.write(f"{python_version}")
+        f.write("")
+        f.write(f"Timestamp: {timestamp}")
+        f.write("")
+        f.write("Files checked:")
+        f.write("")
+        f.write("\n".join(relative_python_files))
+        f.write("")
+        f.write("Dependencies:")
+        f.write("")
         for package, version in valid_packages.items():
             f.write(f"{package}=={version}\n")
 
@@ -883,6 +888,7 @@ def create_install_python_dependencies(folder_path):
     """
     extension = ".py"
     content = """
+{% raw %}    
 import subprocess
 import sys
 import re
@@ -965,7 +971,7 @@ def main(dependencies_file='python_dependencies.txt'):
 
 if __name__ == "__main__":
     main('python_dependencies.txt')  # Specify the dependencies file here
-
+{% endraw %}
 """
     write_script(folder_path, "install_dependencies", extension, content)
 
@@ -978,6 +984,7 @@ def create_install_r_dependencies(folder_path):
     """
     extension = ".R"
     content = """
+{% raw %}    
 install_dependencies <- function(file_path = NULL) {
   # If no file_path is specified, look for R_dependencies.txt in the script folder
   if (is.null(file_path)) {
@@ -1032,6 +1039,7 @@ install_dependencies <- function(file_path = NULL) {
     }
   }
 }
+{% endraw %}
 """
     write_script(folder_path, "install_dependencies", extension, content)
 
@@ -1063,6 +1071,7 @@ def create_install_matlab_dependencies(folder_path):
     """
     extension = ".m"
     content = """
+{% raw %}  
 function install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
@@ -1137,6 +1146,7 @@ function install_dependencies(dependency_file)
 
     fprintf("Dependency installation process completed.\n");
 end
+{% endraw %}
 """
     write_script(folder_path, "install_dependencies", extension, content)
 

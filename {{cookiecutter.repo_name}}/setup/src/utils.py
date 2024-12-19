@@ -597,6 +597,42 @@ def set_pip_packages(version_control,programming_language):
     return install_packages
 
 # Conda Functions:
+def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_packages:list = [], env_file:str = None):
+    
+    install_path = os.path.abspath(install_path)
+
+    if not is_installed('conda','Conda'):
+        if not install_miniconda(install_path):
+            return False
+
+    # Get the absolute path to the environment
+    env_path = os.path.abspath(os.path.join("bin", "conda", repo_name))
+    env_path = os.path.relpath(env_path)
+
+    if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
+        if env_file.endswith('.txt'):
+            env_file = generate_env_yml(repo_name,env_file)
+        update_env_yaml(env_file, repo_name, conda_packages)
+        command = ['conda', 'env', 'create', '-f', env_file, '--prefix', env_path]
+        #command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
+        msg = f'Conda environment "{repo_name}" created successfully from {env_file}.'
+    else:
+        #command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
+        command = ['conda', 'create', '--yes', '--prefix', env_path, '-c', 'conda-forge']
+
+        command.extend(conda_packages)
+        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
+
+    if create_conda_env(command,msg):
+        conda_pip_install(env_path, pip_packages)
+        export_conda_env(env_path)
+        
+        #env_path = os.path.relpath(env_path)
+        save_to_env(env_path,"CONDA_ENV_PATH")
+        return env_path
+    else:
+        return None
+
 def set_conda_packages(version_control,programming_language,code_repo):
     os_type = platform.system().lower()    
     
@@ -620,41 +656,6 @@ def set_conda_packages(version_control,programming_language,code_repo):
 
     return install_packages
 
-def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_packages:list = [], env_file:str = None):
-    
-    install_path = os.path.abspath(install_path)
-
-    if not is_installed('conda','Conda'):
-        if not install_miniconda(install_path):
-            return False
-
-    # Get the absolute path to the environment
-    env_path = os.path.abspath(os.path.join("bin", "conda", repo_name))
-
-    if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
-        if env_file.endswith('.txt'):
-            env_file = generate_env_yml(repo_name,env_file)
-        update_env_yaml(env_file, repo_name, conda_packages)
-        command = ['conda', 'env', 'create', '-f', env_file, '--prefix', env_path]
-        #command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
-        msg = f'Conda environment "{repo_name}" created successfully from {env_file}.'
-    else:
-        #command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
-        command = ['conda', 'create', '--yes', '--prefix', env_path, '-c', 'conda-forge']
-
-        command.extend(conda_packages)
-        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
-
-    if create_conda_env(command,msg):
-        conda_pip_install(env_path, pip_packages)
-        export_conda_env(env_path)
-        
-        env_path = os.path.relpath(env_path)
-        save_to_env(env_path,"CONDA_ENV_PATH")
-        return env_path
-    else:
-        return None
-   
 def conda_pip_install(repo_path, pip_packages):
     """
     Activates a Conda environment and installs packages using pip.
@@ -898,6 +899,7 @@ def create_venv_env(env_name, pip_packages=None):
     try:
         # Get the absolute path to the environment
         env_path = os.path.abspath(os.path.join("bin", "venv", env_name))
+        env_path = os.path.relpath(env_path)
         
         # Create the virtual environment
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
@@ -909,7 +911,7 @@ def create_venv_env(env_name, pip_packages=None):
             subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
-        env_path = os.path.relpath(env_path)
+        #env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VENV_ENV_PATH")
 
         # Return the path to the virtual environment
@@ -927,7 +929,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
     try:
         # Get the absolute path to the environment
         env_path = os.path.abspath(os.path.join("bin", "virtualenv", env_name))
-        
+        env_path = os.path.relpath(env_path)
         # Create the virtual environment
         subprocess.run(['virtualenv', env_path], check=True)
         print(f'Virtualenv environment "{env_path}" for Python created successfully.')
@@ -938,7 +940,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
             subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
         
-        env_path = os.path.relpath(env_path)
+        #env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VIRTUALENV_ENV_PATH")
 
         # Return the path to the virtual environment
