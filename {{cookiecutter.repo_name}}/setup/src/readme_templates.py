@@ -3,6 +3,11 @@ import subprocess
 import sys
 import json
 import re
+import os
+import json
+import subprocess
+import sys
+
 
 required_libraries = ['python-dotenv','pyyaml'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
@@ -19,6 +24,7 @@ for lib in required_libraries:
 from dotenv import dotenv_values, load_dotenv
 
 import yaml
+
 sys.path.append('setup/src')
 from utils import *
 
@@ -85,6 +91,7 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
         file.write(header)
     print(f"README.md created at: {readme_file}")
 
+# Project Tree
 def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root_folder=None):
     """
     Updates the "Project Tree" section in a README.md file with the project structure.
@@ -263,6 +270,103 @@ def update_file_descriptions(readme_path, json_file="setup/file_descriptions.jso
         json.dump(file_descriptions, f, indent=4, ensure_ascii=False)
 
     print(f"File descriptions updated in {json_file}")
+
+# Dataset Table
+def generate_dataset_table(json_file_path):
+    """
+    Generates a markdown table based on the data in a JSON file.
+
+    Parameters:
+        json_file_path (str): Path to the JSON file containing dataset metadata.
+
+    Returns:
+        str: A markdown formatted table as a string.
+    """
+    
+    # Check if the JSON file exists
+    if not os.path.exists(json_file_path):
+        raise FileNotFoundError(f"The file {json_file_path} does not exist.")
+    
+    # Read the JSON file
+    with open(json_file_path, 'r') as json_file:
+        data = json.load(json_file)
+
+    # If the data is a list, loop through each dataset entry
+    if isinstance(data, list):
+        markdown_table = (
+            f"| Name             | Location        | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |\n"
+            f"|------------------|-----------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|\n"
+        )
+
+        full_table = (
+            f"| Name             | Files                             | Location        | Provided        | Run Command               | Source           | DOI             | Citation               | License               | Notes                |\n"
+            f"|------------------|-----------------------------------|-----------------|-----------------|---------------------------|------------------|-----------------|------------------------|-----------------------|----------------------|\n"
+        )
+
+        for entry in data:
+            if isinstance(entry, dict):  # Only process dictionary entries
+                # Extract required information from the JSON data
+                data_name = entry.get("data_name", "N/A")
+                data_files = " ; ".join(entry.get("data_files", ["Not available"]))  # Newline separated
+                location = entry.get("destination", "N/A")
+                provided = "Provided" if entry.get("data_files") else "Can be re-created"
+                run_command = entry.get("run_command", "N/A")
+                number_of_files = entry.get("number_of_files", 0)
+                total_size_mb = entry.get("total_size_mb", 0)
+                file_formats = "; ".join(entry.get("file_formats", ["Not available"]))
+                source = entry.get("source", "N/A")
+                doi = entry.get("DOI", "Not provided")
+                citation = entry.get("citation", "Not provided")
+                license = entry.get("license", "Not provided")
+                notes = entry.get("notes", "No additional notes")
+
+
+                 # Format pdf table
+                data_files = entry.get("data_files", ["Not available"])
+                for file in data_files:
+                    full_table += (f"|{data_name}| {file}|{location}|{provided}|{run_command}|{source}|{doi}|{citation}|{license}|{notes}|\n")
+
+                # Format the markdown table for this entry
+                markdown_table += (f"|{data_name}| {location}| {provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{citation}|{license}|{notes}|\n")
+       
+        return markdown_table,full_table
+    else:
+        # If the data is not a list, raise an error
+        raise TypeError(f"Expected a list of datasets but got {type(data)}.")
+
+def append_dataset_to_readme(markdown_table, readme_path:str= 'README.md'):
+    """
+    Appends the generated markdown table to the README file under the 
+    'Dataset List' heading.
+
+    Parameters:
+        markdown_table (str): The markdown table to be appended.
+        readme_path (str): The path to the README file.
+    """
+    # Read the current content of the README file
+    with open(readme_path, 'r') as readme_file:
+        content = readme_file.readlines()
+
+    # Check if the 'Data Availability and Provenance Statements' section exists
+    heading_found = False
+    for i, line in enumerate(content):
+        if "Dataset List" in line:
+            heading_found = True
+            # Insert the markdown table below the heading
+            content.insert(i + 1, markdown_table + "\n")
+            break
+    
+    # If the heading is not found, add it at the end
+    if not heading_found:
+        content.append("\n# Dataset List\n")
+        content.append(markdown_table + "\n")
+
+    # Write the updated content back to the README
+    with open(readme_path, 'w') as readme_file:
+        readme_file.writelines(content)
+    print(f"Appended data to {readme_path}")
+
+
 
 # CITATION.cff
 def create_citation_file(
