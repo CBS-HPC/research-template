@@ -284,7 +284,6 @@ def set_from_env():
     is_installed('rclone')
     is_installed('git-annex-remote-rclone')
 
-
 # Setting programming language 
 def search_apps(app: str):
     """
@@ -382,10 +381,11 @@ def manual_apps():
     """
     print("\nNo path was selected. Please input the executable path manually.")
 
-    msg = "Enter the full path to the executable with double backslashes ('\\') or or forward slashes('/') e.g. 'C:\\Program Files\\Stata18\\StataSE-64.exe':"
+    msg = "Enter the full path to the executable with double backslashes ('\\') or forward slashes('/') e.g. 'C:\\Program Files\\Stata18\\StataSE-64.exe':"
     # Prompt the user to input the path to the executable
     while True:
         selected_path = input(msg).strip()
+        selected_path = selected_path.replace("'", "").replace('"', '')
 
         # Check if the path contains any single backslashes
         if "\\" in selected_path:
@@ -398,7 +398,7 @@ def manual_apps():
             answer = ask_yes_no("Invalid path. Do you want to input a new path? (yes/no)")
             
             if answer:
-                msg = "The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes ('/')."
+                msg = f"The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes ('/'): "
                 continue  # Re-prompt the user if single backslashes are detected   
             else:
                 return None, None
@@ -647,7 +647,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         export_conda_env(repo_name)
 
         save_to_env(env_path,"CONDA_ENV_PATH")
-        return repo_name
+        return env_path
     else:
         return None
    
@@ -904,7 +904,7 @@ def create_venv_env(env_name, pip_packages=None):
         save_to_env(env_path,"VENV_ENV_PATH")
 
         # Return the path to the virtual environment
-        return env_name
+        return env_path
 
     except subprocess.CalledProcessError as e:
         print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
@@ -932,7 +932,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
         save_to_env(env_path,"VIRTUALENV_ENV_PATH")
 
         # Return the path to the virtual environment
-        return env_name
+        return env_path
 
     except subprocess.CalledProcessError as e:
         print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
@@ -940,6 +940,23 @@ def create_virtualenv_env(env_name, pip_packages=None):
     except Exception as e:
         print(f"Error: An unexpected error occurred: {e}")
         return None
+
+def create_requirements_txt():
+    # Get the Python executable path from sys.executable
+    python_executable = sys.executable
+    
+    # Use subprocess to run pip freeze and capture the output
+    result = subprocess.run([python_executable, "-m", "pip", "freeze"], capture_output=True, text=True)
+    
+    # Check if the pip freeze command was successful
+    if result.returncode == 0:
+        # Write the output of pip freeze to a requirements.txt file
+        with open("requirements.txt", "w") as f:
+            f.write(result.stdout)
+        print("requirements.txt has been created successfully.")
+    else:
+        print("Error running pip freeze:", result.stderr)
+
 
 # Other
 def get_hardware_info():
