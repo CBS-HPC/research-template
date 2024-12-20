@@ -155,17 +155,17 @@ version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 if "(Pre-installation required)" in programming_language:
     programming_language = programming_language.replace(" (Pre-installation required)", "")
-print(programming_language.lower())
-if programming_language.lower == 'r':
+
+if programming_language.lower() == 'r':
     question = "Do you want to create a new R environment using:"
     r_env_manager = prompt_user(question, ["Conda","renv","None"])
-    if r_env_manager.lower =='conda':
+    if r_env_manager.lower() =='conda':
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
         environment_opts = ["Conda","None"]
 else:
     r_env_manager = None
     environment_opts = ["Conda","Venv","None"]
-    if programming_language.lower == 'python':
+    if programming_language.lower() == 'python':
         question = "Do you want to create a new python environment using:"
     else:
         question = "Do you want to create a new python environment (used for project setup functions) using:"
