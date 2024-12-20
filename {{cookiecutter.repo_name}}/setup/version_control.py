@@ -676,6 +676,8 @@ project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 author_name = load_from_env("AUTHORS",".cookiecutter")
 
+# FIX ME !!! MOVE TO set_options()
+
 # Set to .env
 is_installed('python','Python')
 if programming_language.lower() in ['r','stata','matlab','sas']:
