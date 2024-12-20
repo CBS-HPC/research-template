@@ -20,14 +20,14 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     
     pip_packages = set_pip_packages(version_control,programming_language)
 
-    if python_env_manager and python_env_manager.lower() == "conda" or r_env_manager and r_env_manager.lower() == "conda":
+    if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
         
         install_packages = []
         
-        if python_env_manager and python_env_manager.lower() == "conda":
+        if python_env_manager.lower() == "conda":
               install_packages.extend(['python'])
 
-        if r_env_manager and r_env_manager.lower() == "conda":
+        if r_env_manager.lower() == "conda":
             install_packages.extend(['r-base'])
 
         conda_packages = set_conda_packages(version_control,install_packages,code_repo)
@@ -125,14 +125,47 @@ def prompt_user(question, options):
 
     while True:
         try:
-            choice = int(input("Enter the number corresponding to your choice: "))
+            choice = int(input("Choose from above (enter number): "))
             if 1 <= choice <= len(options):
                 selected_option = options[choice - 1]
-                return None if selected_option == "None" else selected_option
+                return selected_option
             else:
                 print(f"Invalid choice. Please select a number between 1 and {len(options)}.")
         except ValueError:
             print("Invalid input. Please enter a number.")
+
+def set_options(programming_language,version_control):
+
+    if "(Pre-installation required)" in programming_language:
+        programming_language = programming_language.replace(" (Pre-installation required)", "")
+
+    if programming_language.lower() == 'r':
+        question = "Do you want to create a new R environment using:"
+        r_env_manager = prompt_user(question, ["Conda","renv","None"])
+        if r_env_manager.lower() =='conda':
+            question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
+            environment_opts = ["Conda","None"]
+    else:
+        r_env_manager = "None"
+        environment_opts = ["Conda","Venv","None"]
+        if programming_language.lower() == 'python':
+            question = "Do you want to create a new python environment using:"
+        else:
+            question = "Do you want to create a new python environment (used for project setup functions) using:"
+
+    python_env_manager = prompt_user(question, environment_opts)
+
+
+    if version_control in ["Git","Datalad","DVC"]:
+        code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","None"])
+    else:
+        code_repo = "None"
+
+    if version_control in ["Datalad","DVC"]:
+        remote_storage = prompt_user(f"Do you want to setup remote storage for your {version_control} repo:", ["Dropbox","Deic Storage","Local Path","None"])
+    else:
+        remote_storage = "None"
+    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage
 
 
 setup_version_control = "setup/version_control.py"
@@ -149,40 +182,9 @@ version = "{{cookiecutter.version}}"
 license = "{{cookiecutter.open_source_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
-
-
-# FIX ME - devide into R and python Env Manager
 programming_language = "{{cookiecutter.programming_language}}"
-if "(Pre-installation required)" in programming_language:
-    programming_language = programming_language.replace(" (Pre-installation required)", "")
 
-if programming_language.lower() == 'r':
-    question = "Do you want to create a new R environment using:"
-    r_env_manager = prompt_user(question, ["Conda","renv","None"])
-    if r_env_manager.lower() =='conda':
-        question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
-        environment_opts = ["Conda","None"]
-else:
-    r_env_manager = None
-    environment_opts = ["Conda","Venv","None"]
-    if programming_language.lower() == 'python':
-        question = "Do you want to create a new python environment using:"
-    else:
-        question = "Do you want to create a new python environment (used for project setup functions) using:"
-
-python_env_manager = prompt_user(question, environment_opts)
-
-
-if version_control in ["Git","Datalad","DVC"]:
-    code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","None"])
-else:
-    code_repo = None
-
-if version_control in ["Datalad","DVC"]:
-    remote_storage = prompt_user(f"Do you want to setup remote storage for your {version_control} repo:", ["Dropbox","Deic Storage","Local Path","None"])
-else:
-    remote_storage = None
-
+programming_language, python_env_manager,r_env_manager,code_repo, remote_storage = set_options(programming_language,version_control)
 
 # Create scripts and notebook
 create_scripts(programming_language, "src")
