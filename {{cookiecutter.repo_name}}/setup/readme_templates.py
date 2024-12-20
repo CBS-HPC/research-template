@@ -42,9 +42,9 @@ def creating_readme(repo_name ,project_name, project_description,code_repo,autho
     contact = f"{author_name}"
 
     # Create and update README and Project Tree:
-    update_file_descriptions("README.md", json_file="setup/file_descriptions.json")
+    update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"setup/file_descriptions.json")
+    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"FILE_DESCRIPTIONS.json")
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """
@@ -194,13 +194,12 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
 
     print(f"'Project Tree' section updated in '{readme_file}'.")
 
-def update_file_descriptions(readme_path, json_file="setup/file_descriptions.json"):
+def update_file_descriptions(readme_path, json_file="FILE_DESCRIPTIONS.json"):
     """
-    Reads the project tree from an existing README.md and updates a file_descriptions.json file.
+    Reads the project tree from an existing README.md and updates a FILE_DESCRIPTIONS.json file.
 
     Parameters:
     - readme_path (str): Path to the README.md file.
-    - setup_folder (str): Path to the setup folder where file_descriptions.json will be saved.
     - json_file (str): The name of the JSON file for file descriptions.
 
     Returns:

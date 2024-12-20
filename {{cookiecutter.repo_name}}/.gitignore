@@ -1,6 +1,9 @@
 # ignore the bin files as they contain local installation for rclone and git_annex_remote_rclone 
 bin/
 
+# DotEnv configuration
+.env
+
 # exclude data from source control by default
 #/data/
 
@@ -61,9 +64,6 @@ docs/_build/
 
 # PyBuilder
 target/
-
-# DotEnv configuration
-.env
 
 # Database
 *.db
