@@ -155,7 +155,7 @@ version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 if "(Pre-installation required)" in programming_language:
     programming_language = programming_language.replace(" (Pre-installation required)", "")
-
+print(programming_language.lower())
 if programming_language.lower == 'r':
     question = "Do you want to create a new R environment using:"
     r_env_manager = prompt_user(question, ["Conda","renv","None"])
