@@ -3,7 +3,7 @@ import subprocess
 import ast
 from datetime import datetime
 
-def get_setup_dependencies(folder_path:str=None, file_name:str = "setup_depedencies.txt"):
+def get_setup_dependencies(folder_path:str=None, file_name:str = "REQUIREMENTS.txt"):
     # If folder_path is not provided, use the folder of the current script
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
@@ -56,11 +56,9 @@ def get_setup_dependencies(folder_path:str=None, file_name:str = "setup_depedenc
     valid_packages = {}
 
     for package, version in installed_packages.items():
-        if version == "Not available" and package in python_script_names:
-            print(f"Removing dependency '{package}' as it corresponds to a Python script.")
-        else:
-            valid_packages[package] = version
-
+        if not (version == "Not available" and package in python_script_names):
+           valid_packages[package] = version
+        
     # Collect Python version
     python_version = subprocess.check_output([os.sys.executable, '--version']).decode().strip()
 

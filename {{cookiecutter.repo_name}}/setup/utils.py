@@ -969,7 +969,6 @@ def create_requirements_txt():
     else:
         print("Error running pip freeze:", result.stderr)
 
-
 # Other
 def get_hardware_info():
     """

@@ -13,9 +13,9 @@ os.chdir(project_root)
 
 # Add the directory to sys.path
 
-sys.path.append('setup/src')
-from src.utils import *
-from src.readme_templates import *
+sys.path.append('setup')
+from utils import *
+from readme_templates import *
 
 def set_data(data_name, source, run_command, destination:str=None, doi:str = None,citation:str = None,license:str=None):
     """

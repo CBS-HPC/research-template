@@ -401,7 +401,7 @@ import subprocess
 import ast
 from datetime import datetime
 
-def get_dependencies(folder_path=None):
+def get_dependencies(folder_path:str=None, file_name:str = "REQUIREMENTS.txt"):
     # If folder_path is not provided, use the folder of the current script
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
@@ -454,10 +454,8 @@ def get_dependencies(folder_path=None):
     valid_packages = {}
 
     for package, version in installed_packages.items():
-        if version == "Not available" and package in python_script_names:
-            print(f"Removing dependency '{package}' as it corresponds to a Python script.")
-        else:
-            valid_packages[package] = version
+        if not (version == "Not available" and package in python_script_names):
+           valid_packages[package] = version
 
     # Collect Python version
     python_version = subprocess.check_output([os.sys.executable, '--version']).decode().strip()
@@ -468,8 +466,8 @@ def get_dependencies(folder_path=None):
     # Collect the list of files checked (relative paths)
     relative_python_files = [os.path.relpath(file, folder_path) for file in python_files]
 
-    # Write the required information to the software_dependencies.txt
-    output_file = os.path.join(folder_path, "software_dependencies.txt")
+    # Write the required information to the REQUIREMENTS.txt
+    output_file = os.path.join(folder_path, file_name)
     with open(output_file, "w") as f:
         f.write("Software version:\n")
         f.write(f"{python_version}\n\n")
@@ -481,7 +479,7 @@ def get_dependencies(folder_path=None):
             f.write(f"{package}=={version}\n")
 
 
-    print(f"software_dependencies.txt successfully generated at {output_file}")
+    print(f"REQUIREMENTS.txt successfully generated at {output_file}")
 if __name__ == "__main__":
     get_dependencies(None)
 {% endraw %}
@@ -492,7 +490,7 @@ def create_get_r_dependencies(folder_path):
     extension = ".R"
     content = r"""
 {% raw %}    
-get_dependencies <- function(folder_path = NULL) {
+get_dependencies <- function(folder_path = NULL, file_name = "REQUIREMENTS.txt") {
   
   # If folder_path is not provided, use the folder of the current script
   if (is.null(folder_path)) {
@@ -561,9 +559,9 @@ get_dependencies <- function(folder_path = NULL) {
     }
   }
   
-  # Create a software_dependencies.txt file
-  output_file <- file.path(folder_path, "software_dependencies.txt")
-  message("Writing dependencies to 'software_dependencies.txt'...")
+  # Create a REQUIREMENTS.txt file
+  output_file <- file.path(folder_path, file_name )
+  message("Writing dependencies to 'REQUIREMENTS.txt'...")
   
   # Collect the R version
   r_version <- paste(R.version$version.string)
@@ -575,7 +573,7 @@ get_dependencies <- function(folder_path = NULL) {
   timestamp <- Sys.time()
   formatted_timestamp <- format(timestamp, "%Y-%m-%d %H:%M:%S")
   
-  # Write to the software_dependencies.txt file
+  # Write to the REQUIREMENTS.txt file
   writeLines(
     c("Software version:",
       r_version,
@@ -597,7 +595,7 @@ get_dependencies <- function(folder_path = NULL) {
     append = TRUE
   )
   
-  message("'software_dependencies.txt' successfully generated.")
+  message("'REQUIREMENTS.txt' successfully generated.")
 }
 
 if (interactive()) {
@@ -607,6 +605,169 @@ if (interactive()) {
 """
     
     write_script(folder_path, "get_dependencies", extension, content)
+
+def create_get_matlab_dependencies(folder_path):
+    extension = ".m"
+    content = r"""
+{% raw %}      
+function get_dependencies(folder_path,file_name)
+    % If folder_path is not provided, use the folder of the current script
+    if nargin < 1
+        folder_path = fileparts(mfilename('fullpath'));
+    end
+
+    % Default dependency file
+    if nargin < 2
+        file_name = 'REQUIREMENTS.txt';
+    end
+
+    % Ensure the specified folder exists
+    if ~isfolder(folder_path)
+        error("The specified folder does not exist.");
+    end
+
+    % Find all .m files in the folder and its subfolders
+    m_files = dir(fullfile(folder_path, '**', '*.m'));
+    if isempty(m_files)
+        error("No .m files found in the specified folder.");
+    end
+
+    % Initialize containers for unique dependencies
+    unique_files = {};
+    unique_products = containers.Map;
+
+    % Analyze each .m file
+    file_paths = strings(length(m_files), 1);
+    for i = 1:length(m_files)
+        file_path = fullfile(m_files(i).folder, m_files(i).name);
+        file_paths(i) = file_path;
+
+        % Get required files and products
+        [required_files, required_products] = matlab.codetools.requiredFilesAndProducts(file_path);
+
+        % Collect required files
+        unique_files = unique([unique_files, required_files]);
+
+        % Collect required products (toolboxes)
+        for product = required_products
+            if ~isKey(unique_products, product.Name)
+                unique_products(product.Name) = product.Version;
+            end
+        end
+    end
+
+    % Create the output file
+    output_file = fullfile(folder_path, file_name);
+    fid = fopen(output_file, 'w');
+    if fid == -1
+        error("Unable to create REQUIREMENTS.txt in the specified folder.");
+    end
+
+    % Write header information
+    fprintf(fid, "Software version:"\n");
+    fprintf(fid, "MATLAB version: %s\n\n", version);
+    fprintf(fid, "Timestamp: %s\n\n", datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+
+    % Write files checked
+    fprintf(fid, "Files checked:\n");
+    for i = 1:length(file_paths)
+        fprintf(fid, "%s\n", file_paths(i));
+    end
+    fprintf(fid, "\n");
+
+    % Write dependencies
+    fprintf(fid, "Dependencies:\n");
+    % Add toolboxes
+    product_names = keys(unique_products);
+    for i = 1:length(product_names)
+        fprintf(fid, "%s==%s\n", product_names{i}, unique_products(product_names{i}));
+    end
+
+    % Add required files
+    for i = 1:length(unique_files)
+        [~, name, ext] = fileparts(unique_files{i});
+        fprintf(fid, "%s%s==Not available\n", name, ext);
+    end
+
+    fclose(fid);
+    fprintf("REQUIREMENTS.txt successfully generated in %s.\n", folder_path);
+end
+{% endraw %}
+"""
+    write_script(folder_path, "get_dependencies", extension, content)
+
+# FIX ME 
+def create_get_sas_dependencies(folder_path):
+    extension = ".m"
+    content = r"""
+{% raw %}     
+%macro get_dependencies(folder_path);
+    /* Check if folder_path is provided; if not, set it to current working directory */
+    %if &folder_path = %then %do;
+        %let folder_path = %sysfunc(getoption(work));
+        %put NOTE: No folder path provided. Using current working directory: &folder_path;
+    %end;
+
+    /* Ensure the folder exists */
+    %if %sysfunc(fileexist(&folder_path)) = 0 %then %do;
+        %put ERROR: The specified folder does not exist.;
+        %return;
+    %end;
+
+    /* Get all .sas files in the folder */
+    filename dirlist pipe "dir /b &folder_path\\*.sas"; 
+    data sas_files;
+        infile dirlist truncover;
+        input file_name $256.;
+    run;
+
+    /* Initialize variables for dependencies */
+    %let includes =;
+    %let libraries =;
+
+    /* Loop through each .sas file to check for dependencies */
+    data _null_;
+        set sas_files;
+        /* Open the .sas file */
+        infile "&folder_path.\\&file_name" length=reclen;
+        input line $char256.;
+
+        /* Search for 'include' statements */
+        if index(line, 'include') > 0 then do;
+            call symputx('includes', cats("&includes ", line));
+        end;
+
+        /* Search for 'libname' statements */
+        if index(line, 'libname') > 0 then do;
+            call symputx('libraries', cats("&libraries ", line));
+        end;
+    run;
+
+    /* Output detected dependencies */
+    %put Detected Include Files:;
+    %put &includes;
+
+    %put Detected Library References:;
+    %put &libraries;
+
+    /* Optionally save the dependencies to a text file */
+    filename outfile "&folder_path.\\dependencies.txt";
+    data _null_;
+        file outfile;
+        put "Detected Include Files:";
+        put &includes;
+        put "Detected Library References:";
+        put &libraries;
+    run;
+
+    %put requirements.txt successfully generated at &folder_path.\\dependencies.txt;
+%mend get_dependencies;
+
+/* Example usage */
+%get_dependencies(C:\\path\\to\\your\\folder);
+{% endraw %}
+"""
+    write_script(folder_path, "get_sas_dependencies", extension, content)
 
 # FIX ME 
 def create_get_stata_dependencies(folder_path):
@@ -691,163 +852,6 @@ end
 """
     write_script(folder_path, "get_dependencies", extension, content)    
 
-def create_get_matlab_dependencies(folder_path):
-    extension = ".m"
-    content = r"""
-{% raw %}      
-function get_dependencies(folder_path)
-    % If folder_path is not provided, use the folder of the current script
-    if nargin < 1
-        folder_path = fileparts(mfilename('fullpath'));
-    end
-
-    % Ensure the specified folder exists
-    if ~isfolder(folder_path)
-        error("The specified folder does not exist.");
-    end
-
-    % Find all .m files in the folder and its subfolders
-    m_files = dir(fullfile(folder_path, '**', '*.m'));
-    if isempty(m_files)
-        error("No .m files found in the specified folder.");
-    end
-
-    % Initialize containers for unique dependencies
-    unique_files = {};
-    unique_products = containers.Map;
-
-    % Analyze each .m file
-    file_paths = strings(length(m_files), 1);
-    for i = 1:length(m_files)
-        file_path = fullfile(m_files(i).folder, m_files(i).name);
-        file_paths(i) = file_path;
-
-        % Get required files and products
-        [required_files, required_products] = matlab.codetools.requiredFilesAndProducts(file_path);
-
-        % Collect required files
-        unique_files = unique([unique_files, required_files]);
-
-        % Collect required products (toolboxes)
-        for product = required_products
-            if ~isKey(unique_products, product.Name)
-                unique_products(product.Name) = product.Version;
-            end
-        end
-    end
-
-    % Create the output file
-    output_file = fullfile(folder_path, 'software_dependencies.txt');
-    fid = fopen(output_file, 'w');
-    if fid == -1
-        error("Unable to create software_dependencies.txt in the specified folder.");
-    end
-
-    % Write header information
-    fprintf(fid, "Software version:"\n");
-    fprintf(fid, "MATLAB version: %s\n\n", version);
-    fprintf(fid, "Timestamp: %s\n\n", datestr(now, 'yyyy-mm-dd HH:MM:SS'));
-
-    % Write files checked
-    fprintf(fid, "Files checked:\n");
-    for i = 1:length(file_paths)
-        fprintf(fid, "%s\n", file_paths(i));
-    end
-    fprintf(fid, "\n");
-
-    % Write dependencies
-    fprintf(fid, "Dependencies:\n");
-    % Add toolboxes
-    product_names = keys(unique_products);
-    for i = 1:length(product_names)
-        fprintf(fid, "%s==%s\n", product_names{i}, unique_products(product_names{i}));
-    end
-
-    % Add required files
-    for i = 1:length(unique_files)
-        [~, name, ext] = fileparts(unique_files{i});
-        fprintf(fid, "%s%s==Not available\n", name, ext);
-    end
-
-    fclose(fid);
-    fprintf("software_dependencies.txt successfully generated in %s.\n", folder_path);
-end
-{% endraw %}
-"""
-    write_script(folder_path, "get_dependencies", extension, content)
-
-# FIX ME 
-def create_get_sas_dependencies(folder_path):
-    extension = ".m"
-    content = r"""
-{% raw %}     
-%macro get_dependencies(folder_path);
-    /* Check if folder_path is provided; if not, set it to current working directory */
-    %if &folder_path = %then %do;
-        %let folder_path = %sysfunc(getoption(work));
-        %put NOTE: No folder path provided. Using current working directory: &folder_path;
-    %end;
-
-    /* Ensure the folder exists */
-    %if %sysfunc(fileexist(&folder_path)) = 0 %then %do;
-        %put ERROR: The specified folder does not exist.;
-        %return;
-    %end;
-
-    /* Get all .sas files in the folder */
-    filename dirlist pipe "dir /b &folder_path\\*.sas"; 
-    data sas_files;
-        infile dirlist truncover;
-        input file_name $256.;
-    run;
-
-    /* Initialize variables for dependencies */
-    %let includes =;
-    %let libraries =;
-
-    /* Loop through each .sas file to check for dependencies */
-    data _null_;
-        set sas_files;
-        /* Open the .sas file */
-        infile "&folder_path.\\&file_name" length=reclen;
-        input line $char256.;
-
-        /* Search for 'include' statements */
-        if index(line, 'include') > 0 then do;
-            call symputx('includes', cats("&includes ", line));
-        end;
-
-        /* Search for 'libname' statements */
-        if index(line, 'libname') > 0 then do;
-            call symputx('libraries', cats("&libraries ", line));
-        end;
-    run;
-
-    /* Output detected dependencies */
-    %put Detected Include Files:;
-    %put &includes;
-
-    %put Detected Library References:;
-    %put &libraries;
-
-    /* Optionally save the dependencies to a text file */
-    filename outfile "&folder_path.\\dependencies.txt";
-    data _null_;
-        file outfile;
-        put "Detected Include Files:";
-        put &includes;
-        put "Detected Library References:";
-        put &libraries;
-    run;
-
-    %put requirements.txt successfully generated at &folder_path.\\dependencies.txt;
-%mend get_dependencies;
-
-/* Example usage */
-%get_dependencies(C:\\path\\to\\your\\folder);
-{% endraw %}
-"""
-    write_script(folder_path, "get_sas_dependencies", extension, content)
 
 
 # Create install_dependencies()  # FIX ME - NOT IN USE!!!
@@ -892,7 +896,7 @@ import sys
 import re
 import importlib.util
 
-def parse_dependencies(file_path='software_dependencies.txt'):
+def parse_dependencies(file_path='REQUIREMENTS.txt'):
     required_libraries = []
     try:
         with open(file_path, 'r') as f:
@@ -957,7 +961,7 @@ def install_dependencies(required_libraries):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-def main(dependencies_file='software_dependencies.txt'):
+def main(dependencies_file='REQUIREMENTS.txt'):
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)
     
@@ -968,7 +972,7 @@ def main(dependencies_file='software_dependencies.txt'):
         print("No dependencies found to install.")
 
 if __name__ == "__main__":
-    main('software_dependencies.txt')  # Specify the dependencies file here
+    main('REQUIREMENTS.txt')  # Specify the dependencies file here
 {% endraw %}
 """
     write_script(folder_path, "install_dependencies", extension, content)
@@ -984,9 +988,9 @@ def create_install_r_dependencies(folder_path):
     content = r"""
 {% raw %}    
 install_dependencies <- function(file_path = NULL) {
-  # If no file_path is specified, look for software_dependencies.txt in the script folder
+  # If no file_path is specified, look for REQUIREMENTS.txt in the script folder
   if (is.null(file_path)) {
-    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "software_dependencies.txt")
+    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "REQUIREMENTS.txt")
   }
   
   # Define a function to read dependencies from a text file and return them as a list
@@ -1041,25 +1045,6 @@ install_dependencies <- function(file_path = NULL) {
 """
     write_script(folder_path, "install_dependencies", extension, content)
 
-# FIX ME 
-def create_install_stata_dependencies(folder_path):
-    """
-    Create the install_dependencies script for Stata to install required dependencies.
-    
-    Parameters:
-    folder_path (str): The directory where the install_dependencies script will be saved.
-    """
-    extension = ".do"
-    content = r"""
-* Install Stata dependencies
-
-* List of required packages
-ssc install outreg2, replace
-ssc install estout, replace
-net install rdrobust, from("https://www.example.com/rdrobust"), replace
-"""
-    write_script(folder_path, "install_dependencies", extension, content)
-
 def create_install_matlab_dependencies(folder_path):
     """
     Create the install_dependencies script for Matlab to install required dependencies.
@@ -1073,7 +1058,7 @@ def create_install_matlab_dependencies(folder_path):
 function install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
-        dependency_file = 'software_dependencies.txt';
+        dependency_file = 'REQUIREMENTS.txt';
     end
 
     % Check if the dependency file exists
@@ -1145,6 +1130,26 @@ function install_dependencies(dependency_file)
     fprintf("Dependency installation process completed.\n");
 end
 {% endraw %}
+"""
+    write_script(folder_path, "install_dependencies", extension, content)
+
+
+# FIX ME 
+def create_install_stata_dependencies(folder_path):
+    """
+    Create the install_dependencies script for Stata to install required dependencies.
+    
+    Parameters:
+    folder_path (str): The directory where the install_dependencies script will be saved.
+    """
+    extension = ".do"
+    content = r"""
+* Install Stata dependencies
+
+* List of required packages
+ssc install outreg2, replace
+ssc install estout, replace
+net install rdrobust, from("https://www.example.com/rdrobust"), replace
 """
     write_script(folder_path, "install_dependencies", extension, content)
 

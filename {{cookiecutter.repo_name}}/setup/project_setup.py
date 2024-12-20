@@ -4,7 +4,7 @@ import sys
 import platform
 
 
-sys.path.append('setup/src')
+sys.path.append('setup')
 from utils import *
 from code_templates import *
 from readme_templates import *
@@ -95,10 +95,10 @@ def delete_files(file_paths:list=[]):
 
     return results
 
-setup_version_control = "setup/src/version_control.py"
-setup_remote_repository = "setup/src/remote_repository.py"
-setup_bash = "setup/src/run_setup.sh"
-setup_powershell = "setup/src/run_setup.ps1"
+setup_version_control = "setup/version_control.py"
+setup_remote_repository = "setup/remote_repository.py"
+setup_bash = "setup/run_setup.sh"
+setup_powershell = "setup/run_setup.ps1"
 miniconda_path =  "bin/miniconda3"
 
 programming_language = "{{cookiecutter.programming_language}}"
@@ -155,5 +155,5 @@ elif os_type == "darwin" or os_type == "linux":
     run_bash_script(setup_bash, repo_name, environment_manager, setup_version_control, setup_remote_repository)
 
 # Deleting Setup scripts
-files_to_delete = [os.path.abspath(__file__),"setup/src/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell]
+files_to_delete = [os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell]
 delete_files(files_to_delete)

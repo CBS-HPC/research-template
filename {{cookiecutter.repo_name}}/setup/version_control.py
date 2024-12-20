@@ -20,7 +20,7 @@ for lib in required_libraries:
 
 import requests
 
-sys.path.append('setup/src')
+sys.path.append('setup')
 from utils import *
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):

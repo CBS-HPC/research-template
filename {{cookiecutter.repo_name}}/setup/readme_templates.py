@@ -25,7 +25,7 @@ from dotenv import dotenv_values, load_dotenv
 
 import yaml
 
-sys.path.append('setup/src')
+sys.path.append('setup')
 from utils import *
 
 # README.md
@@ -368,8 +368,6 @@ def append_dataset_to_readme(markdown_table, readme_path:str= 'README.md'):
     with open(readme_path, 'w') as readme_file:
         readme_file.writelines(content)
     print(f"Appended data to {readme_path}")
-
-
 
 # CITATION.cff
 def create_citation_file(
