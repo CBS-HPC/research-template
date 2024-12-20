@@ -5,9 +5,9 @@ import platform
 
 
 sys.path.append('setup/src')
-from src.utils import *
-from src.code_templates import *
-from src.readme_templates import *
+from utils import *
+from code_templates import *
+from readme_templates import *
 
 def setup_virtual_environment(version_control,programming_language,environment_manager,code_repo,repo_name,install_path = "bin/miniconda3"):
     """
@@ -71,6 +71,30 @@ def run_powershell_script(script_path, repo_name=None, environment_manager=None,
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
+def delete_files(file_paths:list=[]):
+    """
+    Deletes a list of files specified by their paths.
+
+    Args:
+        file_paths (list): A list of file paths to be deleted.
+
+    Returns:
+        dict: A dictionary with file paths as keys and their status as values.
+              The status can be "Deleted", "Not Found", or an error message.
+    """
+    results = {}
+    for file_path in file_paths:
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                results[file_path] = "Deleted"
+            else:
+                results[file_path] = "Not Found"
+        except Exception as e:
+            results[file_path] = f"Error: {e}"
+
+    return results
+
 setup_version_control = "setup/src/version_control.py"
 setup_remote_repository = "setup/src/remote_repository.py"
 setup_bash = "setup/src/run_setup.sh"
@@ -129,3 +153,7 @@ if os_type == "windows":
     run_powershell_script(setup_powershell, repo_name, environment_manager, setup_version_control, setup_remote_repository)
 elif os_type == "darwin" or os_type == "linux":
     run_bash_script(setup_bash, repo_name, environment_manager, setup_version_control, setup_remote_repository)
+
+# Deleting Setup scripts
+files_to_delete = [os.path.abspath(__file__),"setup/src/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell]
+delete_files(files_to_delete)

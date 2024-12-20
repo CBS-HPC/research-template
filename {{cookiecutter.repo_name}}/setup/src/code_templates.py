@@ -230,7 +230,7 @@ def create_main(programming_language, folder_path):
 
 def create_r_main(folder_path):
     extension = ".R"
-    content = """
+    content = r"""
 # Main: Running all steps in order
 
 # Install dependencies
@@ -258,7 +258,7 @@ visualization::main()
 
 def create_python_main(folder_path):
     extension = ".py"
-    content = """
+    content = r"""
 # Main: Running all steps in order
 
 # Install dependencies
@@ -287,7 +287,7 @@ visualization.main()
 
 def create_stata_main(folder_path):
     extension = ".do"
-    content = """
+    content = r"""
 * Main: Running all steps in order
 
 * Install dependencies
@@ -315,7 +315,7 @@ visualization_main
 
 def create_matlab_main(folder_path):
     extension = ".m"
-    content = """
+    content = r"""
 % Main: Running all steps in order
 
 % Install dependencies
@@ -337,7 +337,7 @@ visualization_main();
 
 def create_sas_main(folder_path):
     extension = ".sas"
-    content ="""
+    content =r"""
 * Main: Running all steps in order;
 
 * Install dependencies
@@ -468,9 +468,10 @@ def get_dependencies(folder_path=None):
     # Collect the list of files checked (relative paths)
     relative_python_files = [os.path.relpath(file, folder_path) for file in python_files]
 
-    # Write the required information to the python_dependencies.txt
-    output_file = os.path.join(folder_path, "python_dependencies.txt")
+    # Write the required information to the software_dependencies.txt
+    output_file = os.path.join(folder_path, "software_dependencies.txt")
     with open(output_file, "w") as f:
+        f.write("Software version:\n")
         f.write(f"{python_version}\n\n")
         f.write(f"Timestamp: {timestamp}\n\n")
         f.write("Files checked:\n")
@@ -480,7 +481,7 @@ def get_dependencies(folder_path=None):
             f.write(f"{package}=={version}\n")
 
 
-    print(f"python_dependencies.txt successfully generated at {output_file}")
+    print(f"software_dependencies.txt successfully generated at {output_file}")
 if __name__ == "__main__":
     get_dependencies(None)
 {% endraw %}
@@ -489,7 +490,7 @@ if __name__ == "__main__":
 
 def create_get_r_dependencies(folder_path):
     extension = ".R"
-    content = """
+    content = r"""
 {% raw %}    
 get_dependencies <- function(folder_path = NULL) {
   
@@ -560,9 +561,9 @@ get_dependencies <- function(folder_path = NULL) {
     }
   }
   
-  # Create a R_dependencies.txt file
-  output_file <- file.path(folder_path, "R_dependencies.txt")
-  message("Writing dependencies to 'R_dependencies.txt'...")
+  # Create a software_dependencies.txt file
+  output_file <- file.path(folder_path, "software_dependencies.txt")
+  message("Writing dependencies to 'software_dependencies.txt'...")
   
   # Collect the R version
   r_version <- paste(R.version$version.string)
@@ -574,9 +575,9 @@ get_dependencies <- function(folder_path = NULL) {
   timestamp <- Sys.time()
   formatted_timestamp <- format(timestamp, "%Y-%m-%d %H:%M:%S")
   
-  # Write to the R_dependencies.txt file
+  # Write to the software_dependencies.txt file
   writeLines(
-    c(
+    c("Software version:",
       r_version,
       "",
       paste("Timestamp:", formatted_timestamp),
@@ -596,7 +597,7 @@ get_dependencies <- function(folder_path = NULL) {
     append = TRUE
   )
   
-  message("'R_dependencies.txt' successfully generated.")
+  message("'software_dependencies.txt' successfully generated.")
 }
 
 if (interactive()) {
@@ -611,7 +612,7 @@ if (interactive()) {
 def create_get_stata_dependencies(folder_path):
 
     extension = ".do"
-    content = """
+    content = r"""
 {% raw %}
 capture program drop get_dependencies
 
@@ -692,7 +693,7 @@ end
 
 def create_get_matlab_dependencies(folder_path):
     extension = ".m"
-    content = """
+    content = r"""
 {% raw %}      
 function get_dependencies(folder_path)
     % If folder_path is not provided, use the folder of the current script
@@ -736,13 +737,14 @@ function get_dependencies(folder_path)
     end
 
     % Create the output file
-    output_file = fullfile(folder_path, 'matlab_dependencies.txt');
+    output_file = fullfile(folder_path, 'software_dependencies.txt');
     fid = fopen(output_file, 'w');
     if fid == -1
-        error("Unable to create matlab_dependencies.txt in the specified folder.");
+        error("Unable to create software_dependencies.txt in the specified folder.");
     end
 
     % Write header information
+    fprintf(fid, "Software version:"\n");
     fprintf(fid, "MATLAB version: %s\n\n", version);
     fprintf(fid, "Timestamp: %s\n\n", datestr(now, 'yyyy-mm-dd HH:MM:SS'));
 
@@ -768,7 +770,7 @@ function get_dependencies(folder_path)
     end
 
     fclose(fid);
-    fprintf("matlab_dependencies.txt successfully generated in %s.\n", folder_path);
+    fprintf("software_dependencies.txt successfully generated in %s.\n", folder_path);
 end
 {% endraw %}
 """
@@ -777,7 +779,7 @@ end
 # FIX ME 
 def create_get_sas_dependencies(folder_path):
     extension = ".m"
-    content = """
+    content = r"""
 {% raw %}     
 %macro get_dependencies(folder_path);
     /* Check if folder_path is provided; if not, set it to current working directory */
@@ -883,14 +885,14 @@ def create_install_python_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies.py script will be saved.
     """
     extension = ".py"
-    content = """
+    content = r"""
 {% raw %}    
 import subprocess
 import sys
 import re
 import importlib.util
 
-def parse_dependencies(file_path='python_dependencies.txt'):
+def parse_dependencies(file_path='software_dependencies.txt'):
     required_libraries = []
     try:
         with open(file_path, 'r') as f:
@@ -955,7 +957,7 @@ def install_dependencies(required_libraries):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-def main(dependencies_file='python_dependencies.txt'):
+def main(dependencies_file='software_dependencies.txt'):
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)
     
@@ -966,7 +968,7 @@ def main(dependencies_file='python_dependencies.txt'):
         print("No dependencies found to install.")
 
 if __name__ == "__main__":
-    main('python_dependencies.txt')  # Specify the dependencies file here
+    main('software_dependencies.txt')  # Specify the dependencies file here
 {% endraw %}
 """
     write_script(folder_path, "install_dependencies", extension, content)
@@ -979,12 +981,12 @@ def create_install_r_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".R"
-    content = """
+    content = r"""
 {% raw %}    
 install_dependencies <- function(file_path = NULL) {
-  # If no file_path is specified, look for R_dependencies.txt in the script folder
+  # If no file_path is specified, look for software_dependencies.txt in the script folder
   if (is.null(file_path)) {
-    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "R_dependencies.txt")
+    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "software_dependencies.txt")
   }
   
   # Define a function to read dependencies from a text file and return them as a list
@@ -1048,7 +1050,7 @@ def create_install_stata_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".do"
-    content = """
+    content = r"""
 * Install Stata dependencies
 
 * List of required packages
@@ -1066,12 +1068,12 @@ def create_install_matlab_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".m"
-    content = """
+    content = r"""
 {% raw %}  
 function install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
-        dependency_file = 'matlab_dependencies.txt';
+        dependency_file = 'software_dependencies.txt';
     end
 
     % Check if the dependency file exists
@@ -1155,7 +1157,7 @@ def create_install_sas_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".sas"
-    content = """
+    content = r"""
 * Install SAS dependencies;
 
 * List of required packages;
@@ -1238,7 +1240,7 @@ def create_r_notebook(folder_path):
     file_path = os.path.join(folder_path, file_name)
 
     # Create RMarkdown content with the requested structure
-    content = dedent("""{% raw %}
+    content = dedent(r"""{% raw %}
     ---
     title: "Workflow: Running all steps in order"
     output: html_document
@@ -1347,7 +1349,7 @@ def create_matlab_notebooks(folder_path):
         nbf.write(nb, f)
 
     # For .mlx file, write MATLAB-specific workflow
-    mlx_content = dedent("""%% Workflow: Running all steps in order
+    mlx_content = dedent(r"""%% Workflow: Running all steps in order
     % MATLAB Setup
     addpath('src')
 

@@ -76,6 +76,9 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 ```
 ## Dataset list
 
+## Computational requirements
+
+
 ## Project Tree
 ------------
 
@@ -112,7 +115,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         """
         tree = []
         if span_style:
-            tree.append('<span style="font-size: 9px;">')
+            tree.append('<span style="font-size: 5px;">')
         items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
         for index, item in enumerate(items):
             if item in ignore_list:
