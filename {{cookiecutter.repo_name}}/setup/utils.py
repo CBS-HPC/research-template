@@ -437,7 +437,7 @@ def git_commit(msg:str=""):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-def git_push(msg:str=""):
+def git_push(flag:str,msg:str=""):
 
     def push_all(remote="origin"):
         try:
@@ -484,12 +484,14 @@ def git_push(msg:str=""):
 
         elif os.path.isdir(".git"):
             git_commit(msg)
-            result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
-            branch = result.stdout.strip()  # Remove any extra whitespace or newlin
-            if branch:
-                subprocess.run(["git", "push", "origin", branch], check=True)
-            else:
-                subprocess.run(["git", "push", "--all"], check=True)
+            
+            if flag:
+                result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
+                branch = result.stdout.strip()  # Remove any extra whitespace or newlin
+                if branch:
+                    subprocess.run(["git", "push", "origin", branch], check=True)
+                else:
+                    subprocess.run(["git", "push", "--all"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
@@ -579,7 +581,7 @@ def load_env_file(extensions = ['.yml', '.txt']):
 
 def set_pip_packages(version_control,programming_language):
 
-    install_packages = []
+    install_packages = ['python-dotenv']
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab'])
     elif programming_language.lower()  == 'stata':

@@ -15,15 +15,16 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 
     if version_control == None or not os.path.isdir(".git"):
-        return
+        return False
     if code_repo.lower() == "github":
-        check = install_gh("bin/gh")     
+        flag = install_gh("bin/gh")     
     elif code_repo.lower() == "gitlab":
-        check = install_glab("bin/glab")
+        flag  = install_glab("bin/glab")
     else:
-        return    
-    if check:    
-        setup_repo(version_control,code_repo,repo_name,description)      
+        return False 
+    if flag:    
+        flag = setup_repo(version_control,code_repo,repo_name,description)      
+    return flag
 
 def repo_details(version_control,code_repo,repo_name):
     username = load_from_env(f"{code_repo.upper()}_USER")
@@ -217,14 +218,16 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     print(f"{code_repo} username and token added to {env_file}")
 
 def setup_repo(version_control,code_repo,repo_name,description):
-    
     if not repo_login(code_repo):
         username,privacy_setting = repo_details(version_control,code_repo,repo_name)
-        if repo_init(code_repo):
-            check, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
-            if check:
+        flag = repo_init(code_repo)
+        if flag: 
+            flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
+            if flag:
                 repo_to_env_file(code_repo,username,repo_name)
- 
+        return flag
+    else:
+        return False 
 def install_glab(install_path=None):
     
     def get_glab_version():
@@ -359,7 +362,7 @@ python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
 
 # Create Remote Repository
-setup_remote_repository(version_control,code_repo,repo_name,project_description )
+flag = setup_remote_repository(version_control,code_repo,repo_name,project_description )
 
 # Updating requirements.txt/environment.yaml  # FIX ME
 if python_env_manager.lower() == "conda":
@@ -368,9 +371,8 @@ if python_env_manager.lower() == "conda":
 else:
     create_requirements_txt()
 
-
 # Updating README
 creating_readme(repo_name,project_name, project_description,code_repo,author_name)
 
 # Pushing to Git 
-git_push("environment.yaml updated and README.md added ")
+git_push(flag,"environment.yaml updated and README.md added ")

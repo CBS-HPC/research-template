@@ -40,19 +40,19 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
 def setup_git(version_control,code_repo):
 
     if install_git("bin/git"):  
-        check, git_name, git_email = check_git_config()
+        flag, git_name, git_email = check_git_config()
 
-        if not check:
-            check, git_name, git_email = setup_git_config(version_control,git_name, git_email)
+        if not flag:
+            flag, git_name, git_email = setup_git_config(version_control,git_name, git_email)
         
-        if check and version_control == "Git":  
-            check = git_init(code_repo)
+        if flag and version_control == "Git":  
+            flag = git_init(code_repo)
         
-        if check:
+        if flag:
             save_to_env(git_name,"GIT_USER") 
             save_to_env(git_email,"GIT_EMAIL")    
     
-        return check
+        return flag
     else:
         return False
 
