@@ -633,14 +633,9 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
     else:
         return None
 
-def set_conda_packages(version_control,programming_language,code_repo):
+def set_conda_packages(version_control,install_packages,code_repo):
     os_type = platform.system().lower()    
     
-    install_packages = ['python','python-dotenv']
-
-    if programming_language.lower()  == 'r':
-        install_packages.extend(['r-base'])
-
     if version_control.lower() in ['git','dvc','datalad'] and not is_installed('git', 'Git'):
         install_packages.extend(['git'])   
     

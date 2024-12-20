@@ -355,13 +355,14 @@ remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
 project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 author_name = load_from_env("AUTHORS",".cookiecutter")
-environment_manager = "{{cookiecutter.environment_manager}}"
+python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+
 
 # Create Remote Repository
 setup_remote_repository(version_control,code_repo,repo_name,project_description )
 
 # Updating requirements.txt/environment.yaml  # FIX ME
-if environment_manager.lower() == "conda":
+if python_env_manager.lower() == "conda":
     #export_conda_env(repo_name)
     print("skip step")
 else:
