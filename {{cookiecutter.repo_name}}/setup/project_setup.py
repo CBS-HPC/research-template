@@ -170,7 +170,7 @@ else:
     else:
         question = "Do you want to create a new python environment (used for project setup functions) using:"
 
-    python_env_manager = prompt_user(question, environment_opts)
+python_env_manager = prompt_user(question, environment_opts)
 
 
 if version_control in ["Git","Datalad","DVC"]:
