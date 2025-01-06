@@ -139,6 +139,7 @@ def set_options(programming_language,version_control):
     if "(Pre-installation required)" in programming_language:
         programming_language = programming_language.replace(" (Pre-installation required)", "")
 
+    environment_opts = ["Conda","Venv","None"]
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using:"
         r_env_manager = prompt_user(question, ["Conda","renv (R Pre-installation required)","None"])
@@ -148,7 +149,6 @@ def set_options(programming_language,version_control):
             environment_opts = ["Conda","None"]
     else:
         r_env_manager = "None"
-        environment_opts = ["Conda","Venv","None"]
         if programming_language.lower() == 'python':
             question = "Do you want to create a new python environment using:"
         else:
