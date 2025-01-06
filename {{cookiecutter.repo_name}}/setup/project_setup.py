@@ -142,8 +142,9 @@ def set_options(programming_language,version_control):
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using:"
         r_env_manager = prompt_user(question, ["Conda","renv (R Pre-installation required)","None"])
+
         if r_env_manager.lower() =='conda':
-            question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
+            question = "Python is used to setup functionalities. Do you also want to create a new python environment using Conda (recommended):"
             environment_opts = ["Conda","None"]
     else:
         r_env_manager = "None"
@@ -155,7 +156,6 @@ def set_options(programming_language,version_control):
 
     python_env_manager = prompt_user(question, environment_opts)
 
-
     if version_control in ["Git","Datalad","DVC"]:
         code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","None"])
     else:
@@ -165,6 +165,14 @@ def set_options(programming_language,version_control):
         remote_storage = prompt_user(f"Do you want to setup remote storage for your {version_control} repo:", ["Dropbox","Deic Storage","Local Path","None"])
     else:
         remote_storage = "None"
+
+    if programming_language.lower() in ['stata','matlab','sas'] or (programming_language.lower() == 'r' and r_env_manager.lower() !='conda'):
+        selected_app = set_programming_language(programming_language)
+        if selected_app: 
+            is_installed(programming_language.lower(),programming_language)
+        else:
+            print(f"{programming_language} path has not been set")
+
     return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage
 
 
