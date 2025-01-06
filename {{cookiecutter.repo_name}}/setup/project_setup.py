@@ -140,12 +140,13 @@ def set_options(programming_language,version_control):
         programming_language = programming_language.replace(" (Pre-installation required)", "")
 
     environment_opts = ["Conda","Venv","None"]
+
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using:"
         r_env_manager = prompt_user(question, ["Conda","renv (R Pre-installation required)","None"])
-
+        question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
+        
         if r_env_manager.lower() =='conda':
-            question = "Python is used to setup functionalities. Do you also want to create a new python environment using Conda (recommended):"
             environment_opts = ["Conda","None"]
     else:
         r_env_manager = "None"
@@ -174,7 +175,6 @@ def set_options(programming_language,version_control):
             print(f"{programming_language} path has not been set")
 
     return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage
-
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"

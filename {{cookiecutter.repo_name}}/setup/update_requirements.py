@@ -5,7 +5,7 @@ import pathlib
 project_root = pathlib.Path(__file__).resolve().parent.parent
 os.chdir(project_root)
 
-def update_requirements(dependencies_files: list = ["src/software_dependencies.txt"], 
+def update_requirements(dependencies_files: list = ["src/REQUIREMENTS.txt"], 
                                  readme_file: str = "README.md", 
                                  sections: list = ["src"]):
     # Ensure the lengths of dependencies_files and sections match
@@ -83,5 +83,5 @@ def update_requirements(dependencies_files: list = ["src/software_dependencies.t
 
 
 if __name__ == "__main__":
-    update_requirements(dependencies_files=["src/software_dependencies.txt", "setup/setup_dependencies.txt"], 
+    update_requirements(dependencies_files=["src/REQUIREMENTS.txt", "setup/REQUIREMENTS.txt"], 
                                  sections=["src", "setup"])
