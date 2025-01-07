@@ -235,3 +235,10 @@ elif os_type == "darwin" or os_type == "linux":
 # Deleting Setup scripts
 files_to_delete = [os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell]
 delete_files(files_to_delete)
+
+# Updating README
+creating_readme(repo_name,project_name, project_description,code_repo,authors)
+
+# Pushing to Git
+flag = load_from_env(f"{code_repo}_REPO")  
+git_push(flag,"README.md updated")

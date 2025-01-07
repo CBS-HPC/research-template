@@ -468,7 +468,7 @@ def create_citation_file(
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
 # Download Readme template:
-def download_and_rename_github_file(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_filename:str = "Social Science Data Editors_README_template.md"):
+def download_and_rename_github_file(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_filename:str = "README_template(Social Science Data Editors).md"):
     # Send GET request to the raw file URL
     response = requests.get(url)
 

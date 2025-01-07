@@ -357,7 +357,7 @@ code_repo = load_from_env("CODE_REPO",".cookiecutter")
 remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
 project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-author_name = load_from_env("AUTHORS",".cookiecutter")
+authors= load_from_env("AUTHORS",".cookiecutter")
 python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
 
@@ -372,7 +372,7 @@ else:
     create_requirements_txt()
 
 # Updating README
-creating_readme(repo_name,project_name, project_description,code_repo,author_name)
+#creating_readme(repo_name,project_name, project_description,code_repo,authors)
 
 # Pushing to Git 
-git_push(flag,"environment.yaml updated and README.md added ")
+git_push(flag,"environment.yaml updated")
