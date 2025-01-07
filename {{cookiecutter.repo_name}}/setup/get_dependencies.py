@@ -1,22 +1,30 @@
 import os
 import subprocess
 import ast
-from datetime import datetime
+import sys
+import sysconfig
 
-def get_setup_dependencies(folder_path:str=None, file_name:str = "REQUIREMENTS.txt"):
-    # If folder_path is not provided, use the folder of the current script
+from datetime import datetime
+import importlib.util
+import importlib.metadata
+
+def resolve_parent_module(module_name):
+    """Resolve and return the top-level module for submodules."""
+    if '.' in module_name:
+        return module_name.split('.')[0]
+    return module_name
+
+def get_setup_dependencies(folder_path: str = None, file_name: str = "REQUIREMENTS.txt"):
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
     print(f"Scanning folder: {folder_path}")
 
-    # Ensure pip is up-to-date
     try:
-        subprocess.check_call([os.sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
     except subprocess.CalledProcessError as e:
         print(f"Failed to upgrade pip: {e}")
         return
 
-    # Find all .py files in the folder and subfolders
     python_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
@@ -27,7 +35,6 @@ def get_setup_dependencies(folder_path:str=None, file_name:str = "REQUIREMENTS.t
         print("No Python files found in the specified folder.")
         return
 
-    # Scan the Python files for imported packages
     used_packages = set()
     for file in python_files:
         with open(file, "r") as f:
@@ -35,42 +42,40 @@ def get_setup_dependencies(folder_path:str=None, file_name:str = "REQUIREMENTS.t
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     for alias in node.names:
-                        used_packages.add(alias.name)
-                elif isinstance(node, ast.ImportFrom):
-                    used_packages.add(node.module)
+                        used_packages.add(resolve_parent_module(alias.name))
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    used_packages.add(resolve_parent_module(node.module))
+    
+    # Get the path to the standard library
+    std_lib_path = sysconfig.get_paths()["stdlib"]
+    # List Python standard library modules by checking files in the standard library path
 
-    # Install and fetch versions for the used packages
+    python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
+    standard_libs = []
+    for root, dirs, files in os.walk(std_lib_path):
+        for file in files:
+            if file.endswith(".py") or file.endswith(".pyc"):
+                standard_libs.append(os.path.splitext(file)[0])
+
     installed_packages = {}
     for package in used_packages:
         try:
-            # Try to get the version of the package
-            version = subprocess.check_output([os.sys.executable, '-m', 'pip', 'show', package]).decode('utf-8')
-            version_line = [line for line in version.splitlines() if line.startswith('Version')][0]
-            installed_packages[package] = version_line.split(" ")[1]
-        except subprocess.CalledProcessError:
-            # If the package is not installed, add it with 'Not available'
-            installed_packages[package] = "Not available"
-
-    # Check for Python scripts corresponding to "Not available" packages
+            version = importlib.metadata.version(package)
+            installed_packages[package] = version
+        except importlib.metadata.PackageNotFoundError:
+            if package not in standard_libs and package not in sys.builtin_module_names:
+                installed_packages[package] = "Not available" 
+    
     python_script_names = {os.path.splitext(os.path.basename(file))[0] for file in python_files}
-    valid_packages = {}
+    valid_packages = {package: version for package, version in installed_packages.items()
+                      if not (version == "Not available" and package in python_script_names)}
 
-    for package, version in installed_packages.items():
-        if not (version == "Not available" and package in python_script_names):
-           valid_packages[package] = version
-        
-    # Collect Python version
-    python_version = subprocess.check_output([os.sys.executable, '--version']).decode().strip()
-
-    # Get the current timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # Collect the list of files checked (relative paths)
     relative_python_files = [os.path.relpath(file, folder_path) for file in python_files]
 
-    # Write the required information to the setup_dependencies.txt
     output_file = os.path.join(folder_path, file_name)
     with open(output_file, "w") as f:
+        f.write("Software version:\n")
         f.write(f"{python_version}\n\n")
         f.write(f"Timestamp: {timestamp}\n\n")
         f.write("Files checked:\n")
@@ -79,8 +84,7 @@ def get_setup_dependencies(folder_path:str=None, file_name:str = "REQUIREMENTS.t
         for package, version in valid_packages.items():
             f.write(f"{package}=={version}\n")
 
-
     print(f"{file_name} successfully generated at {output_file}")
-if __name__ == "__main__":
-    get_setup_dependencies(None)
 
+if __name__ == "__main__":
+    get_setup_dependencies()

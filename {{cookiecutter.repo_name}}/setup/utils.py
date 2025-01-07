@@ -512,11 +512,12 @@ def git_user_info(version_control):
         return None, None
     
 def git_repo_user(version_control,repo_name,code_repo):
+    
     if code_repo.lower() in ["github","gitlab"] and version_control.lower() in ["git","datalad","dvc"]: 
         repo_user = None 
         privacy_setting = None
         while not repo_user or not privacy_setting:
-            repo_user = input(f"Enter your {code_repo} username:").strip()
+            repo_user = input(f"Enter your {code_repo} username: ").strip()
             privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
 
             if privacy_setting not in ["private", "public"]:

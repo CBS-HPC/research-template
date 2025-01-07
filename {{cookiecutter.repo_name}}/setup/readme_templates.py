@@ -8,8 +8,7 @@ import json
 import subprocess
 import sys
 
-
-required_libraries = ['python-dotenv','pyyaml'] 
+required_libraries = ['python-dotenv','pyyaml','requests'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
 for lib in required_libraries:
@@ -22,8 +21,8 @@ for lib in required_libraries:
         print(f"Failed to install {lib}: {e}")
 
 from dotenv import dotenv_values, load_dotenv
-
 import yaml
+import requests
 
 sys.path.append('setup')
 from utils import *
@@ -44,6 +43,7 @@ def creating_readme(repo_name ,project_name, project_description,code_repo,autho
     # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
+    download_and_rename_github_file()
     create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"FILE_DESCRIPTIONS.json")
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
@@ -59,7 +59,6 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
     # Project header
     header = f"""# {project_name}
-
 
 {project_description}
 
@@ -78,6 +77,15 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 
 ## Computational requirements
 
+### Software Requirements
+
+## Creating a replication package
+
+https://datacodestandard.org/
+
+https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html
+
+https://social-science-data-editors.github.io/template_README/
 
 ## Project Tree
 ------------
@@ -458,3 +466,16 @@ def create_citation_file(
     # Write to CITATION.cff
     with open("CITATION.cff", "w") as cff_file:
         yaml.dump(citation_data, cff_file, sort_keys=False)
+
+# Download Readme template:
+def download_and_rename_github_file(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_filename:str = "Social Science Data Editors_README_template.md"):
+    # Send GET request to the raw file URL
+    response = requests.get(url)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Save the content to a file
+        with open(local_filename, 'wb') as file:
+            file.write(response.content)
+    else:
+        print(f"Failed to download {local_filename} from {url}")
