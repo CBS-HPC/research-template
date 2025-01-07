@@ -3,7 +3,7 @@ import sys
 import re
 import importlib.util
 
-def parse_dependencies(file_path="REQUIREMENTS.txt"):
+def parse_dependencies(file_path="dependencies.txt"):
     required_libraries = []
     try:
         with open(file_path, 'r') as f:
@@ -68,7 +68,7 @@ def install_dependencies(required_libraries):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-def main(dependencies_file="REQUIREMENTS.txt"):
+def main(dependencies_file="dependencies.txt"):
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)
     
@@ -79,5 +79,5 @@ def main(dependencies_file="REQUIREMENTS.txt"):
         print("No dependencies found to install.")
 
 if __name__ == "__main__":
-    main("REQUIREMENTS.txt")  # Specify the dependencies file here
+    main()  # Specify the dependencies file here
 

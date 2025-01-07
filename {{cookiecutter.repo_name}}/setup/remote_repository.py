@@ -228,6 +228,7 @@ def setup_repo(version_control,code_repo,repo_name,description):
         return flag
     else:
         return False 
+
 def install_glab(install_path=None):
     
     def get_glab_version():
@@ -360,7 +361,6 @@ project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 authors= load_from_env("AUTHORS",".cookiecutter")
 python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
-
 # Create Remote Repository
 flag = setup_remote_repository(version_control,code_repo,repo_name,project_description )
 
@@ -368,11 +368,10 @@ flag = setup_remote_repository(version_control,code_repo,repo_name,project_descr
 if python_env_manager.lower() == "conda":
     #export_conda_env(repo_name)
     print("skip step")
+    push_msg = "environment.yaml created"
 else:
     create_requirements_txt()
-
-# Updating README
-#creating_readme(repo_name,project_name, project_description,code_repo,authors)
+    push_msg = "requirements.txt created"
 
 # Pushing to Git 
-git_push(flag,"environment.yaml updated")
+git_push(flag,push_msg)

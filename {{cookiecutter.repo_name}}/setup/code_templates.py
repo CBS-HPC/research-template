@@ -410,7 +410,7 @@ def resolve_parent_module(module_name):
         return module_name.split('.')[0]
     return module_name
 
-def get_setup_dependencies(folder_path: str = None, file_name: str = "REQUIREMENTS.txt"):
+def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt"):
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
     print(f"Scanning folder: {folder_path}")
@@ -493,7 +493,7 @@ def create_get_r_dependencies(folder_path):
     extension = ".R"
     content = r"""
 {% raw %}    
-get_dependencies <- function(folder_path = NULL, file_name = "REQUIREMENTS.txt") {
+get_dependencies <- function(folder_path = NULL, file_name = "dependencies.txt") {
   
   # If folder_path is not provided, use the folder of the current script
   if (is.null(folder_path)) {
@@ -562,9 +562,9 @@ get_dependencies <- function(folder_path = NULL, file_name = "REQUIREMENTS.txt")
     }
   }
   
-  # Create a REQUIREMENTS.txt file
+  # Create a dependencies.txtt file
   output_file <- file.path(folder_path, file_name )
-  message("Writing dependencies to 'REQUIREMENTS.txt'...")
+  message("Writing dependencies to 'dependencies.txt'...")
   
   # Collect the R version
   r_version <- paste(R.version$version.string)
@@ -576,7 +576,7 @@ get_dependencies <- function(folder_path = NULL, file_name = "REQUIREMENTS.txt")
   timestamp <- Sys.time()
   formatted_timestamp <- format(timestamp, "%Y-%m-%d %H:%M:%S")
   
-  # Write to the REQUIREMENTS.txt file
+  # Write to the dependencies.txt file
   writeLines(
     c("Software version:",
       r_version,
@@ -598,7 +598,7 @@ get_dependencies <- function(folder_path = NULL, file_name = "REQUIREMENTS.txt")
     append = TRUE
   )
   
-  message("'REQUIREMENTS.txt' successfully generated.")
+  message("'dependencies.txt' successfully generated.")
 }
 
 if (interactive()) {
@@ -621,7 +621,7 @@ function get_dependencies(folder_path,file_name)
 
     % Default dependency file
     if nargin < 2
-        file_name = 'REQUIREMENTS.txt';
+        file_name = 'dependencies.txt';
     end
 
     % Ensure the specified folder exists
@@ -663,7 +663,7 @@ function get_dependencies(folder_path,file_name)
     output_file = fullfile(folder_path, file_name);
     fid = fopen(output_file, 'w');
     if fid == -1
-        error("Unable to create REQUIREMENTS.txt in the specified folder.");
+        error("Unable to create dependencies.txt in the specified folder.");
     end
 
     % Write header information
@@ -693,7 +693,7 @@ function get_dependencies(folder_path,file_name)
     end
 
     fclose(fid);
-    fprintf("REQUIREMENTS.txt successfully generated in %s.\n", folder_path);
+    fprintf("dependencies.txt successfully generated in %s.\n", folder_path);
 end
 {% endraw %}
 """
@@ -763,7 +763,7 @@ def create_get_sas_dependencies(folder_path):
         put &libraries;
     run;
 
-    %put requirements.txt successfully generated at &folder_path.\\dependencies.txt;
+    %put dependencies.txt successfully generated at &folder_path.\\dependencies.txt;
 %mend get_dependencies;
 
 /* Example usage */
@@ -898,7 +898,7 @@ import sys
 import re
 import importlib.util
 
-def parse_dependencies(file_path='REQUIREMENTS.txt'):
+def parse_dependencies(file_path='dependencies.txt'):
     required_libraries = []
     try:
         with open(file_path, 'r') as f:
@@ -963,7 +963,7 @@ def install_dependencies(required_libraries):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-def main(dependencies_file='REQUIREMENTS.txt'):
+def main(dependencies_file='dependencies.txt'):
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)
     
@@ -974,7 +974,7 @@ def main(dependencies_file='REQUIREMENTS.txt'):
         print("No dependencies found to install.")
 
 if __name__ == "__main__":
-    main('REQUIREMENTS.txt')  # Specify the dependencies file here
+    main('dependencies.txt')  # Specify the dependencies file here
 {% endraw %}
 """
     write_script(folder_path, "install_dependencies", extension, content)
@@ -990,9 +990,9 @@ def create_install_r_dependencies(folder_path):
     content = r"""
 {% raw %}    
 install_dependencies <- function(file_path = NULL) {
-  # If no file_path is specified, look for REQUIREMENTS.txt in the script folder
+  # If no file_path is specified, look for dependencies.txt in the script folder
   if (is.null(file_path)) {
-    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "REQUIREMENTS.txt")
+    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "dependencies.txt")
   }
   
   # Define a function to read dependencies from a text file and return them as a list
@@ -1060,7 +1060,7 @@ def create_install_matlab_dependencies(folder_path):
 function install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
-        dependency_file = 'REQUIREMENTS.txt';
+        dependency_file = 'dependencies.txt';
     end
 
     % Check if the dependency file exists

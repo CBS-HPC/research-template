@@ -14,7 +14,7 @@ def resolve_parent_module(module_name):
         return module_name.split('.')[0]
     return module_name
 
-def get_setup_dependencies(folder_path: str = None, file_name: str = "REQUIREMENTS.txt"):
+def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt"):
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
     print(f"Scanning folder: {folder_path}")
