@@ -686,6 +686,35 @@ def conda_pip_install(repo_path, pip_packages):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+def update_conda_env_file(file_path: str):
+    # Get the current working directory
+    current_dir = os.path.abspath(os.getcwd())
+    
+    # Load the existing environment.yml file
+    with open(file_path, 'r') as f:
+        env_data = yaml.safe_load(f)
+
+    # Check if 'prefix' and 'name' are defined
+    if 'prefix' in env_data and 'name' in env_data:
+        # Get the absolute path from the prefix
+        prefix_abs_path = env_data['prefix']
+        
+        # Extract the last part of the path for the 'name'
+        new_name = os.path.basename(prefix_abs_path)
+        
+        # Make the prefix relative to the current working directory
+        prefix_relative_path = os.path.relpath(prefix_abs_path, current_dir)
+        
+        # Update the 'name' and 'prefix'
+        env_data['name'] = new_name
+        env_data['prefix'] = prefix_relative_path
+
+        # Save the updated file
+        with open(file_path, 'w') as f:
+            yaml.dump(env_data, f, default_flow_style=False)
+    else:
+        print(f"'{file_path}' does not contain both 'name' and 'prefix' fields.")
+
 def export_conda_env(env_path, output_file='environment.yml'):
     """
     Export the details of a conda environment to a YAML file.
@@ -699,6 +728,8 @@ def export_conda_env(env_path, output_file='environment.yml'):
         with open(output_file, 'w') as f:
             #subprocess.run(['conda', 'env', 'export', '-n', env_name], stdout=f, check=True)  
             subprocess.run(['conda', 'env', 'export', '--prefix', env_path], stdout=f, check=True)      
+        
+        update_conda_env_file(output_file)
         print(f"Conda environment '{env_path}' exported to {output_file}.")
 
     except subprocess.CalledProcessError as e:

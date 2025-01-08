@@ -36,7 +36,18 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
                 current_software = content[i + 1].strip()
                 software_dependencies[current_software] = []
                 continue
+            
+            if line == "Install Command:":
+                install_cmd = content[i + 1].strip()
 
+                if "pip" in install_cmd:
+                    install_str = f"  - The file '*/setup/requirements.txt' lists the dependencies below, please run '{install_cmd}' as the first step. See https://pip.pypa.io/en/stable/user_guide/#ensuring-repeatability for further instructions on creating and using the 'requirements.txt' file.\n"
+                elif "conda" in install_cmd:
+                    install_str = f"  - The file '*/setup/environment.yml' lists these dependencies below, please run '{install_cmd}'to create the environment. For further instructions on managing conda environments, visit https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html.\n"
+                else:
+                    install_str = f"  - To install the dependencies below, please run '{install_cmd}'.\n"
+                
+                software_dependencies[current_software].append(install_str) 
             if line == "Dependencies:":
                 continue
 

@@ -10,6 +10,9 @@ import importlib.metadata
 import yaml
 from typing import Optional, Dict, Set, List
 
+sys.path.append('setup')
+from utils import *
+
 
 def resolve_parent_module(module_name):
     """Resolve and return the top-level module for submodules."""
@@ -17,7 +20,7 @@ def resolve_parent_module(module_name):
         return module_name.split('.')[0]
     return module_name
 
-def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None):
+def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None,install_cmd:str=None):
     
     def get_dependencies_from_file(python_files):
         used_packages = set()
@@ -106,7 +109,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         return
 
     if requirements_file:
-        installed_packages =process_requirements(requirements_file)
+        installed_packages = process_requirements(requirements_file)
     else:
         installed_packages  = get_dependencies_from_file(python_files)
 
@@ -121,6 +124,10 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         f.write(f"Timestamp: {timestamp}\n\n")
         f.write("Files checked:\n")
         f.write("\n".join(relative_python_files) + "\n\n")
+        if install_cmd:
+            f.write("Install Command:\n")
+            f.write(f"{install_cmd}\n")
+
         f.write("Dependencies:\n")
         for package, version in installed_packages .items():
             f.write(f"{package}=={version}\n")
