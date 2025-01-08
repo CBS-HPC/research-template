@@ -257,7 +257,8 @@ def update_file_descriptions(readme_path, json_file="FILE_DESCRIPTIONS.json"):
     # Extract the project tree section using regex
     tree_match = re.search(r"Project Tree\s*[-=]+\s*\n([\s\S]+)", readme_content)
     if not tree_match:
-        raise ValueError("Project Tree section not found in README.md")
+        print("Project Tree section not found in README.md")
+        return
 
     project_tree = tree_match.group(1)
 
@@ -468,14 +469,19 @@ def create_citation_file(
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
 # Download Readme template:
-def download_and_rename_github_file(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_filename:str = "README_template(Social Science Data Editors).md"):
+def download_and_rename_github_file(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_file:str = "README_template(Social Science Data Editors).md"):
+    
+     # Check if the local file already exists
+    if os.path.exists(local_file):
+        return
+    
     # Send GET request to the raw file URL
     response = requests.get(url)
 
     # Check if the request was successful
     if response.status_code == 200:
         # Save the content to a file
-        with open(local_filename, 'wb') as file:
+        with open(local_file, 'wb') as file:
             file.write(response.content)
     else:
-        print(f"Failed to download {local_filename} from {url}")
+        print(f"Failed to download {local_file} from {url}")

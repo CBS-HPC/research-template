@@ -64,7 +64,7 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
         if "### Software Requirements" in readme_content:
             # Find the "### Software Requirements" section and replace it
             start = readme_content.find("### Software Requirements")
-            end = readme_content.find("###", start + 1)
+            end = readme_content.find("##", start + 1)
             if end == -1:
                 end = len(readme_content)  # No further sections, overwrite until the end
             updated_content = readme_content[:start] + software_requirements_section.strip() + readme_content[end:]
