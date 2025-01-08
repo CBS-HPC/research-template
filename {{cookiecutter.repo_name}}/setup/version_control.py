@@ -6,7 +6,8 @@ import zipfile
 import urllib.request
 import shutil
 
-required_libraries = ['requests'] 
+#required_libraries = ['requests']
+required_libraries = ['python-dotenv','pyyaml','requests','bs4','rpds-py==0.21.0','nbformat'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
 for lib in required_libraries:
@@ -676,19 +677,10 @@ project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 author_name = load_from_env("AUTHORS",".cookiecutter")
 
-# FIX ME !!! MOVE TO set_options()
-
 # Set to .env
 is_installed('python','Python')
 if programming_language.lower() != "python":
     is_installed(programming_language.lower(),programming_language)
-
-#if programming_language.lower() in ['r','stata','matlab','sas']:
-#    selected_app = set_programming_language(programming_language)
-#    if selected_app: 
-#        is_installed(programming_language.lower(),programming_language)
-#    else:
-#        print(f"{programming_language} path has not been set")
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)

@@ -3,20 +3,18 @@ import subprocess
 import sys
 import platform
 
-
-
 # Installing all dependencies for all files within setup/*
-required_libraries = ['python-dotenv','pyyaml','requests','bs4','rpds-py==0.21.0','nbformat'] 
-installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
+#required_libraries = ['python-dotenv','pyyaml','requests','bs4','rpds-py==0.21.0','nbformat'] 
+#installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
-for lib in required_libraries:
-    try:
-        # Check if the library is already installed
-        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-            print(f"Installing {lib}...")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install {lib}: {e}")
+#for lib in required_libraries:
+#    try:
+#        # Check if the library is already installed
+#        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
+#            print(f"Installing {lib}...")
+#            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+#    except subprocess.CalledProcessError as e:
+#        print(f"Failed to install {lib}: {e}")
 
 sys.path.append('setup')
 from utils import *
