@@ -373,11 +373,12 @@ if python_env_manager.lower() == "conda":
     print("skip step")
     get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/environmnet.yml")
     update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
-    push_msg = "environment.yaml created"
+    push_msg = "'*/setup/environment.yaml' and */setup/dependencies.txt created and 'Requirements' section in README.md updated"
 elif python_env_manager.lower() == "venv":
     create_requirements_txt("setup/requirements.txt")
     get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/requirements.txt")
     update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
+    push_msg = "'*/setup/requirements.txt' and */setup/dependencies.txt created and 'Requirements' section in README.md updated"
 else:
     create_requirements_txt("setup/requirements.txt")
     push_msg = "setup/requirements.txt created"

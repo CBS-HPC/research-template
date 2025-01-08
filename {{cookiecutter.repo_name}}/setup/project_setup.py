@@ -206,6 +206,11 @@ programming_language = "{{cookiecutter.programming_language}}"
 
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage = set_options(programming_language,version_control)
 
+
+
+# Creating README
+creating_readme(repo_name,project_name, project_description,code_repo,authors)
+
 # Create scripts and notebook
 create_scripts(programming_language, "src")
 create_notebooks(programming_language, "notebooks")
@@ -233,6 +238,9 @@ git_repo_user(version_control,repo_name,code_repo)
 
 # Create a citation file
 create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None)
+
+# Updating README
+creating_readme(repo_name,project_name, project_description,code_repo,authors)
 
 # Create Virtual Environment
 repo_name = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
