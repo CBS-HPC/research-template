@@ -367,18 +367,16 @@ python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 flag = setup_remote_repository(version_control,code_repo,repo_name,project_description )
 
 
-
-
 # Updating requirements.txt/environment.yaml  # FIX ME
 if python_env_manager.lower() == "conda":
     #export_conda_env(repo_name)
     print("skip step")
-    get_setup_dependencies("setup/environmnet.yml")
+    get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/environmnet.yml")
     update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
     push_msg = "environment.yaml created"
 elif python_env_manager.lower() == "venv":
     create_requirements_txt("setup/requirements.txt")
-    get_setup_dependencies("setup/requirements.txt")
+    get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/requirements.txt")
     update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
 else:
     create_requirements_txt("setup/requirements.txt")
