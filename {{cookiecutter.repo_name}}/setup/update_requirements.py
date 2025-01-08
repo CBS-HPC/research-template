@@ -75,6 +75,8 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
         # If the README file doesn't exist, create it with the new section
         updated_content = software_requirements_section.strip()
 
+    updated_content = updated_content.replace("---## Software Requirements","")
+
     # Write the updated content to the README file
     with open(readme_file, "w") as f:
         f.write(updated_content.strip())
