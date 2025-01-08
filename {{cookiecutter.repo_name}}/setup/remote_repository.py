@@ -10,6 +10,8 @@ import tarfile
 sys.path.append('setup')
 from utils import *
 from readme_templates import *
+from get_dependencies import get_setup_dependencies
+from update_requirements import update_requirements
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -364,14 +366,23 @@ python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 # Create Remote Repository
 flag = setup_remote_repository(version_control,code_repo,repo_name,project_description )
 
+
+
+
 # Updating requirements.txt/environment.yaml  # FIX ME
 if python_env_manager.lower() == "conda":
     #export_conda_env(repo_name)
     print("skip step")
+    get_setup_dependencies("setup/environmnet.yml")
+    update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
     push_msg = "environment.yaml created"
+elif python_env_manager.lower() == "venv":
+    create_requirements_txt("setup/requirements.txt")
+    get_setup_dependencies("setup/requirements.txt")
+    update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
 else:
-    create_requirements_txt()
-    push_msg = "requirements.txt created"
+    create_requirements_txt("setup/requirements.txt")
+    push_msg = "setup/requirements.txt created"
 
 # Pushing to Git 
 git_push(flag,push_msg)

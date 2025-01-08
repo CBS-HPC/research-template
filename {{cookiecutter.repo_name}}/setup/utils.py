@@ -951,7 +951,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
         print(f"Error: An unexpected error occurred: {e}")
         return None
 
-def create_requirements_txt():
+def create_requirements_txt(file:str="requirements.txt"):
     # Get the Python executable path from sys.executable
     python_executable = sys.executable
     
@@ -961,7 +961,7 @@ def create_requirements_txt():
     # Check if the pip freeze command was successful
     if result.returncode == 0:
         # Write the output of pip freeze to a requirements.txt file
-        with open("requirements.txt", "w") as f:
+        with open(file, "w") as f:
             f.write(result.stdout)
         print("requirements.txt has been created successfully.")
     else:
