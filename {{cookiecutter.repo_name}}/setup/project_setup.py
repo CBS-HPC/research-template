@@ -206,8 +206,6 @@ programming_language = "{{cookiecutter.programming_language}}"
 
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage = set_options(programming_language,version_control)
 
-
-
 # Creating README
 creating_readme(repo_name,project_name, project_description,code_repo,authors)
 

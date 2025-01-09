@@ -362,28 +362,42 @@ project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 authors= load_from_env("AUTHORS",".cookiecutter")
 python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+
 
 # Create Remote Repository
 flag = setup_remote_repository(version_control,code_repo,repo_name,project_description )
 
+folder = "./setup/"
+
+if programming_language.lower() == "python":
+    sections=[None]
+    file = "./dependencies.txt"
+else:
+    sections=["setup"]
+    file = "./setup/dependencies.txt"
+
+if python_env_manager.lower() == "conda":
+    requirements_file = f"{folder}environment.yml"
+    install_cmd =  f"conda env create -f {requirements_file}"
+    #export_conda_env(repo_name)
+elif python_env_manager.lower() == "venv":    
+    requirements_file = f"{folder}requirements.txt"
+    install_cmd = f"pip install -r {requirements_file}"
+    create_requirements_txt(requirements_file)
+else:
+    install_cmd = "FIX ME"
+    requirements_file = None
 
 # Updating requirements.txt/environment.yaml  # FIX ME
-if python_env_manager.lower() == "conda":
-    #export_conda_env(repo_name)
-    print("skip step")
-    get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/environmnet.yml",install_cmd = "conda env create -f setup/environment.yml")
-    update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
-    push_msg = "'*/setup/environment.yaml' and */setup/dependencies.txt created and 'Requirements' section in README.md updated"
-
-elif python_env_manager.lower() == "venv":
-    create_requirements_txt("setup/requirements.txt")
-    get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/requirements.txt",install_cmd = "pip install -r setup/requirements.txt")
-    update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
-    push_msg = "'*/setup/requirements.txt' and */setup/dependencies.txt created and 'Requirements' section in README.md updated"
+if python_env_manager.lower() in ["conda","venv"]:
+    get_setup_dependencies(folder_path = folder, file_name = file , requirements_file = requirements_file,install_cmd = install_cmd)
+    push_msg = f"'{requirements_file}' and '{file}' created and 'Requirements' section in README.md updated"
 else:
-    #create_requirements_txt("setup/requirements.txt")
-    get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/requirements.txt",install_cmd = "FIX ME")
-    #push_msg = "setup/requirements.txt created"
+    get_setup_dependencies(folder_path = folder, file_name = file, requirements_file = requirements_file,install_cmd = "FIX ME")
+    push_msg = "setup/requirements.txt created"
+
+update_requirements(dependencies_files = [file], sections= sections)
 
 # Pushing to Git 
 git_push(flag,push_msg)

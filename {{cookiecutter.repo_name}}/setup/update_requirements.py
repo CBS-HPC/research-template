@@ -1,5 +1,6 @@
 import os
 import pathlib
+import platform  # Add platform module
 
 # Change to project root directory
 project_root = pathlib.Path(__file__).resolve().parent.parent
@@ -13,8 +14,9 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
         raise ValueError("The number of dependencies files must match the number of sections.")
 
     # Initialize the Software Requirements section with the header
-    software_requirements_section = "### Software Requirements\n"
-    
+    software_requirements_section = "### Software Requirements\n\n"
+    software_requirements_section += f"**The software below were installed on the follow operation system: {platform.platform() }**\n"
+
     # Iterate through all dependency files and corresponding sections
     for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
         # Check if the dependencies file exists
@@ -32,37 +34,43 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
         # Parse the dependencies file
         for i, line in enumerate(content):
             line = line.strip()
+
             if line == "Software version:" and i + 1 < len(content):
                 current_software = content[i + 1].strip()
-                software_dependencies[current_software] = []
+                software_dependencies[current_software] = {"install_cmd": None, "dependencies": []}
                 continue
-            
-            if line == "Install Command:":
+
+            if line == "Install Command:" and current_software:
                 install_cmd = content[i + 1].strip()
+                software_dependencies[current_software]["install_cmd"] = install_cmd
 
                 if "pip" in install_cmd:
-                    install_str = f"  - The file '*/setup/requirements.txt' lists the dependencies below, please run '{install_cmd}' as the first step. See https://pip.pypa.io/en/stable/user_guide/#ensuring-repeatability for further instructions on creating and using the 'requirements.txt' file.\n"
+                    install_str = f"To replicate the environment below, please run '{install_cmd}' within {current_software} as the initial step. See [this guide](https://pip.pypa.io/en/stable/user_guide/#ensuring-repeatability) for further info on using the 'requirements.txt'.\n"
                 elif "conda" in install_cmd:
-                    install_str = f"  - The file '*/setup/environment.yml' lists these dependencies below, please run '{install_cmd}'to create the environment. For further instructions on managing conda environments, visit https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html.\n"
+                    install_str = f"To replicate the {current_software} environment below (using Conda), please run '{install_cmd}'as the initial step. For further info Conda environments, visit [this page](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).\n"
                 else:
-                    install_str = f"  - To install the dependencies below, please run '{install_cmd}'.\n"
-                
-                software_dependencies[current_software].append(install_str) 
+                    install_str = f"To install the dependencies below, please run '{install_cmd}' within {current_software} as the first step to replicate the environment.\n\n"
+
+                software_dependencies[current_software]["install_cmd"] = install_str
+                continue
 
             if line == "Dependencies:":
                 continue
 
             if current_software and "==" in line:
                 package, version = line.split("==")
-                software_dependencies[current_software].append((package, version))
+                software_dependencies[current_software]["dependencies"].append((package, version))
 
         # Add the subheading section if it exists
-        software_requirements_section += f"\n#### **{section}**\n"
-
-        # Loop through software dependencies and append them
-        for software, install_cmd, dependencies in software_dependencies.items():
-            software_requirements_section += f"\n- **{software}**\n"
+        if section:
+            software_requirements_section += f"\n#### **{section}**\n"
+        
+        # Correctly loop through the dictionary
+        for software, details in software_dependencies.items():
+            install_cmd = details["install_cmd"]
+            dependencies = details["dependencies"]
             software_requirements_section += install_cmd
+            software_requirements_section += f"\n**{software}**\n"
             for package, version in dependencies:
                 software_requirements_section += f"  - {package}: {version}\n"
 
@@ -77,7 +85,7 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
         if "### Software Requirements" in readme_content:
             # Find the "### Software Requirements" section and replace it
             start = readme_content.find("### Software Requirements")
-            end = readme_content.find("##", start + 1)
+            end = readme_content.find("\n## ", start + 1)
             if end == -1:
                 end = len(readme_content)  # No further sections, overwrite until the end
             updated_content = readme_content[:start] + software_requirements_section.strip() + readme_content[end:]
@@ -95,7 +103,6 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
         f.write(updated_content.strip())
 
     print(f"{readme_file} successfully updated.")
-
 
 if __name__ == "__main__":
     update_requirements(dependencies_files=["src/dependencies.txt", "setup/dependencies.txt"], 
