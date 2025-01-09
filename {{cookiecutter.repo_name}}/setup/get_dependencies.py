@@ -13,7 +13,6 @@ sys.path.append('setup')
 from utils import *
 
 def resolve_parent_module(module_name):
-    """Resolve and return the top-level module for submodules."""
     if '.' in module_name:
         return module_name.split('.')[0]
     return module_name
@@ -92,13 +91,6 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         folder_path =  os.getcwd()
     
     print(f"Scanning folder: {folder_path}")
-
-    try:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to upgrade pip: {e}")
-        return
-
     python_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:

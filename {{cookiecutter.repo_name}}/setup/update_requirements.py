@@ -15,7 +15,7 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
 
     # Initialize the Software Requirements section with the header
     software_requirements_section = "### Software Requirements\n\n"
-    software_requirements_section += f"**The software below were installed on the follow operation system: {platform.platform() }**\n"
+    software_requirements_section += f"**The software below were installed on the follow operation system: {platform.platform() }**\n\n"
 
     # Iterate through all dependency files and corresponding sections
     for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
@@ -45,11 +45,11 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
                 software_dependencies[current_software]["install_cmd"] = install_cmd
 
                 if "pip" in install_cmd:
-                    install_str = f"To replicate the environment below, please run '{install_cmd}' within {current_software} as the initial step. See [this guide](https://pip.pypa.io/en/stable/user_guide/#ensuring-repeatability) for further info on using the 'requirements.txt'.\n"
+                    install_str = f"**To replicate the environment below, please run '{install_cmd}' within {current_software} as the initial step. See [this guide](https://pip.pypa.io/en/stable/user_guide/#ensuring-repeatability) for further info on using the 'requirements.txt'.**\n"
                 elif "conda" in install_cmd:
-                    install_str = f"To replicate the {current_software} environment below (using Conda), please run '{install_cmd}'as the initial step. For further info Conda environments, visit [this page](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).\n"
+                    install_str = f"**To replicate the {current_software} environment below (using Conda), please run '{install_cmd}'as the initial step. For further info Conda environments, visit [this page](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).**\n"
                 else:
-                    install_str = f"To install the dependencies below, please run '{install_cmd}' within {current_software} as the first step to replicate the environment.\n\n"
+                    install_str = f"**To install the dependencies below, please run '{install_cmd}' within {current_software} as the first step to replicate the environment.**\n\n"
 
                 software_dependencies[current_software]["install_cmd"] = install_str
                 continue

@@ -400,7 +400,6 @@ import subprocess
 import ast
 import sys
 import sysconfig
-
 from datetime import datetime
 import importlib.util
 import importlib.metadata
@@ -409,7 +408,6 @@ from typing import Optional, Dict, Set, List
 
 sys.path.append('setup')
 from utils import *
-
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
@@ -486,14 +484,10 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
+    elif folder_path == "":
+        folder_path =  os.getcwd()
+    
     print(f"Scanning folder: {folder_path}")
-
-    try:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to upgrade pip: {e}")
-        return
-
     python_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
@@ -513,13 +507,19 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     relative_python_files = [os.path.relpath(file, folder_path) for file in python_files]
     python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
-    output_file = os.path.join(folder_path, file_name)
+
+    if os.path.exists(os.path.dirname(file_name)):
+        output_file = file_name
+    else: 
+        output_file = os.path.join(folder_path,"dependencies.txt")
+    
     with open(output_file, "w") as f:
         f.write("Software version:\n")
         f.write(f"{python_version}\n\n")
         f.write(f"Timestamp: {timestamp}\n\n")
         f.write("Files checked:\n")
         f.write("\n".join(relative_python_files) + "\n\n")
+        
         if install_cmd:
             f.write("Install Command:\n")
             f.write(f"{install_cmd}\n\n")
