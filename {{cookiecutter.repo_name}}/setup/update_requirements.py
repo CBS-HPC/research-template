@@ -48,6 +48,7 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
                     install_str = f"  - To install the dependencies below, please run '{install_cmd}'.\n"
                 
                 software_dependencies[current_software].append(install_str) 
+
             if line == "Dependencies:":
                 continue
 
@@ -59,8 +60,9 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
         software_requirements_section += f"\n#### **{section}**\n"
 
         # Loop through software dependencies and append them
-        for software, dependencies in software_dependencies.items():
+        for software, install_cmd, dependencies in software_dependencies.items():
             software_requirements_section += f"\n- **{software}**\n"
+            software_requirements_section += install_cmd
             for package, version in dependencies:
                 software_requirements_section += f"  - {package}: {version}\n"
 

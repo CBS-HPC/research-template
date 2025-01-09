@@ -372,7 +372,6 @@ if python_env_manager.lower() == "conda":
     #export_conda_env(repo_name)
     print("skip step")
     get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/environmnet.yml",install_cmd = "conda env create -f setup/environment.yml")
-    
     update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
     push_msg = "'*/setup/environment.yaml' and */setup/dependencies.txt created and 'Requirements' section in README.md updated"
 
@@ -382,8 +381,9 @@ elif python_env_manager.lower() == "venv":
     update_requirements(dependencies_files=["setup/dependencies.txt"], sections=["setup"])
     push_msg = "'*/setup/requirements.txt' and */setup/dependencies.txt created and 'Requirements' section in README.md updated"
 else:
-    create_requirements_txt("setup/requirements.txt")
-    push_msg = "setup/requirements.txt created"
+    #create_requirements_txt("setup/requirements.txt")
+    get_setup_dependencies(folder_path = "setup", file_name = "dependencies.txt", requirements_file = "setup/requirements.txt",install_cmd = "FIX ME")
+    #push_msg = "setup/requirements.txt created"
 
 # Pushing to Git 
 git_push(flag,push_msg)
