@@ -28,16 +28,16 @@ sys.path.append('setup')
 from utils import *
 
 # README.md
-def creating_readme(repo_name= None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None,install_cmd = None, activate_cmd = None):
+def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None,install_cmd = None, activate_cmd = None):
 
-    def create_content(repo_name= None, code_repo=None, authors = None, orcids = None, emails = None, install_cmd = None, activate_cmd = None):
+    def create_content(repo_name= None, repo_user = None, code_repo=None, authors = None, orcids = None, emails = None, install_cmd = None, activate_cmd = None):
 
         setup = ""
 
-        if repo_name:
+        if repo_name and repo_user:
             if code_repo.lower() in ["github","gitlab"]:
                 web_repo = code_repo.lower()
-                setup += f"""git clone https://{web_repo}.com/username/{repo_name}.git\n"""
+                setup += f"""git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"""
             
             setup += f"""cd {repo_name}\n"""
 
@@ -62,7 +62,7 @@ def creating_readme(repo_name= None ,project_name=None, project_description= Non
         
         return setup,usage,contact
     
-    setup, usage, contact = create_content(repo_name, code_repo, authors, orcids, emails,install_cmd)
+    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, install_cmd, activate_cmd)
 
      # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")

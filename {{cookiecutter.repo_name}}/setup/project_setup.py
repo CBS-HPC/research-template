@@ -260,7 +260,8 @@ save_to_env(os.getcwd(),"PROJECT_PATH")
 
 # Set git user info
 git_user_info(version_control)
-git_repo_user(version_control,repo_name,code_repo)
+
+repo_user = git_repo_user(version_control,repo_name,code_repo)
 
 # Create a citation file
 create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
@@ -272,7 +273,7 @@ create_citation_file(project_name,version,authors,orcids,version_control,doi=Non
 repo_name, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
 # Creating README NYYYY
-creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids,None,install_cmd,activate_cmd)
+creating_readme(repo_name,repo_user,project_name, project_description, code_repo, authors, orcids,None,install_cmd,activate_cmd)
 
 os_type = platform.system().lower()
 
