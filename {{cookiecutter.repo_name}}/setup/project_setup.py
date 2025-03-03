@@ -31,9 +31,9 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     """    
     
     pip_packages = set_pip_packages(version_control,programming_language)
-
+  
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
-        
+    
         install_packages = []
         
         if python_env_manager.lower() == "conda":
@@ -49,9 +49,10 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             repo_name = setup_conda(install_path,repo_name,conda_packages,pip_packages,None)
         else:
             repo_name = setup_conda(install_path,repo_name,conda_packages,None,None)
-
+        
     elif python_env_manager.lower() == "venv":
         repo_name = create_venv_env(repo_name,pip_packages)    
+    
     elif python_env_manager.lower() == "virtualenv":
         repo_name = create_virtualenv_env(repo_name,pip_packages)
     
@@ -59,7 +60,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
-    return repo_name
+    return repo_name, install_cmd, requirements_file
 
 def run_bash_script(script_path, repo_name=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
@@ -152,7 +153,7 @@ def set_options(programming_language,version_control):
         programming_language = programming_language.replace(" (Pre-installation required)", "")
 
     environment_opts = ["Conda","Venv","None"]
-
+    python_env_manager = None
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using:"
         r_env_manager = prompt_user(question, ["Conda","renv (R Pre-installation required)","None"])
@@ -160,14 +161,18 @@ def set_options(programming_language,version_control):
         
         if r_env_manager.lower() =='conda':
             environment_opts = ["Conda","None"]
+            python_env_manager = "Conda"
+            print("A new python environment will be created to facilitate the setup functionalities")
+
     else:
         r_env_manager = "None"
         if programming_language.lower() == 'python':
             question = "Do you want to create a new python environment using:"
         else:
             question = "Do you want to create a new python environment (used for project setup functions) using:"
-
-    python_env_manager = prompt_user(question, environment_opts)
+    
+    if not python_env_manager: 
+        python_env_manager = prompt_user(question, environment_opts)
 
     if version_control in ["Git","Datalad","DVC"]:
         code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","None"])
@@ -186,7 +191,17 @@ def set_options(programming_language,version_control):
         else:
             print(f"{programming_language} path has not been set")
 
-    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage
+    # Set requirements file
+    requirements_file = "requirements.txt"
+    install_cmd = f"pip install -r {requirements_file}"
+    if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
+        requirements_file = "environment.yml"
+        install_cmd =  f"conda env create -f {requirements_file}"     
+
+    save_to_env(install_cmd,"INSTALL_CMD",".cookiecutter")
+    save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")        
+
+    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, requirements_file
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
@@ -204,10 +219,10 @@ repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 
-programming_language, python_env_manager,r_env_manager,code_repo, remote_storage = set_options(programming_language,version_control)
+programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, requirements_file = set_options(programming_language,version_control)
 
 # Creating README
-creating_readme(repo_name,project_name, project_description,code_repo,authors)
+creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids, install_cmd, requirements_file)
 
 # Create scripts and notebook
 create_scripts(programming_language, "src")
@@ -238,10 +253,10 @@ git_repo_user(version_control,repo_name,code_repo)
 create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None)
 
 # Updating README
-creating_readme(repo_name,project_name, project_description,code_repo,authors)
+creating_readme(repo_name,project_name, project_description,code_repo)
 
 # Create Virtual Environment
-repo_name = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
+repo_name, install_cmd, requirements_file = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
 os_type = platform.system().lower()
 
@@ -255,7 +270,7 @@ files_to_delete = [os.path.abspath(__file__),"setup/code_templates.py",setup_ver
 delete_files(files_to_delete)
 
 # Updating README
-creating_readme(repo_name,project_name, project_description,code_repo,authors)
+creating_readme(repo_name,project_name, project_description,code_repo,authors,orcids,install_cmd)
 
 # Pushing to Git
 flag = load_from_env(f"{code_repo}_REPO")  

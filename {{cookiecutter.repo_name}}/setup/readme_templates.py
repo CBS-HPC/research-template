@@ -28,17 +28,32 @@ sys.path.append('setup')
 from utils import *
 
 # README.md
-def creating_readme(repo_name ,project_name, project_description,code_repo,author_name):
+def creating_readme(repo_name ,project_name, project_description,code_repo,authors = None,orcids = None,emails = None,install_cmd = None):
+
+    setup = ""
 
     if code_repo.lower() in ["github","gitlab"]:
         web_repo = code_repo.lower()
-        setup = f"""git clone https://{web_repo}.com/username/{repo_name}.git"" \
-        cd {repo_name} \
-        python setup.py"""
-    else: 
-        setup = f"""cd {repo_name} python setup.py"""
+        setup += f"""git clone https://{web_repo}.com/username/{repo_name}.git\n"""
+    
+    setup += f"""cd {repo_name}\n"""
+
+    if install_cmd:
+        setup += f"{install_cmd}\n"
+
+
     usage = """python src/workflow.py"""
-    contact = f"{author_name}"
+    
+
+    contact = ""
+    if authors is not None:
+        contact += f"- **Name:** {authors}\n"
+    if orcids is not None:
+        contact += f"- **ORCID:** {orcids}\n"
+    if emails is not None:
+        contact += f"- **Email:** {emails}\n"
+    
+    #contact = f"{authors}"
 
     # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")
