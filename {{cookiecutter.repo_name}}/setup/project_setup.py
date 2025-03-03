@@ -256,7 +256,7 @@ create_citation_file(project_name,version,authors,orcids,version_control, doi=No
 creating_readme()
 
 # Create Virtual Environment
-repo_name, install_cmd, requirements_file = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
+repo_name = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
 os_type = platform.system().lower()
 
