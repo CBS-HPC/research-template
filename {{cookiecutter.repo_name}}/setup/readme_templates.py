@@ -28,9 +28,9 @@ sys.path.append('setup')
 from utils import *
 
 # README.md
-def creating_readme(repo_name= None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None,install_cmd = None):
+def creating_readme(repo_name= None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None,install_cmd = None, activate_cmd = None):
 
-    def create_content(repo_name= None, code_repo=None, authors = None, orcids = None, emails = None, install_cmd = None):
+    def create_content(repo_name= None, code_repo=None, authors = None, orcids = None, emails = None, install_cmd = None, activate_cmd = None):
 
         setup = ""
 
@@ -44,8 +44,12 @@ def creating_readme(repo_name= None ,project_name=None, project_description= Non
         if install_cmd:
             setup += f"{install_cmd}\n"
 
+        usage = "" 
 
-        usage = """python src/workflow.py"""
+        if activate_cmd:
+            usage += f"{activate_cmd}\n"
+        
+        usage += """python src/workflow.py"""
         
 
         contact = ""

@@ -371,12 +371,10 @@ flag = setup_remote_repository(version_control,code_repo,repo_name,project_descr
 install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
 requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
 
-
 if requirements_file == "requirements.txt":
     create_requirements_txt(requirements_file)
-elif requirements_file == "requirements.txt": 
+elif requirements_file == "environment.yml": 
     export_conda_env(repo_name)
-
 
 folder = "./setup/"
 if programming_language.lower() == "python":

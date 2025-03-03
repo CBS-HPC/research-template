@@ -31,7 +31,9 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     """    
     
     pip_packages = set_pip_packages(version_control,programming_language)
-  
+    
+    activate_cmd = None
+
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
     
         install_packages = []
@@ -50,17 +52,27 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         else:
             repo_name = setup_conda(install_path,repo_name,conda_packages,None,None)
         
+        if repo_name:
+            activate_cmd = f"conda activate {repo_name}"
+
     elif python_env_manager.lower() == "venv":
-        repo_name = create_venv_env(repo_name,pip_packages)    
-    
+        repo_name = create_venv_env(repo_name,pip_packages)
+        if repo_name:
+            activate_cmd = f"./{repo_name}/bin/activate"
+     
     elif python_env_manager.lower() == "virtualenv":
         repo_name = create_virtualenv_env(repo_name,pip_packages)
+        if repo_name:
+            activate_cmd = f"./{repo_name}/bin/activate"
+
+    if activate_cmd:
+        save_to_env(activate_cmd,"ACTIVATE_CMD",".cookiecutter")
     
     if not repo_name or not python_env_manager: 
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
-    return repo_name
+    return repo_name, activate_cmd
 
 def run_bash_script(script_path, repo_name=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
@@ -196,7 +208,8 @@ def set_options(programming_language,version_control):
     install_cmd = f"pip install -r {requirements_file}"
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
         requirements_file = "environment.yml"
-        install_cmd =  f"conda env create -f {requirements_file}"     
+        install_cmd =  f"conda env create -f {requirements_file}"
+  
 
     save_to_env(install_cmd,"INSTALL_CMD",".cookiecutter")
     save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")        
@@ -222,7 +235,7 @@ programming_language = "{{cookiecutter.programming_language}}"
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd = set_options(programming_language,version_control)
 
 # Creating README
-creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids,None,install_cmd)
+#creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids,None,install_cmd)
 
 # Create scripts and notebook
 create_scripts(programming_language, "src")
@@ -250,13 +263,16 @@ git_user_info(version_control)
 git_repo_user(version_control,repo_name,code_repo)
 
 # Create a citation file
-create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None)
+create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
 
 # Updating README
-creating_readme()
+#creating_readme()
 
 # Create Virtual Environment
-repo_name = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
+repo_name, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
+
+# Creating README NYYYY
+creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids,None,install_cmd,activate_cmd)
 
 os_type = platform.system().lower()
 
