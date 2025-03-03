@@ -60,7 +60,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
-    return repo_name, install_cmd, requirements_file
+    return repo_name
 
 def run_bash_script(script_path, repo_name=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
