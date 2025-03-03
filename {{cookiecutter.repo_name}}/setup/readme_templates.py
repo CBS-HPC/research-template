@@ -28,34 +28,39 @@ sys.path.append('setup')
 from utils import *
 
 # README.md
-def creating_readme(repo_name ,project_name, project_description,code_repo,authors = None,orcids = None,emails = None,install_cmd = None):
+def creating_readme(repo_name= None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None,install_cmd = None):
 
-    setup = ""
+    def create_content(repo_name= None, code_repo=None, authors = None, orcids = None, emails = None, install_cmd = None):
 
-    if code_repo.lower() in ["github","gitlab"]:
-        web_repo = code_repo.lower()
-        setup += f"""git clone https://{web_repo}.com/username/{repo_name}.git\n"""
+        setup = ""
+
+        if repo_name:
+            if code_repo.lower() in ["github","gitlab"]:
+                web_repo = code_repo.lower()
+                setup += f"""git clone https://{web_repo}.com/username/{repo_name}.git\n"""
+            
+            setup += f"""cd {repo_name}\n"""
+
+        if install_cmd:
+            setup += f"{install_cmd}\n"
+
+
+        usage = """python src/workflow.py"""
+        
+
+        contact = ""
+        if authors is not None:
+            contact += f"- **Name:** {authors}\n"
+        if orcids is not None:
+            contact += f"- **ORCID:** {orcids}\n"
+        if emails is not None:
+            contact += f"- **Email:** {emails}\n"
+        
+        return setup,usage,contact
     
-    setup += f"""cd {repo_name}\n"""
+    setup, usage, contact = create_content(repo_name, code_repo, authors, orcids, emails,install_cmd)
 
-    if install_cmd:
-        setup += f"{install_cmd}\n"
-
-
-    usage = """python src/workflow.py"""
-    
-
-    contact = ""
-    if authors is not None:
-        contact += f"- **Name:** {authors}\n"
-    if orcids is not None:
-        contact += f"- **ORCID:** {orcids}\n"
-    if emails is not None:
-        contact += f"- **Email:** {emails}\n"
-    
-    #contact = f"{authors}"
-
-    # Create and update README and Project Tree:
+     # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
     download_and_rename_github_file()
@@ -70,7 +75,11 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
     - project_name (str): The name of the project.
     - project_description (str): A short description of the project.
     """
-
+    if readme_file is None:
+        readme_file = "README.md" 
+    if os.path.exists(readme_file):
+        return
+    
 
     # Project header
     header = f"""# {project_name}
@@ -107,11 +116,7 @@ https://social-science-data-editors.github.io/template_README/
 
 ------------
 """
-    if readme_file is None:
-        readme_file = "README.md" 
-    if os.path.exists(readme_file):
-        return
-    
+
     # Write the README.md content
     with open(readme_file, "w",encoding="utf-8") as file:
         file.write(header)

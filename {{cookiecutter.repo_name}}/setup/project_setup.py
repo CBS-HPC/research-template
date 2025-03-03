@@ -201,7 +201,7 @@ def set_options(programming_language,version_control):
     save_to_env(install_cmd,"INSTALL_CMD",".cookiecutter")
     save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")        
 
-    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, requirements_file
+    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
@@ -219,10 +219,10 @@ repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 
-programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, requirements_file = set_options(programming_language,version_control)
+programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd = set_options(programming_language,version_control)
 
 # Creating README
-creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids, install_cmd, requirements_file)
+creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids,None,install_cmd)
 
 # Create scripts and notebook
 create_scripts(programming_language, "src")
@@ -253,7 +253,7 @@ git_repo_user(version_control,repo_name,code_repo)
 create_citation_file(project_name,version,authors,orcids,version_control, doi=None, release_date=None)
 
 # Updating README
-creating_readme(repo_name,project_name, project_description,code_repo)
+creating_readme()
 
 # Create Virtual Environment
 repo_name, install_cmd, requirements_file = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
@@ -270,7 +270,7 @@ files_to_delete = [os.path.abspath(__file__),"setup/code_templates.py",setup_ver
 delete_files(files_to_delete)
 
 # Updating README
-creating_readme(repo_name,project_name, project_description,code_repo,authors,orcids,install_cmd)
+creating_readme()
 
 # Pushing to Git
 flag = load_from_env(f"{code_repo}_REPO")  
