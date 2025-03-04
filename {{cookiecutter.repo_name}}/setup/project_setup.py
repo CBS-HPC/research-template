@@ -83,9 +83,11 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             #activate_cmd += install_cmd
             #activate_cmd = f"./{env_name}/Scripts/activate\n"
     
-
-    env_name = env_name.replace("\\", "/")
-    activate_cmd = activate_cmd.replace("\\", "/")
+    if env_name:
+        env_name = env_name.replace("\\", "/")
+    
+    if activate_cmd:
+        activate_cmd = activate_cmd.replace("\\", "/")
 
     #if activate_cmd:
     #    save_to_env(activate_cmd,"ACTIVATE_CMD",".cookiecutter")
