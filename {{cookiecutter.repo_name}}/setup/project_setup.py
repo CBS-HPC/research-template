@@ -159,10 +159,19 @@ def prompt_user(question, options):
         except ValueError:
             print("Invalid input. Please enter a number.")
 
-def set_options(programming_language,version_control):
+def correct_format(programming_language, authors, orcids):
 
     if "(Pre-installation required)" in programming_language:
-        programming_language = programming_language.replace(" (Pre-installation required)", "")
+            programming_language = programming_language.replace(" (Pre-installation required)", "")
+
+    if "Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)" in authors:
+            authors = authors.replace("Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)", "Not Provided")
+    if "Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)" in orcids:
+            orcids = orcids.replace("Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)", "Not Provided")
+
+    return programming_language, authors, orcids
+
+def set_options(programming_language,version_control):
 
     environment_opts = ["Conda","Venv","None"]
     python_env_manager = None
@@ -232,10 +241,8 @@ repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 
+programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd = set_options(programming_language,version_control)
-
-# Creating README
-#creating_readme(repo_name, project_name, project_description, code_repo, authors, orcids,None,install_cmd)
 
 # Create scripts and notebook
 create_scripts(programming_language, "src")
@@ -261,18 +268,15 @@ save_to_env(os.getcwd(),"PROJECT_PATH")
 # Set git user info
 git_user_info(version_control)
 
-repo_user = git_repo_user(version_control,repo_name,code_repo)
+repo_user,_ = git_repo_user(version_control,repo_name,code_repo)
 
 # Create a citation file
 create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
 
-# Updating README
-#creating_readme()
-
 # Create Virtual Environment
 repo_name, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
-# Creating README NYYYY
+# Creating README
 creating_readme(repo_name,repo_user,project_name, project_description, code_repo, authors, orcids,None,install_cmd,activate_cmd)
 
 os_type = platform.system().lower()

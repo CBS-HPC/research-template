@@ -6,10 +6,8 @@ import platform  # Add platform module
 project_root = pathlib.Path(__file__).resolve().parent.parent
 os.chdir(project_root)
 
-def update_requirements(dependencies_files: list = ["src/dependencies.txt"], 
-                                 readme_file: str = "README.md", 
-                                 sections: list = ["src"]):
-    # Ensure the lengths of dependencies_files and sections match
+def read_dependencies(dependencies_files,sections):
+     # Ensure the lengths of dependencies_files and sections match
     if len(dependencies_files) != len(sections):
         raise ValueError("The number of dependencies files must match the number of sections.")
 
@@ -76,7 +74,30 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
 
         software_requirements_section += "\n---\n"
 
-    # Check if the README file exists
+        return software_requirements_section
+
+def write_to_readme(readme_file,software_requirements_section):
+        # Check if the README file exists
+    if not os.path.exists(readme_file):
+        # Project header
+        header = f"""## Creating a replication package
+
+    https://datacodestandard.org/
+
+    https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html
+
+    https://social-science-data-editors.github.io/template_README/
+
+    ## Dataset list
+
+    ## Computational requirements
+
+    ### Software Requirements
+    """
+        # Write the README.md content
+        with open(readme_file, "w",encoding="utf-8") as file:
+            file.write(header)
+
     try:
         with open(readme_file, "r") as f:
             readme_content = f.read()
@@ -104,6 +125,11 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"],
 
     print(f"{readme_file} successfully updated.")
 
+def update_requirements(dependencies_files: list = ["src/dependencies.txt"], readme_file: str = "./replication package template/README.md", sections: list = ["src"]):
+   
+    software_requirements_section =read_dependencies(dependencies_files,sections)
+
+    write_to_readme(readme_file,software_requirements_section)
+
 if __name__ == "__main__":
-    update_requirements(dependencies_files=["src/dependencies.txt", "setup/dependencies.txt"], 
-                                 sections=["src", "setup"])
+    update_requirements(dependencies_files=["src/dependencies.txt", "setup/dependencies.txt"], sections=["src", "setup"])

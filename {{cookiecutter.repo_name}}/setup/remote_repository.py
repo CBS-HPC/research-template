@@ -377,12 +377,8 @@ elif requirements_file == "environment.yml":
     export_conda_env(repo_name)
 
 folder = "./setup/"
-if programming_language.lower() == "python":
-    sections=[None]
-    file = "./dependencies.txt"
-else:
-    sections=["setup"]
-    file = "./setup/dependencies.txt"
+file = "./setup/dependencies.txt"
+
 
 # Updating requirements.txt/environment.yaml  # FIX ME
 if python_env_manager.lower() in ["conda","venv"]:
@@ -392,7 +388,7 @@ else:
     get_setup_dependencies(folder_path = folder, file_name = file, requirements_file = None,install_cmd = None)
     push_msg = "requirements.txt created"
 
-update_requirements(dependencies_files = [file], sections= sections)
+update_requirements(dependencies_files = [file], sections= ["setup"])
 
 # Pushing to Git 
 git_push(flag,push_msg)

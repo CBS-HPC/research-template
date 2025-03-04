@@ -67,7 +67,6 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
      # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    download_and_rename_github_file()
     create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"FILE_DESCRIPTIONS.json")
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
@@ -101,20 +100,6 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 ```
 {usage}
 ```
-## Dataset list
-
-## Computational requirements
-
-### Software Requirements
-
-## Creating a replication package
-
-https://datacodestandard.org/
-
-https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html
-
-https://social-science-data-editors.github.io/template_README/
-
 ## Project Tree
 ------------
 
@@ -425,8 +410,11 @@ def create_citation_file(
         release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
     """
     # Split authors and ORCIDs into lists
-    author_names = authors.split(";") if authors else []
-    orcid_list = orcids.split(";") if orcids else []
+    #author_names = authors.split(";") if authors else []
+    #orcid_list = orcids.split(";") if orcids else []
+    author_names = re.split(r'[;,]', authors) if authors else []
+    orcid_list = re.split(r'[;,]', orcids) if orcids else []
+
 
     # Create a structured list of author dictionaries
     author_data_list = []
@@ -494,7 +482,7 @@ def create_citation_file(
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
 # Download Readme template:
-def download_and_rename_github_file(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_file:str = "README_template(Social Science Data Editors).md"):
+def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_file:str = "README_template(Social Science Data Editors).md"):
     
      # Check if the local file already exists
     if os.path.exists(local_file):
