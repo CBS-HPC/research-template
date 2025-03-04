@@ -24,6 +24,8 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
         flag  = install_glab("bin/glab")
     else:
         return False 
+    print("HELLLO!!!")
+    print(flag)
     if flag:    
         flag = setup_repo(version_control,code_repo,repo_name,description)      
     return flag
