@@ -218,10 +218,8 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     print(f"{code_repo} username and token added to {env_file}")
 
 def setup_repo(version_control,code_repo,repo_name,description):
-    flag= repo_login(code_repo)
-    print("HELLO!!!")
-    print(flag)
-    if not flag:    
+    #if not repo_login(code_repo):
+    if repo_login(code_repo):  
         username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         flag = repo_init(code_repo)
         if flag: 
