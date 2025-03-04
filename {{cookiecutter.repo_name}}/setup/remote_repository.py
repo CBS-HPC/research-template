@@ -54,15 +54,14 @@ def repo_login(code_repo):
                 return False
         elif code_repo.lower() == "gitlab":
             user = load_from_env('GITLAB_USER')
-            token = load_from_env('GH_TOKEN')
-            hostname = load_from_env('GH_HOSTNAME')
+            token = load_from_env('GL_TOKEN')
+            hostname = load_from_env('GL_HOSTNAME')
             
             if hostname:
                 command = ['glab', 'auth', 'login', '--hostname', hostname, '--token'] 
             else: 
                 return False
    
-
         # Check if both environment variables are set
         if user and token:
             # Run the gh auth login command with the token
@@ -220,20 +219,16 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     print(f"{code_repo} username and token added to {env_file}")
 
 def setup_repo(version_control,code_repo,repo_name,description):
-    flag = repo_login(code_repo)
-    if not flag:
+    if not repo_login(code_repo):
         username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         flag = repo_init(code_repo)
         if flag: 
             flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
             if flag:
                 repo_to_env_file(code_repo,username,repo_name)
-    
-    if flag: 
-        flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
-        if flag:
-            repo_to_env_file(code_repo,username,repo_name)
-    return flag
+        return flag
+    else:
+        return False 
 
 def install_glab(install_path=None):
     

@@ -527,7 +527,22 @@ def git_repo_user(version_control,repo_name,code_repo):
         save_to_env(repo_user,f"{code_repo}_USER")
         save_to_env(privacy_setting,f"{code_repo}_PRIVACY")
         save_to_env(repo_name,f"{code_repo}_REPO") 
-        
+
+        if code_repo.lower() == "github":
+            token = load_from_env('GH_TOKEN')
+        elif code_repo.lower() == "gitlab":
+            token = load_from_env('GL_TOKEN')
+ 
+        if not token:
+           while not token: 
+                token = input(f"Enter {code_repo} token: ").strip()
+
+        if code_repo.lower() == "github":
+            save_to_env(token,'GH_TOKEN')
+        elif code_repo.lower() == "gitlab":
+            save_to_env(token,'GL_TOKEN')
+ 
+
         return repo_user, privacy_setting
     else:
         return None, None
