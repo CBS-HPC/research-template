@@ -38,7 +38,6 @@ def repo_details(version_control,code_repo,repo_name):
     return username, privacy_setting
 
 def repo_login(code_repo):
-
     try: 
         if code_repo.lower() == "github":
             user = load_from_env('GITHUB_USER')
@@ -219,7 +218,10 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     print(f"{code_repo} username and token added to {env_file}")
 
 def setup_repo(version_control,code_repo,repo_name,description):
-    if not repo_login(code_repo):
+    flag= repo_login(code_repo)
+    print("HELLO!!!")
+    print(flag)
+    if not flag:    
         username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         flag = repo_init(code_repo)
         if flag: 
