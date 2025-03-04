@@ -30,7 +30,7 @@ from utils import *
 # README.md
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None,install_cmd = None, activate_cmd = None):
 
-    def create_content(repo_name= None, repo_user = None, code_repo=None, authors = None, orcids = None, emails = None, install_cmd = None, activate_cmd = None):
+    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails, install_cmd, activate_cmd):
 
         setup = ""
 

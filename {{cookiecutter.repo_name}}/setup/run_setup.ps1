@@ -2,26 +2,26 @@
 
 # Get parameters passed from PowerShell
 param (
-    [string]$repo_path,
+    [string]$env_path,
     [string]$env_manager,  # Environment manager: Conda, venv, or virtualenv
     [string]$version_control_path,
     [string]$remote_repository_path
 )
 
 # Activate environment based on the environment manager
-if ($repo_path -ne "None" -and $env_manager -ne "None") {
+if ($env_path -ne "None" -and $env_manager -ne "None") {
 
-    $repo_path = $repo_path -replace '\\', '/'
+    $env_path = $env_path -replace '\\', '/'
 
     switch ($env_manager.ToLower()) {
         "conda" {
-            Write-Output "Activating Conda environment: $repo_path"
-            conda activate $repo_path
+            Write-Output "Activating Conda environment: $env_path"
+            conda activate $env_path
         }
         "venv" {
-            Write-Output "Activating venv environment: $repo_path"
+            Write-Output "Activating venv environment: $env_path"
 
-            $venv_activate = "./$repo_path/Scripts/activate"
+            $venv_activate = "./$env_path/Scripts/activate"
 
             if (Test-Path $venv_activate) {
                 Write-Output "Activating venv using $venv_activate"
@@ -31,9 +31,9 @@ if ($repo_path -ne "None" -and $env_manager -ne "None") {
             }
         }
         "virtualenv" {
-            Write-Output "Activating virtualenv environment: $repo_path"
+            Write-Output "Activating virtualenv environment: $env_path"
 
-            $virtualenv_activate = "./$repo_path/Scripts/activate"
+            $virtualenv_activate = "./$env_path/Scripts/activate"
 
             if (Test-Path $virtualenv_activate) {
                 Write-Output "Activating virtualenv using $virtualenv_activate"

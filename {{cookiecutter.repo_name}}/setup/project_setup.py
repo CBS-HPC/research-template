@@ -33,6 +33,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     pip_packages = set_pip_packages(version_control,programming_language)
     
     activate_cmd = None
+    env_name = None
 
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
     
@@ -48,44 +49,47 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         #env_file = load_env_file()
         
         if python_env_manager and python_env_manager.lower() == "conda":
-            repo_name = setup_conda(install_path,repo_name,conda_packages,pip_packages,None)
+            env_name = setup_conda(install_path,repo_name,conda_packages,pip_packages,None)
         else:
-            repo_name = setup_conda(install_path,repo_name,conda_packages,None,None)
+            env_name = setup_conda(install_path,repo_name,conda_packages,None,None)
         
-        if repo_name:
-            activate_cmd = f"conda activate {repo_name}"
+        if env_name:
+            activate_cmd = f"conda activate {env_name}"
 
     elif python_env_manager.lower() == "venv":
-        repo_name = create_venv_env(repo_name,pip_packages)
-        if repo_name:
-            activate_cmd = f"./{repo_name}/bin/activate"
+        env_name = create_venv_env(repo_name,pip_packages)
+        if env_name:
+            activate_cmd = f"./{env_name}/bin/activate"
      
     elif python_env_manager.lower() == "virtualenv":
-        repo_name = create_virtualenv_env(repo_name,pip_packages)
-        if repo_name:
-            activate_cmd = f"./{repo_name}/bin/activate"
+        env_name = create_virtualenv_env(repo_name,pip_packages)
+        if env_name:
+            activate_cmd = f"./{env_name}/bin/activate"
+
+    env_name = env_name.replace("\\", "/")
+    activate_cmd = activate_cmd.replace("\\", "/")
 
     if activate_cmd:
         save_to_env(activate_cmd,"ACTIVATE_CMD",".cookiecutter")
     
-    if not repo_name or not python_env_manager: 
+    if not env_name or not python_env_manager: 
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
-    return repo_name, activate_cmd
+    return env_name, activate_cmd
 
-def run_bash_script(script_path, repo_name=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
+def run_bash_script(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
         # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, repo_name, python_env_manager, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
+        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
         print(f"Script {script_path} executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def run_powershell_script(script_path, repo_name=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
+def run_powershell_script(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     try:
         # Prepare the command to execute the PowerShell script with arguments
         command = [
@@ -93,8 +97,8 @@ def run_powershell_script(script_path, repo_name=None, python_env_manager=None, 
         ]
 
         # Append arguments if they are provided
-        if repo_name:
-            command.append(repo_name)
+        if env_path:
+            command.append(env_path)
         if python_env_manager:
             command.append(python_env_manager)
         if setup_version_control_path:
@@ -274,17 +278,20 @@ repo_user,_ = git_repo_user(version_control,repo_name,code_repo)
 create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
 
 # Create Virtual Environment
-repo_name, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
+env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
 # Creating README
 creating_readme(repo_name,repo_user,project_name, project_description, code_repo, authors, orcids,None,install_cmd,activate_cmd)
 
+
+download_README_template(local_file = "./replication package template/README_template(Social Science Data Editors).md")
+
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    run_powershell_script(setup_powershell, repo_name, python_env_manager, setup_version_control, setup_remote_repository)
+    run_powershell_script(setup_powershell, env_path, python_env_manager, setup_version_control, setup_remote_repository)
 elif os_type == "darwin" or os_type == "linux":
-    run_bash_script(setup_bash, repo_name, python_env_manager, setup_version_control, setup_remote_repository)
+    run_bash_script(setup_bash, env_path, python_env_manager, setup_version_control, setup_remote_repository)
 
 # Deleting Setup scripts
 files_to_delete = [os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell]
