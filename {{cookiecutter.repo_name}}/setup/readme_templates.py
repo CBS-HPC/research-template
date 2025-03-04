@@ -41,14 +41,15 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             
             setup += f"""cd {repo_name}\n"""
 
-        if install_cmd:
-            setup += f"{install_cmd}\n"
+    
+        if activate_cmd:
+            setup += f"{activate_cmd}\n"
+        #if install_cmd:
+        #    setup += f"{install_cmd}\n"
 
         usage = "" 
-
-        if activate_cmd:
-            usage += f"{activate_cmd}\n"
-        
+        #if activate_cmd:
+        #    usage += f"{activate_cmd}\n"
         usage += """python src/workflow.py"""
         
 

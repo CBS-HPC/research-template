@@ -34,6 +34,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     
     activate_cmd = None
     env_name = None
+    install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
 
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
     
@@ -54,17 +55,24 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             env_name = setup_conda(install_path,repo_name,conda_packages,None,None)
         
         if env_name:
+            activate_cmd = f"With conda pre-installed:\n"
+            activate_cmd += f"{install_cmd}\n"
             activate_cmd = f"conda activate {env_name}"
+            #activate_cmd = f"conda activate {env_name}"
 
-    elif python_env_manager.lower() == "venv":
-        env_name = create_venv_env(repo_name,pip_packages)
+    if python_env_manager.lower() in ["venv","virtualenv"]:
+        if python_env_manager.lower() == "venv":
+            env_name = create_venv_env(repo_name,pip_packages)
+        elif python_env_manager.lower() == "virtualenv":
+            env_name = create_virtualenv_env(repo_name,pip_packages)  
         if env_name:
-            activate_cmd = f"./{env_name}/bin/activate"
-     
-    elif python_env_manager.lower() == "virtualenv":
-        env_name = create_virtualenv_env(repo_name,pip_packages)
-        if env_name:
-            activate_cmd = f"./{env_name}/bin/activate"
+            python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
+            activate_cmd = f"With {python_version} run:\n"
+            activate_cmd += f"python -m venv {env_name}\n"
+            activate_cmd += f"./{env_name}/Scripts/activate\n"
+            activate_cmd += install_cmd
+            #activate_cmd = f"./{env_name}/Scripts/activate\n"
+    
 
     env_name = env_name.replace("\\", "/")
     activate_cmd = activate_cmd.replace("\\", "/")
@@ -219,6 +227,7 @@ def set_options(programming_language,version_control):
     # Set requirements file
     requirements_file = "requirements.txt"
     install_cmd = f"pip install -r {requirements_file}"
+
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
         requirements_file = "environment.yml"
         install_cmd =  f"conda env create -f {requirements_file}"

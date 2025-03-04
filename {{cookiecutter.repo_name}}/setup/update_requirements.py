@@ -88,11 +88,11 @@ def write_to_readme(readme_file,software_requirements_section):
 
     https://social-science-data-editors.github.io/template_README/
 
-    ## Dataset list
+## Dataset list
 
-    ## Computational requirements
+## Computational requirements
 
-    ### Software Requirements
+### Software Requirements
     """
         # Write the README.md content
         with open(readme_file, "w",encoding="utf-8") as file:
