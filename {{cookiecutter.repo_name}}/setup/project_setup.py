@@ -55,9 +55,11 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             env_name = setup_conda(install_path,repo_name,conda_packages,None,None)
         
         if env_name:
-            activate_cmd = f"With conda pre-installed:\n"
+            activate_cmd = f"### Conda Installation\n"
+            activate_cmd += "```\n"
             activate_cmd += f"{install_cmd}\n"
-            activate_cmd = f"conda activate {env_name}"
+            activate_cmd = f"conda activate {env_name}\n"
+            activate_cmd += "```"
             #activate_cmd = f"conda activate {env_name}"
 
     if python_env_manager.lower() in ["venv","virtualenv"]:
@@ -67,18 +69,26 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             env_name = create_virtualenv_env(repo_name,pip_packages)  
         if env_name:
             python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
-            activate_cmd = f"With {python_version} run:\n"
+
+            activate_cmd = f"### {python_version}\n"
+            activate_cmd += "```\n"
             activate_cmd += f"python -m venv {env_name}\n"
             activate_cmd += f"./{env_name}/Scripts/activate\n"
-            activate_cmd += install_cmd
+            activate_cmd += f"{install_cmd}\n"
+            activate_cmd += "```"
+  
+            #activate_cmd = f"With {python_version} run:\n"
+            #activate_cmd += f"python -m venv {env_name}\n"
+            #activate_cmd += f"./{env_name}/Scripts/activate\n"
+            #activate_cmd += install_cmd
             #activate_cmd = f"./{env_name}/Scripts/activate\n"
     
 
     env_name = env_name.replace("\\", "/")
     activate_cmd = activate_cmd.replace("\\", "/")
 
-    if activate_cmd:
-        save_to_env(activate_cmd,"ACTIVATE_CMD",".cookiecutter")
+    #if activate_cmd:
+    #    save_to_env(activate_cmd,"ACTIVATE_CMD",".cookiecutter")
     
     if not env_name or not python_env_manager: 
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
@@ -290,7 +300,7 @@ create_citation_file(project_name,version,authors,orcids,version_control,doi=Non
 env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
 # Creating README
-creating_readme(repo_name,repo_user,project_name, project_description, code_repo, authors, orcids,None,install_cmd,activate_cmd)
+creating_readme(repo_name,repo_user,project_name, project_description, code_repo, authors, orcids,None,activate_cmd)
 
 
 download_README_template(local_file = "./replication package template/README_template(Social Science Data Editors).md")

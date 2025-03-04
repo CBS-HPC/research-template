@@ -28,9 +28,9 @@ sys.path.append('setup')
 from utils import *
 
 # README.md
-def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None,install_cmd = None, activate_cmd = None):
+def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None, activate_cmd = None):
 
-    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails, install_cmd, activate_cmd):
+    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd):
 
         setup = ""
 
@@ -44,15 +44,10 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     
         if activate_cmd:
             setup += f"{activate_cmd}\n"
-        #if install_cmd:
-        #    setup += f"{install_cmd}\n"
-
+   
         usage = "" 
-        #if activate_cmd:
-        #    usage += f"{activate_cmd}\n"
         usage += """python src/workflow.py"""
         
-
         contact = ""
         if authors is not None:
             contact += f"- **Name:** {authors}\n"
@@ -63,14 +58,14 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         
         return setup,usage,contact
     
-    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, install_cmd, activate_cmd)
+    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd)
 
      # Create and update README and Project Tree:
     update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
     create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"FILE_DESCRIPTIONS.json")
     
-def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
+def generate_readme(project_name, project_description,python_setup,usage,contact,readme_file = None):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -94,8 +89,11 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 {contact}
 
 ## Installation
+
+### Python 
 ```
-{setup}
+{python_setup}
+
 ```
 ## Usage
 ```
