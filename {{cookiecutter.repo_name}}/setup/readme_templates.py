@@ -489,7 +489,7 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
         return
     
     # Ensure the parent directory exists
-    folder_path = os.path.dirname(file_path)
+    folder_path = os.path.dirname(local_file)
     os.makedirs(folder_path, exist_ok=True)
 
     # Send GET request to the raw file URL
