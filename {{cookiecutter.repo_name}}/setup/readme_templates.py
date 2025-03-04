@@ -33,15 +33,12 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd):
 
         setup = ""
-
         if repo_name and repo_user:
             if code_repo.lower() in ["github","gitlab"]:
                 web_repo = code_repo.lower()
-                setup += f"""git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"""
-            
-            setup += f"""cd {repo_name}\n"""
+                setup += f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
+            setup += f"cd {repo_name}\n"
 
-    
         if activate_cmd:
             setup += f"{activate_cmd}\n"
    
@@ -65,7 +62,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
     create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"FILE_DESCRIPTIONS.json")
     
-def generate_readme(project_name, project_description,python_setup,usage,contact,readme_file = None):
+def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -90,9 +87,9 @@ def generate_readme(project_name, project_description,python_setup,usage,contact
 
 ## Installation
 
-### Python 
+
 ```
-{python_setup}
+{setup}
 
 ```
 ## Usage
