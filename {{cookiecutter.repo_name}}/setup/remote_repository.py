@@ -33,16 +33,19 @@ def repo_details(version_control,code_repo,repo_name):
     privacy_setting = load_from_env(f"{code_repo.upper()}_PRIVACY")
 
     if not username  or not privacy_setting:
-        username, privacy_setting = git_repo_user(version_control,repo_name,code_repo)
+        username, privacy_setting, _ = git_repo_user(version_control,repo_name,code_repo)
 
     return username, privacy_setting
 
-def repo_login(code_repo):
+def repo_login(version_control,repo_name,code_repo):
     try: 
         if code_repo.lower() == "github":
             user = load_from_env('GITHUB_USER')
             token = load_from_env('GH_TOKEN')
             command = ['gh', 'auth', 'login', '--with-token']
+
+            if not user or not token:
+                user, _, token = git_repo_user(version_control,repo_name,code_repo)
         
             # Check if both environment variables are set
             if user and token:
@@ -56,6 +59,9 @@ def repo_login(code_repo):
             token = load_from_env('GL_TOKEN')
             hostname = load_from_env('GL_HOSTNAME')
             
+            if not user or not token:
+                user, _, token = git_repo_user(version_control,repo_name,code_repo)
+
             if hostname:
                 command = ['glab', 'auth', 'login', '--hostname', hostname, '--token'] 
             else: 
@@ -218,9 +224,9 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     print(f"{code_repo} username and token added to {env_file}")
 
 def setup_repo(version_control,code_repo,repo_name,description):
-    #if not repo_login(code_repo):
-    if repo_login(code_repo):  
-        username,privacy_setting = repo_details(version_control,code_repo,repo_name)
+    #if not repo_login(version_control,repo_name,code_repo):
+    if repo_login(version_control,repo_name,code_repo): # FIX ME !!
+        username,privacy_setting,_ = repo_details(version_control,code_repo,repo_name)
         flag = repo_init(code_repo)
         if flag: 
             flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)

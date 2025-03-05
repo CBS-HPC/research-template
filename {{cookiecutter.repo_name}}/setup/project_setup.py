@@ -293,7 +293,7 @@ save_to_env(os.getcwd(),"PROJECT_PATH")
 # Set git user info
 git_user_info(version_control)
 
-repo_user,_ = git_repo_user(version_control,repo_name,code_repo)
+repo_user,_,_ = git_repo_user(version_control,repo_name,code_repo)
 
 # Create a citation file
 create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
