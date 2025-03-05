@@ -115,7 +115,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
     - file_descriptions (dict): Descriptions for files and directories.
     - root_folder (str): The root folder to generate the tree structure from. Defaults to the current working directory.
     """
-    def generate_tree(folder_path, prefix="",span_style:bool = True):
+    def generate_tree(folder_path, prefix=""):
         """
         Recursively generates a tree structure of the folder.
 
@@ -124,8 +124,6 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         - prefix (str): The prefix for the current level of the tree.
         """
         tree = []
-        if span_style:
-            tree.append('<span style="font-size: 2px;">')
         items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
         for index, item in enumerate(items):
             if item in ignore_list:
@@ -134,14 +132,14 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
             is_last = index == len(items) - 1
             tree_symbol = "└── " if is_last else "├── "
             description = f" <- {file_descriptions.get(item, '')}" if file_descriptions and item in file_descriptions else ""
-            description = description.replace("<br>", "")
-            tree.append(f"{prefix}{tree_symbol}{item}{description}<br> ") # Add spaces for a line break
+            #description = description.replace("<br>", "")
+            tree.append(f"{prefix}{tree_symbol}{item}{description}\n") # Add spaces for a line break
+            #tree.append(f"{prefix}{tree_symbol}{item}{description}<br> ") # Add spaces for a line break
             if os.path.isdir(item_path):
-                child_prefix = f"{prefix}&nbsp;&nbsp;&nbsp;&nbsp;" if is_last else f"{prefix}│   "
+                child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
                 #child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path, prefix=child_prefix,span_style=False))
-        if span_style:
-            tree.append("</span>")
+                tree.extend(generate_tree(item_path, prefix=child_prefix))
+
         return tree
 
     if not readme_file:
