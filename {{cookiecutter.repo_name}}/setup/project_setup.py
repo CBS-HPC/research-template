@@ -113,18 +113,18 @@ def run_powershell_script(script_path, env_path=None, python_env_manager=None, s
     try:
         # Prepare the command to execute the PowerShell script with arguments
         command = [
-            "powershell", "-ExecutionPolicy", "Bypass", "-File", script_path
+            "powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,setup_version_control_path,setup_remote_repository_path
         ]
 
         # Append arguments if they are provided
-        if env_path:
-            command.append(env_path)
-        if python_env_manager:
-            command.append(python_env_manager)
-        if setup_version_control_path:
-            command.append(setup_version_control_path)
-        if setup_remote_repository_path:
-            command.append(setup_remote_repository_path)
+        #if env_path:
+        #    command.append(env_path)
+        #if python_env_manager:
+        #    command.append(python_env_manager)
+        #if setup_version_control_path:
+        #    command.append(setup_version_control_path)
+        #if setup_remote_repository_path:
+        #    command.append(setup_remote_repository_path)
 
         # Run the PowerShell script with the specified arguments
         subprocess.check_call(command)

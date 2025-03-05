@@ -17,7 +17,7 @@ def resolve_parent_module(module_name):
         return module_name.split('.')[0]
     return module_name
 
-def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None,install_cmd:str=None,files_to_skip:list = ["project_setup.py","code_templates.py","setup/version_control.py","setup/remote_repository.py"]):
+def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None,install_cmd:str=None):
     
     def get_dependencies_from_file(python_files):
         used_packages = set()
@@ -94,7 +94,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
     python_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.endswith(".py") and file not in files_to_skip:
+            if file.endswith(".py"):
                 python_files.append(os.path.join(root, file))
 
     if not python_files:
