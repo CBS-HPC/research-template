@@ -42,8 +42,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         if activate_cmd:
             setup += f"{activate_cmd}\n"
    
-        usage = "" 
-        usage += """python src/workflow.py"""
+        usage = "```\n"
+        usage += "python src/workflow.py\n"
+        usage += "```"
         
         contact = ""
         if authors is not None:
@@ -86,16 +87,11 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 {contact}
 
 ## Installation
-
-
-```
 {setup}
 
-```
 ## Usage
-```
 {usage}
-```
+
 ## Project Tree
 ------------
 
