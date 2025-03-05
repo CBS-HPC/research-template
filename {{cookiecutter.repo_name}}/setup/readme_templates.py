@@ -131,12 +131,9 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
             is_last = index == len(items) - 1
             tree_symbol = "└── " if is_last else "├── "
             description = f" <- {file_descriptions.get(item, '')}" if file_descriptions and item in file_descriptions else ""
-            #description = description.replace("<br>", "")
-            tree.append(f"{prefix}{tree_symbol}{item}{description}\n") # Add spaces for a line break
-            #tree.append(f"{prefix}{tree_symbol}{item}{description}<br> ") # Add spaces for a line break
+            tree.append(f"{prefix}{tree_symbol}{item}{description}") # Add spaces for a line break
             if os.path.isdir(item_path):
                 child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
-                #child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
                 tree.extend(generate_tree(item_path, prefix=child_prefix))
 
         return tree
