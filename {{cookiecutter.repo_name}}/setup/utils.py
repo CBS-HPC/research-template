@@ -543,9 +543,9 @@ def git_repo_user(version_control,repo_name,code_repo):
             save_to_env(token,'GL_TOKEN')
  
 
-        return repo_user, privacy_setting
+        return repo_user, privacy_setting, token
     else:
-        return None, None
+        return None, None,None
 
 # Common Env Functions
 def load_env_file(extensions = ['.yml', '.txt']):
