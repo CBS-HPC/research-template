@@ -226,7 +226,7 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
 def setup_repo(version_control,code_repo,repo_name,description):
     #if not repo_login(version_control,repo_name,code_repo):
     if repo_login(version_control,repo_name,code_repo): # FIX ME !!
-        username,privacy_setting,_ = repo_details(version_control,code_repo,repo_name)
+        username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         flag = repo_init(code_repo)
         if flag: 
             flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
