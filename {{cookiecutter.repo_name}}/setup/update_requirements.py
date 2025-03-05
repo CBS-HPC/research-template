@@ -65,13 +65,11 @@ def read_dependencies(dependencies_files,sections):
         
         # Correctly loop through the dictionary
         for software, details in software_dependencies.items():
-            if "install_cmd" in details:
-                software_requirements_section += details["install_cmd"]
+            install_cmd = details.get("install_cmd")
+            if install_cmd is not None:
+                software_requirements_section += install_cmd
                 
-            #dependencies = details["dependencies"]
-            
             software_requirements_section += f"\n**{software}**\n"
-            #for package, version in dependencies:
             for package, version in details["dependencies"]:
                 software_requirements_section += f"  - {package}: {version}\n"
 
