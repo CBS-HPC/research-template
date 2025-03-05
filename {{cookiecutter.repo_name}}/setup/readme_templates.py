@@ -31,14 +31,13 @@ from utils import *
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None, activate_cmd = None):
 
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd):
-
         setup = "```\n"
         if repo_name and repo_user:
             if code_repo.lower() in ["github","gitlab"]:
                 web_repo = code_repo.lower()
                 setup += f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
-            setup += f"cd {repo_name}\n"
-            setup += "```\n"
+        setup += f"cd {repo_name}\n"
+        setup += "```\n"
 
         if activate_cmd:
             setup += f"{activate_cmd}\n"
