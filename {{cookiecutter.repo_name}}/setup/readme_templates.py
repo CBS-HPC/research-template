@@ -27,10 +27,22 @@ import requests
 sys.path.append('setup')
 from utils import *
 
+
+# Determine file extension based on programming language
+ext_map = {
+    "R": "R",
+    "Python": "py",
+    "Matlab": "m",
+    "Stata": "do",
+    "SAS": "sas"
+}
+
+       # file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
+
 # README.md
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = None, authors = None, orcids = None, emails = None, activate_cmd = None):
 
-    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd):
+    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd,programming_language):
         setup = "```\n"
         if repo_name and repo_user:
             if code_repo.lower() in ["github","gitlab"]:
@@ -43,7 +55,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             setup += f"{activate_cmd}\n"
    
         usage = "```\n"
-        usage += "python src/workflow.py\n"
+        usage += f"{programming_language.lower()} src/main.{ext_map.get(programming_language, "txt")}\n"
         usage += "```"
         
         contact = ""
@@ -93,6 +105,7 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 {usage}
 
 ## Project Tree
+The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the FILE_DESCRIPTIONS.json file.
 ```
 
 ```
@@ -188,8 +201,8 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
     # Check for "Project Tree" section
     start_index = None
     for i, line in enumerate(readme_content):
-        if "Project Tree" in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
-        #if "Project Tree" in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "------------":
+        #if "Project Tree" in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
+        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the FILE_DESCRIPTIONS.json file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
             start_index = i + 2 
             break
 
@@ -249,14 +262,6 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
             "visualization": "Generates visual outputs such as charts, graphs, and plots."
         }
         
-        # Determine file extension based on programming language
-        ext_map = {
-            "R": "R",
-            "Python": "py",
-            "Matlab": "m",
-            "Stata": "do",
-            "SAS": "sas"
-        }
 
         file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
 
