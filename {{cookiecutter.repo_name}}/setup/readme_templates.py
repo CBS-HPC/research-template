@@ -96,6 +96,29 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 ```
 
 ```
+
+## Creating a Replication Package Based on DCAS
+
+To create a replication package that adheres to the [DCAS (Data and Code Sharing) standard](https://datacodestandard.org/), follow the guidelines ([AEA Data Editor's guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)) provided by the Social Science Data Editors. This ensures your research code and data are shared in a clear, reproducible format.
+
+The following are examples of journals that endorse the Data and Code Availability Standard:
+
+- [American Economic Journal: Applied Economics](https://www.aeaweb.org/journals/applied-economics)
+- [Econometrica](https://www.econometricsociety.org/publications/econometrica)
+- [Economic Inquiry](https://onlinelibrary.wiley.com/journal/14680299)
+- [Journal of Economic Perspectives](https://www.aeaweb.org/journals/jep)
+
+For a full list of journals, visit [here](https://datacodestandard.org/journals/).
+
+Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal.
+
+
+## Dataset list
+
+## Computational requirements
+
+### Software Requirements
+    
 """
 
     # Write the README.md content
@@ -263,6 +286,7 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
             "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",
             "results": "Directory for generated results from the project.",
             "setup": "Directory containing setup files and scripts to configure the project environment.",
+            "DCAS template": "Directory containing 'replication package' template for the DCAS (Data and Code Sharing) standard",
 
             # Setup files
             ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
@@ -271,6 +295,8 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
             "FILE_DESCRIPTIONS.json": "JSON file containing descriptions of the project files for reference.",
             "LICENSE.txt": "The project's license file, outlining terms and conditions for usage and distribution.",
             "README.md": "The top-level README for developers using this project.",
+            "README.MD": "Current The top-level README for developers using this project.",
+            "README_DCAS.md": "A template README for social science replication packages: https://social-science-data-editors.github.io/template_README/",
             "requirements.txt": "The requirements file for reproducing the analysis environment.",
        
              # Setup files
@@ -522,7 +548,7 @@ def create_citation_file(
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
 # Download Readme template:
-def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_file:str = "README_template(Social Science Data Editors).md"):
+def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_file:str = "README_DCAS_template.md"):
     
      # Check if the local file already exists
     if os.path.exists(local_file):

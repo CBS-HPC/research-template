@@ -126,7 +126,7 @@ def write_to_readme(readme_file,software_requirements_section):
 
     print(f"{readme_file} successfully updated.")
 
-def update_requirements(dependencies_files: list = ["src/dependencies.txt"], readme_file: str = "./replication package template/README.md", sections: list = ["src"]):
+def update_requirements(dependencies_files: list = ["src/dependencies.txt"], readme_file: str = "README.md", sections: list = ["src"]):
    
     software_requirements_section =read_dependencies(dependencies_files,sections)
 
