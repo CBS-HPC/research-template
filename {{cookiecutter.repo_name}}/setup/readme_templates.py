@@ -53,9 +53,10 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
         if activate_cmd:
             setup += f"{activate_cmd}\n"
-   
+
+        file_extension = ext_map.get(programming_language, "txt")
         usage = "```\n"
-        usage += f"{programming_language.lower()} src/main.{ext_map.get(programming_language, "txt")}\n"
+        usage += f"{programming_language.lower()} src/main.{file_extension}\n"
         usage += "```"
         
         contact = ""
