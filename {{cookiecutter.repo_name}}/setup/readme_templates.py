@@ -157,7 +157,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
             tree.append(f"{prefix}{tree_symbol}{item}{description}") # Add spaces for a line break
             if os.path.isdir(item_path):
                 child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path, prefix=child_prefix))
+                tree.extend(generate_tree(item_path,file_descriptions, prefix=child_prefix))
 
         return tree
 
