@@ -76,12 +76,6 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             activate_cmd += f"./{env_name}/Scripts/activate\n"
             activate_cmd += f"{install_cmd}\n"
             activate_cmd += "```"
-  
-            #activate_cmd = f"With {python_version} run:\n"
-            #activate_cmd += f"python -m venv {env_name}\n"
-            #activate_cmd += f"./{env_name}/Scripts/activate\n"
-            #activate_cmd += install_cmd
-            #activate_cmd = f"./{env_name}/Scripts/activate\n"
     
     if env_name:
         env_name = env_name.replace("\\", "/")
@@ -295,7 +289,7 @@ create_citation_file(project_name,version,authors,orcids,version_control,doi=Non
 env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
 # Creating README
-creating_readme(repo_name,repo_user,project_name, project_description, code_repo, authors, orcids,None,activate_cmd)
+creating_readme(repo_name,repo_user,project_name, project_description, code_repo,programming_language, authors, orcids,None,activate_cmd)
 
 
 download_README_template(local_file = "./replication package template/README_template(Social Science Data Editors).md")

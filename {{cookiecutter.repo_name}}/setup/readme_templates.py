@@ -28,7 +28,7 @@ sys.path.append('setup')
 from utils import *
 
 # README.md
-def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None,authors = None,orcids = None,emails = None, activate_cmd = None):
+def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = None, authors = None, orcids = None, emails = None, activate_cmd = None):
 
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd):
         setup = "```\n"
@@ -59,7 +59,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd)
 
      # Create and update README and Project Tree:
-    update_file_descriptions("README.md", json_file="FILE_DESCRIPTIONS.json")
+    update_file_descriptions("README.md",programming_language, json_file="FILE_DESCRIPTIONS.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
     create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"FILE_DESCRIPTIONS.json")
     
@@ -114,7 +114,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
     - file_descriptions (dict): Descriptions for files and directories.
     - root_folder (str): The root folder to generate the tree structure from. Defaults to the current working directory.
     """
-    def generate_tree(folder_path, prefix=""):
+    def generate_tree(folder_path,file_descriptions,prefix=""):
         """
         Recursively generates a tree structure of the folder.
 
@@ -186,7 +186,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         return
 
     # Generate the folder tree structure
-    tree_structure = generate_tree(root_folder)
+    tree_structure = generate_tree(root_folder,file_descriptions)
 
     # Replace the old tree structure in the README
     updated_content = (
@@ -201,7 +201,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
 
     print(f"'Project Tree' section updated in '{readme_file}'.")
 
-def update_file_descriptions(readme_path, json_file="FILE_DESCRIPTIONS.json"):
+def update_file_descriptions(readme_path,programming_language, json_file="FILE_DESCRIPTIONS.json"):
     """
     Reads the project tree from an existing README.md and updates a FILE_DESCRIPTIONS.json file.
 
@@ -213,35 +213,86 @@ def update_file_descriptions(readme_path, json_file="FILE_DESCRIPTIONS.json"):
     - None
     """
 
+    def src_file_descriptions(programming_language):
+
+        src_template = {
+            "data_collection": "Script to collect and import raw data from external sources.",
+            "get_dependencies": "Checks and retrieves necessary {language} package dependencies.",
+            "install_dependencies": "Installs any missing {language} packages required for the project.",
+            "main": "The entry point script that orchestrates the workflow of the project.",
+            "modeling": "Defines the process for building and training models using the data.",
+            "preprocessing": "Handles data cleaning and transformation tasks.",
+            "utils": "Contains helper functions for common tasks throughout the project.",
+            "visualization": "Generates visual outputs such as charts, graphs, and plots."
+        }
+        
+        # Determine file extension based on programming language
+        ext_map = {
+            "R": "R",
+            "Python": "py",
+            "Matlab": "m",
+            "Stata": "do",
+            "SAS": "sas"
+        }
+
+        file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
+
+        # Generate the descriptions by replacing placeholders in the template
+        descriptions = {}
+        for key, description in src_template.items():
+            file_name = f"{key}.{file_extension}"  # Create the file name with the correct extension
+            descriptions[file_name] = description.format(language=programming_language)
+
+        return descriptions
+
        # Read existing descriptions if the JSON file exists
+    
     if os.path.exists(json_file):
         with open(json_file, "r", encoding="utf-8") as f:
             file_descriptions = json.load(f)
     else:
         file_descriptions = {
-            "Makefile": "Makefile with commands like `make data` or `make train`",
-            "README.md": "The top-level README for developers using this project.",
-            "data": "Directory for datasets.",
-            "external": "Data from third-party sources.",
+            
+            # Directories
+            "data": "Directory containing scripts to download or generate data.",
             "interim": "Intermediate data transformed during the workflow.",
             "processed": "The final, clean data used for analysis or modeling.",
             "raw": "Original, immutable raw data.",
-            "docs": "Documentation files.",
-            "models": "Trained models and their outputs.",
-            "notebooks": "Jupyter or R notebooks for exploratory and explanatory work.",
-            "references": "Manuals, data dictionaries, or other resources.",
-            "reports": "Generated reports, including figures.",
-            "figures": "Generated graphics and figures to be used in reporting.",
+            "src": "Directory containing source code for use in this project.",
+            "docs": "Directory for documentation files.",
+            "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",
+            "results": "Directory for generated results from the project.",
+            "setup": "Directory containing setup files and scripts to configure the project environment.",
+
+            # Setup files
+            ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
+            ".gitignore": "Specifies files and directories that should be ignored by Git.",
+            "CITATION.cff": "File containing citation information for the project, typically used for academic purposes.",
+            "FILE_DESCRIPTIONS.json": "JSON file containing descriptions of the project files for reference.",
+            "LICENSE.txt": "The project's license file, outlining terms and conditions for usage and distribution.",
+            "README.md": "The top-level README for developers using this project.",
             "requirements.txt": "The requirements file for reproducing the analysis environment.",
+       
+             # Setup files
+            "deic_storage_download.py": "Script to download data from DEIC storage for the project.",
+            "dependencies.txt": "List of external dependencies required for the project, typically installed with pip.",
+            "get_dependencies.py": "Checks and retrieves necessary dependencies for the project setup.",
+            "install_dependencies.py": "Installs any missing dependencies listed in `dependencies.txt` or other sources.",
+            "readme_templates.py": "Script that provides templates for README files for different setups or environments.",
+            "set_raw_data.py": "Script to set up raw data for use in the project, including preprocessing steps.",
+            "setup.ps1": "PowerShell script for setting up the environment, configuring necessary settings.",
             "setup.py": "Makes project pip installable (pip install -e .) so `src` can be imported.",
-            "src": "Source code for use in this project.",
-            "__init__.py": "Makes `src` a Python module.",
-            "data": "Scripts to download or generate data.",
-            "make_dataset.py": "Script to create datasets.",
-            "features": "Scripts to turn raw data into features for modeling.",
-            "build_features.py": "Script to build features for modeling.",
-            "predict_model.py": "Script to make predictions using trained models."
+            "setup.sh": "Bash script for setting up the environment, configuring necessary settings.",
+            "update_requirements.py": "Script to update the `requirements.txt` file with the latest dependencies.",
+            "utils.py": "Contains utility functions for common tasks throughout the setup process."
+            
         }
+
+
+        if programming_language:
+            # Update the existing dictionary with the new descriptions
+            file_descriptions.update(src_file_descriptions(programming_language))
+
         # Save to JSON file
         with open(json_file, "w", encoding="utf-8") as file:
             json.dump(file_descriptions, file, indent=4, ensure_ascii=False)
