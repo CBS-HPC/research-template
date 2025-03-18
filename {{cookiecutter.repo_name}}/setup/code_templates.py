@@ -628,7 +628,7 @@ get_dependencies <- function(folder_path = NULL, file_name = "dependencies.txt",
 writeLines(
   c(
     "Software version:",
-    python_version,
+    r_version,
     "",
     paste("Timestamp:", timestamp),
     "",

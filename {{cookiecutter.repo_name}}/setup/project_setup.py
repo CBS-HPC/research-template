@@ -39,7 +39,23 @@ file_ext_map = {
 }
 
 
+def get_version(programming_language):
 
+    exe_path = load_from_env(programming_language)
+    
+    if programming_language.lower() == "r":
+        r_path  = check_path_format(f"{exe_path}//R.exe")
+        version = subprocess.run([r_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
+        version = version.stdout[0:17].strip()
+    
+    elif programming_language.lower() == "matlab":
+        r_path = exe_path  + "/Rscript"
+    elif programming_language.lower() == "matlab":
+        r_path = exe_path  + "/Rscript"
+    elif programming_language.lower() == "sas":
+        r_path = exe_path  + "/Rscript"
+    
+    return version
 
 
 def setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,install_path = "bin/miniconda3"):
@@ -79,8 +95,9 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         elif step == 3:
             if activate_cmd:
                 if programming_language.lower() != "python":
+                    software_version = get_version(programming_language)
                     activate_cmd = f"### ./src\n"
-                    activate_cmd = f"#### {programming_language}\n"  
+                    activate_cmd = f"#### {software_version}\n"  
                     activate_cmd += "```\n"
                     activate_cmd += f"{ext_map[programming_language.lower()]} install_dependencies.{file_ext_map[programming_language.lower()]}"
                     activate_cmd += "```"

@@ -56,6 +56,17 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
+
+def check_path_format(env_var):
+    # Determine if the value is a path (heuristic check)
+    if any(sep in env_var for sep in ["/", "\\", ":"]) and os.path.exists(env_var):  # ":" for Windows drive letters
+        system_name = platform.system()
+        if system_name == "Windows":
+            env_var = env_var.replace("/", "\\")  # Convert to Windows-style paths
+        else:  # Linux/macOS
+            env_var = env_var.replace("\\", "/")  # Convert to Unix-style paths
+    return env_var
+
 def load_from_env(env_var: str, env_file=".env"):
     """
     Loads an environment variable's value from a .env file.
@@ -71,11 +82,16 @@ def load_from_env(env_var: str, env_file=".env"):
     if os.path.exists(env_file):
         env_values = dotenv_values(env_file)
         if env_var.upper() in env_values:
-            return env_values[env_var.upper()]
+            env_value = env_values[env_var.upper()]
+            env_value = check_path_format(env_value) 
+            return env_value
     
     # If not found directly, load the .env file into the environment
     load_dotenv(env_file, override=True)
-    return os.getenv(env_var.upper())
+    env_value = os.getenv(env_var.upper())
+    env_value = check_path_format(env_value) 
+
+    return env_value
 
 def save_to_env(env_var: str, env_name: str, env_file=".env"):
     """
@@ -88,9 +104,12 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     """
     if env_var is None:
         return
+    
     # Standardize the variable name for comparison
     env_name_upper = env_name.strip().upper()
-    
+
+    env_var = check_path_format(env_var) 
+
     # Read the existing .env file if it exists
     env_lines = []
     if os.path.exists(env_file):
