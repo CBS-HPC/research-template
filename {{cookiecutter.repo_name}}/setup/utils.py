@@ -409,6 +409,8 @@ def manual_apps():
         selected_path = input(msg).strip()
         selected_path = selected_path.replace("'", "").replace('"', '')
 
+        selected_path = check_path_format(selected_path)
+
         # Check if the path contains any single backslashes
         if "\\" in selected_path:
             #print("The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes('/').")

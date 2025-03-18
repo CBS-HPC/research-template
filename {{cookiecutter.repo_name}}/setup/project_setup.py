@@ -71,7 +71,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         if step == 1:
             if programming_language.lower() != "python":
                     activate_cmd = f"### ./setup Configuration\n"
-                    activate_cmd = f"#### Conda Installation\n"
+                    activate_cmd += f"#### Conda Installation\n"
             else:
                 activate_cmd = f"### Conda Installation\n"
             activate_cmd += "```\n"
@@ -82,7 +82,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         elif step == 2: 
             if programming_language.lower() != "python":
                 activate_cmd = f"### ./setup Configuration\n"
-                activate_cmd = f"#### {python_version}\n"
+                activate_cmd += f"#### {python_version}\n"
             else:
                 activate_cmd = f"### {python_version}\n"
           
@@ -96,8 +96,8 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             if activate_cmd:
                 if programming_language.lower() != "python":
                     software_version = get_version(programming_language)
-                    activate_cmd = f"### ./src\n"
-                    activate_cmd = f"#### {software_version}\n"  
+                    activate_cmd += f"### ./src\n"
+                    activate_cmd += f"#### {software_version}\n"  
                     activate_cmd += "```\n"
                     activate_cmd += f"{ext_map[programming_language.lower()]} install_dependencies.{file_ext_map[programming_language.lower()]}"
                     activate_cmd += "```"
@@ -354,6 +354,7 @@ env_path, activate_cmd = setup_virtual_environment(version_control,programming_l
 
 # Creating README
 creating_readme(repo_name,repo_user,project_name, project_description, code_repo,programming_language, authors, orcids,None,activate_cmd)
+creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = None, authors = None, orcids = None, emails = None, activate_cmd = None)
 
 
 download_README_template(local_file = "./replication package template/README_template(Social Science Data Editors).md")
