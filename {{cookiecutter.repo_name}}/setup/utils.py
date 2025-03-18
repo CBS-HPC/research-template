@@ -59,12 +59,16 @@ def ask_yes_no(question):
 
 def check_path_format(env_var):
     # Determine if the value is a path (heuristic check)
+    selected_path = r"{}".format(selected_path.replace("\\", r"\\"))
     if any(sep in env_var for sep in ["/", "\\", ":"]) and os.path.exists(env_var):  # ":" for Windows drive letters
         system_name = platform.system()
         if system_name == "Windows":
-            env_var = env_var.replace("/", "\\")  # Convert to Windows-style paths
+         
+            env_var = r"{}".format(env_var.replace("/", r"\\"))
+            env_var = r"{}".format(env_var.replace("\\", r"\\"))
         else:  # Linux/macOS
-            env_var = env_var.replace("\\", "/")  # Convert to Unix-style paths
+            env_var = r"{}".format(env_var.replace("\\", r"\\"))
+            env_var = r"{}".format(env_var.replace("\\", "/"))
     return env_var
 
 def load_from_env(env_var: str, env_file=".env"):
@@ -408,15 +412,16 @@ def manual_apps():
     while True:
         selected_path = input(msg).strip()
         selected_path = selected_path.replace("'", "").replace('"', '')
+        #selected_path = r"{}".format(selected_path.replace("\\", r"\\"))
 
         selected_path = check_path_format(selected_path)
 
         # Check if the path contains any single backslashes
-        if "\\" in selected_path:
-            #print("The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes('/').")
-            msg = "The path contains single backslashes or double backslashes ('\') . Please use single forward slashes ('/')."
-            continue  # Re-prompt the user if single backslashes are detected
-        elif os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
+        #if "\\" in selected_path:
+        #    #print("The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes('/').")
+        #    msg = "The path contains single backslashes or double backslashes ('\') . Please use single forward slashes ('/')."
+        #    continue  # Re-prompt the user if single backslashes are detected
+        if os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
             break  # Exit loop if the file exists and is executable
         else:
             answer = ask_yes_no("Invalid path. Do you want to input a new path? (yes/no)")
