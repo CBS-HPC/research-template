@@ -21,6 +21,27 @@ from utils import *
 from code_templates import *
 from readme_templates import *
 
+ext_map = {
+    "r": "Rscript",
+    "python": "python",
+    "matlab": "matlab -batch",
+    "stata": "stata -b do",
+    "sas": "sas"
+}
+
+
+file_ext_map = {
+    "r": "R",
+    "python": "py",
+    "matlab": "m",
+    "stata": "do",
+    "sas": "sas"
+}
+
+
+
+
+
 def setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,install_path = "bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
@@ -29,7 +50,45 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """    
+    def create_command(activate_cmd :str=None ,step:int = 0):
+
+        if step == 1:
+            if programming_language.lower() != "python":
+                    activate_cmd = f"### ./setup Configuration\n"
+                    activate_cmd = f"#### Conda Installation\n"
+            else:
+                activate_cmd = f"### Conda Installation\n"
+            activate_cmd += "```\n"
+            activate_cmd += f"{install_cmd}\n"
+            activate_cmd = f"conda activate {env_name}\n"
+            activate_cmd += "```"
+        
+        elif step == 2: 
+            if programming_language.lower() != "python":
+                activate_cmd = f"### ./setup Configuration\n"
+                activate_cmd = f"#### {python_version}\n"
+            else:
+                activate_cmd = f"### {python_version}\n"
+          
+            activate_cmd += "```\n"
+            activate_cmd += f"python -m venv {env_name}\n"
+            activate_cmd += f"./{env_name}/Scripts/activate\n"
+            activate_cmd += f"{install_cmd}\n"
+            activate_cmd += "```"
+
+        elif step == 3:
+            if activate_cmd:
+                if programming_language.lower() != "python":
+                    activate_cmd = f"### ./src\n"
+                    activate_cmd = f"#### {programming_language}\n"  
+                    activate_cmd += "```\n"
+                    activate_cmd += f"{ext_map[programming_language.lower()]} install_dependencies.{file_ext_map[programming_language.lower()]}"
+                    activate_cmd += "```"
+                activate_cmd = activate_cmd.replace("\\", "/")
+
+        return activate_cmd 
     
+
     pip_packages = set_pip_packages(version_control,programming_language)
     
     activate_cmd = None
@@ -55,12 +114,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             env_name = setup_conda(install_path,repo_name,conda_packages,None,None)
         
         if env_name:
-            activate_cmd = f"### Conda Installation\n"
-            activate_cmd += "```\n"
-            activate_cmd += f"{install_cmd}\n"
-            activate_cmd = f"conda activate {env_name}\n"
-            activate_cmd += "```"
-            #activate_cmd = f"conda activate {env_name}"
+            activate_cmd = create_command(activate_cmd=activate_cmd ,step = 1)
 
     if python_env_manager.lower() in ["venv","virtualenv"]:
         if python_env_manager.lower() == "venv":
@@ -69,19 +123,12 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             env_name = create_virtualenv_env(repo_name,pip_packages)  
         if env_name:
             python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
-
-            activate_cmd = f"### {python_version}\n"
-            activate_cmd += "```\n"
-            activate_cmd += f"python -m venv {env_name}\n"
-            activate_cmd += f"./{env_name}/Scripts/activate\n"
-            activate_cmd += f"{install_cmd}\n"
-            activate_cmd += "```"
-    
+            activate_cmd = create_command(activate_cmd=activate_cmd ,step = 2)
+        
     if env_name:
         env_name = env_name.replace("\\", "/")
-    
-    if activate_cmd:
-        activate_cmd = activate_cmd.replace("\\", "/")
+    activate_cmd = create_command(activate_cmd=activate_cmd ,step = 3)
+
 
     #if activate_cmd:
     #    save_to_env(activate_cmd,"ACTIVATE_CMD",".cookiecutter")

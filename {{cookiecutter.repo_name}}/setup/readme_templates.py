@@ -30,11 +30,11 @@ from utils import *
 
 # Determine file extension based on programming language
 ext_map = {
-    "R": "R",
-    "Python": "py",
-    "Matlab": "m",
-    "Stata": "do",
-    "SAS": "sas"
+    "r": "R",
+    "python": "py",
+    "matlab": "m",
+    "stata": "do",
+    "sas": "sas"
 }
 
        # file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
@@ -54,7 +54,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         if activate_cmd:
             setup += f"{activate_cmd}\n"
 
-        file_extension = ext_map.get(programming_language, "txt")
+        file_extension = ext_map.get(programming_language.lower(), "txt")
         usage = "```\n"
         usage += f"{programming_language.lower()} src/main.{file_extension}\n"
         usage += "```"
@@ -69,7 +69,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         
         return setup,usage,contact
     
-    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd)
+    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd,programming_language)
 
      # Create and update README and Project Tree:
     update_file_descriptions("README.md",programming_language, json_file="FILE_DESCRIPTIONS.json")
@@ -264,7 +264,7 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
         }
         
 
-        file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
+        file_extension = ext_map.get(programming_language.lower(), "txt")  # Default to "txt" if language is unknown
 
         # Generate the descriptions by replacing placeholders in the template
         descriptions = {}
