@@ -59,11 +59,9 @@ def ask_yes_no(question):
 
 def check_path_format(env_var):
     # Determine if the value is a path (heuristic check)
-    selected_path = r"{}".format(selected_path.replace("\\", r"\\"))
     if any(sep in env_var for sep in ["/", "\\", ":"]) and os.path.exists(env_var):  # ":" for Windows drive letters
         system_name = platform.system()
         if system_name == "Windows":
-         
             env_var = r"{}".format(env_var.replace("/", r"\\"))
             env_var = r"{}".format(env_var.replace("\\", r"\\"))
         else:  # Linux/macOS
