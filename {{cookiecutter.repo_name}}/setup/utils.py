@@ -405,20 +405,13 @@ def manual_apps():
     """
     print("\nNo path was selected. Please input the executable path manually.")
 
-    msg = "Enter the full path to the executable with forward slashes('/') e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
+    msg = "Enter the full path to the executable e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
     # Prompt the user to input the path to the executable
     while True:
         selected_path = input(msg).strip()
-        selected_path = selected_path.replace("'", "").replace('"', '')
-        #selected_path = r"{}".format(selected_path.replace("\\", r"\\"))
-
+        selected_path = selected_path.replace("'", "").replace('"', '')     
         selected_path = check_path_format(selected_path)
-
-        # Check if the path contains any single backslashes
-        #if "\\" in selected_path:
-        #    #print("The path contains single backslashes ('\'). Please use double backslashes ('\\') or forward slashes('/').")
-        #    msg = "The path contains single backslashes or double backslashes ('\') . Please use single forward slashes ('/')."
-        #    continue  # Re-prompt the user if single backslashes are detected
+  
         if os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
             break  # Exit loop if the file exists and is executable
         else:

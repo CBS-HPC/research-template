@@ -70,7 +70,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
 
         if step == 1:
             if programming_language.lower() != "python":
-                    activate_cmd = f"### ./setup Configuration\n"
+                    activate_cmd = f"### Setup Code (./setup) Configuration\n"
                     activate_cmd += f"#### Conda Installation\n"
             else:
                 activate_cmd = f"### Conda Installation\n"
@@ -81,7 +81,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         
         elif step == 2: 
             if programming_language.lower() != "python":
-                activate_cmd = f"### ./setup Configuration\n"
+                activate_cmd = f"### Setup Code (./setup) Configuration\n"
                 activate_cmd += f"#### {python_version}\n"
             else:
                 activate_cmd = f"### {python_version}\n"
@@ -89,18 +89,22 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             activate_cmd += "```\n"
             activate_cmd += f"python -m venv {env_name}\n"
             activate_cmd += f"./{env_name}/Scripts/activate\n"
+            activate_cmd += "```\n"
+
+            activate_cmd += "Install using requirements.txt for full environment\n"
+            activate_cmd += "```\n"
             activate_cmd += f"{install_cmd}\n"
-            activate_cmd += "```"
+            activate_cmd += "```\n"
 
         elif step == 3:
             if activate_cmd:
                 if programming_language.lower() != "python":
                     software_version = get_version(programming_language)
-                    activate_cmd += f"### ./src\n"
+                    activate_cmd += f"### Project Code (./src) Configuration\n"
                     activate_cmd += f"#### {software_version}\n"  
                     activate_cmd += "```\n"
-                    activate_cmd += f"{ext_map[programming_language.lower()]} install_dependencies.{file_ext_map[programming_language.lower()]}"
-                    activate_cmd += "```"
+                    activate_cmd += f"{ext_map[programming_language.lower()]} ./src/install_dependencies.{file_ext_map[programming_language.lower()]}"
+                    activate_cmd += "```\n"
                 activate_cmd = activate_cmd.replace("\\", "/")
 
         return activate_cmd 
