@@ -97,7 +97,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             activate_cmd += "```\n"
 
         elif step == 3:
-            if activate_cmd:
+            if activate_cmd and r_env_manager.lower() != "conda":
                 if programming_language.lower() != "python":
                     software_version = get_version(programming_language)
                     activate_cmd += f"### Project Code (./src) Configuration\n"
