@@ -369,7 +369,6 @@ authors= load_from_env("AUTHORS",".cookiecutter")
 python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
 
-
 # Create Remote Repository
 flag = setup_remote_repository(version_control,code_repo,repo_name,project_description )
 

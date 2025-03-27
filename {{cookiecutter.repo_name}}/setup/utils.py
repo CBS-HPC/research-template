@@ -56,7 +56,6 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
-
 def check_path_format(env_var):
     # Determine if the value is a path (heuristic check)
     if any(sep in env_var for sep in ["/", "\\", ":"]) and os.path.exists(env_var):  # ":" for Windows drive letters
@@ -438,7 +437,8 @@ def set_programming_language(programming_language):
         programming_language, selected_path =manual_apps()
 
     if programming_language and selected_path:    
-        save_to_env(os.path.dirname(selected_path),programming_language.upper())
+        #save_to_env(os.path.dirname(selected_path),programming_language.upper())
+        save_to_env(selected_path,programming_language.upper())
         save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
     return programming_language
 

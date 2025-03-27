@@ -9,7 +9,7 @@ param (
 )
 
 # Activate environment based on the environment manager
-if ($env_path -ne "None" -and $env_manager -ne "None") {
+if ($env_path -ne "Base Installation" -and $env_manager -ne "Base Installation") {
 
     $env_path = $env_path -replace '\\', '/'
 

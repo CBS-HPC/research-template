@@ -7,7 +7,7 @@ version_control_path=$3
 remote_repository_path=$4
 
 # Activate environment based on the environment manager
-if [ "$env_path" != "None" ] && [ "$env_manager" != "None" ]; then
+if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installation" ]; then
     case "$env_manager" in
         "conda")
             echo "Activating Conda environment: $env_path"

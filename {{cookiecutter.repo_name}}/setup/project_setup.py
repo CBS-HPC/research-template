@@ -29,7 +29,6 @@ ext_map = {
     "sas": "sas"
 }
 
-
 file_ext_map = {
     "r": "R",
     "python": "py",
@@ -38,25 +37,22 @@ file_ext_map = {
     "sas": "sas"
 }
 
-
 def get_version(programming_language):
 
     exe_path = load_from_env(programming_language)
-    
+    exe_path  = check_path_format(exe_path)
     if programming_language.lower() == "r":
-        r_path  = check_path_format(f"{exe_path}//R.exe")
-        version = subprocess.run([r_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
+        version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
         version = version.stdout[0:17].strip()
     
     elif programming_language.lower() == "matlab":
         r_path = exe_path  + "/Rscript"
-    elif programming_language.lower() == "matlab":
+    elif programming_language.lower() == "stata":
         r_path = exe_path  + "/Rscript"
     elif programming_language.lower() == "sas":
         r_path = exe_path  + "/Rscript"
     
     return version
-
 
 def setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,install_path = "bin/miniconda3"):
     """
@@ -162,9 +158,9 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
 
 def run_bash_script(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     if not env_path:
-        env_path = "None"
+        env_path = "Base Installation" 
     if not python_env_manager:
-        python_env_manager = "None"    
+        python_env_manager = "Base Installation"    
     try:
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
@@ -177,9 +173,9 @@ def run_bash_script(script_path, env_path=None, python_env_manager=None, setup_v
 
 def run_powershell_script(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     if not env_path:
-        env_path = "None"
+        env_path = "Base Installation" 
     if not python_env_manager:
-        python_env_manager = "None"    
+        python_env_manager = "Base Installation"    
     
     try:
         subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,setup_version_control_path,setup_remote_repository_path])
@@ -240,8 +236,8 @@ def prompt_user(question, options):
 
 def correct_format(programming_language, authors, orcids):
 
-    if "(Pre-installation required)" in programming_language:
-            programming_language = programming_language.replace(" (Pre-installation required)", "")
+    if "(Base installation required)" in programming_language:
+            programming_language = programming_language.replace(" (Base installation required)", "")
 
     if "Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)" in authors:
             authors = authors.replace("Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)", "Not Provided")
@@ -252,20 +248,21 @@ def correct_format(programming_language, authors, orcids):
 
 def set_options(programming_language,version_control):
 
-    environment_opts = ["Conda","Venv","None"]
+    environment_opts = ["Conda","Venv","Base Installation"]
     python_env_manager = None
     if programming_language.lower() == 'r':
-        question = "Do you want to create a new R environment using:"
-        r_env_manager = prompt_user(question, ["Conda","renv (R Pre-installation required)","None"])
+        question = "Do you want to create a new R environment using Conda or use Base Installation:"
+        r_env_manager = prompt_user(question, ["Conda","Base Installation"])
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
         
         if r_env_manager.lower() =='conda':
-            environment_opts = ["Conda","None"]
+            environment_opts = ["Conda","Base Installation"]
             python_env_manager = "Conda"
             print("A new python environment will be created to facilitate the setup functionalities")
 
     else:
-        r_env_manager = "None"
+        r_env_manager = "Base Installation"
+
         if programming_language.lower() == 'python':
             question = "Do you want to create a new python environment using:"
         else:
@@ -274,8 +271,21 @@ def set_options(programming_language,version_control):
     if not python_env_manager: 
         python_env_manager = prompt_user(question, environment_opts)
 
+     # Set requirements file
+    requirements_file = "requirements.txt"
+    install_cmd = f"pip install -r {requirements_file}"
+
+    if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
+        
+        requirements_file = "environment.yml"
+        install_cmd =  f"conda env create -f {requirements_file}"
+  
+    save_to_env(install_cmd,"INSTALL_CMD",".cookiecutter")
+    save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")     
+
+
     if version_control in ["Git","Datalad","DVC"]:
-        code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","None"])
+        code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","Codeberg","None"])
     else:
         code_repo = "None"
 
@@ -286,22 +296,12 @@ def set_options(programming_language,version_control):
 
     if programming_language.lower() in ['stata','matlab','sas'] or (programming_language.lower() == 'r' and r_env_manager.lower() !='conda'):
         selected_app = set_programming_language(programming_language)
-        if selected_app: 
-            is_installed(programming_language.lower(),programming_language)
-        else:
+        if not selected_app: 
             print(f"{programming_language} path has not been set")
-
-    # Set requirements file
-    requirements_file = "requirements.txt"
-    install_cmd = f"pip install -r {requirements_file}"
-
-    if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
-        requirements_file = "environment.yml"
-        install_cmd =  f"conda env create -f {requirements_file}"
-  
-
-    save_to_env(install_cmd,"INSTALL_CMD",".cookiecutter")
-    save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")        
+            #is_installed(programming_language.lower(),programming_language)
+        #else:
+        #    print(f"{programming_language} path has not been set")
+      
 
     return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd
 
