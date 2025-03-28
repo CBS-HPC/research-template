@@ -62,9 +62,9 @@ def check_path_format(env_var):
         system_name = platform.system()
         if system_name == "Windows":
             env_var = r"{}".format(env_var.replace("/", r"\\"))
-            env_var = r"{}".format(env_var.replace("\\", r"\\"))
+            #env_var = r"{}".format(env_var.replace("\\", r"\\"))
         else:  # Linux/macOS
-            env_var = r"{}".format(env_var.replace("\\", r"\\"))
+            #env_var = r"{}".format(env_var.replace("\\", r"\\"))
             env_var = r"{}".format(env_var.replace("\\", "/"))
     return env_var
 
