@@ -96,8 +96,17 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             activate_cmd += "```\n"
 
         elif step == 3:
+            if activate_cmd:
+                activate_cmd = f"### Setup Code (./setup) Configuration\n"
+                activate_cmd = f"### {python_version}\n"
+                activate_cmd += "```\n"
+                activate_cmd += f"python ./setup/install_dependencies.py"
+                activate_cmd += "```\n"
+            activate_cmd = activate_cmd.replace("\\", "/")
+
+        elif step == 4:
             if activate_cmd and r_env_manager.lower() != "conda":
-                if programming_language.lower() != "python":
+                if programming_language.lower() not in ["python","none"]:
                     software_version = get_version(programming_language)
                     activate_cmd += f"### Project Code (./src) Configuration\n"
                     activate_cmd += f"#### {software_version}\n"  
@@ -142,10 +151,14 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         if env_name:
             python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
             activate_cmd = create_command(activate_cmd=activate_cmd ,step = 2)
+    else:
+        python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
+        activate_cmd = create_command(activate_cmd=activate_cmd ,step = 3)
     
     if env_name:
         env_name = env_name.replace("\\", "/")
-    activate_cmd = create_command(activate_cmd=activate_cmd ,step = 3)
+    
+    activate_cmd = create_command(activate_cmd=activate_cmd ,step = 4)
 
     if not env_name or not python_env_manager: 
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
