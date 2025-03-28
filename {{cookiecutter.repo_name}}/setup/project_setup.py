@@ -102,7 +102,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
                 activate_cmd += "```\n"
                 activate_cmd += f"python ./setup/install_dependencies.py"
                 activate_cmd += "```\n"
-            activate_cmd = activate_cmd.replace("\\", "/")
+                activate_cmd = activate_cmd.replace("\\", "/")
 
         elif step == 4:
             if activate_cmd and r_env_manager.lower() != "conda":
