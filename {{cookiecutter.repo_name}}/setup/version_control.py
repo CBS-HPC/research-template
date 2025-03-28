@@ -683,7 +683,7 @@ if programming_language.lower() != "python":
     if not exe_path:
         exe_path = shutil.which(programming_language.lower())
     if exe_path:
-        save_to_env(check_path_format(sys.executable), programming_language.upper())
+        save_to_env(check_path_format(exe_path), programming_language.upper())
 
 save_to_env(check_path_format(sys.executable), "PYTHON")
 
