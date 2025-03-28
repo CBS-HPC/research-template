@@ -688,13 +688,13 @@ if programming_language:
     exe_checks = [programming_language, "python"] if programming_language.lower() != "python" else [programming_language]
 
     # Loop through the languages to check the executables
-    for exe in exe_checks:
-        exe_path = load_from_env(exe)
-        if not exe_path:
-            exe_path = shutil.which(exe.lower())
-        if exe_path:
-            exe_path = check_path_format(exe_path)
-            save_to_env(exe_path, exe.upper())
+   # for exe in exe_checks:
+   #     exe_path = load_from_env(exe)
+   #     if not exe_path:
+   #         exe_path = shutil.which(exe.lower())
+   #     if exe_path:
+   #         exe_path = check_path_format(exe_path)
+   #         save_to_env(exe_path, exe.upper())
 
 
 # Setup Version Control
