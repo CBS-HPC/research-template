@@ -325,8 +325,9 @@ programming_language, authors, orcids = correct_format(programming_language, aut
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd = set_options(programming_language,version_control)
 
 # Create scripts and notebook
-create_scripts(programming_language, "src")
-create_notebooks(programming_language, "notebooks")
+if programming_language.lower() != "none":
+    create_scripts(programming_language, "src")
+    create_notebooks(programming_language, "notebooks")
 
 # Set project info to .cookiecutter
 save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
