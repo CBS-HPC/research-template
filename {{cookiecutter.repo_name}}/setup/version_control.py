@@ -678,7 +678,7 @@ project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 author_name = load_from_env("AUTHORS",".cookiecutter")
 
 # Set to .env
-if programming_language.lower() != "python":
+if programming_language.lower() not in ["python","None"]:
     exe_path = load_from_env(programming_language.upper())
     if not exe_path:
         exe_path = shutil.which(programming_language.lower())
