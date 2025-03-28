@@ -431,12 +431,12 @@ def manual_apps():
 def set_programming_language(programming_language):
 
     found_apps = search_apps(programming_language)
-    programming_language, selected_path = choose_apps(programming_language,found_apps)
+    _, selected_path = choose_apps(programming_language,found_apps)
 
-    if not programming_language and not selected_path: 
-        programming_language, selected_path =manual_apps()
+    if not selected_path: 
+        _, selected_path =manual_apps()
 
-    if programming_language and selected_path:    
+    if  selected_path:    
         #save_to_env(os.path.dirname(selected_path),programming_language.upper())
         save_to_env(selected_path,programming_language.upper())
         save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
