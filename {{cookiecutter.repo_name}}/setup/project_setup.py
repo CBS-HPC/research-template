@@ -391,6 +391,6 @@ delete_files(files_to_delete)
 creating_readme()
 
 # Pushing to Git
-if version_control is not "None" and  code_repo is not "None":    
+if version_control != "None" and code_repo != "None":    
     flag = load_from_env(f"{code_repo}_REPO")  
     git_push(flag,"README.md updated")
