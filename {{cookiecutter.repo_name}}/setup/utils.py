@@ -501,7 +501,6 @@ def git_push(flag:str,msg:str=""):
 
         elif os.path.isdir(".git"):
             git_commit(msg)
-            
             if flag:
                 result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
                 branch = result.stdout.strip()  # Remove any extra whitespace or newlin

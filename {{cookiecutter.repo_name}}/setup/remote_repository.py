@@ -25,7 +25,9 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
     else:
         return False 
     if flag:    
-        flag = setup_repo(version_control,code_repo,repo_name,description)      
+        flag = setup_repo(version_control,code_repo,repo_name,description) 
+    if not flag:
+        save_to_env("None","CODE_REPO",".cookiecutter")
     return flag
 
 def repo_details(version_control,code_repo,repo_name):
@@ -382,7 +384,6 @@ elif requirements_file == "environment.yml":
 
 folder = "./setup/"
 file = "./setup/dependencies.txt"
-
 
 # Updating requirements.txt/environment.yaml  # FIX ME
 if python_env_manager.lower() in ["conda","venv"]:

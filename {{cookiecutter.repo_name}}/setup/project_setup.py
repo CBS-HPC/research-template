@@ -142,11 +142,6 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
             activate_cmd = create_command(activate_cmd=activate_cmd ,step = 2)
     
-    #elif python_env_manager.lower() == "Base Installation":
-
-    #    (sys.executable)
-
-
     if env_name:
         env_name = env_name.replace("\\", "/")
     activate_cmd = create_command(activate_cmd=activate_cmd ,step = 3)
@@ -391,6 +386,4 @@ delete_files(files_to_delete)
 creating_readme()
 
 # Pushing to Git
-if version_control != "None" and code_repo != "None":    
-    flag = load_from_env(f"{code_repo}_REPO")  
-    git_push(flag,"README.md updated")
+git_push(load_from_env("CODE_REPO",".cookiecutter")!= "None","README.md updated")

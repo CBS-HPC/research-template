@@ -678,24 +678,14 @@ project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 author_name = load_from_env("AUTHORS",".cookiecutter")
 
 # Set to .env
-#is_installed('python','Python')
-#if programming_language.lower() != "python":
-#    is_installed(programming_language.lower(),programming_language)
+if programming_language.lower() != "python":
+    exe_path = load_from_env(programming_language.upper())
+    if not exe_path:
+        exe_path = shutil.which(programming_language.lower())
+    if exe_path:
+        save_to_env(check_path_format(sys.executable), programming_language.upper())
 
-
-if programming_language:
-    # Define the list of languages to check
-    exe_checks = [programming_language, "python"] if programming_language.lower() != "python" else [programming_language]
-
-    # Loop through the languages to check the executables
-   # for exe in exe_checks:
-   #     exe_path = load_from_env(exe)
-   #     if not exe_path:
-   #         exe_path = shutil.which(exe.lower())
-   #     if exe_path:
-   #         exe_path = check_path_format(exe_path)
-   #         save_to_env(exe_path, exe.upper())
-
+save_to_env(check_path_format(sys.executable), "PYTHON")
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)
