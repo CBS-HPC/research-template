@@ -693,6 +693,7 @@ if programming_language:
         if not exe_path:
             exe_path = shutil.which(exe.lower())
         if exe_path:
+            exe_path = check_path_format(exe_path)
             save_to_env(exe_path, exe.upper())
 
 

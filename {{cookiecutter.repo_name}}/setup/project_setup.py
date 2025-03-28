@@ -133,7 +133,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         if env_name:
             activate_cmd = create_command(activate_cmd=activate_cmd ,step = 1)
 
-    if python_env_manager.lower() in ["venv","virtualenv"]:
+    elif python_env_manager.lower() in ["venv","virtualenv"]:
         if python_env_manager.lower() == "venv":
             env_name = create_venv_env(repo_name,pip_packages)
         elif python_env_manager.lower() == "virtualenv":
@@ -141,7 +141,11 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         if env_name:
             python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
             activate_cmd = create_command(activate_cmd=activate_cmd ,step = 2)
-        
+    #elif python_env_manager.lower() == "Base Installation":
+
+    #    (sys.executable)
+
+
     if env_name:
         env_name = env_name.replace("\\", "/")
     activate_cmd = create_command(activate_cmd=activate_cmd ,step = 3)
