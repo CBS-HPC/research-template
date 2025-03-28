@@ -63,8 +63,11 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """    
     def create_command(activate_cmd :str=None ,step:int = 0):
-
+        
+        if step in [1,2]:
+            install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
         if step == 1:
+            
             if programming_language.lower() != "python":
                     activate_cmd = f"### Setup Code (./setup) Configuration\n"
                     activate_cmd += f"#### Conda Installation\n"
@@ -110,8 +113,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
     
     activate_cmd = None
     env_name = None
-    install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
-
+  
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
     
         install_packages = []
@@ -146,10 +148,6 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         env_name = env_name.replace("\\", "/")
     activate_cmd = create_command(activate_cmd=activate_cmd ,step = 3)
 
-
-    #if activate_cmd:
-    #    save_to_env(activate_cmd,"ACTIVATE_CMD",".cookiecutter")
-    
     if not env_name or not python_env_manager: 
         subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
