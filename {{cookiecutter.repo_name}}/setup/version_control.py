@@ -679,6 +679,8 @@ remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
 
 # Set to .env
 if programming_language and programming_language.lower() !="python":
+    print("hello")
+    print(programming_language)
     exe_path = load_from_env(programming_language.upper())
     if not exe_path:
         exe_path = shutil.which(programming_language.lower())
