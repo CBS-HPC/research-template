@@ -141,6 +141,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         if env_name:
             python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
             activate_cmd = create_command(activate_cmd=activate_cmd ,step = 2)
+    
     #elif python_env_manager.lower() == "Base Installation":
 
     #    (sys.executable)
@@ -361,8 +362,16 @@ create_citation_file(project_name,version,authors,orcids,version_control,doi=Non
 env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
 
 # Creating README
-creating_readme(repo_name,repo_user,project_name, project_description, code_repo,programming_language, authors, orcids,None,activate_cmd)
-creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = None, authors = None, orcids = None, emails = None, activate_cmd = None)
+creating_readme(repo_name= repo_name, 
+                repo_user = repo_name, 
+                project_name = project_name,
+                project_description = project_description,
+                code_repo = code_repo,
+                programming_language = programming_language,
+                authors = authors,
+                orcids = orcids,
+                emails = None,
+                activate_cmd = activate_cmd)
 
 
 download_README_template(local_file = "./replication package template/README_template(Social Science Data Editors).md")
@@ -382,5 +391,6 @@ delete_files(files_to_delete)
 creating_readme()
 
 # Pushing to Git
-flag = load_from_env(f"{code_repo}_REPO")  
-git_push(flag,"README.md updated")
+if version_control is not "None" and  code_repo is not "None":    
+    flag = load_from_env(f"{code_repo}_REPO")  
+    git_push(flag,"README.md updated")
