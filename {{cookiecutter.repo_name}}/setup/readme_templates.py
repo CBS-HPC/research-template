@@ -40,7 +40,7 @@ ext_map = {
        # file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
 
 # README.md
-def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = None, authors = None, orcids = None, emails = None, activate_cmd = None):
+def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None, activate_cmd = None):
 
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd,programming_language):
         setup = "```\n"
@@ -55,7 +55,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             setup += f"{activate_cmd}\n"
 
         usage = "```\n"
-        if programming_language:
+        if programming_language.lower() != "none":
             file_extension = ext_map.get(programming_language.lower(), "txt")
             usage += f"{programming_language.lower()} src/main.{file_extension}\n"
         

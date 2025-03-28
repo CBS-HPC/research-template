@@ -673,15 +673,19 @@ version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
 repo_name = load_from_env("REPO_NAME",".cookiecutter")
 code_repo = load_from_env("CODE_REPO",".cookiecutter")
 remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
-#project_name = load_from_env("PROJECT_NAME",".cookiecutter")
-#project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-#authors = load_from_env("AUTHORS",".cookiecutter")
 
 # Set to .env
 if programming_language.lower() not in ["python","none"]:
+    print("Hello")
+    print(programming_language)
     exe_path = load_from_env(programming_language.upper())
+    print(exe_path)
+    print(type(exe_path))
     if not exe_path:
         exe_path = shutil.which(programming_language.lower())
+
+    print(exe_path)
+    print(type(exe_path))    
     if exe_path:
         save_to_env(check_path_format(exe_path), programming_language.upper())
 

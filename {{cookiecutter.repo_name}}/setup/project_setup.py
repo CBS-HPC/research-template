@@ -125,8 +125,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             install_packages.extend(['r-base'])
 
         conda_packages = set_conda_packages(version_control,install_packages,code_repo)
-        #env_file = load_env_file()
-        
+
         if python_env_manager and python_env_manager.lower() == "conda":
             env_name = setup_conda(install_path,repo_name,conda_packages,pip_packages,None)
         else:
