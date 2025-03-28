@@ -18,9 +18,9 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
 
     if version_control == None or not os.path.isdir(".git"):
         return False
-    if code_repo.lower() == "github":
+    if code_repo and code_repo.lower() == "github":
         flag = install_gh("bin/gh")     
-    elif code_repo.lower() == "gitlab":
+    elif code_repo and code_repo.lower() == "gitlab":
         flag  = install_glab("bin/glab")
     else:
         return False 
@@ -364,15 +364,15 @@ def install_gh(install_path=None):
 version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
 repo_name = load_from_env("REPO_NAME",".cookiecutter")
 code_repo = load_from_env("CODE_REPO",".cookiecutter")
-remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
-project_name = load_from_env("PROJECT_NAME",".cookiecutter")
+#remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
+#project_name = load_from_env("PROJECT_NAME",".cookiecutter")
 project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-authors= load_from_env("AUTHORS",".cookiecutter")
+#authors= load_from_env("AUTHORS",".cookiecutter")
 python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
-programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+#programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
 
 # Create Remote Repository
-flag = setup_remote_repository(version_control,code_repo,repo_name,project_description )
+flag = setup_remote_repository(version_control,code_repo,repo_name,project_description)
 
 install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
 requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
