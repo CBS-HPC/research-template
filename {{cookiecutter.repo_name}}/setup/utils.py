@@ -464,7 +464,7 @@ def get_version(programming_language):
     elif programming_language.lower() == "sas": # FIX ME
         version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
         version =version.stdout.strip()  # Returns version info
-    return versio
+    return version
 
 
 # Git Functions:
