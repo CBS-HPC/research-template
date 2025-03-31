@@ -71,23 +71,23 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         if step in [1,2]:
             install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
         if step == 1:
-            
+            activate_cmd = f"### Conda Installation\n"
             if programming_language.lower() != "python":
-                    activate_cmd = f"### Setup Code (./setup) Configuration\n"
-                    activate_cmd += f"#### Conda Installation\n"
+                activate_cmd += f"The conda environment is used for project setup (./setup)\n"
             else:
-                activate_cmd = f"### Conda Installation\n"
+                activate_cmd += f"The conda environment is used for project code (./src) and setup(./setup)\n"
+
             activate_cmd += "```\n"
             activate_cmd += f"{install_cmd}\n"
             activate_cmd = f"conda activate {env_name}\n"
             activate_cmd += "```"
         
         elif step == 2: 
+            activate_cmd = f"### {python_version}\n"
             if programming_language.lower() != "python":
-                activate_cmd = f"### Setup Code (./setup) Configuration\n"
-                activate_cmd += f"#### {python_version}\n"
+                activate_cmd += f"The venv environment is used for project setup (./setup)\n"
             else:
-                activate_cmd = f"### {python_version}\n"
+                activate_cmd += f"The venv environment is used for project code (./src) and setup(./setup)\n"
           
             activate_cmd += "```\n"
             activate_cmd += f"python -m venv {env_name}\n"
@@ -100,10 +100,10 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             activate_cmd += "```\n"
 
         elif step == 3:
-            activate_cmd = f"### Setup Code (./setup) Configuration\n"
-            activate_cmd += f"### {python_version}\n"
+            activate_cmd = f"### {python_version}\n"
+            activate_cmd += f"The python environment is used for project setup (./setup)\n"
             activate_cmd += "```\n"
-            activate_cmd += f"python ./setup/install_dependencies.py"
+            activate_cmd += f"python ./setup/install_dependencies.py\n"
             activate_cmd += "```\n"
             activate_cmd = activate_cmd.replace("\\", "/")
 
@@ -111,8 +111,8 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
             if activate_cmd and r_env_manager.lower() != "conda":
                 if programming_language.lower() not in ["python","none"]:
                     software_version = get_version(programming_language)
-                    activate_cmd += f"### Project Code (./src) Configuration\n"
-                    activate_cmd += f"#### {software_version}\n"  
+                    activate_cmd += f"### {software_version}\n"  
+                    activate_cmd += f"The environment is used for project code (./src)\n"
                     activate_cmd += "```\n"
                     activate_cmd += f"{ext_map[programming_language.lower()]} ./src/install_dependencies.{file_ext_map[programming_language.lower()]}"
                     activate_cmd += "```\n"

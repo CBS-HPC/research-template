@@ -345,6 +345,9 @@ def search_apps(app: str):
 
     if not found_paths:
         print(f"No executables found for app '{app}'.")
+
+    found_paths = list(set(found_paths))
+    
     return found_paths
 
 def choose_apps(app: str, found_apps: list):
