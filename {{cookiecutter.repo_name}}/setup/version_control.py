@@ -681,8 +681,10 @@ if programming_language.lower() not in ["python","none"]:
         exe_path = shutil.which(programming_language.lower())
     if exe_path:
         save_to_env(check_path_format(exe_path), programming_language.upper())
+        save_to_env(get_version(programming_language), f"{programming_language.upper()}_VERSION",".cookiecutter")
 
 save_to_env(check_path_format(sys.executable), "PYTHON")
+save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)

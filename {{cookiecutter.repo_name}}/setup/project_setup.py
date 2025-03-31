@@ -4,19 +4,6 @@ import sys
 import platform
 import re
 
-# Installing all dependencies for all files within setup/*
-#required_libraries = ['python-dotenv','pyyaml','requests','bs4','rpds-py==0.21.0','nbformat'] 
-#installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
-
-#for lib in required_libraries:
-#    try:
-#        # Check if the library is already installed
-#        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-#            print(f"Installing {lib}...")
-#            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-#    except subprocess.CalledProcessError as e:
-#        print(f"Failed to install {lib}: {e}")
-
 sys.path.append('setup')
 from utils import *
 from code_templates import *
@@ -38,47 +25,6 @@ file_ext_map = {
     "sas": "sas"
 }
 
-def is_valid_version(version: str, software: str) -> bool:
-    """
-    Validate if the inputted version follows the general versioning structure for R or Python.
-
-    Args:
-        version (str): The version string to validate.
-        software (str): The software name ('r' or 'python').
-
-    Returns:
-        bool: True if the version is valid, False otherwise.
-    """
-    version_pattern = {
-        "r": r"^4(\.\d+){0,2}$",  # Matches '4', '4.3', or '4.4.3' for R
-        "python": r"^3(\.\d+){0,2}$"  # Matches '3', '3.9', '3.12', or '3.9.3' for Python
-    }
-
-    if software.lower() not in version_pattern:
-        raise ValueError("Software must be 'r' or 'python'")
-
-    return version == "" or bool(re.fullmatch(version_pattern[software.lower()], version))
-
-def get_version(programming_language):
-    exe_path = load_from_env(programming_language)
-    exe_path  = check_path_format(exe_path)
-    if programming_language.lower() == "r":
-        version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
-        version = version.stdout[0:17].strip()
-    elif programming_language.lower() == "matlab":
-        version = subprocess.run([exe_path, "-batch", "disp(version)"], capture_output=True, text=True)
-        version = f"Matlab {version.stdout.strip()}"
-    elif programming_language.lower() == "stata":
-        # Extract edition based on executable name
-        edition = "SE" if "SE" in exe_path else ("MP" if "MP" in exe_path else "IC")
-        # Extract version from the folder name (e.g., Stata18 -> 18)
-        version = os.path.basename(os.path.dirname(exe_path)).replace('Stata', '')
-        # Format the output as Stata version and edition
-        version = f"Stata {version} {edition}"
-    elif programming_language.lower() == "sas": # FIX ME
-        version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
-        version =version.stdout.strip()  # Returns version info
-    return version
 
 def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "bin/miniconda3"):
     """
@@ -287,6 +233,28 @@ def correct_format(programming_language, authors, orcids):
 
 def set_options(programming_language,version_control):
     
+    def is_valid_version(version: str, software: str) -> bool:
+        """
+        Validate if the inputted version follows the general versioning structure for R or Python.
+
+        Args:
+            version (str): The version string to validate.
+            software (str): The software name ('r' or 'python').
+
+        Returns:
+            bool: True if the version is valid, False otherwise.
+        """
+        version_pattern = {
+            "r": r"^4(\.\d+){0,2}$",  # Matches '4', '4.3', or '4.4.3' for R
+            "python": r"^3(\.\d+){0,2}$"  # Matches '3', '3.9', '3.12', or '3.9.3' for Python
+        }
+
+        if software.lower() not in version_pattern:
+            raise ValueError("Software must be 'r' or 'python'")
+
+        return version == "" or bool(re.fullmatch(version_pattern[software.lower()], version))
+
+
     def select_version():
         r_version = None
         if r_env_manager.lower() == 'conda':

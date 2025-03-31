@@ -445,6 +445,28 @@ def set_programming_language(programming_language):
         save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
     return programming_language
 
+def get_version(programming_language):
+    exe_path = load_from_env(programming_language)
+    exe_path  = check_path_format(exe_path)
+    if programming_language.lower() == "r":
+        version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
+        version = version.stdout[0:17].strip()
+    elif programming_language.lower() == "matlab":
+        version = subprocess.run([exe_path, "-batch", "disp(version)"], capture_output=True, text=True)
+        version = f"Matlab {version.stdout.strip()}"
+    elif programming_language.lower() == "stata":
+        # Extract edition based on executable name
+        edition = "SE" if "SE" in exe_path else ("MP" if "MP" in exe_path else "IC")
+        # Extract version from the folder name (e.g., Stata18 -> 18)
+        version = os.path.basename(os.path.dirname(exe_path)).replace('Stata', '')
+        # Format the output as Stata version and edition
+        version = f"Stata {version} {edition}"
+    elif programming_language.lower() == "sas": # FIX ME
+        version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
+        version =version.stdout.strip()  # Returns version info
+    return versio
+
+
 # Git Functions:
 def git_commit(msg:str=""):
     
