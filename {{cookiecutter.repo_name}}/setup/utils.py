@@ -660,12 +660,9 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         command.extend(conda_packages)
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
 
-    create_conda_env(command,msg,dry_run=True)
-
     flag = create_conda_env(command,msg)
 
     if not flag and (conda_python_version or conda_r_version):
-        
         if conda_python_version:
             command = [item for item in command if conda_python_version not in item]
             print(f"Choice of Python version {conda_python_version} has been cancelled due to installation problems")
@@ -869,7 +866,7 @@ def install_miniconda(install_path):
         print(f"Failed to install Miniconda3: {e}")
         return False
 
-def create_conda_env(command,msg,dry_run:bool = False):
+def create_conda_env(command,msg):
     """
     Create a conda environment from an environment.yml file with a specified name.
     
@@ -878,8 +875,6 @@ def create_conda_env(command,msg,dry_run:bool = False):
     - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
     """
     try:
-        if dry_run:
-            command.extend("--dry-run")
         # Run the command
         subprocess.run(command, check=True)
         print(msg)
