@@ -347,7 +347,7 @@ def search_apps(app: str):
         print(f"No executables found for app '{app}'.")
 
     found_paths = list(set(found_paths))
-    
+
     return found_paths
 
 def choose_apps(app: str, found_apps: list):
@@ -634,7 +634,7 @@ def set_pip_packages(version_control,programming_language):
     return install_packages
 
 # Conda Functions:
-def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_packages:list = [], env_file:str = None):
+def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_packages:list = [], env_file:str = None, conda_r_version:str = None, conda_python_version:str = None):
     
     install_path = os.path.abspath(install_path)
 
@@ -660,7 +660,22 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         command.extend(conda_packages)
         msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
 
-    if create_conda_env(command,msg):
+    create_conda_env(command,msg,dry_run=True)
+
+    flag = create_conda_env(command,msg)
+
+    if not flag and (conda_python_version or conda_r_version):
+        
+        if conda_python_version:
+            command = [item for item in command if conda_python_version not in item]
+            print(f"Choice of Python version {conda_python_version} has been cancelled due to installation problems")
+        if conda_r_version:
+            command = [item for item in command if conda_r_version not in item]
+            print(f"Choice of Python version {conda_r_version} has been cancelled due to installation problems")
+
+        flag = create_conda_env(command,msg)
+
+    if flag:
         conda_pip_install(env_path, pip_packages)
         export_conda_env(env_path)
         
@@ -854,7 +869,7 @@ def install_miniconda(install_path):
         print(f"Failed to install Miniconda3: {e}")
         return False
 
-def create_conda_env(command,msg):
+def create_conda_env(command,msg,dry_run:bool = False):
     """
     Create a conda environment from an environment.yml file with a specified name.
     
@@ -863,7 +878,8 @@ def create_conda_env(command,msg):
     - env_name: str, optional name for the new environment. If provided, overrides the name in the YAML file.
     """
     try:
-
+        if dry_run:
+            command.extend("--dry-run")
         # Run the command
         subprocess.run(command, check=True)
         print(msg)

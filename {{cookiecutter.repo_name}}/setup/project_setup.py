@@ -50,13 +50,13 @@ def is_valid_version(version: str, software: str) -> bool:
         bool: True if the version is valid, False otherwise.
     """
     version_pattern = {
-        "r": r"^\d+(\.\d+){0,2}$",  # Matches '4', '4.3', or '4.4.3'
-        "python": r"^\d+(\.\d+){0,2}$"  # Matches '3', '3.12', or '3.9.3'
+        "r": r"^4(\.\d+){0,2}$",  # Matches '4', '4.3', or '4.4.3' for R
+        "python": r"^3(\.\d+){0,2}$"  # Matches '3', '3.9', '3.12', or '3.9.3' for Python
     }
-    
+
     if software.lower() not in version_pattern:
         raise ValueError("Software must be 'r' or 'python'")
-    
+
     return version == "" or bool(re.fullmatch(version_pattern[software.lower()], version))
 
 def get_version(programming_language):
@@ -80,7 +80,7 @@ def get_version(programming_language):
         version =version.stdout.strip()  # Returns version info
     return version
 
-def setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,install_path = "bin/miniconda3"):
+def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
 
@@ -152,22 +152,22 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         
         if python_env_manager.lower() == "conda":
             if conda_python_version:
-                install_packages.extend([f'python {conda_python_version}'])
+                install_packages.extend([f'python={conda_python_version}'])
             else:
                 install_packages.extend(['python'])
 
         if r_env_manager.lower() == "conda":
             if conda_r_version:
-                install_packages.extend([f'r-base {conda_r_version}'])
+                install_packages.extend([f'r-base={conda_r_version}'])
             else:
                 install_packages.extend(['r-base'])
 
         conda_packages = set_conda_packages(version_control,install_packages,code_repo)
 
         if python_env_manager and python_env_manager.lower() == "conda":
-            env_name = setup_conda(install_path,repo_name,conda_packages,pip_packages,None)
+            env_name = setup_conda(install_path=install_path,repo_name=repo_name,conda_packages=conda_packages, pip_packages=pip_packages, env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
         else:
-            env_name = setup_conda(install_path,repo_name,conda_packages,None,None)
+            env_name = setup_conda(install_path=install_path, repo_name=repo_name,conda_packages=conda_packages, pip_packages=None,env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
         
         if env_name:
             activate_cmd = create_command(activate_cmd=activate_cmd ,step = 1)
