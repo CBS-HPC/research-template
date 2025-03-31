@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import platform
+import re
 
 # Installing all dependencies for all files within setup/*
 #required_libraries = ['python-dotenv','pyyaml','requests','bs4','rpds-py==0.21.0','nbformat'] 
@@ -37,6 +38,27 @@ file_ext_map = {
     "sas": "sas"
 }
 
+def is_valid_version(version: str, software: str) -> bool:
+    """
+    Validate if the inputted version follows the general versioning structure for R or Python.
+
+    Args:
+        version (str): The version string to validate.
+        software (str): The software name ('r' or 'python').
+
+    Returns:
+        bool: True if the version is valid, False otherwise.
+    """
+    version_pattern = {
+        "r": r"^\d+(\.\d+){0,2}$",  # Matches '4', '4.3', or '4.4.3'
+        "python": r"^\d+(\.\d+){0,2}$"  # Matches '3', '3.12', or '3.9.3'
+    }
+    
+    if software.lower() not in version_pattern:
+        raise ValueError("Software must be 'r' or 'python'")
+    
+    return version == "" or bool(re.fullmatch(version_pattern[software.lower()], version))
+
 def get_version(programming_language):
     exe_path = load_from_env(programming_language)
     exe_path  = check_path_format(exe_path)
@@ -58,7 +80,7 @@ def get_version(programming_language):
         version =version.stdout.strip()  # Returns version info
     return version
 
-def setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,install_path = "bin/miniconda3"):
+def setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,install_path = "bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
 
@@ -73,9 +95,9 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         if step == 1:
             activate_cmd = f"### Conda Installation\n"
             if programming_language.lower() != "python":
-                activate_cmd += f"The conda environment is used for project setup (./setup)\n"
+                activate_cmd += f"The conda environment is used for project setup functionalities in the './setup' folder\n"
             else:
-                activate_cmd += f"The conda environment is used for project code (./src) and setup(./setup)\n"
+                activate_cmd += f"The conda environment is used for project code ('./src' folder) and setup functionalities ('./setup' folder)\n"
 
             activate_cmd += "```\n"
             activate_cmd += f"{install_cmd}\n"
@@ -85,9 +107,9 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         elif step == 2: 
             activate_cmd = f"### {python_version}\n"
             if programming_language.lower() != "python":
-                activate_cmd += f"The venv environment is used for project setup (./setup)\n"
+                activate_cmd += f"The venv environment is used for project setup functionalities in the './setup' folder\n"
             else:
-                activate_cmd += f"The venv environment is used for project code (./src) and setup(./setup)\n"
+                activate_cmd += f"The venv environment is used for project code ('./src' folder) and setup functionalities ('./setup' folder)\n"
           
             activate_cmd += "```\n"
             activate_cmd += f"python -m venv {env_name}\n"
@@ -101,7 +123,7 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
 
         elif step == 3:
             activate_cmd = f"### {python_version}\n"
-            activate_cmd += f"The python environment is used for project setup (./setup)\n"
+            activate_cmd += f"The python environment is used for project setup functionalities in the './setup' folder\n"
             activate_cmd += "```\n"
             activate_cmd += f"python ./setup/install_dependencies.py\n"
             activate_cmd += "```\n"
@@ -112,17 +134,15 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
                 if programming_language.lower() not in ["python","none"]:
                     software_version = get_version(programming_language)
                     activate_cmd += f"### {software_version}\n"  
-                    activate_cmd += f"The environment is used for project code (./src)\n"
+                    activate_cmd += f"The environment is used for project code in the './src' folder\n"
                     activate_cmd += "```\n"
-                    activate_cmd += f"{ext_map[programming_language.lower()]} ./src/install_dependencies.{file_ext_map[programming_language.lower()]}"
+                    activate_cmd += f"{ext_map[programming_language.lower()]} ./src/install_dependencies.{file_ext_map[programming_language.lower()]}\n"
                     activate_cmd += "```\n"
                 activate_cmd = activate_cmd.replace("\\", "/")
 
         return activate_cmd 
     
-
-    pip_packages = set_pip_packages(version_control,programming_language)
-    
+    pip_packages = set_pip_packages(version_control,programming_language)    
     activate_cmd = None
     env_name = None
   
@@ -131,10 +151,16 @@ def setup_virtual_environment(version_control,programming_language,python_env_ma
         install_packages = []
         
         if python_env_manager.lower() == "conda":
-              install_packages.extend(['python'])
+            if conda_python_version:
+                install_packages.extend([f'python {conda_python_version}'])
+            else:
+                install_packages.extend(['python'])
 
         if r_env_manager.lower() == "conda":
-            install_packages.extend(['r-base'])
+            if conda_r_version:
+                install_packages.extend([f'r-base {conda_r_version}'])
+            else:
+                install_packages.extend(['r-base'])
 
         conda_packages = set_conda_packages(version_control,install_packages,code_repo)
 
@@ -260,8 +286,26 @@ def correct_format(programming_language, authors, orcids):
     return programming_language, authors, orcids
 
 def set_options(programming_language,version_control):
+    
+    def select_version():
+        r_version = None
+        if r_env_manager.lower() == 'conda':
+            r_version = input("Would you like to specify an R version (e.g., '4.4.3', '4.3', or '4') to be installed via conda? Leave empty for default: ").strip()
+            if r_version and not is_valid_version(r_version, 'r'):
+                print("Invalid R version format. Will be left empty.")
+                r_version = None
+        python_version = None
+        if python_env_manager.lower() == 'conda':
+            python_version = input("Would you like to specify a Python version (e.g., '3.9.3', '3.12', or '3') to be installed via conda? Leave empty for default: ").strip()
+            if python_version and not is_valid_version(python_version, 'python'):
+                print("Invalid Python version format. Will be left empty.")
+                python_version = None
+        
+        return r_version, python_version
 
-    environment_opts = ["Conda","Venv","Base Installation"]
+
+    python_version = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
+    environment_opts = ["Conda",f"Venv {python_version}",f"Base Installation {python_version}"]
     python_env_manager = None
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using Conda or use Base Installation:"
@@ -269,7 +313,7 @@ def set_options(programming_language,version_control):
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
         
         if r_env_manager.lower() =='conda':
-            environment_opts = ["Conda","Base Installation"]
+            environment_opts = ["Conda",f"Base Installation {python_version}"]
             python_env_manager = "Conda"
             print("A new python environment will be created to facilitate the setup functionalities")
 
@@ -314,9 +358,13 @@ def set_options(programming_language,version_control):
             #is_installed(programming_language.lower(),programming_language)
         #else:
         #    print(f"{programming_language} path has not been set")
-      
 
-    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd
+
+    python_env_manager = python_env_manager.replace(python_version,"") 
+
+    conda_r_version, conda_python_version = select_version()
+
+    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version 
 
 setup_version_control = "setup/version_control.py"
 setup_remote_repository = "setup/remote_repository.py"
@@ -335,7 +383,7 @@ version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
-programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd = set_options(programming_language,version_control)
+programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
 
 # Create scripts and notebook
 if programming_language.lower() != "none":
@@ -368,7 +416,7 @@ repo_user,_,_ = git_repo_user(version_control,repo_name,code_repo)
 create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
 
 # Create Virtual Environment
-env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,miniconda_path)
+env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
 # Creating README
 creating_readme(repo_name= repo_name, 
