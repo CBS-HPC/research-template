@@ -5,6 +5,7 @@ import platform
 import zipfile
 import urllib.request
 import shutil
+import glob
 
 #required_libraries = ['requests']
 required_libraries = ['python-dotenv','pyyaml','requests','bs4','rpds-py==0.21.0','nbformat'] 
@@ -628,6 +629,7 @@ def install_rclone(install_path):
         # Set the URL and executable name based on the OS
         if os_type == "windows":
             url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
+            unzip_folder = ""
             rclone_executable = "rclone.exe"
         elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
             url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if os_type == "linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
@@ -657,11 +659,20 @@ def install_rclone(install_path):
         with zipfile.ZipFile(local_zip, 'r') as zip_ref:
             zip_ref.extractall(install_path)
 
+        rclone_folder = glob.glob(os.path.join(install_path, 'rclone-*'))
+
+        if not rclone_folder or len(rclone_folder) > 1:
+            print(f"More than one 'rclone-*' folder detected in {install_path}")
+            return
+         
+
         # Clean up by deleting the zip file
         #os.remove(local_zip)
-        print(f"rclone installed successfully at {os.path.join(install_path, rclone_executable)}.")
 
-        rclone_path = os.path.abspath(os.path.join(install_path, rclone_executable))
+        rclone_path = os.path.join(install_path,rclone_folder ,rclone_executable)
+        print(f"rclone installed successfully at {rclone_path}.")
+
+        rclone_path = os.path.abspath(rclone_path)
 
         return rclone_path
 
