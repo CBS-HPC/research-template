@@ -38,15 +38,18 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     elif version_control.lower() == "dvc":
         setup_dvc(version_control,remote_storage,code_repo,repo_name)
 
+
+
+
 def setup_remote_backup(remote_backup,repo_name):
     
     if remote_backup.lower() != "none":
         # Install rclone git-annex-remote-rclone
         install_rclone("bin")
     
-    #if remote_storage.lower() == "local path":
+    #if remote_backup.lower() == "local path":
     
-    if remote_storage.lower() == "deic storage":
+    if remote_backup.lower() == "deic storage":
         rclone_remote("deic-storage")
         base_folder = 'RClone_backup/' + repo_name
         rclone_folder("deic-storage", base_folder)
@@ -718,6 +721,23 @@ def rclone_remote(remote_name:str="deic-storage"):
             print(f"Failed to create backup folder: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+
+def rclone_folder(remote_name,base_folder):
+
+    # Construct the command to create a backup folder with a timestamp on the remote
+    command= [
+        'rclone', 'mkdir', f'{remote_name}:{base_folder}'
+    ]
+
+    try:
+        # Create the backup folder on the remote
+        subprocess.run(command, check=True)
+        print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create backup: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 def rclone_copy(remote_name, base_folder, folder_to_backup=None):
     # If folder_to_backup is None, use the current directory
