@@ -448,7 +448,10 @@ def set_programming_language(programming_language):
 def get_version(programming_language):
     exe_path = load_from_env(programming_language)
     exe_path  = check_path_format(exe_path)
-    if programming_language.lower() == "r":
+    
+    if programming_language.lower() == "python":
+        version  = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
+    elif programming_language.lower() == "r":
         version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
         version = version.stdout[0:17].strip()
     elif programming_language.lower() == "matlab":
