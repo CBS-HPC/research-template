@@ -5,6 +5,10 @@ import platform
 #from textwrap import dedent
 import shutil
 import urllib.request
+import zipfile
+import glob
+from datetime import datetime
+import fnmatch
 
 
 required_libraries = ['python-dotenv','pyyaml'] 
@@ -468,7 +472,6 @@ def get_version(programming_language):
         version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
         version =version.stdout.strip()  # Returns version info
     return version
-
 
 # Git Functions:
 def git_commit(msg:str=""):
@@ -1067,6 +1070,250 @@ def create_requirements_txt(file:str="requirements.txt"):
         print("requirements.txt has been created successfully.")
     else:
         print("Error running pip freeze:", result.stderr)
+
+
+# RClone:
+
+def install_rclone(install_path):
+    """Download and extract rclone to the specified bin folder."""
+
+    def download_rclone(install_path):
+        os_type = platform.system().lower()
+        
+        # Set the URL and executable name based on the OS
+        if os_type == "windows":
+            url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
+            rclone_executable = "rclone.exe"
+        elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
+            url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if os_type == "linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
+            rclone_executable = "rclone"
+        else:
+            print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
+            return None
+
+        # Create the bin folder if it doesn't exist
+        install_path = os.path.abspath(install_path or os.getcwd())
+        os.makedirs(install_path, exist_ok=True)
+    
+        # Download rclone
+        local_zip = os.path.join(install_path, "rclone.zip")
+        print(f"Downloading rclone for {os_type} to {local_zip}...")
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(local_zip, 'wb') as file:
+                file.write(response.content)
+            print("Download complete.")
+        else:
+            print("Failed to download rclone. Please check the URL.")
+            return None
+
+        # Extract the rclone executable
+        print("Extracting rclone...")
+        with zipfile.ZipFile(local_zip, 'r') as zip_ref:
+            zip_ref.extractall(install_path)
+
+        rclone_folder = glob.glob(os.path.join(install_path, 'rclone-*'))
+
+        if not rclone_folder or len(rclone_folder) > 1:
+            print(f"More than one 'rclone-*' folder detected in {install_path}")
+            return None
+         
+        # Clean up by deleting the zip file
+        #os.remove(local_zip)
+
+        rclone_path = os.path.join(install_path,rclone_folder[0] ,rclone_executable)
+        print(f"rclone installed successfully at {rclone_path}.")
+
+        rclone_path = os.path.abspath(rclone_path)
+
+        return rclone_path
+
+    if not is_installed('rclone','Rclone'):
+        rclone_path = download_rclone(install_path)
+        exe_to_path('rclone', os.path.dirname(rclone_path))
+
+def rclone_remote(remote_name:str="deic-storage"):
+
+    email = input("Please enter email to Deic Storage: ").strip()
+    
+    password = input("Please enter password to Deic Storage: ").strip()
+
+        # Construct the command
+    command = [
+            'rclone', 'config', 'create', remote_name, 'sftp',
+            'host', 'sftp.storage.deic.dk',
+            'port', '2222',
+            'user', email,
+            'pass', password
+    ]
+
+    try:
+        # Execute the command
+        subprocess.run(command, check=True)
+        print("Rclone remote 'deic-storage' created successfully.")
+        save_to_env(email,"RClONE_USER")
+        save_to_env(password,"RCLODE_PASS")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create rclone remote: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def rclone_folder(remote_name, base_folder):
+    # Generate a timestamped folder name
+   
+        # Construct the command to create the timestamped backup folder
+        rclone_repo = f'{remote_name}:{base_folder}'
+        command = [
+            'rclone', 'mkdir', rclone_repo
+        ]
+        
+        try:
+            # Execute the command
+            subprocess.run(command, check=True)
+            print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
+            save_to_env(rclone_repo,"RCLODE_REPO")
+
+            return rclone_repo
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to create backup folder: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+        return None
+
+def read_rcloneignore(folder):
+    """Read the .rcloneignore file from the specified folder and return the patterns."""
+    rcloneignore_path = os.path.join(folder, '.rcloneignore')
+    
+    ignore_patterns = []
+    if os.path.exists(rcloneignore_path):
+        with open(rcloneignore_path, 'r') as f:
+            for line in f:
+                # Remove comments and strip any surrounding whitespace
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    ignore_patterns.append(line)
+    return ignore_patterns
+
+def zip_folder(folder_to_backup, exclude_patterns=None):
+    """Zips the folder, excluding files or subfolders matching any exclude_patterns."""
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    # Get the folder name (just the name, not the full path)
+    folder_name = os.path.basename(folder_to_backup)
+    
+    # Generate a timestamped zip file name
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    zip_file_name = f"{folder_name}_backup_{timestamp}.zip"
+    
+    # Construct the path to save the zip file
+    zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
+
+    # Create the zip file
+    try:
+        with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Walk through the folder
+            for root, dirs, files in os.walk(folder_to_backup):
+                # Check each subfolder to see if it should be excluded
+                for dir_name in dirs:
+                    dir_path = os.path.join(root, dir_name)
+                    # If directory matches any exclusion pattern, skip it
+                    if any(fnmatch.fnmatch(dir_path, pat) for pat in exclude_patterns):
+                        dirs.remove(dir_name)  # This excludes the directory from walking
+
+                # Add each file to the zip, unless it's excluded
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # If file matches any exclusion pattern, skip it
+                    if any(fnmatch.fnmatch(file_path, pat) for pat in exclude_patterns):
+                        continue
+                    zipf.write(file_path, os.path.relpath(file_path, folder_to_backup))
+        
+        print(f"Folder '{folder_to_backup}' successfully zipped to '{zip_file_path}'.")
+        return zip_file_path
+    except Exception as e:
+        print(f"Error creating zip file: {e}")
+        return None
+
+def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
+    """Backup folder to remote by zipping it first and then copying the zip file."""
+
+    if not rclone_repo:
+        rclone_repo = load_from_env("RCLONE_REPO")
+
+    # If folder_to_backup is None, use the current directory
+    if folder_to_backup is None:
+        folder_to_backup = os.getcwd()
+    
+    # Check if the specified folder exists
+    if not os.path.exists(folder_to_backup):
+        print(f"Error: The folder '{folder_to_backup}' does not exist.")
+        return
+
+    # Read patterns from .rcloneignore file
+    exclude_patterns = read_rcloneignore(folder_to_backup)
+
+    # Get the folder name (just the name, not the full path)
+    folder_name = os.path.basename(folder_to_backup)
+
+    # Generate a timestamped zip file name
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    zip_file_name = f"{folder_name}_{timestamp}.zip"
+
+    # Define the path where the zip file will be saved
+    zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
+
+    # Zip the folder, excluding the patterns specified in .rcloneignore
+    if not zip_folder(folder_to_backup, exclude_patterns):
+        return
+
+    # Construct the remote backup path where the zip file will be copied
+    remote_backup_path = f"{rclone_repo}/{zip_file_name}"
+
+    # Construct the command to copy the zip file to the remote server
+    command_copy = [
+        'rclone', 'copy', zip_file_path, remote_backup_path, '--verbose'
+    ]
+    
+    try:
+        # Copy the .zip file to the remote
+        subprocess.run(command_copy, check=True)
+        print(f"Backup (zip file) of folder '{folder_to_backup}' to '{remote_backup_path}' was successful.")
+
+        # Optionally remove the zip file after successful backup (uncomment to delete after copy)
+        os.remove(zip_file_path)
+        # print(f"Local zip file '{zip_file_path}' removed after backup.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to copy zip file to remote: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def check_rclone_remote(remote_name):
+    """Check if a specific remote repository is configured in rclone."""
+    try:
+        # Run the rclone listremotes command to get all configured remotes
+        result = subprocess.run(['rclone', 'listremotes'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Decode the output and split by lines
+        remotes = result.stdout.decode('utf-8').splitlines()
+
+        # Check if the given remote_name exists in the list (remotes end with ':')
+        if f"{remote_name}:" in remotes:
+            print(f"Remote '{remote_name}' is configured in rclone.")
+            return True
+        else:
+            print(f"Remote '{remote_name}' is NOT configured in rclone.")
+            return False
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to check rclone remotes: {e}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
+
 
 # Other
 def get_hardware_info():
