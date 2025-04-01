@@ -254,7 +254,6 @@ def set_options(programming_language,version_control):
 
         return version == "" or bool(re.fullmatch(version_pattern[software.lower()], version))
 
-
     def select_version():
         r_version = None
         if r_env_manager.lower() == 'conda':
@@ -349,6 +348,7 @@ license = "{{cookiecutter.open_source_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
+remote_backup = "{{cookiecutter.remote_backup}}"
 
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
@@ -369,6 +369,7 @@ save_to_env(license,"LICENSE",".cookiecutter")
 save_to_env(programming_language,"PROGRAMMING_LANGUAGE",".cookiecutter")
 save_to_env(python_env_manager,"PYTHON_ENV_MANAGER",".cookiecutter")
 save_to_env(version_control,"VERSION_CONTROL",".cookiecutter")
+save_to_env(remote_backup,"REMOTE_BACKUP",".cookiecutter")
 save_to_env(remote_storage,"REMOTE_STORAGE",".cookiecutter")
 save_to_env(code_repo,"CODE_REPO",".cookiecutter")
 
