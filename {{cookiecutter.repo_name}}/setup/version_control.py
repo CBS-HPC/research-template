@@ -629,7 +629,6 @@ def install_rclone(install_path):
         # Set the URL and executable name based on the OS
         if os_type == "windows":
             url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
-            unzip_folder = ""
             rclone_executable = "rclone.exe"
         elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
             url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if os_type == "linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
@@ -669,7 +668,7 @@ def install_rclone(install_path):
         # Clean up by deleting the zip file
         #os.remove(local_zip)
 
-        rclone_path = os.path.join(install_path,rclone_folder ,rclone_executable)
+        rclone_path = os.path.join(install_path,rclone_folder[0] ,rclone_executable)
         print(f"rclone installed successfully at {rclone_path}.")
 
         rclone_path = os.path.abspath(rclone_path)
