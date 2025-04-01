@@ -37,6 +37,24 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     elif version_control.lower() == "dvc":
         setup_dvc(version_control,remote_storage,code_repo,repo_name)
 
+def setup_remote_backup(remote_backup,repo_name):
+    
+    if remote_backup.lower() != "none":
+        # Install rclone git-annex-remote-rclone
+        install_rclone("bin")
+    
+    #if remote_storage.lower() == "local path":
+    
+    if remote_storage.lower() == "deic storage":
+        rclone_remote("deic-storage")
+        base_folder = 'RClone_backup/' + repo_name
+        rclone_folder("deic-storage", base_folder)
+        rclone_copy("deic-storage", base_folder, folder_to_backup=None)
+       
+
+    
+
+
 # Git Setup Functions
 def setup_git(version_control,code_repo):
 
@@ -384,6 +402,7 @@ def setup_datalad(version_control,remote_storage,code_repo,repo_name):
     
     # Install rclone git-annex-remote-rclone
     install_rclone("bin")
+    install_git_annex_remote_rclone("bin")
 
     # Create datalad dataset
     datalad_create()
@@ -467,52 +486,8 @@ def install_git_annex():
         print(f"Error configuring git-annex filter process: {e}")
         return False
 
-def install_rclone(install_path):
-    """Download and extract rclone to the specified bin folder."""
-
-    def download_rclone(install_path):
-        os_type = platform.system().lower()
+def install_git_annex_remote_rclone(install_path):
         
-        # Set the URL and executable name based on the OS
-        if os_type == "windows":
-            url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
-            rclone_executable = "rclone.exe"
-        elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
-            url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if os_type == "linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
-            rclone_executable = "rclone"
-        else:
-            print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
-            return
-
-        # Create the bin folder if it doesn't exist
-        install_path = os.path.abspath(install_path or os.getcwd())
-        os.makedirs(install_path, exist_ok=True)
-    
-        # Download rclone
-        local_zip = os.path.join(install_path, "rclone.zip")
-        print(f"Downloading rclone for {os_type} to {local_zip}...")
-        response = requests.get(url)
-        if response.status_code == 200:
-            with open(local_zip, 'wb') as file:
-                file.write(response.content)
-            print("Download complete.")
-        else:
-            print("Failed to download rclone. Please check the URL.")
-            return
-
-        # Extract the rclone executable
-        print("Extracting rclone...")
-        with zipfile.ZipFile(local_zip, 'r') as zip_ref:
-            zip_ref.extractall(install_path)
-
-        # Clean up by deleting the zip file
-        #os.remove(local_zip)
-        print(f"rclone installed successfully at {os.path.join(install_path, rclone_executable)}.")
-
-        rclone_path = os.path.abspath(os.path.join(install_path, rclone_executable))
-
-        return rclone_path
-
     def clone_git_annex_remote_rclone(install_path):
         """Clone the git-annex-remote-rclone repository to the specified bin folder."""
         repo_url = "https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git"
@@ -534,10 +509,6 @@ def install_rclone(install_path):
         print(f"Repository cloned successfully to {repo_path}.")
         return repo_path
     
-    if not is_installed('rclone','Rclone'):
-        rclone_path = download_rclone(install_path)
-        exe_to_path('rclone', os.path.dirname(rclone_path))
-
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
     
     if not is_installed('git-annex-remote-rclone','git-annex-remote-rclone'):
@@ -589,30 +560,7 @@ def datalad_deic_storage(repo_name):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-    def rclone_remote(email,password):
-
-            # Construct the command
-        command = [
-                'rclone', 'config', 'create', 'deic-storage', 'sftp',
-                'host', 'sftp.storage.deic.dk',
-                'port', '2222',
-                'user', email,
-                'pass', password
-        ]
-    
-        try:
-            # Execute the command
-            subprocess.run(command, check=True)
-            print("Rclone remote 'deic-storage' created successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to create rclone remote: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-
-    email = input("Please enter email to Deic Storage: ").strip()
-    password = input("Please enter password to Deic Storage: ").strip()
-
-    rclone_remote(email,password)
+    rclone_remote()
     git_annex_remote("deic-storage","deic-storage",repo_name)
 
 def datalad_local_storage(repo_name):
@@ -668,11 +616,150 @@ def datalad_local_storage(repo_name):
     if datalad_remote:
         subprocess.run(["datalad", "create-sibling-ria","-s",repo_name,"--new-store-ok",f"ria+file//{remote_storage}"], check=True)
 
+
+# RClone:
+
+def install_rclone(install_path):
+    """Download and extract rclone to the specified bin folder."""
+
+    def download_rclone(install_path):
+        os_type = platform.system().lower()
+        
+        # Set the URL and executable name based on the OS
+        if os_type == "windows":
+            url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
+            rclone_executable = "rclone.exe"
+        elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
+            url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip" if os_type == "linux" else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
+            rclone_executable = "rclone"
+        else:
+            print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
+            return
+
+        # Create the bin folder if it doesn't exist
+        install_path = os.path.abspath(install_path or os.getcwd())
+        os.makedirs(install_path, exist_ok=True)
+    
+        # Download rclone
+        local_zip = os.path.join(install_path, "rclone.zip")
+        print(f"Downloading rclone for {os_type} to {local_zip}...")
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(local_zip, 'wb') as file:
+                file.write(response.content)
+            print("Download complete.")
+        else:
+            print("Failed to download rclone. Please check the URL.")
+            return
+
+        # Extract the rclone executable
+        print("Extracting rclone...")
+        with zipfile.ZipFile(local_zip, 'r') as zip_ref:
+            zip_ref.extractall(install_path)
+
+        # Clean up by deleting the zip file
+        #os.remove(local_zip)
+        print(f"rclone installed successfully at {os.path.join(install_path, rclone_executable)}.")
+
+        rclone_path = os.path.abspath(os.path.join(install_path, rclone_executable))
+
+        return rclone_path
+
+    if not is_installed('rclone','Rclone'):
+        rclone_path = download_rclone(install_path)
+        exe_to_path('rclone', os.path.dirname(rclone_path))
+
+def rclone_remote(remote_name:str="deic-storage"):
+
+    email = input("Please enter email to Deic Storage: ").strip()
+    password = input("Please enter password to Deic Storage: ").strip()
+
+        # Construct the command
+    command = [
+            'rclone', 'config', 'create', remote_name, 'sftp',
+            'host', 'sftp.storage.deic.dk',
+            'port', '2222',
+            'user', email,
+            'pass', password
+    ]
+
+    try:
+        # Execute the command
+        subprocess.run(command, check=True)
+        print("Rclone remote 'deic-storage' created successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create rclone remote: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    def rclone_folder(remote_name, base_folder):
+    # Generate a timestamped folder name
+   
+        # Construct the command to create the timestamped backup folder
+        command = [
+            'rclone', 'mkdir', f'{remote_name}:{base_folder}'
+        ]
+        
+        try:
+            # Execute the command
+            subprocess.run(command, check=True)
+            print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to create backup folder: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+def rclone_copy(remote_name, base_folder, folder_to_backup=None):
+    # If folder_to_backup is None, use the current directory
+    if folder_to_backup is None:
+        folder_to_backup = os.getcwd()
+    
+    # Check if the specified folder exists
+    if not os.path.exists(folder_to_backup):
+        print(f"Error: The folder '{folder_to_backup}' does not exist.")
+        return
+
+    # Get the folder name (just the name, not the full path)
+    folder_name = os.path.basename(folder_to_backup)
+
+    # Generate a timestamped folder name
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    backup_folder_name = f"{folder_name}_backup_{timestamp}"
+
+    # Construct the full path for the backup folder on the remote
+    remote_backup_path = f"{remote_name}:{base_folder}/{backup_folder_name}"
+
+    # Construct the command to create a backup folder with a timestamp on the remote
+    command_create_folder = [
+        'rclone', 'mkdir', remote_backup_path
+    ]
+
+    # Construct the command to copy the specified folder to the timestamped backup folder
+    command_copy = [
+        'rclone', 'copy', folder_to_backup, remote_backup_path, '--verbose'
+    ]
+    
+    try:
+        # Create the backup folder on the remote
+        subprocess.run(command_create_folder, check=True)
+        print(f"Backup folder '{backup_folder_name}' created successfully on remote '{remote_name}' at '{base_folder}'.")
+
+        # Copy the specified folder to the backup folder on the remote
+        subprocess.run(command_copy, check=True)
+        print(f"Backup of folder '{folder_to_backup}' to '{backup_folder_name}' was successful.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create backup: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
 programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
 version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
 repo_name = load_from_env("REPO_NAME",".cookiecutter")
 code_repo = load_from_env("CODE_REPO",".cookiecutter")
 remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
+remote_backup = load_from_env("REMOTE_BACKUP",".cookiecutter")
 
 # Set to .env
 if programming_language.lower() not in ["python","none"]:
@@ -688,3 +775,6 @@ save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
 
 # Setup Version Control
 setup_version_control(version_control,remote_storage,code_repo,repo_name)
+
+# Setup Remote Backup
+setup_remote_backup(remote_backup,repo_name)
