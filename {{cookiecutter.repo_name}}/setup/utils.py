@@ -487,16 +487,18 @@ def git_commit(msg: str = "") -> str:
         try:
             # Stage all changes
             subprocess.run(["git", "add", "."], check=True)
+            
+            try:
+                subprocess.run(["git", "commit", "-m", msg], check=True)
+            except subprocess.CalledProcessError:
+                print("")
 
-            # Commit and capture output
-            subprocess.run(
-                ["git", "commit", "-m", msg],
-                check=True,
-                capture_output=True,
-                text=True
-            )
+          # Get short commit hash
+          #  commit_hash = subprocess.run(
+          #      ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True
+          #  ).stdout.strip()
 
-            # Extract commit hash
+        # Extract commit hash
             commit_hash = subprocess.run(
                 ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
             ).stdout.strip()
@@ -1230,7 +1232,7 @@ def read_rcloneignore(folder):
                     ignore_patterns.append(line)
     return ignore_patterns
 
-def zip_folder(folder_to_backup, exclude_patterns=None):
+def zip_folder(folder_to_backup,zip_file_path=None ,exclude_patterns=None):
     """Zips the folder, excluding files or subfolders matching any exclude_patterns."""
     if exclude_patterns is None:
         exclude_patterns = []
@@ -1238,12 +1240,13 @@ def zip_folder(folder_to_backup, exclude_patterns=None):
     # Get the folder name (just the name, not the full path)
     folder_name = os.path.basename(folder_to_backup)
     
-    # Generate a timestamped zip file name
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    zip_file_name = f"{folder_name}_{timestamp}.zip"
-    
-    # Construct the path to save the zip file
-    zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
+    if not zip_file_path:
+        # Generate a timestamped zip file name
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        zip_file_name = f"{folder_name}_{timestamp}.zip"
+        
+        # Construct the path to save the zip file
+        zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
 
     # Create the zip file
     try:
@@ -1295,16 +1298,17 @@ def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
 
     if not name:
         name = os.path.basename(folder_to_backup)
-    
-    # Generate a timestamped zip file name
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    zip_file_name = f"{name}_{timestamp}.zip"
+        # Generate a timestamped zip file name
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        zip_file_name = f"{name}_{timestamp}.zip"
+    else:
+        zip_file_name = f"{name}.zip"
 
     # Define the path where the zip file will be saved
     zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
 
     # Zip the folder, excluding the patterns specified in .rcloneignore
-    if not zip_folder(folder_to_backup, exclude_patterns):
+    if not zip_folder(folder_to_backup,zip_file_path ,exclude_patterns):
         return
 
     # Construct the remote backup path where the zip file will be copied
