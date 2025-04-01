@@ -506,6 +506,8 @@ def git_commit(msg: str = "") -> str:
         except subprocess.CalledProcessError as e:
             print(f"An error occurred: {e}")
             return None
+
+    return None
     
 def git_commit_old(msg:str=""):
     if os.path.isdir(".git"):
