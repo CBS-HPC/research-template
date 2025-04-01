@@ -7,6 +7,8 @@ import urllib.request
 import shutil
 import glob
 from datetime import datetime
+import fnmatch
+
 
 #required_libraries = ['requests']
 required_libraries = ['python-dotenv','pyyaml','requests','bs4','rpds-py==0.21.0','nbformat'] 
@@ -53,8 +55,9 @@ def setup_remote_backup(remote_backup,repo_name):
     if remote_backup.lower() == "deic storage":
         rclone_remote("deic-storage")
         base_folder = 'RClone_backup/' + repo_name
-        rclone_folder("deic-storage", base_folder)
-        rclone_copy("deic-storage", base_folder, folder_to_backup=None)
+        rclone_repo = rclone_folder("deic-storage", base_folder)
+        if rclone_repo:
+            rclone_copy(rclone_repo, folder_to_backup=None)
        
 
     
@@ -686,6 +689,7 @@ def install_rclone(install_path):
 def rclone_remote(remote_name:str="deic-storage"):
 
     email = input("Please enter email to Deic Storage: ").strip()
+    
     password = input("Please enter password to Deic Storage: ").strip()
 
         # Construct the command
@@ -701,46 +705,100 @@ def rclone_remote(remote_name:str="deic-storage"):
         # Execute the command
         subprocess.run(command, check=True)
         print("Rclone remote 'deic-storage' created successfully.")
+        save_to_env(email,"RClONE_USER")
+        save_to_env(password,"RCLODE_PASS")
     except subprocess.CalledProcessError as e:
         print(f"Failed to create rclone remote: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-    def rclone_folder(remote_name, base_folder):
+def rclone_folder(remote_name, base_folder):
     # Generate a timestamped folder name
    
         # Construct the command to create the timestamped backup folder
+        rclone_repo = f'{remote_name}:{base_folder}'
         command = [
-            'rclone', 'mkdir', f'{remote_name}:{base_folder}'
+            'rclone', 'mkdir', rclone_repo
         ]
         
         try:
             # Execute the command
             subprocess.run(command, check=True)
             print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
+            save_to_env(rclone_repo,"RCLODE_REPO")
+
+            return rclone_repo
         except subprocess.CalledProcessError as e:
             print(f"Failed to create backup folder: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-def rclone_folder(remote_name,base_folder):
+        return None
 
-    # Construct the command to create a backup folder with a timestamp on the remote
-    command= [
-        'rclone', 'mkdir', f'{remote_name}:{base_folder}'
-    ]
+def read_rcloneignore(folder):
+    """Read the .rcloneignore file from the specified folder and return the patterns."""
+    rcloneignore_path = os.path.join(folder, '.rcloneignore')
+    
+    ignore_patterns = []
+    if os.path.exists(rcloneignore_path):
+        with open(rcloneignore_path, 'r') as f:
+            for line in f:
+                # Remove comments and strip any surrounding whitespace
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    ignore_patterns.append(line)
+    return ignore_patterns
 
+def zip_folder(folder_to_backup, exclude_patterns=None):
+    """Zips the folder, excluding files or subfolders matching any exclude_patterns."""
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    # Get the folder name (just the name, not the full path)
+    folder_name = os.path.basename(folder_to_backup)
+    
+    # Generate a timestamped zip file name
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    zip_file_name = f"{folder_name}_backup_{timestamp}.zip"
+    
+    # Construct the path to save the zip file
+    zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
+
+    # Create the zip file
     try:
-        # Create the backup folder on the remote
-        subprocess.run(command, check=True)
-        print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
+        with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Walk through the folder
+            for root, dirs, files in os.walk(folder_to_backup):
+                # Check each subfolder to see if it should be excluded
+                for dir_name in dirs:
+                    dir_path = os.path.join(root, dir_name)
+                    # If directory matches any exclusion pattern, skip it
+                    if any(fnmatch.fnmatch(dir_path, pat) for pat in exclude_patterns):
+                        dirs.remove(dir_name)  # This excludes the directory from walking
 
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to create backup: {e}")
+                # Add each file to the zip, unless it's excluded
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # If file matches any exclusion pattern, skip it
+                    if any(fnmatch.fnmatch(file_path, pat) for pat in exclude_patterns):
+                        continue
+                    zipf.write(file_path, os.path.relpath(file_path, folder_to_backup))
+        
+        print(f"Folder '{folder_to_backup}' successfully zipped to '{zip_file_path}'.")
+        return zip_file_path
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"Error creating zip file: {e}")
+        return None
 
-def rclone_copy(remote_name, base_folder, folder_to_backup=None):
+
+def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
+    """Backup folder to remote by zipping it first and then copying the zip file."""
+    
+    
+    if not rclone_repo:
+        rclone_repo = load_from_env("RCLONE_REPO")
+
+
     # If folder_to_backup is None, use the current directory
     if folder_to_backup is None:
         folder_to_backup = os.getcwd()
@@ -750,39 +808,46 @@ def rclone_copy(remote_name, base_folder, folder_to_backup=None):
         print(f"Error: The folder '{folder_to_backup}' does not exist.")
         return
 
+    # Read patterns from .rcloneignore file
+    exclude_patterns = read_rcloneignore(folder_to_backup)
+
     # Get the folder name (just the name, not the full path)
     folder_name = os.path.basename(folder_to_backup)
 
-    # Generate a timestamped folder name
+    # Generate a timestamped zip file name
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    backup_folder_name = f"{folder_name}_backup_{timestamp}"
+    zip_file_name = f"{folder_name}_backup_{timestamp}.zip"
 
-    # Construct the full path for the backup folder on the remote
-    remote_backup_path = f"{remote_name}:{base_folder}/{backup_folder_name}"
+    # Define the path where the zip file will be saved
+    zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
 
-    # Construct the command to create a backup folder with a timestamp on the remote
-    command_create_folder = [
-        'rclone', 'mkdir', remote_backup_path
-    ]
+    # Zip the folder, excluding the patterns specified in .rcloneignore
+    if not zip_folder(folder_to_backup, exclude_patterns):
+        return
 
-    # Construct the command to copy the specified folder to the timestamped backup folder
+    # Construct the remote backup path where the zip file will be copied
+    remote_backup_path = f"{rclone_repo}/{zip_file_name}"
+
+    # Construct the command to copy the zip file to the remote server
     command_copy = [
-        'rclone', 'copy', folder_to_backup, remote_backup_path, '--verbose'
+        'rclone', 'copy', zip_file_path, remote_backup_path, '--verbose'
     ]
     
     try:
-        # Create the backup folder on the remote
-        subprocess.run(command_create_folder, check=True)
-        print(f"Backup folder '{backup_folder_name}' created successfully on remote '{remote_name}' at '{base_folder}'.")
-
-        # Copy the specified folder to the backup folder on the remote
+        # Copy the .zip file to the remote
         subprocess.run(command_copy, check=True)
-        print(f"Backup of folder '{folder_to_backup}' to '{backup_folder_name}' was successful.")
+        print(f"Backup (zip file) of folder '{folder_to_backup}' to '{remote_backup_path}' was successful.")
+
+        # Optionally remove the zip file after successful backup (uncomment to delete after copy)
+        os.remove(zip_file_path)
+        # print(f"Local zip file '{zip_file_path}' removed after backup.")
 
     except subprocess.CalledProcessError as e:
-        print(f"Failed to create backup: {e}")
+        print(f"Failed to copy zip file to remote: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+
 
 
 programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")

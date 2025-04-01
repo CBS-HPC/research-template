@@ -1,0 +1,14 @@
+# Ignore all .log files
+*.log
+
+# Ignore all files in "tmp" subfolder
+tmp/
+
+# Ignore backup files with a specific extension
+*.bak
+
+# Ignore .git folders
+.git/
+
+# Ignore all files starting with "secret"
+secret*
