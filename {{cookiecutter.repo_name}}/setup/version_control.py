@@ -234,7 +234,7 @@ def git_init(code_repo):
     if code_repo.lower() == "github":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
-    git_commit("Initial commit")
+    _= git_commit("Initial commit")
     print("Created an initial commit.")
     return True
 
@@ -297,7 +297,7 @@ def dvc_init(remote_storage,code_repo,repo_name):
     if code_repo.lower() == "github":
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
-    git_commit("Initial commit")
+    _= git_commit("Initial commit")
     print("Created an initial commit.")
 
 def dvc_deic_storage(remote_directory =None):

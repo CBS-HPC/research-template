@@ -473,17 +473,50 @@ def get_version(programming_language):
         version =version.stdout.strip()  # Returns version info
     return version
 
-# Git Functions:
-def git_commit(msg:str=""):
-    
-    # Set from .env file
-    is_installed('git')
 
-    try:
-        subprocess.run(["git", "add", "."], check=True)    
-        subprocess.run(["git", "commit", "-m", msg], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
+
+
+# Git Functions:
+
+def git_commit(msg: str = "") -> str:
+    """Commits changes to Git and returns the commit hash."""
+    if os.path.isdir(".git"):
+        # Ensure Git is installed
+        is_installed("git")
+
+        try:
+            # Stage all changes
+            subprocess.run(["git", "add", "."], check=True)
+
+            # Commit and capture output
+            subprocess.run(
+                ["git", "commit", "-m", msg],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+
+            # Extract commit hash
+            commit_hash = subprocess.run(
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+            ).stdout.strip()
+
+            return commit_hash
+
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred: {e}")
+            return None
+    
+def git_commit_old(msg:str=""):
+    if os.path.isdir(".git"):
+        # Set from .env file
+        is_installed('git')
+
+        try:
+            subprocess.run(["git", "add", "."], check=True)    
+            subprocess.run(["git", "commit", "-m", msg], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred: {e}")
 
 def git_push(flag:str,msg:str=""):
 
@@ -531,7 +564,7 @@ def git_push(flag:str,msg:str=""):
             push_all()
 
         elif os.path.isdir(".git"):
-            git_commit(msg)
+            _=git_commit(msg)
             if flag:
                 result = subprocess.run(["git", "branch", "--show-current"], check=True, capture_output=True, text=True)
                 branch = result.stdout.strip()  # Remove any extra whitespace or newlin
@@ -1254,12 +1287,16 @@ def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
     # Read patterns from .rcloneignore file
     exclude_patterns = read_rcloneignore(folder_to_backup)
 
-    # Get the folder name (just the name, not the full path)
-    folder_name = os.path.basename(folder_to_backup)
 
+     # Run Git Commit
+    name = git_commit("Rclone Backup")
+
+    if not name:
+        name = os.path.basename(folder_to_backup)
+    
     # Generate a timestamped zip file name
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    zip_file_name = f"{folder_name}_{timestamp}.zip"
+    zip_file_name = f"{name}_{timestamp}.zip"
 
     # Define the path where the zip file will be saved
     zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
@@ -1280,10 +1317,13 @@ def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
         # Copy the .zip file to the remote
         subprocess.run(command_copy, check=True)
         print(f"Backup (zip file) of folder '{folder_to_backup}' to '{remote_backup_path}' was successful.")
-
+        
         # Optionally remove the zip file after successful backup (uncomment to delete after copy)
         os.remove(zip_file_path)
         # print(f"Local zip file '{zip_file_path}' removed after backup.")
+
+        # Run Git Commit
+        _= git_commit(zip_file_name)
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to copy zip file to remote: {e}")
