@@ -1205,7 +1205,7 @@ def zip_folder(folder_to_backup, exclude_patterns=None):
     
     # Generate a timestamped zip file name
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    zip_file_name = f"{folder_name}_backup_{timestamp}.zip"
+    zip_file_name = f"{folder_name}_{timestamp}.zip"
     
     # Construct the path to save the zip file
     zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
