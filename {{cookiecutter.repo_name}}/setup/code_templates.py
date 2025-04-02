@@ -118,7 +118,11 @@ base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 raw_data = os.path.join(base_path, "data", "raw")
 interim_data = os.path.join(base_path, "data", "interrim")
 processed_data = os.path.join(base_path, "data", "processed")
+setup_path  os.path.join(base_path, "setup") 
+sys.path.append(setup_path)
+from utils import *
 
+@ensure_correct_kernel
 def main():
     # {purpose} code
     print("Running {script_name}...")
@@ -261,27 +265,38 @@ def create_python_main(folder_path):
     content = r"""
 # Main: Running all steps in order
 
-# Install dependencies
-import install_dependencies
-install_dependencies.main()
+import os
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+setup_path  os.path.join(base_path, "setup") 
+sys.path.append(setup_path)
+from utils import *
 
-# Load Scripts
-import data_collection
-import preprocessing
-import modeling
-import visualization
+@ensure_correct_kernel
+def main():
+    # Install dependencies
+    import install_dependencies
+    install_dependencies.main()
 
-# Run data collection
-data_collection.main()
+    # Load Scripts
+    import data_collection
+    import preprocessing
+    import modeling
+    import visualization
 
-# Run preprocessing
-preprocessing.main()
+    # Run data collection
+    data_collection.main()
 
-# Run modeling
-modeling.main()
+    # Run preprocessing
+    preprocessing.main()
 
-# Run visualization
-visualization.main()
+    # Run modeling
+    modeling.main()
+
+    # Run visualization
+    visualization.main()
+
+if __name__ == "__main__":
+    main()
 """
     write_script(folder_path, "main", extension, content)
 
@@ -406,14 +421,18 @@ import importlib.metadata
 import yaml
 from typing import Optional, Dict, Set, List
 
-sys.path.append('setup')
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+setup_path  os.path.join(base_path, "setup") 
+sys.path.append(setup_path)
 from utils import *
+
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
         return module_name.split('.')[0]
     return module_name
 
+@ensure_correct_kernel
 def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None,install_cmd:str=None):
     
     def get_dependencies_from_file(python_files):
@@ -1022,6 +1041,7 @@ def install_dependencies(required_libraries):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
+@ensure_correct_kernel
 def main(dependencies_file='dependencies.txt'):
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)

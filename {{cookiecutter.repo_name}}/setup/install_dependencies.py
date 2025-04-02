@@ -3,6 +3,9 @@ import sys
 import re
 import importlib.util
 
+sys.path.append('setup')
+from utils import *
+
 def parse_dependencies(file_path="dependencies.txt"):
     required_libraries = []
     try:
@@ -68,6 +71,7 @@ def install_dependencies(required_libraries):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
+@ensure_correct_kernel
 def main(dependencies_file="dependencies.txt"):
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)
@@ -78,6 +82,18 @@ def main(dependencies_file="dependencies.txt"):
     else:
         print("No dependencies found to install.")
 
+
+
 if __name__ == "__main__":
     main()  # Specify the dependencies file here
+    
+    #if not check_python_kernel():
+    #    python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from environment
+    #    # If the python_kernel path doesn't already contain "python.exe", append it
+    #    if "python.exe" not in python_kernel:
+    #        python_kernel = os.path.join(python_kernel, "python.exe")     
+    #    script_path = os.path.abspath(__file__)  # Get the current script path
+    #    change_python_kernel(python_kernel, script_path)  # Restart the script with the new kernel
+    #else:
+    #    main()  # Specify the dependencies file here
 

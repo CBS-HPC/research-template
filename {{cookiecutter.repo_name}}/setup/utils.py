@@ -11,6 +11,7 @@ from datetime import datetime
 import fnmatch
 import requests
 from contextlib import contextmanager
+from functools import wraps
 
 
 required_libraries = ['python-dotenv','pyyaml'] 
@@ -37,7 +38,6 @@ def change_dir(destination):
         yield
     finally:
         os.chdir(cur_dir)
-
 
 def get_relative_path(target_path):
 
@@ -1391,6 +1391,60 @@ def check_rclone_remote(remote_name):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
+
+
+#Check software
+
+def check_python_kernel():
+    # Load the desired python kernel path from the environment variable
+    python_kernel = load_from_env("PYTHON")
+    
+    # Check if the full executable path matches
+    if sys.executable == python_kernel  or os.path.dirname(sys.executable)== python_kernel:
+        print("The correct Python kernel (exact match) is being used.")
+        return True
+    else:
+        print(f"Warning: The current Python interpreter ({sys.executable}) does not match the expected kernel ({python_kernel}).")
+        return False
+
+def change_python_kernel(python_kernel, script_path,arguments =sys.argv[1:] ):
+    # Restart the script with the new Python interpreter
+    print(f"Restarting the script with {python_kernel}...")
+    subprocess.run([python_kernel, script_path] + arguments, check=True)
+
+
+from functools import wraps
+
+
+def ensure_correct_kernel(func):
+    """Decorator to ensure the function runs with the correct Python kernel."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from the environment
+
+        # If the kernel path doesn't contain "python.exe", append it
+        if "python.exe" not in python_kernel:
+            python_kernel = os.path.join(python_kernel, "python.exe")
+
+        # Get the current executable and its base folder
+        current_executable = sys.executable
+        current_base = os.path.dirname(current_executable)
+        kernel_base = os.path.dirname(python_kernel)
+
+        # If the current Python executable does not match the required kernel, restart
+        if current_executable != python_kernel and current_base != kernel_base:
+            print(f"Restarting with the correct Python kernel: {python_kernel}")
+
+            # Re-run the script with the correct Python interpreter
+            script_path = os.path.abspath(__file__)
+            subprocess.run([python_kernel, script_path] + sys.argv[1:], check=True)
+            sys.exit()  # Terminate the current process after restarting
+
+        # If the kernel is correct, execute the function normally
+        return func(*args, **kwargs)
+
+    return wrapper
+   
 
 
 # Other

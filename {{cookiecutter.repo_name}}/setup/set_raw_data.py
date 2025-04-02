@@ -130,6 +130,7 @@ def set_data(data_name, source, run_command, destination:str=None, doi:str = Non
     except Exception as e:
         print(e)
 
+@ensure_correct_kernel
 def set_raw_data(data_name, source, run_command, destination:str=None, doi:str = None,citation:str = None,license:str=None):
     
     if destination is None:
@@ -154,8 +155,23 @@ if __name__ == "__main__":
     parser.add_argument("--license", default=None, help="License of the dataset (optional).")
     args = parser.parse_args()
 
-    # Execute the function with command-line arguments
     set_raw_data(args.data_name, args.source, args.command, args.destination, args.doi, args.citation,args.license)
+
+
+    #if not check_python_kernel():
+    #    python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from environment
+    #    
+    #    # If the python_kernel path doesn't already contain "python.exe", append it
+    #    if "python.exe" not in python_kernel:
+    #        python_kernel = os.path.join(python_kernel, "python.exe")
+    #    
+    #    script_path = os.path.abspath(__file__)  # Get the current script path
+    #    
+    #    # Pass the command-line arguments to the new kernel process
+    #    change_python_kernel(python_kernel, script_path, [args.data_name, args.source, args.command, args.destination, args.doi, args.citation,args.license])  # Restart the script with the new kernel and args
+    #else:
+    #    # Execute the function with command-line arguments
+    #    set_raw_data(args.data_name, args.source, args.command, args.destination, args.doi, args.citation,args.license)
 
 
 #python set_raw_data.py deic_dataset1 "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f" "./src/deic_storage_download.py"

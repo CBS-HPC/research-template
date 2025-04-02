@@ -23,7 +23,8 @@ for lib in required_libraries:
 
 from bs4 import BeautifulSoup
 
-
+sys.path.append('setup')
+from utils import *
 
 def links_deic_storage(url):
     """
@@ -110,6 +111,7 @@ def download_files_parallel(file_paths, save_dir, n_workers):
         for path in file_paths:
             download_file_worker(path, save_dir)
 
+@ensure_correct_kernel
 def deic_storage_download(link, save_dir, n_workers=1):
     """ Download files from the given link using parallel workers or sequentially """
     links = links_deic_storage(link)
@@ -117,15 +119,29 @@ def deic_storage_download(link, save_dir, n_workers=1):
     download_files_parallel(file_paths, save_dir, n_workers)
 
 if __name__ == "__main__":
+
     # Command-line argument parser
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")
     parser.add_argument("remote_path", help="URL link to the dataset")
     parser.add_argument("destination", help="Path where data will be stored")
-    
     args = parser.parse_args()
-
-    # Execute the function with command-line arguments
+    
     deic_storage_download(args.remote_path, args.destination)
+
+    #if not check_python_kernel():
+    #    python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from environment
+        
+        # If the python_kernel path doesn't already contain "python.exe", append it
+    #    if "python.exe" not in python_kernel:
+    #        python_kernel = os.path.join(python_kernel, "python.exe")
+        
+    #    script_path = os.path.abspath(__file__)  # Get the current script path
+        
+        # Pass the command-line arguments to the new kernel process
+    #    change_python_kernel(python_kernel, script_path, [args.remote_path, args.destination])  # Restart the script with the new kernel and args
+    #else:
+        # Execute the function with command-line arguments
+    #    deic_storage_download(args.remote_path, args.destination)
 
 #link = "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f"
 

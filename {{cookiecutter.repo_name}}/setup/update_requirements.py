@@ -6,6 +6,9 @@ import platform  # Add platform module
 project_root = pathlib.Path(__file__).resolve().parent.parent
 os.chdir(project_root)
 
+sys.path.append('setup')
+from utils import *
+
 def read_dependencies(dependencies_files,sections):
      # Ensure the lengths of dependencies_files and sections match
     if len(dependencies_files) != len(sections):
@@ -126,6 +129,7 @@ def write_to_readme(readme_file,software_requirements_section):
 
     print(f"{readme_file} successfully updated.")
 
+@ensure_correct_kernel
 def update_requirements(dependencies_files: list = ["src/dependencies.txt"], readme_file: str = "README.md", sections: list = ["src"]):
    
     software_requirements_section =read_dependencies(dependencies_files,sections)
@@ -134,3 +138,13 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"], rea
 
 if __name__ == "__main__":
     update_requirements(dependencies_files=["src/dependencies.txt", "setup/dependencies.txt"], sections=["src", "setup"])
+    
+    #if not check_python_kernel():
+    #    python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from environment
+    #    # If the python_kernel path doesn't already contain "python.exe", append it
+    #    if "python.exe" not in python_kernel:
+    #        python_kernel = os.path.join(python_kernel, "python.exe")     
+    #    script_path = os.path.abspath(__file__)  # Get the current script path
+    #    change_python_kernel(python_kernel, script_path)  # Restart the script with the new kernel
+    #else:
+    #    update_requirements(dependencies_files=["src/dependencies.txt", "setup/dependencies.txt"], sections=["src", "setup"])

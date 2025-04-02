@@ -17,6 +17,7 @@ def resolve_parent_module(module_name):
         return module_name.split('.')[0]
     return module_name
 
+@ensure_correct_kernel
 def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None,install_cmd:str=None):
     
     def get_dependencies_from_file(python_files):
@@ -135,3 +136,12 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
 if __name__ == "__main__":
     get_setup_dependencies()
+    #if not check_python_kernel():
+    #    python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from environment
+    #    # If the python_kernel path doesn't already contain "python.exe", append it
+    #    if "python.exe" not in python_kernel:
+    #        python_kernel = os.path.join(python_kernel, "python.exe")     
+    #    script_path = os.path.abspath(__file__)  # Get the current script path
+    #    change_python_kernel(python_kernel, script_path)  # Restart the script with the new kernel
+    #else:
+    #    get_setup_dependencies()
