@@ -9,6 +9,7 @@ import zipfile
 import glob
 from datetime import datetime
 import fnmatch
+import requests
 
 
 required_libraries = ['python-dotenv','pyyaml'] 
