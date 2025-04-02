@@ -306,7 +306,7 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
             "README.MD": "Current The top-level README for developers using this project.",
             "README_DCAS.md": "A template README for social science replication packages: https://social-science-data-editors.github.io/template_README/",
             "requirements.txt": "The requirements file for reproducing the analysis environment.",
-            "data.txt": "git log file (created using git log --all --pretty=fuller --stat > data.txt) tracking changes to the './data' git repository" 
+            "data.txt": "git log file (created using git log --all --pretty=fuller --stat > data.txt) tracking changes to the './data' git repository",
        
              # Setup files
             "deic_storage_download.py": "Script to download data from DEIC storage for the project.",

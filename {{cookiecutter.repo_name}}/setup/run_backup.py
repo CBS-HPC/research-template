@@ -3,7 +3,6 @@ import sys
 sys.path.append('setup')
 from utils import *
 
-
 def run_backup(remote_backup,repo_name):
     if remote_backup.lower() == "deic storage":
         install_rclone("bin")
