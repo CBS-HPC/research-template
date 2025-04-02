@@ -4,8 +4,6 @@ import sys
 import platform
 import urllib.request
 import shutil
-from contextlib import contextmanager
-
 
 
 #required_libraries = ['requests']
@@ -26,14 +24,6 @@ import requests
 sys.path.append('setup')
 from utils import *
 
-@contextmanager
-def change_dir(destination):
-    cur_dir = os.getcwd()
-    try:
-        os.chdir(destination)
-        yield
-    finally:
-        os.chdir(cur_dir)
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     """Handle repository creation and log-in based on selected platform."""
@@ -81,8 +71,10 @@ def setup_git(version_control,code_repo):
             
             # Creating its own git repo for "data"
             if flag:
+                curdir = os.getcwd()
                 with change_dir("./data"):
                     flag = git_init("Initial commit","data")
+                    git_log_to_file(os.path.join(curdir, "data.txt"))
              
         if flag:
             save_to_env(git_name,"GIT_USER") 

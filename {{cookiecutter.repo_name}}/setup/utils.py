@@ -10,6 +10,7 @@ import glob
 from datetime import datetime
 import fnmatch
 import requests
+from contextlib import contextmanager
 
 
 required_libraries = ['python-dotenv','pyyaml'] 
@@ -26,6 +27,17 @@ for lib in required_libraries:
 
 from dotenv import dotenv_values, load_dotenv
 import yaml
+
+
+@contextmanager
+def change_dir(destination):
+    cur_dir = os.getcwd()
+    try:
+        os.chdir(destination)
+        yield
+    finally:
+        os.chdir(cur_dir)
+
 
 def get_relative_path(target_path):
 
@@ -475,8 +487,6 @@ def get_version(programming_language):
     return version
 
 
-
-
 # Git Functions:
 
 def git_commit(msg: str = "") -> str:
@@ -631,6 +641,21 @@ def git_repo_user(version_control,repo_name,code_repo):
         return repo_user, privacy_setting, token
     else:
         return None, None,None
+
+def git_log_to_file(output_file_path):
+    """
+    Runs the 'git log' command with the specified output file path.
+
+    Parameters:
+    output_file_path (str): The full path to the output file where the Git log will be saved.
+    """
+    try:
+        # Run the git log command with the specified output file
+        command = f'git log --all --pretty=fuller --stat > "{output_file_path}"'
+        subprocess.run(command, shell=True, check=True)
+        print(f"Git log has been saved to {output_file_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
 
 # Common Env Functions
 def load_env_file(extensions = ['.yml', '.txt']):
@@ -1294,8 +1319,14 @@ def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
     exclude_patterns = read_rcloneignore(folder_to_backup)
 
 
+    with change_dir("./data"):
+        _ = git_commit("Rclone Backup")
+        git_log_to_file(os.path.join(folder_to_backup, "data.txt"))
+             
      # Run Git Commit
     name = git_commit("Rclone Backup")
+
+   
 
     if not name:
         name = os.path.basename(folder_to_backup)
