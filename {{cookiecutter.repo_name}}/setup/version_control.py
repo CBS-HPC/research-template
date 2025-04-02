@@ -4,6 +4,7 @@ import sys
 import platform
 import urllib.request
 import shutil
+from contextlib import contextmanager
 
 
 
@@ -24,6 +25,15 @@ import requests
 
 sys.path.append('setup')
 from utils import *
+
+@contextmanager
+def change_dir(destination):
+    cur_dir = os.getcwd()
+    try:
+        os.chdir(destination)
+        yield
+    finally:
+        os.chdir(cur_dir)
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     """Handle repository creation and log-in based on selected platform."""
@@ -64,8 +74,16 @@ def setup_git(version_control,code_repo):
             flag, git_name, git_email = setup_git_config(version_control,git_name, git_email)
         
         if flag and version_control == "Git":  
-            flag = git_init(code_repo)
-        
+            rename = None
+            if code_repo.lower() == "github":
+                rename = "main"
+            flag = git_init("Initial commit",rename)
+            
+            # Creating its own git repo for "data"
+            if flag:
+                with change_dir("./data"):
+                    flag = git_init("Initial commit","data")
+             
         if flag:
             save_to_env(git_name,"GIT_USER") 
             save_to_env(git_email,"GIT_EMAIL")    
@@ -224,18 +242,18 @@ def setup_git_config(version_control,git_name,git_email):
         print(f"Failed to configure Git: {e}")
         return False,git_name,git_email
         
-def git_init(code_repo):
+def git_init(msg,rename):
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".git"):
         subprocess.run(["git", "init"], check=True)
         print("Initialized a new Git repository.")
 
-    if code_repo.lower() == "github":
+    if rename:
         # Rename branch to 'main' if it was initialized as 'master'
-        subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
-    _= git_commit("Initial commit")
-    print("Created an initial commit.")
+        subprocess.run(["git", "branch", "-m", "master", rename], check=True)
+    _= git_commit(msg)
+    print(f"Created the following commit : {msg}")
     return True
 
 # DVC Setup Functions
