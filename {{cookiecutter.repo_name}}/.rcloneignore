@@ -1,14 +1,10 @@
-# Ignore all .log files
-*.log
+# ignore the bin files as they contain local installation for rclone and git_annex_remote_rclone 
+#bin/
 
-# Ignore all files in "tmp" subfolder
-tmp/
+# DotEnv configuration
+#.env
 
-# Ignore backup files with a specific extension
-*.bak
+# exclude data from source control by default
+#/data/
 
-# Ignore .git folders
-.git/
 
-# Ignore all files starting with "secret"
-secret*

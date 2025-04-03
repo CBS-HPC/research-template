@@ -1,8 +1,10 @@
 import os
 import pathlib
 import platform  # Add platform module
+import sys
 
-sys.path.append('setup')
+# Add the directory to sys.path
+#sys.path.append('setup')
 from utils import *
 
 # Change to project root directory
