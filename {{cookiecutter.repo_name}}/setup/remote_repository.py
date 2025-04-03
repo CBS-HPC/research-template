@@ -7,7 +7,6 @@ import requests
 import zipfile
 import tarfile
 
-sys.path.append('setup')
 from utils import *
 from readme_templates import *
 from get_dependencies import get_setup_dependencies

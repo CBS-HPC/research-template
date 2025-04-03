@@ -23,7 +23,6 @@ for lib in required_libraries:
 
 from bs4 import BeautifulSoup
 
-sys.path.append('setup')
 from utils import *
 
 def links_deic_storage(url):

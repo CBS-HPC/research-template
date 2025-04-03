@@ -4,7 +4,6 @@ import sys
 import platform
 import re
 
-sys.path.append('setup')
 from utils import *
 from code_templates import *
 from readme_templates import *

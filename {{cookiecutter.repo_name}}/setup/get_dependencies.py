@@ -9,7 +9,6 @@ import importlib.metadata
 import yaml
 from typing import Optional, Dict, Set, List
 
-sys.path.append('setup')
 from utils import *
 
 def resolve_parent_module(module_name):

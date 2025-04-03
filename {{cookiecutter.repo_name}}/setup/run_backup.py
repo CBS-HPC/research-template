@@ -1,6 +1,4 @@
-import sys
 
-sys.path.append('setup')
 from utils import *
 
 @ensure_correct_kernel

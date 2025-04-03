@@ -24,7 +24,6 @@ from dotenv import dotenv_values, load_dotenv
 import yaml
 import requests
 
-sys.path.append('setup')
 from utils import *
 
 

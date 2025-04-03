@@ -1335,7 +1335,6 @@ def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-
 def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
     """Backup folder to remote by zipping it first and then copying the zip file."""
 

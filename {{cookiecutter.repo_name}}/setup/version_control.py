@@ -19,11 +19,7 @@ for lib in required_libraries:
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {lib}: {e}")
 
-import requests
-
-sys.path.append('setup')
 from utils import *
-
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     """Handle repository creation and log-in based on selected platform."""

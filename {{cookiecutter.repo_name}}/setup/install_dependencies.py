@@ -3,7 +3,6 @@ import sys
 import re
 import importlib.util
 
-sys.path.append('setup')
 from utils import *
 
 def parse_dependencies(file_path="dependencies.txt"):
@@ -81,7 +80,6 @@ def main(dependencies_file="dependencies.txt"):
         install_dependencies(required_libraries)
     else:
         print("No dependencies found to install.")
-
 
 
 if __name__ == "__main__":
