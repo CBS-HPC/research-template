@@ -39,9 +39,9 @@ def setup_remote_backup(remote_backup,repo_name):
     #if remote_backup.lower() == "local path":
     
     if remote_backup.lower() == "deic storage":
-        rclone_remote("deic-storage")
+        rclone_remote("deic storage")
         base_folder = 'RClone_backup/' + repo_name
-        _= rclone_folder("deic-storage", base_folder)
+        _= rclone_folder("deic storage", base_folder)
        #if rclone_repo:
            #rclone_copy(rclone_repo, folder_to_backup=None)
        
@@ -538,9 +538,9 @@ def datalad_deic_storage(repo_name):
 
     def git_annex_remote(remote_name,target,prefix):
         """
-        Creates a git annex remote configuration for 'deic-storage' using rclone.
+        Creates a git annex remote configuration for 'deic storage' using rclone.
         """
-        remote_name = "deic-storage"
+        remote_name = "deic storage"
         target = "dropbox-for-friends"  # Change this to your actual target as needed
         prefix = "my_awesome_dataset"  # Change this to your desired prefix
 
@@ -562,7 +562,7 @@ def datalad_deic_storage(repo_name):
             print(f"An unexpected error occurred: {e}")
 
     rclone_remote()
-    git_annex_remote("deic-storage","deic-storage",repo_name)
+    git_annex_remote("deic storage","deic storage",repo_name)
 
 def datalad_local_storage(repo_name):
 

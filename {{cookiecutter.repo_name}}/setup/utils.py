@@ -1195,27 +1195,35 @@ def install_rclone(install_path):
         rclone_path = download_rclone(install_path)
         exe_to_path('rclone', os.path.dirname(rclone_path))
 
-def rclone_remote(remote_name:str="deic-storage"):
-
-    email = input("Please enter email to Deic Storage: ").strip()
+def rclone_remote(remote_name: str = "deic storage"):
+    """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
     
-    password = input("Please enter password to Deic Storage: ").strip()
-
-        # Construct the command
-    command = [
+    if remote_name == "deic storage":
+        email = input("Please enter email to Deic Storage: ").strip()
+        password = input("Please enter password to Deic Storage: ").strip()
+        
+        command = [
             'rclone', 'config', 'create', remote_name, 'sftp',
             'host', 'sftp.storage.deic.dk',
             'port', '2222',
             'user', email,
             'pass', password
-    ]
-
+        ]
+    
+    elif remote_name == "dropbox":
+        print("You will need to authorize rclone with Dropbox.")
+        command = ['rclone', 'config', 'create', remote_name, 'dropbox']
+    
+    else:
+        print("Unsupported remote name. Choose either 'deic storage' or 'dropbox'.")
+        return
+    
     try:
-        # Execute the command
         subprocess.run(command, check=True)
-        print("Rclone remote 'deic-storage' created successfully.")
-        save_to_env(email,"RClONE_USER")
-        save_to_env(password,"RCLODE_PASS")
+        print(f"Rclone remote '{remote_name}' created successfully.")
+        if remote_name == "deic storage":
+            save_to_env(email, "RCLONE_USER")
+            save_to_env(password, "RCLONE_PASS")
     except subprocess.CalledProcessError as e:
         print(f"Failed to create rclone remote: {e}")
     except Exception as e:

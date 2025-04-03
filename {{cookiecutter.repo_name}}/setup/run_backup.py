@@ -3,14 +3,14 @@ from utils import *
 
 @ensure_correct_kernel
 def run_backup(remote_backup,repo_name):
-    if remote_backup.lower() == "deic storage":
+    if remote_backup.lower() in ["deic storage","dropbox"]:
         install_rclone("bin")
 
-        if check_rclone_remote("deic-storage"):
+        if check_rclone_remote(remote_backup.lower()):
             rclone_repo = load_from_env("RCLODE_REPO")
         else:
-            rclone_remote("deic-storage")
-            rclone_repo= rclone_folder("deic-storage", 'RClone_backup/' + repo_name)
+            rclone_remote(remote_backup.lower())
+            rclone_repo= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
        
         if rclone_repo:
            rclone_sync(rclone_repo, folder_to_backup=None)
