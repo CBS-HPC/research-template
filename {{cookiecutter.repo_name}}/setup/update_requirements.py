@@ -2,12 +2,12 @@ import os
 import pathlib
 import platform  # Add platform module
 
+sys.path.append('setup')
+from utils import *
+
 # Change to project root directory
 project_root = pathlib.Path(__file__).resolve().parent.parent
 os.chdir(project_root)
-
-sys.path.append('setup')
-from utils import *
 
 def read_dependencies(dependencies_files,sections):
      # Ensure the lengths of dependencies_files and sections match

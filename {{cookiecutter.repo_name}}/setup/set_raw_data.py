@@ -6,16 +6,16 @@ from datetime import datetime
 import sys
 import pathlib
 
+# Add the directory to sys.path
+sys.path.append('setup')
+from utils import *
+from readme_templates import *
 
 # Change to project root directory
 project_root = pathlib.Path(__file__).resolve().parent.parent
 os.chdir(project_root)
 
 # Add the directory to sys.path
-
-sys.path.append('setup')
-from utils import *
-from readme_templates import *
 
 def set_data(data_name, source, run_command, destination:str=None, doi:str = None,citation:str = None,license:str=None):
     """
