@@ -27,12 +27,8 @@ from utils import *
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     """Handle repository creation and log-in based on selected platform."""
-
-    if version_control == None:
-        return
-    elif version_control.lower()  == "git":
-        if not setup_git(version_control,code_repo):
-            return
+    if version_control.lower()  == "git":
+        setup_git(version_control,code_repo)
     if version_control.lower() == "datalad":
         setup_datalad(version_control,remote_storage,code_repo,repo_name)
     elif version_control.lower() == "dvc":
