@@ -1300,6 +1300,42 @@ def zip_folder(folder_to_backup,zip_file_path=None ,exclude_patterns=None):
         print(f"Error creating zip file: {e}")
         return None
 
+def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
+    """Synchronize a folder to a remote location using rclone."""
+    if not rclone_repo:
+        rclone_repo = load_from_env("RCLONE_REPO")
+
+    if folder_to_backup is None:
+        folder_to_backup = os.getcwd()
+
+    if not os.path.exists(folder_to_backup):
+        print(f"Error: The folder '{folder_to_backup}' does not exist.")
+        return
+
+    exclude_patterns = read_rcloneignore(folder_to_backup)
+    exclude_args = []
+    for pattern in exclude_patterns:
+        exclude_args.extend(["--exclude", pattern])
+
+    with change_dir("./data"):
+        _ = git_commit("Rclone Backup")
+        git_log_to_file(os.path.join(folder_to_backup, "data.txt"))
+    
+    _ = git_commit("Rclone Backup")
+    
+    command_sync = [
+        'rclone', 'sync', folder_to_backup, rclone_repo, '--verbose'
+    ] + exclude_args
+    
+    try:
+        subprocess.run(command_sync, check=True)
+        print(f"Folder '{folder_to_backup}' successfully synchronized with '{rclone_repo}'.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to sync folder to remote: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
 def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
     """Backup folder to remote by zipping it first and then copying the zip file."""
 
@@ -1412,10 +1448,6 @@ def change_python_kernel(python_kernel, script_path,arguments =sys.argv[1:] ):
     print(f"Restarting the script with {python_kernel}...")
     subprocess.run([python_kernel, script_path] + arguments, check=True)
 
-
-from functools import wraps
-
-
 def ensure_correct_kernel(func):
     """Decorator to ensure the function runs with the correct Python kernel."""
     @wraps(func)
@@ -1445,7 +1477,6 @@ def ensure_correct_kernel(func):
 
     return wrapper
    
-
 
 # Other
 def get_hardware_info():

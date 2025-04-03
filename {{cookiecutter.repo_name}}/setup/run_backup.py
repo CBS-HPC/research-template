@@ -15,7 +15,7 @@ def run_backup(remote_backup,repo_name):
             rclone_repo= rclone_folder("deic-storage", 'RClone_backup/' + repo_name)
        
         if rclone_repo:
-           rclone_copy(rclone_repo, folder_to_backup=None)
+           rclone_sync(rclone_repo, folder_to_backup=None)
        
 if __name__ == "__main__":
 
