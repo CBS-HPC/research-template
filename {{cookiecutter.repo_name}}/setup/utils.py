@@ -1150,6 +1150,15 @@ def create_requirements_txt(file:str="requirements.txt"):
         print("Error running pip freeze:", result.stderr)
 
 # RClone:
+def setup_remote_backup(remote_backup,repo_name):
+    
+    if remote_backup.lower() != "none":
+        if install_rclone("bin"):
+            rclone_remote(remote_backup.lower())
+            _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
+       
+
+
 def install_rclone(install_path):
     """Download and extract rclone to the specified bin folder."""
 
@@ -1206,9 +1215,8 @@ def install_rclone(install_path):
 
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
-        return exe_to_path('rclone', os.path.dirname(rclone_path)):
+        return exe_to_path('rclone', os.path.dirname(rclone_path))
     
-
 def rclone_remote(remote_name: str = "deic storage"):
     """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
 
