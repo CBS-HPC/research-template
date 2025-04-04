@@ -9,5 +9,5 @@
     "open_source_license": ["MIT", "BSD-3-Clause", "None"],
 	"programming_language":["Python","R","Stata (Base installation required)","Matlab (Base installation required)","SAS (Base installation required)","None"],
 	"version_control":["Git","Datalad","DVC","None"],
-	"rclone_backup":["Deic Storage","Dropbox","Onedrive","Local","Multiple","None"]
+	"remote_backup [project backup to remote repos using RClone]":["Deic Storage","Dropbox","Onedrive","Local","Multiple","None"]
 }

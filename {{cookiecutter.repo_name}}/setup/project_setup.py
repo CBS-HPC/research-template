@@ -358,7 +358,7 @@ license = "{{cookiecutter.open_source_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
-remote_backup = "{{cookiecutter.rclone_backup}}"
+remote_backup = "{{cookiecutter.remote_backup}}"
 
 
 if remote_backup == "Multiple":
