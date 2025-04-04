@@ -1165,7 +1165,7 @@ def install_rclone(install_path):
             rclone_executable = "rclone"
         else:
             print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
-            return False
+            return None
 
         # Create the bin folder if it doesn't exist
         install_path = os.path.abspath(install_path or os.getcwd())
@@ -1181,7 +1181,7 @@ def install_rclone(install_path):
             print("Download complete.")
         else:
             print("Failed to download rclone. Please check the URL.")
-            return False
+            return None
 
         # Extract the rclone executable
         print("Extracting rclone...")
@@ -1192,7 +1192,7 @@ def install_rclone(install_path):
 
         if not rclone_folder or len(rclone_folder) > 1:
             print(f"More than one 'rclone-*' folder detected in {install_path}")
-            return False
+            return None
          
         # Clean up by deleting the zip file
         #os.remove(local_zip)
@@ -1202,11 +1202,12 @@ def install_rclone(install_path):
 
         rclone_path = os.path.abspath(rclone_path)
 
-        return True
+        return rclone_path
 
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
-        exe_to_path('rclone', os.path.dirname(rclone_path))
+        return exe_to_path('rclone', os.path.dirname(rclone_path)):
+    
 
 def rclone_remote(remote_name: str = "deic storage"):
     """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""

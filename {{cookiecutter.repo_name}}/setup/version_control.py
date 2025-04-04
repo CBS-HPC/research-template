@@ -30,14 +30,6 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     elif version_control.lower() == "dvc":
         setup_dvc(version_control,remote_storage,code_repo,repo_name)
 
-def setup_remote_backup(remote_backup,repo_name):
-    
-    if remote_backup.lower() != "none":
-        if install_rclone("bin"):
-            rclone_remote(remote_backup.lower())
-            _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
-       
-
 # Git Setup Functions
 def setup_git(version_control,code_repo):
 
@@ -633,4 +625,4 @@ save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
 setup_version_control(version_control,remote_storage,code_repo,repo_name)
 
 # Setup Remote Backup
-setup_remote_backup(remote_backup,repo_name)
+#setup_remote_backup(remote_backup,repo_name)

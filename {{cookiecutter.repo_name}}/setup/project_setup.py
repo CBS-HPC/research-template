@@ -376,7 +376,11 @@ save_to_env(os.getcwd(),"PROJECT_PATH")
 # Set git user info
 git_user_info(version_control)
 
+# Set git repo info
 repo_user,_,_ = git_repo_user(version_control,repo_name,code_repo)
+
+# Setup RClone backup remote
+setup_remote_backup(remote_backup,repo_name)
 
 # Create a citation file
 create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
