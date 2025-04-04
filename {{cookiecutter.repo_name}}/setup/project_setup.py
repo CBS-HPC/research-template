@@ -321,10 +321,6 @@ def set_options(programming_language,version_control):
         selected_app = set_programming_language(programming_language)
         if not selected_app: 
             print(f"{programming_language} path has not been set")
-            #is_installed(programming_language.lower(),programming_language)
-        #else:
-        #    print(f"{programming_language} path has not been set")
-
 
     python_env_manager = python_env_manager.replace(python_version,"") 
 
@@ -342,6 +338,7 @@ project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 authors = "{{cookiecutter.author_name}}"
 orcids = "{{cookiecutter.orcid}}"
+email = "{{cookiecutter.email}}"
 version = "{{cookiecutter.version}}"
 license = "{{cookiecutter.open_source_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
@@ -364,6 +361,7 @@ save_to_env(project_description,"PROJECT_DESCRIPTION",".cookiecutter")
 save_to_env(version,"VERSION",".cookiecutter")
 save_to_env(authors,"AUTHORS",".cookiecutter")
 save_to_env(orcids,"ORCIDS",".cookiecutter")
+save_to_env(email,"EMAIL",".cookiecutter")
 save_to_env(license,"LICENSE",".cookiecutter")
 save_to_env(programming_language,"PROGRAMMING_LANGUAGE",".cookiecutter")
 save_to_env(python_env_manager,"PYTHON_ENV_MANAGER",".cookiecutter")
@@ -395,7 +393,7 @@ creating_readme(repo_name= repo_name,
                 programming_language = programming_language,
                 authors = authors,
                 orcids = orcids,
-                emails = None,
+                emails = email,
                 activate_cmd = activate_cmd)
 
 

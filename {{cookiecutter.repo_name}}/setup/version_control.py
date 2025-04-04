@@ -33,17 +33,9 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
 def setup_remote_backup(remote_backup,repo_name):
     
     if remote_backup.lower() != "none":
-        # Install rclone git-annex-remote-rclone
-        install_rclone("bin")
-    
-    #if remote_backup.lower() == "local path":
-    
-    if remote_backup.lower() == "deic storage":
-        rclone_remote("deic storage")
-        base_folder = 'RClone_backup/' + repo_name
-        _= rclone_folder("deic storage", base_folder)
-       #if rclone_repo:
-           #rclone_copy(rclone_repo, folder_to_backup=None)
+        if install_rclone("bin"):
+            rclone_remote(remote_backup.lower())
+            _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
        
 
 # Git Setup Functions

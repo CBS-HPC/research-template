@@ -591,20 +591,35 @@ def git_push(flag:str,msg:str=""):
         print(f"An error occurred: {e}")
 
 def git_user_info(version_control):
-    if version_control.lower() in ["git","datalad","dvc"]:    
+    if version_control.lower() in ["git", "datalad", "dvc"]:
+        # Load defaults
+        default_name = load_from_env("AUTHORS", ".cookiecutter")
+        default_email = load_from_env("EMAIL", ".cookiecutter")
+
         git_name = None
         git_email = None
+
         while not git_name or not git_email:
-            git_name = input("Enter your Git user name: ").strip()
-            git_email = input("Enter your Git user email: ").strip()
+            # Prompt with defaults
+            name_prompt = f"Enter your Git user name [{default_name}]: "
+            email_prompt = f"Enter your Git user email [{default_email}]: "
+
+            git_name = input(name_prompt).strip() or default_name
+            git_email = input(email_prompt).strip() or default_email
+
             # Check if inputs are valid
             if not git_name or not git_email:
                 print("Both name and email are required.")
-        save_to_env(git_name ,'GIT_USER')
-        save_to_env(git_email,'GIT_EMAIL')
+
+        print(f"\nUsing Git user name: {git_name}")
+        print(f"Using Git user email: {git_email}\n")
+
+        save_to_env(git_name, 'GIT_USER')
+        save_to_env(git_email, 'GIT_EMAIL')
         return git_name, git_email
     else:
         return None, None
+
     
 def git_repo_user(version_control,repo_name,code_repo):
     
@@ -1134,9 +1149,7 @@ def create_requirements_txt(file:str="requirements.txt"):
     else:
         print("Error running pip freeze:", result.stderr)
 
-
 # RClone:
-
 def install_rclone(install_path):
     """Download and extract rclone to the specified bin folder."""
 
@@ -1197,11 +1210,23 @@ def install_rclone(install_path):
 
 def rclone_remote(remote_name: str = "deic storage"):
     """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
-    
+
     if remote_name == "deic storage":
-        email = input("Please enter email to Deic Storage: ").strip()
-        password = input("Please enter password to Deic Storage: ").strip()
-        
+        default_email = load_from_env("EMAIL", ".cookiecutter")
+
+        email = None
+        password = None
+
+        while not email or not password:
+            email_prompt = f"Please enter email to Deic Storage [{default_email}]: "
+            email = input(email_prompt).strip() or default_email
+            password = input("Please enter password to Deic Storage: ").strip()
+
+            if not email or not password:
+                print("Both email and password are required.\n")
+
+        print(f"\nUsing email for Deic Storage: {email}\n")
+
         command = [
             'rclone', 'config', 'create', remote_name, 'sftp',
             'host', 'sftp.storage.deic.dk',
@@ -1209,21 +1234,29 @@ def rclone_remote(remote_name: str = "deic storage"):
             'user', email,
             'pass', password
         ]
-    
-    elif remote_name == "dropbox":
-        print("You will need to authorize rclone with Dropbox.")
-        command = ['rclone', 'config', 'create', remote_name, 'dropbox']
-    
+
+    elif remote_name in ["dropbox", "onedrive"]:
+        print(f"You will need to authorize rclone with {remote_name}")
+        command = ['rclone', 'config', 'create', remote_name, remote_name]
+
+    elif remote_name == "local":
+        local_path = input("Please enter the local path for rclone: ").strip()
+        local_path = local_path.replace("'", "").replace('"', '')
+        local_path = check_path_format(local_path)
+
+        if not os.path.isdir(local_path):
+            print("Error: The specified local path does not exist.")
+            return
+        print(f"Setting up local path as rclone remote: {local_path}")
+        command = ['rclone', 'config', 'create', remote_name, 'local', '--local-root', local_path]
+
     else:
-        print("Unsupported remote name. Choose either 'deic storage' or 'dropbox'.")
+        print("Unsupported remote name. Choose 'deic storage', 'dropbox', 'onedrive', or 'local'.")
         return
-    
+
     try:
         subprocess.run(command, check=True)
         print(f"Rclone remote '{remote_name}' created successfully.")
-        if remote_name == "deic storage":
-            save_to_env(email, "RCLONE_USER")
-            save_to_env(password, "RCLONE_PASS")
     except subprocess.CalledProcessError as e:
         print(f"Failed to create rclone remote: {e}")
     except Exception as e:
@@ -1266,48 +1299,6 @@ def read_rcloneignore(folder):
                     ignore_patterns.append(line)
     return ignore_patterns
 
-def zip_folder(folder_to_backup,zip_file_path=None ,exclude_patterns=None):
-    """Zips the folder, excluding files or subfolders matching any exclude_patterns."""
-    if exclude_patterns is None:
-        exclude_patterns = []
-
-    # Get the folder name (just the name, not the full path)
-    folder_name = os.path.basename(folder_to_backup)
-    
-    if not zip_file_path:
-        # Generate a timestamped zip file name
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        zip_file_name = f"{folder_name}_{timestamp}.zip"
-        
-        # Construct the path to save the zip file
-        zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
-
-    # Create the zip file
-    try:
-        with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            # Walk through the folder
-            for root, dirs, files in os.walk(folder_to_backup):
-                # Check each subfolder to see if it should be excluded
-                for dir_name in dirs:
-                    dir_path = os.path.join(root, dir_name)
-                    # If directory matches any exclusion pattern, skip it
-                    if any(fnmatch.fnmatch(dir_path, pat) for pat in exclude_patterns):
-                        dirs.remove(dir_name)  # This excludes the directory from walking
-
-                # Add each file to the zip, unless it's excluded
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    # If file matches any exclusion pattern, skip it
-                    if any(fnmatch.fnmatch(file_path, pat) for pat in exclude_patterns):
-                        continue
-                    zipf.write(file_path, os.path.relpath(file_path, folder_to_backup))
-        
-        print(f"Folder '{folder_to_backup}' successfully zipped to '{zip_file_path}'.")
-        return zip_file_path
-    except Exception as e:
-        print(f"Error creating zip file: {e}")
-        return None
-
 def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
     """Synchronize a folder to a remote location using rclone."""
     if not rclone_repo:
@@ -1343,74 +1334,6 @@ def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-def rclone_copy(rclone_repo:str = None, folder_to_backup:str=None):
-    """Backup folder to remote by zipping it first and then copying the zip file."""
-
-    if not rclone_repo:
-        rclone_repo = load_from_env("RCLONE_REPO")
-
-    # If folder_to_backup is None, use the current directory
-    if folder_to_backup is None:
-        folder_to_backup = os.getcwd()
-    
-    # Check if the specified folder exists
-    if not os.path.exists(folder_to_backup):
-        print(f"Error: The folder '{folder_to_backup}' does not exist.")
-        return
-
-    # Read patterns from .rcloneignore file
-    exclude_patterns = read_rcloneignore(folder_to_backup)
-
-
-    with change_dir("./data"):
-        _ = git_commit("Rclone Backup")
-        git_log_to_file(os.path.join(folder_to_backup, "data.txt"))
-             
-     # Run Git Commit
-    name = git_commit("Rclone Backup")
-
-   
-
-    if not name:
-        name = os.path.basename(folder_to_backup)
-        # Generate a timestamped zip file name
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        zip_file_name = f"{name}_{timestamp}.zip"
-    else:
-        zip_file_name = f"{name}.zip"
-
-    # Define the path where the zip file will be saved
-    zip_file_path = os.path.join(os.path.dirname(folder_to_backup), zip_file_name)
-
-    # Zip the folder, excluding the patterns specified in .rcloneignore
-    if not zip_folder(folder_to_backup,zip_file_path ,exclude_patterns):
-        return
-
-    # Construct the remote backup path where the zip file will be copied
-    remote_backup_path = f"{rclone_repo}/{zip_file_name}"
-
-    # Construct the command to copy the zip file to the remote server
-    command_copy = [
-        'rclone', 'copy', zip_file_path, remote_backup_path, '--verbose'
-    ]
-    
-    try:
-        # Copy the .zip file to the remote
-        subprocess.run(command_copy, check=True)
-        print(f"Backup (zip file) of folder '{folder_to_backup}' to '{remote_backup_path}' was successful.")
-        
-        # Optionally remove the zip file after successful backup (uncomment to delete after copy)
-        os.remove(zip_file_path)
-        # print(f"Local zip file '{zip_file_path}' removed after backup.")
-
-        # Run Git Commit
-        _= git_commit(zip_file_name)
-
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to copy zip file to remote: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
 def check_rclone_remote(remote_name):
     """Check if a specific remote repository is configured in rclone."""
     try:
@@ -1435,9 +1358,7 @@ def check_rclone_remote(remote_name):
         print(f"An unexpected error occurred: {e}")
         return False
 
-
 #Check software
-
 def check_python_kernel():
     # Load the desired python kernel path from the environment variable
     python_kernel = load_from_env("PYTHON")
