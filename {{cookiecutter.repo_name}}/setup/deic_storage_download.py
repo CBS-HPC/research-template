@@ -127,21 +127,6 @@ if __name__ == "__main__":
     
     deic_storage_download(args.remote_path, args.destination)
 
-    #if not check_python_kernel():
-    #    python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from environment
-        
-        # If the python_kernel path doesn't already contain "python.exe", append it
-    #    if "python.exe" not in python_kernel:
-    #        python_kernel = os.path.join(python_kernel, "python.exe")
-        
-    #    script_path = os.path.abspath(__file__)  # Get the current script path
-        
-        # Pass the command-line arguments to the new kernel process
-    #    change_python_kernel(python_kernel, script_path, [args.remote_path, args.destination])  # Restart the script with the new kernel and args
-    #else:
-        # Execute the function with command-line arguments
-    #    deic_storage_download(args.remote_path, args.destination)
-
 #link = "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f"
 
 #dropbox = "https://www.dropbox.com/scl/fo/ro7vwy40ym5zoi2z7kbxs/AORJDfZ2lolBz2J2Tf02iYQ?rlkey=1urgvvvy722b8ci1dwdyd6jbg&st=9g1kd9ah&dl=0"

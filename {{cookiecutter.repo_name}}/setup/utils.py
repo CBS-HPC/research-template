@@ -1151,13 +1151,15 @@ def create_requirements_txt(file:str="requirements.txt"):
         print("Error running pip freeze:", result.stderr)
 
 # RClone:
-def setup_remote_backup(remote_backup,repo_name):
+def setup_remote_backup(remote_backups,repo_name):
     
-    if remote_backup.lower() != "none":
-        email, password = remote_user_info(remote_backup.lower())
-        if install_rclone("bin"):
-            rclone_remote(remote_backup.lower(),email, password)
-            _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
+    if remote_backups.lower() != "none":
+        remote_backups= [item.strip() for item in remote_backups.split(",")]
+        for remote_backup in remote_backups:
+            email, password = remote_user_info(remote_backup.lower())
+            if install_rclone("bin"):
+                rclone_remote(remote_backup.lower(),email, password)
+                _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
        
 def install_rclone(install_path):
     """Download and extract rclone to the specified bin folder."""
