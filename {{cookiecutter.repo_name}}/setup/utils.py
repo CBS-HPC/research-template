@@ -1158,8 +1158,6 @@ def setup_remote_backup(remote_backup,repo_name):
             rclone_remote(remote_backup.lower())
             _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
        
-
-
 def install_rclone(install_path):
     """Download and extract rclone to the specified bin folder."""
 
