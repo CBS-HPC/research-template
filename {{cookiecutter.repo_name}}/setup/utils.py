@@ -626,9 +626,10 @@ def git_repo_user(version_control,repo_name,code_repo):
     if code_repo.lower() in ["github","gitlab"] and version_control.lower() in ["git","datalad","dvc"]: 
         repo_user = None 
         privacy_setting = None
+        default_setting = "private"
         while not repo_user or not privacy_setting:
             repo_user = input(f"Enter your {code_repo} username: ").strip()
-            privacy_setting = input("Select the repository visibility (private/public): ").strip().lower()
+            privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
 
             if privacy_setting not in ["private", "public"]:
                 print("Invalid choice. Defaulting to 'private'.")
@@ -1216,6 +1217,7 @@ def install_rclone(install_path):
     if not is_installed('rclone','Rclone'):
         rclone_path = download_rclone(install_path)
         return exe_to_path('rclone', os.path.dirname(rclone_path))
+    return True
     
 def rclone_remote(remote_name: str = "deic storage"):
     """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
