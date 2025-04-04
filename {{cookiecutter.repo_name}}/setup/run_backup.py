@@ -4,7 +4,7 @@ from utils import *
 @ensure_correct_kernel
 def run_backup(remote_backups,repo_name):
     
-    if remote_backup.lower() != "none": 
+    if remote_backups.lower() != "none": 
         if install_rclone("bin"):
             remote_backups= [item.strip() for item in remote_backups.split(",")]
             for remote_backup in remote_backups:

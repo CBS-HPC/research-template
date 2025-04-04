@@ -673,6 +673,39 @@ def git_log_to_file(output_file_path):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
+def get_git_hash(path):
+    """
+    Get the Git hash of a file or folder.
+    For folders, the hashes of all files within the folder are combined.
+    If any exception occurs, it returns None.
+    """
+    try:
+        if not is_installed('git'):
+            return None
+        # Check if path is a file or directory
+        if os.path.isfile(path):
+            # Get the Git hash of the file
+            result = subprocess.run(['git', 'hash-object', path], capture_output=True, text=True)
+            return result.stdout.strip()
+        elif os.path.isdir(path):
+            # For directory, get the hash of each file inside it
+            hashes = []
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    result = subprocess.run(['git', 'hash-object', file_path], capture_output=True, text=True)
+                    hashes.append(result.stdout.strip())
+            # Combine all file hashes into a single string and get its hash
+            combined_hashes = "".join(hashes)
+            result = subprocess.run(['git', 'hash-object', '-w', '--stdin'], input=combined_hashes, capture_output=True, text=True)
+            return result.stdout.strip()
+        else:
+            raise ValueError(f"{path} does not exist or is not a valid file or directory.")
+    except Exception as e:
+        print(f"Error while calculating hash for {path}: {e}")
+        return None
+
+
 # Common Env Functions
 def load_env_file(extensions = ['.yml', '.txt']):
     
