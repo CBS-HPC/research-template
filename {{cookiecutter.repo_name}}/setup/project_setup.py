@@ -344,7 +344,7 @@ license = "{{cookiecutter.open_source_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
-remote_backup = "{{cookiecutter.remote_backup}}"
+remote_backup = "{{cookiecutter.rclone_backup}}"
 
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
