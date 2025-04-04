@@ -4,6 +4,20 @@ import sys
 import platform
 import re
 
+required_libraries = ['questionary'] 
+installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
+
+for lib in required_libraries:
+    try:
+        # Check if the library is already installed
+        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
+            print(f"Installing {lib}...")
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install {lib}: {e}")
+
+import questionary
+
 from utils import *
 from code_templates import *
 from readme_templates import *
@@ -345,6 +359,18 @@ repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 remote_backup = "{{cookiecutter.rclone_backup}}"
+
+
+if remote_backup == "Multiple":
+    options = ["Deic Storage", "Dropbox", "Onedrive", "Local"]
+    remote_backup = questionary.checkbox(
+        "Select remote backups:",
+        choices=options
+    ).ask()
+    if remote_backup:
+        remote_backup = ", ".join(remote_backup)
+    else:
+        remote_backup = "None"
 
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)

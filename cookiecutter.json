@@ -8,6 +8,6 @@
 	"version": "0.0.1",
     "open_source_license": ["MIT", "BSD-3-Clause", "None"],
 	"programming_language":["Python","R","Stata (Base installation required)","Matlab (Base installation required)","SAS (Base installation required)","None"],
-	"version_control [Git]":["Git","Datalad","DVC","None"],
-	"rlone_backup [Deic Storage]":["Deic Storage","Dropbox","Onedrive","Local","None"]
+	"version_control":["Git","Datalad","DVC","None"],
+	"rlone_backup":["Deic Storage","Dropbox","Onedrive","Local","Multiple","None"]
 }
