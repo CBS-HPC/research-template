@@ -1154,8 +1154,9 @@ def create_requirements_txt(file:str="requirements.txt"):
 def setup_remote_backup(remote_backup,repo_name):
     
     if remote_backup.lower() != "none":
+        email, password = remote_user_info(remote_backup.lower())
         if install_rclone("bin"):
-            rclone_remote(remote_backup.lower())
+            rclone_remote(remote_backup.lower(),email, password)
             _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
        
 def install_rclone(install_path):
@@ -1216,10 +1217,11 @@ def install_rclone(install_path):
         rclone_path = download_rclone(install_path)
         return exe_to_path('rclone', os.path.dirname(rclone_path))
     return True
-    
-def rclone_remote(remote_name: str = "deic storage"):
-    """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
 
+def remote_user_info(remote_name):
+    email = None
+    password = None
+    
     if remote_name == "deic storage":
         default_email = load_from_env("EMAIL", ".cookiecutter")
 
@@ -1235,7 +1237,12 @@ def rclone_remote(remote_name: str = "deic storage"):
                 print("Both email and password are required.\n")
 
         print(f"\nUsing email for Deic Storage: {email}\n")
+    return email, password
+    
+def rclone_remote(remote_name: str = "deic storage",email:str = None, password:str = None ):
+    """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
 
+    if remote_name == "deic storage":
         command = [
             'rclone', 'config', 'create', remote_name, 'sftp',
             'host', 'sftp.storage.deic.dk',
