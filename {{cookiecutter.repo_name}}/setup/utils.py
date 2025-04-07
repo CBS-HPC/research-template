@@ -75,15 +75,17 @@ def ask_yes_no(question):
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
 def check_path_format(path):
-    # Determine if the value is a path (heuristic check)
-    if any(sep in path for sep in ["/", "\\", ":"]) and os.path.exists(path):  # ":" for Windows drive letters
-        system_name = platform.system()
-        if system_name == "Windows":
-            path = r"{}".format(path.replace("/", r"\\"))
-            #path = r"{}".format(path.replace("\\", r"\\"))
-        else:  # Linux/macOS
-            #path = r"{}".format(path.replace("\\", r"\\"))
-            path = r"{}".format(path.replace("\\", "/"))
+
+    if path:
+        # Determine if the value is a path (heuristic check)
+        if any(sep in path for sep in ["/", "\\", ":"]) and os.path.exists(path):  # ":" for Windows drive letters
+            system_name = platform.system()
+            if system_name == "Windows":
+                path = r"{}".format(path.replace("/", r"\\"))
+                #path = r"{}".format(path.replace("\\", r"\\"))
+            else:  # Linux/macOS
+                #path = r"{}".format(path.replace("\\", r"\\"))
+                path = r"{}".format(path.replace("\\", "/"))
     return path
 
 def load_from_env(env_var: str, env_file=".env"):
@@ -108,7 +110,10 @@ def load_from_env(env_var: str, env_file=".env"):
     # If not found directly, load the .env file into the environment
     load_dotenv(env_file, override=True)
     env_value = os.getenv(env_var.upper())
-    env_value = check_path_format(env_value) 
+    if env_value:
+        env_value = check_path_format(env_value) 
+    else:
+        env_value = None 
 
     return env_value
 
@@ -464,8 +469,12 @@ def set_programming_language(programming_language):
     return programming_language
 
 def get_version(programming_language):
-    exe_path = load_from_env(programming_language)
-    exe_path  = check_path_format(exe_path)
+    
+    if programming_language != "python":
+        exe_path = load_from_env(programming_language)
+        exe_path  = check_path_format(exe_path)
+        if not exe_path:
+            return "Unknown"
     
     if programming_language.lower() == "python":
         version  = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
