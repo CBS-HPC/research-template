@@ -12,11 +12,11 @@ if (Test-Path $envFile) {
             if (Test-Path $value) {
                 # If the value is a valid path, add it to the PATH environment variable
                 $env:PATH = $value + ";" + $env:PATH
-                Write-Host "Added $value to PATH"
+                Write-Host "Added $key to PATH"
             } else {
                 # Otherwise, set the environment variable
                 Set-Item -Path "Env:$key" -Value $value
-                Write-Host "Loaded variable: $key = $value"
+                Write-Host "Loaded variable: $key"
             }
         }
     }

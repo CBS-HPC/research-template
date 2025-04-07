@@ -436,12 +436,15 @@ os_type = platform.system().lower()
 
 if os_type == "windows":
     run_powershell_script(setup_powershell, env_path, python_env_manager, setup_version_control, setup_remote_repository)
+    activate_to_delete = "activate.sh"
+    deactivate_to_delete = "deactivate.sh"
 elif os_type == "darwin" or os_type == "linux":
     run_bash_script(setup_bash, env_path, python_env_manager, setup_version_control, setup_remote_repository)
+    activate_to_delete = "activate.ps1"
+    deactivate_to_delete = "deactivate.ps1"
 
 # Deleting Setup scripts
-files_to_delete = [os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell]
-delete_files(files_to_delete)
+delete_files([os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
 
 # Updating README
 creating_readme()

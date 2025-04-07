@@ -1,4 +1,4 @@
-# Path to .env file (same as the one used in activate.ps1)
+# Path to .env file
 $envFile = ".\.env"
 
 # Deactivate the Conda environment if it was activated
@@ -18,18 +18,22 @@ if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
         if ($_ -match "^\s*([^#][^=]+?)\s*=\s*(.+)$") {
             $key = $matches[1].Trim()
+            $value = $matches[2].Trim()
 
-            # Remove the environment variable if it exists
-            if ($env:$key) {
+            # Remove quotes around values (both single and double quotes)
+            $value = $value.Trim('"').Trim("'")
+
+            # If the variable is PATH, remove the path that was added
+            if (Test-Path $value) {
+                # Split the PATH by semicolon, remove the path, and join again
+                $env:PATH = ($env:PATH -split ";") | Where-Object { $_ -ne $value } -join ";"
+                Write-Host "Removed path: $value from PATH"
+            } else {
+                # Remove the environment variable if it exists
                 Remove-Item -Path "Env:$key"
                 Write-Host "Removed environment variable: $key"
             }
 
-            # If the variable was a path that was added to the PATH, remove it
-            if ($key -eq 'PATH') {
-                $env:PATH = ($env:PATH -split ";") | Where-Object { $_ -ne $matches[2].Trim('"') } -join ";"
-                Write-Host "Removed path: $($matches[2].Trim('"')) from PATH"
-            }
         }
     }
     Write-Output "Environment variables removed from .env"
@@ -43,4 +47,3 @@ function global:prompt {
 }
 
 Write-Output "Deactivation of {{ cookiecutter.repo_name }} is complete."
-
