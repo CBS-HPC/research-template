@@ -73,17 +73,17 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
-def check_path_format(env_var):
+def check_path_format(path):
     # Determine if the value is a path (heuristic check)
-    if any(sep in env_var for sep in ["/", "\\", ":"]) and os.path.exists(env_var):  # ":" for Windows drive letters
+    if any(sep in path for sep in ["/", "\\", ":"]) and os.path.exists(path):  # ":" for Windows drive letters
         system_name = platform.system()
         if system_name == "Windows":
-            env_var = r"{}".format(env_var.replace("/", r"\\"))
-            #env_var = r"{}".format(env_var.replace("\\", r"\\"))
+            path = r"{}".format(path.replace("/", r"\\"))
+            #path = r"{}".format(path.replace("\\", r"\\"))
         else:  # Linux/macOS
-            #env_var = r"{}".format(env_var.replace("\\", r"\\"))
-            env_var = r"{}".format(env_var.replace("\\", "/"))
-    return env_var
+            #path = r"{}".format(path.replace("\\", r"\\"))
+            path = r"{}".format(path.replace("\\", "/"))
+    return path
 
 def load_from_env(env_var: str, env_file=".env"):
     """

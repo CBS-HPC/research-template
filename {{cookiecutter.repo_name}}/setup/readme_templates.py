@@ -128,9 +128,9 @@ For a full list of journals, visit [here](https://datacodestandard.org/journals/
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal.
 
 
-## Dataset list
+## Dataset List
 
-## Computational requirements
+## Computational Requirements
 
 ### Software Requirements
     
@@ -389,13 +389,13 @@ def generate_dataset_table(json_file_path):
     # If the data is a list, loop through each dataset entry
     if isinstance(data, list):
         markdown_table = (
-            f"| Name             | Location        | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |\n"
-            f"|------------------|-----------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|\n"
+            f"| Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |\n"
+            f"|------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|\n"
         )
 
         full_table = (
-            f"| Name             | Files                             | Location        | Provided        | Run Command               | Source           | DOI             | Citation               | License               | Notes                |\n"
-            f"|------------------|-----------------------------------|-----------------|-----------------|---------------------------|------------------|-----------------|------------------------|-----------------------|----------------------|\n"
+            f"| Name             | Files                             |Hash                       | Location        | Provided        | Run Command               | Source           | DOI             | Citation               | License               | Notes                |\n"
+            f"|------------------|-----------------------------------|---------------------------|-----------------|-----------------|---------------------------|------------------|-----------------|------------------------|-----------------------|----------------------|\n"
         )
 
         for entry in data:
@@ -404,6 +404,7 @@ def generate_dataset_table(json_file_path):
                 data_name = entry.get("data_name", "N/A")
                 data_files = " ; ".join(entry.get("data_files", ["Not available"]))  # Newline separated
                 location = entry.get("destination", "N/A")
+                hash = entry.get("hash", "N/A")
                 provided = "Provided" if entry.get("data_files") else "Can be re-created"
                 run_command = entry.get("run_command", "N/A")
                 number_of_files = entry.get("number_of_files", 0)
@@ -419,47 +420,53 @@ def generate_dataset_table(json_file_path):
                  # Format pdf table
                 data_files = entry.get("data_files", ["Not available"])
                 for file in data_files:
-                    full_table += (f"|{data_name}| {file}|{location}|{provided}|{run_command}|{source}|{doi}|{citation}|{license}|{notes}|\n")
+                    full_table += (f"|{data_name}|{file}|{hash}|{location}|{provided}|{run_command}|{source}|{doi}|{citation}|{license}|{notes}|\n")
 
                 # Format the markdown table for this entry
-                markdown_table += (f"|{data_name}| {location}| {provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{citation}|{license}|{notes}|\n")
+                markdown_table += (f"|{data_name}|{location}|{hash}|{provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{citation}|{license}|{notes}|\n")
        
         return markdown_table,full_table
     else:
         # If the data is not a list, raise an error
         raise TypeError(f"Expected a list of datasets but got {type(data)}.")
 
-def append_dataset_to_readme(markdown_table, readme_path:str= 'README.md'):
+
+def dataset_to_readme(markdown_table: str, readme_path: str = 'README.md'):
     """
-    Appends the generated markdown table to the README file under the 
-    'Dataset List' heading.
+    Updates or appends the '## Dataset List' section in the README file.
 
     Parameters:
-        markdown_table (str): The markdown table to be appended.
-        readme_path (str): The path to the README file.
+        markdown_table (str): The markdown table to insert.
+        readme_path (str): Path to the README file.
     """
-    # Read the current content of the README file
-    with open(readme_path, 'r') as readme_file:
-        content = readme_file.readlines()
+    section_title = "## Dataset List"
+    new_dataset_section = f"{section_title}\n\n{markdown_table.strip()}\n"
 
-    # Check if the 'Data Availability and Provenance Statements' section exists
-    heading_found = False
-    for i, line in enumerate(content):
-        if "Dataset List" in line:
-            heading_found = True
-            # Insert the markdown table below the heading
-            content.insert(i + 1, markdown_table + "\n")
-            break
-    
-    # If the heading is not found, add it at the end
-    if not heading_found:
-        content.append("\n# Dataset List\n")
-        content.append(markdown_table + "\n")
+    try:
+        with open(readme_path, "r", encoding="utf-8") as f:
+            readme_content = f.read()
 
-    # Write the updated content back to the README
-    with open(readme_path, 'w') as readme_file:
-        readme_file.writelines(content)
-    print(f"Appended data to {readme_path}")
+        if section_title in readme_content:
+            # Find the start and end of the existing section
+            start = readme_content.find(section_title)
+            end = readme_content.find("\n## ", start + len(section_title))
+            if end == -1:
+                end = len(readme_content)
+            updated_content = readme_content[:start] + new_dataset_section + readme_content[end:]
+        else:
+            # Append the new section at the end
+            updated_content = readme_content.strip() + "\n\n" + new_dataset_section
+
+    except FileNotFoundError:
+        # If the README doesn't exist, create it with the new section
+        updated_content = new_dataset_section
+
+    # Write the updated content to the README file
+    with open(readme_path, "w", encoding="utf-8") as f:
+        f.write(updated_content.strip())
+
+    print(f"{readme_path} successfully updated with dataset section.")
+
 
 # CITATION.cff
 def create_citation_file(

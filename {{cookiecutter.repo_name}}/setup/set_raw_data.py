@@ -12,11 +12,21 @@ from readme_templates import *
 project_root = pathlib.Path(__file__).resolve().parent.parent
 os.chdir(project_root)
 
-def get_file_info(destination):
-    files = [f for f in os.listdir(destination) if os.path.isfile(os.path.join(destination, f))]
-    number_of_files = len(files)
-    total_size = sum(os.path.getsize(os.path.join(destination, f)) for f in files) / (1024 * 1024)
-    file_formats = set(os.path.splitext(f)[1].lower() for f in files)
+def get_file_info(path):
+    if os.path.isfile(path):
+        # If it's a single file
+        number_of_files = 1
+        total_size = os.path.getsize(path) / (1024 * 1024)  # in MB
+        file_formats = {os.path.splitext(path)[1].lower()}
+    elif os.path.isdir(path):
+        # If it's a folder
+        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        number_of_files = len(files)
+        total_size = sum(os.path.getsize(os.path.join(path, f)) for f in files) / (1024 * 1024)
+        file_formats = set(os.path.splitext(f)[1].lower() for f in files)
+    else:
+        raise ValueError(f"Path does not exist or is not a file/folder: {path}")
+    
     return number_of_files, total_size, file_formats
 
 def add_to_json(json_file_path, entry):
@@ -65,11 +75,16 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
                            The script will ensure {source} and {destination} are appended.
         destination (str): The path where the data will be stored. Defaults to './data/raw/data_name' if None.
     """
+    destination = check_path_format(destination)
 
-    os.makedirs(destination, exist_ok=True)
-
-    initial_files = set(os.listdir(destination))
-
+    if os.path.isfile(destination):
+        initial_files = set(destination)
+        
+    elif os.path.isdir(destination):
+        initial_files = set(os.listdir(destination))
+    else:
+        os.makedirs(destination, exist_ok=True)
+        initial_files = set(os.listdir(destination))
     if run_command:
         command_parts = run_command.split()
         command_list = command_parts + [source, destination]
@@ -89,6 +104,9 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
         data_files = list(updated_files - initial_files)
     else:
         data_files = list(initial_files)
+
+
+    data_files = sorted(data_files)
 
     number_of_files, total_size, file_formats = get_file_info(destination)
 
@@ -132,44 +150,54 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
     # Add or update the JSON metadata
     add_to_json(json_file_path, new_entry)
 
-    try:
-        markdown_table, full_table = generate_dataset_table(json_file_path)
-        append_dataset_to_readme(markdown_table)
+    return json_file_path
 
-        with open("dataset_list.md", 'w') as markdown_file:
-            markdown_file.write(full_table)
-    except Exception as e:
-        print(e)
 
 @ensure_correct_kernel
-def set_raw_data(data_name:str= None, source:str=None, run_command:str=None, destination:str=None, doi:str = None,citation:str = None,license:str=None):
+def set_datasets(data_name:str= None, source:str=None, run_command:str=None, destination:str=None, doi:str = None,citation:str = None,license:str=None):
     
     def sanitize_folder_name(name):
         return name.replace(" ", "_").replace("/", "_").replace("\\", "_").replace(":", "_")
     
-    def get_all_raw_files():
-        # Get all files and folders in the './data/raw/' directory, excluding .git folders and .gitignore/.gitkeep files
-        raw_data_dir = './data/raw/'
-        
-        # List files and directories, excluding .git folders and .gitignore/.gitkeep files
-        return [
-            f for f in os.listdir(raw_data_dir) 
-            if os.path.isdir(os.path.join(raw_data_dir, f)) or 
-            (os.path.isfile(os.path.join(raw_data_dir, f)) and not f.startswith(".git") and f not in [".gitignore", ".gitkeep"])
-        ]
+    def get_data_files():
+        # Subdirectories to look into
+        subdirs = ['raw', 'interim', 'processed', 'external']
+        base_dir = './data'
+
+        # Gather all files and folders with full paths, excluding Git-related files
+        all_files = []
+        for subdir in subdirs:
+            dir_path = os.path.join(base_dir, subdir)
+            if not os.path.exists(dir_path):
+                continue  # Skip if the directory doesn't exist
+            for item in os.listdir(dir_path):
+                full_path = os.path.join(dir_path, item)
+                if (
+                    os.path.isdir(full_path) or
+                    (os.path.isfile(full_path) and not item.startswith(".git") and item not in [".gitignore", ".gitkeep"])
+                ):
+                    all_files.append(full_path)
+
+        return all_files
 
     # If all input parameters are None, gather all files and folders from './data/raw/'
     if all(param is None for param in [data_name, source, run_command, destination, doi, citation, license]):
-        raw_files = get_all_raw_files()
-        for file in raw_files:
-            set_dataset(data_name=file, source=None, run_command=None, destination=f'./data/raw/{file}', doi=None, citation=None, license=None)
-        return
+        data_files = get_data_files()
+        for file in data_files:
+            json_file_path = set_dataset(data_name=os.path.basename(file), destination=file, source=None, run_command=None, json_file_path="./data/datasets.json", doi=None, citation=None, license=None) 
+    else:
+        if destination is None:
+            destination = f"./data/raw/{sanitize_folder_name(data_name)}"
+        json_file_path = set_dataset(data_name = data_name, destination = destination, source=source, run_command=run_command, json_file_path="./data/datasets.json", doi=doi, citation=citation, license=license)
 
-    if destination is None:
-        destination = f"./data/raw/{sanitize_folder_name(data_name)}"
+    try:
+        markdown_table, full_table = generate_dataset_table(json_file_path)
+        dataset_to_readme(markdown_table)
 
-
-    set_dataset(data_name = data_name,destination = destination, source=source, run_command=run_command,json_file_path="./datasets.json", doi=doi,citation=citation,license=license)
+        with open("DCAS template/dataset_list.md", 'w') as markdown_file:
+            markdown_file.write(full_table)
+    except Exception as e:
+        print(e)
 
 def save_datalist(full_table ,markdown_file_path="dataset_list.md"):
 
@@ -188,7 +216,7 @@ if __name__ == "__main__":
     parser.add_argument("--license", default=None, help="License of the dataset (optional).")
     args = parser.parse_args()
 
-    set_raw_data(args.name, args.source, args.command, args.destination, args.doi, args.citation,args.license)
+    set_datasets(args.name, args.source, args.command, args.destination, args.doi, args.citation,args.license)
 
 
-#python set_raw_data.py deic_dataset1 "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f" "./src/deic_storage_download.py"
+#python setup/set_raw_data.py deic_dataset1 "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f" "./setup/deic_storage_download.py"

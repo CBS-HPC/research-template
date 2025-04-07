@@ -430,7 +430,7 @@ creating_readme(repo_name= repo_name,
                 activate_cmd = activate_cmd)
 
 
-download_README_template(local_file = "./replication package template/README_template(Social Science Data Editors).md")
+download_README_template(local_file = "./DCAS template/README.md")
 
 os_type = platform.system().lower()
 
