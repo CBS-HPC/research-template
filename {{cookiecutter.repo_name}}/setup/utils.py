@@ -12,6 +12,7 @@ import fnmatch
 import requests
 from contextlib import contextmanager
 from functools import wraps
+import getpass
 
 
 required_libraries = ['python-dotenv','pyyaml'] 
@@ -488,7 +489,6 @@ def get_version(programming_language):
 
 
 # Git Functions:
-
 def git_commit(msg: str = "") -> str:
     """Commits changes to Git and returns the commit hash."""
     if os.path.isdir(".git"):
@@ -646,7 +646,8 @@ def git_repo_user(version_control,repo_name,code_repo):
  
         if not token:
            while not token: 
-                token = input(f"Enter {code_repo} token: ").strip()
+                token = getpass.getpass(f"Enter {code_repo} token: ").strip()
+                #token = input(f"Enter {code_repo} token: ").strip()
 
         if code_repo.lower() == "github":
             save_to_env(token,'GH_TOKEN')
@@ -1266,7 +1267,8 @@ def remote_user_info(remote_name):
         while not email or not password:
             email_prompt = f"Please enter email to Deic Storage [{default_email}]: "
             email = input(email_prompt).strip() or default_email
-            password = input("Please enter password to Deic Storage: ").strip()
+            #password = input("Please enter password to Deic Storage: ").strip()
+            password = getpass.getpass("Please enter password to Deic Storage: ").strip()
 
             if not email or not password:
                 print("Both email and password are required.\n")
