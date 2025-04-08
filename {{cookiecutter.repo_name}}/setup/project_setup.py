@@ -4,7 +4,7 @@ import sys
 import platform
 import re
 
-required_libraries = ['questionary'] 
+required_libraries = ['questionary','bs4'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
 for lib in required_libraries:
@@ -38,6 +38,33 @@ file_ext_map = {
     "sas": "sas"
 }
 
+def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
+    if not env_path:
+        env_path = "Base Installation" 
+    if not python_env_manager:
+        python_env_manager = "Base Installation"    
+    try:
+        # Make sure the script is executable
+        os.chmod(script_path, 0o755)
+
+        # Run the script with the additional paths as arguments
+        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
+        print(f"Script {script_path} executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing the script: {e}")
+
+def run_powershell(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
+    if not env_path:
+        env_path = "Base Installation" 
+    if not python_env_manager:
+        python_env_manager = "Base Installation"    
+    
+    try:
+        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,setup_version_control_path,setup_remote_repository_path])
+        print(f"Script {script_path} executed successfully.")
+    
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing the script: {e}")
 
 def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "bin/miniconda3"):
     """
@@ -153,34 +180,6 @@ def setup_virtual_environment(version_control, programming_language, python_env_
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
     return env_name, activate_cmd
-
-def run_bash_script(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
-    if not env_path:
-        env_path = "Base Installation" 
-    if not python_env_manager:
-        python_env_manager = "Base Installation"    
-    try:
-        # Make sure the script is executable
-        os.chmod(script_path, 0o755)
-
-        # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
-        print(f"Script {script_path} executed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while executing the script: {e}")
-
-def run_powershell_script(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
-    if not env_path:
-        env_path = "Base Installation" 
-    if not python_env_manager:
-        python_env_manager = "Base Installation"    
-    
-    try:
-        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,setup_version_control_path,setup_remote_repository_path])
-        print(f"Script {script_path} executed successfully.")
-    
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while executing the script: {e}")
 
 def delete_files(file_paths:list=[]):
     """
@@ -373,7 +372,6 @@ version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 remote_backup = "{{cookiecutter.remote_backup}}"
 
-
 remote_backup = multiple_backups(remote_backup)
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
@@ -434,13 +432,13 @@ download_README_template(local_file = "./DCAS template/README.md")
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    run_powershell_script(setup_powershell, env_path, python_env_manager, setup_version_control, setup_remote_repository)
-    activate_to_delete = "activate.sh"
-    deactivate_to_delete = "deactivate.sh"
+    run_powershell(setup_powershell, env_path, python_env_manager, setup_version_control, setup_remote_repository)
+    activate_to_delete = "Activate.sh"
+    deactivate_to_delete = "Deactivate.sh"
 elif os_type == "darwin" or os_type == "linux":
-    run_bash_script(setup_bash, env_path, python_env_manager, setup_version_control, setup_remote_repository)
-    activate_to_delete = "activate.ps1"
-    deactivate_to_delete = "deactivate.ps1"
+    run_bash(setup_bash, env_path, python_env_manager, setup_version_control, setup_remote_repository)
+    activate_to_delete = "Activate.ps1"
+    deactivate_to_delete = "Deactivate.ps1"
 
 # Deleting Setup scripts
 delete_files([os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
