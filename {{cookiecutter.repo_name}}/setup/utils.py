@@ -628,8 +628,7 @@ def git_user_info(version_control):
         return git_name, git_email
     else:
         return None, None
-
-    
+  
 def git_repo_user(version_control,repo_name,code_repo):
     
     if code_repo.lower() in ["github","gitlab"] and version_control.lower() in ["git","datalad","dvc"]: 
@@ -766,7 +765,7 @@ def load_env_file(extensions = ['.yml', '.txt']):
 
 def set_pip_packages(version_control,programming_language):
 
-    install_packages = ['python-dotenv']
+    install_packages = ['python-dotenv','setuptools']
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab'])
     elif programming_language.lower()  == 'stata':

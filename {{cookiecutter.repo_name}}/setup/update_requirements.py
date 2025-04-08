@@ -135,5 +135,8 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"], rea
 
     write_to_readme(readme_file,software_requirements_section)
 
-if __name__ == "__main__":
+def main():
     update_requirements(dependencies_files=["src/dependencies.txt", "setup/dependencies.txt"], sections=["src", "setup"])
+
+if __name__ == "__main__":
+    main()

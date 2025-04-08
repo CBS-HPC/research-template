@@ -34,7 +34,6 @@ def repo_details(version_control,code_repo,repo_name):
     privacy_setting = load_from_env(f"{code_repo.upper()}_PRIVACY")
 
     if not username or not privacy_setting:
-        print("Hello1")
         username, privacy_setting, _ = git_repo_user(version_control,repo_name,code_repo)
 
     return username, privacy_setting
@@ -81,7 +80,6 @@ def repo_login(version_control, repo_name, code_repo):
 
         # If user or token is missing, attempt to retrieve them
         if not user or not token:
-            print("hello2")
             user, _, token = git_repo_user(version_control, repo_name, code_repo)
 
         # Attempt authentication if both user and token are provided
@@ -90,7 +88,6 @@ def repo_login(version_control, repo_name, code_repo):
                 return True
             else:
                 # Retry with fresh credentials if authentication failed
-                print("hello3")
                 user, _, token = git_repo_user(version_control, repo_name, code_repo)
                 if user and token and authenticate(command, token):
                     return True
@@ -249,7 +246,6 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
 def setup_repo(version_control,code_repo,repo_name,description):
     #if not repo_login(version_control,repo_name,code_repo):
     if repo_login(version_control,repo_name,code_repo): # FIX ME !!
-        print("hello")
         username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         flag = repo_init(code_repo)
         if flag: 

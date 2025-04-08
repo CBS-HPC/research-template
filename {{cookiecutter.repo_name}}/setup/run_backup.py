@@ -17,9 +17,11 @@ def run_backup(remote_backups,repo_name):
             
                 if rclone_repo:
                     rclone_sync(rclone_repo, folder_to_backup=None)
-       
-if __name__ == "__main__":
 
-    repo_name = load_from_env("REPO_NAME",".cookiecutter")
-    remote_backup = load_from_env("REMOTE_BACKUP",".cookiecutter")
-    run_backup(remote_backup,repo_name)
+def main():
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
+    remote_backup = load_from_env("REMOTE_BACKUP", ".cookiecutter")
+    run_backup(remote_backup, repo_name)
+
+if __name__ == "__main__":
+   main()

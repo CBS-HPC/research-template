@@ -133,5 +133,8 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     print(f"{file_name} successfully generated at {output_file}")
 
-if __name__ == "__main__":
+def main():
     get_setup_dependencies()
+
+if __name__ == "__main__":
+    main()

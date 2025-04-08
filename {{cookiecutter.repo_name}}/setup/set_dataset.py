@@ -12,7 +12,34 @@ from readme_templates import *
 project_root = pathlib.Path(__file__).resolve().parent.parent
 os.chdir(project_root)
 
-def get_file_info(path):
+
+def get_file_info(file_paths):
+    """
+    Takes a list of full file paths and returns:
+    - number of files
+    - total size in MB
+    - set of unique file formats (extensions)
+    - list of individual file sizes
+    """
+    number_of_files = 0
+    total_size = 0
+    file_formats = set()
+    individual_sizes = []
+
+    print(file_paths)
+    for path in file_paths:
+        print(path)
+        # If it's a file
+        number_of_files += 1
+        file_size = os.path.getsize(path) / (1024 * 1024)
+        total_size += file_size
+        individual_sizes.append(int(file_size))
+        file_formats.add(os.path.splitext(path)[1].lower())
+
+    #total_size /= 1024 * 1024  # Convert total size to MB
+    return number_of_files, total_size, file_formats, individual_sizes
+
+def get_file_info_old(path):
     if os.path.isfile(path):
         # If it's a single file
         number_of_files = 1
@@ -38,6 +65,17 @@ def get_file_info(path):
     
     return number_of_files, total_size, file_formats
 
+def get_all_files(destination):
+    """
+    Returns a set of all file paths within the given directory,
+    including files in all subdirectories.
+    """
+    all_files = set()
+    for root, dirs, files in os.walk(destination):
+        for file in files:
+            full_path = os.path.join(root, file)
+            all_files.add(full_path)
+    return all_files
 
 def add_to_json(json_file_path, entry):
     """
@@ -88,37 +126,33 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
     destination = check_path_format(destination)
 
     if os.path.isfile(destination):
-        initial_files = set(destination)
-        
-    elif os.path.isdir(destination):
-        initial_files = set(os.listdir(destination))
+        data_files = [destination]
     else:
         os.makedirs(destination, exist_ok=True)
-        initial_files = set(os.listdir(destination))
-    if run_command:
-        command_parts = run_command.split()
-        command_list = command_parts + [source, destination]
+        initial_files = get_all_files(destination)
 
-        if is_installed(command_parts[0]):
-            try:
-                result = subprocess.run(command_list, check=True, text=True, capture_output=True)
-                print(f"Command output:\n{result.stdout}")
-            except subprocess.CalledProcessError as e:
-                print(f"Error executing command: {e}")
-                print(f"Command output:\n{e.output}")
-                return
+        if run_command:
+            command_parts = run_command.split()
+            command_list = command_parts + [source, destination]
+
+            if is_installed(command_parts[0]):
+                try:
+                    result = subprocess.run(command_list, check=True, text=True, capture_output=True)
+                    print(f"Command output:\n{result.stdout}")
+                except subprocess.CalledProcessError as e:
+                    print(f"Error executing command: {e}")
+                    print(f"Command output:\n{e.output}")
+                    return
+            else:
+                raise FileNotFoundError(f"The executable '{command_parts[0]}' was not found in the PATH.")
+            
+            updated_files = get_all_files(destination)
+            data_files = list(updated_files - initial_files)
         else:
-            raise FileNotFoundError(f"The executable '{command_parts[0]}' was not found in the PATH.")
+            data_files = list(initial_files)
+        data_files = sorted(data_files)
 
-        updated_files = set(os.listdir(destination))
-        data_files = list(updated_files - initial_files)
-    else:
-        data_files = list(initial_files)
-
-
-    data_files = sorted(data_files)
-
-    number_of_files, total_size, file_formats = get_file_info(destination)
+    number_of_files, total_size, file_formats, individual_sizes = get_file_info(data_files)
 
     if number_of_files > 1000: # FIX ME !!
         print("It is recommended to zip datasets with >1000 files when creating a replication package: https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html#data-structure-of-a-replication-package")
@@ -129,18 +163,17 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
     new_entry = {
         "data_name": data_name,
         "destination": destination,
-        "hash":hash,
+        "hash":None,
         "number_of_files": number_of_files,
         "total_size_mb": int(total_size),
         "file_formats": list(file_formats),
-        "data_files": data_files,
-    
         "timestamp": datetime.now().isoformat(),
+        "data_files": data_files,
+        "data_size": individual_sizes,
     }
 
     if hash:
         new_entry["hash"] = hash
-
 
     if source:
         new_entry["source"] = source
@@ -161,7 +194,6 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
     add_to_json(json_file_path, new_entry)
 
     return json_file_path
-
 
 @ensure_correct_kernel
 def set_datasets(data_name:str= None, source:str=None, run_command:str=None, destination:str=None, doi:str = None,citation:str = None,license:str=None):
@@ -209,13 +241,8 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
     except Exception as e:
         print(e)
 
-def save_datalist(full_table ,markdown_file_path="dataset_list.md"):
 
-    # Save the markdown table to a file
-    with open(markdown_file_path, 'w') as markdown_file:
-            markdown_file.write(full_table)
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")
     parser.add_argument("--name", default=None, help="Name of the dataset.")
     parser.add_argument("--source", default=None, help="Remote URL or path to the dataset.")
@@ -224,9 +251,15 @@ if __name__ == "__main__":
     parser.add_argument("--doi", default=None, help="DOI of the dataset (optional).")
     parser.add_argument("--citation", default=None, help="Citation of the dataset (optional).")
     parser.add_argument("--license", default=None, help="License of the dataset (optional).")
+    
     args = parser.parse_args()
 
-    set_datasets(args.name, args.source, args.command, args.destination, args.doi, args.citation,args.license)
+    # Call the function to handle the dataset setup
+    set_datasets(args.name, args.source, args.command, args.destination, args.doi, args.citation, args.license)
+
+
+if __name__ == "__main__":
+    main()
 
 
 #python setup/set_raw_data.py deic_dataset1 "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f" "./setup/deic_storage_download.py"

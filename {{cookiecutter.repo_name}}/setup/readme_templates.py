@@ -285,6 +285,7 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
             
             # Directories
             "data": "Directory containing scripts to download or generate data.",
+            "external":"Data from third party sources.",
             "interim": "Intermediate data transformed during the workflow.",
             "processed": "The final, clean data used for analysis or modeling.",
             "raw": "Original, immutable raw data.",
@@ -394,8 +395,8 @@ def generate_dataset_table(json_file_path):
         )
 
         full_table = (
-            f"| Name             | Files                             |Hash                       | Location        | Provided        | Run Command               | Source           | DOI             | Citation               | License               | Notes                |\n"
-            f"|------------------|-----------------------------------|---------------------------|-----------------|-----------------|---------------------------|------------------|-----------------|------------------------|-----------------------|----------------------|\n"
+            f"| Name             | Files                             |Hash                       | Location        | Provided        | File Size (MB) | Run Command               | Source           | DOI             | Citation               | License               | Notes                |\n"
+            f"|------------------|-----------------------------------|---------------------------|-----------------|-----------------|----------------|---------------------------|------------------|-----------------|------------------------|-----------------------|----------------------|\n"
         )
 
         for entry in data:
@@ -403,6 +404,7 @@ def generate_dataset_table(json_file_path):
                 # Extract required information from the JSON data
                 data_name = entry.get("data_name", "N/A")
                 data_files = " ; ".join(entry.get("data_files", ["Not available"]))  # Newline separated
+                data_sizes = " ; ".join(entry.get("data_size", ["Not available"]))  # Newline separated
                 location = entry.get("destination", "N/A")
                 hash = entry.get("hash", "N/A")
                 provided = "Provided" if entry.get("data_files") else "Can be re-created"
@@ -419,8 +421,8 @@ def generate_dataset_table(json_file_path):
 
                  # Format pdf table
                 data_files = entry.get("data_files", ["Not available"])
-                for file in data_files:
-                    full_table += (f"|{data_name}|{file}|{hash}|{location}|{provided}|{run_command}|{source}|{doi}|{citation}|{license}|{notes}|\n")
+                for file, size in zip(data_files, data_sizes):
+                    full_table += (f"|{data_name}|{file}|{hash}|{location}|{provided}|{size}|{run_command}|{source}|{doi}|{citation}|{license}|{notes}|\n")
 
                 # Format the markdown table for this entry
                 markdown_table += (f"|{data_name}|{location}|{hash}|{provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{citation}|{license}|{notes}|\n")
@@ -429,7 +431,6 @@ def generate_dataset_table(json_file_path):
     else:
         # If the data is not a list, raise an error
         raise TypeError(f"Expected a list of datasets but got {type(data)}.")
-
 
 def dataset_to_readme(markdown_table: str, readme_path: str = 'README.md'):
     """
