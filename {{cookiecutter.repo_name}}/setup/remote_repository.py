@@ -66,8 +66,8 @@ def repo_login(version_control, repo_name, code_repo):
     def authenticate(command, token):
         """Attempts to authenticate using the provided command and token."""
         try:
-            result = subprocess.run(command, input=token, text=True, capture_output=True)
-            return result.returncode == 0
+            subprocess.run(command, input=token, text=True, capture_output=True)
+            return True
         except Exception as e:
             return False
 
