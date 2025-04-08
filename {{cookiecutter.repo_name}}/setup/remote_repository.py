@@ -38,47 +38,66 @@ def repo_details(version_control,code_repo,repo_name):
 
     return username, privacy_setting
 
-def repo_login(version_control,repo_name,code_repo):
-    try: 
+def repo_login(version_control, repo_name, code_repo):
+
+    def get_login_credentials(code_repo):
+        """Returns the user, token, and command based on the code repository."""
         if code_repo.lower() == "github":
             user = load_from_env('GITHUB_USER')
             token = load_from_env('GH_TOKEN')
             command = ['gh', 'auth', 'login', '--with-token']
 
-            if not user or not token:
-                user, _, token = git_repo_user(version_control,repo_name,code_repo)
-        
-            # Check if both environment variables are set
-            if user and token:
-                # Run the gh auth login command with the token
-                subprocess.run(command, input=token, text=True, capture_output=True)
-                return True
-            else:
-                return False
         elif code_repo.lower() == "gitlab":
             user = load_from_env('GITLAB_USER')
             token = load_from_env('GL_TOKEN')
             hostname = load_from_env('GL_HOSTNAME')
-            
-            if not user or not token:
-                user, _, token = git_repo_user(version_control,repo_name,code_repo)
 
             if hostname:
-                command = ['glab', 'auth', 'login', '--hostname', hostname, '--token'] 
-            else: 
-                return False
-   
-        # Check if both environment variables are set
-        if user and token:
-            # Run the gh auth login command with the token
-            subprocess.run(command, input=token, text=True, capture_output=True)
-            return True
+                command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
+            else:
+                return None, None, None
+
         else:
-            return False    
-    
-    except Exception as e:
+            return None, None, None
+
+        return user, token, command
+
+    def authenticate(command, token):
+        """Attempts to authenticate using the provided command and token."""
+        try:
+            result = subprocess.run(command, input=token, text=True, capture_output=True)
+            return result.returncode == 0
+        except Exception as e:
+            return False
+
+    try:
+        # Get login details based on the repository type
+        user, token, command = get_login_credentials(code_repo)
+
+        # Return False if no command is found (invalid code_repo)
+        if not command:
+            return False
+
+        # If user or token is missing, attempt to retrieve them
+        if not user or not token:
+            user, _, token = git_repo_user(version_control, repo_name, code_repo)
+
+        # Attempt authentication if both user and token are provided
+        if user and token:
+            if authenticate(command, token):
+                return True
+            else:
+                # Retry with fresh credentials if authentication failed
+                user, _, token = git_repo_user(version_control, repo_name, code_repo)
+                if user and token and authenticate(command, token):
+                    return True
+
         return False
-  
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
 def repo_init(code_repo):    
     
     if code_repo.lower() == "github":

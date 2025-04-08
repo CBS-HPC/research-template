@@ -26,14 +26,13 @@ if (Test-Path $envFile) {
             # If the variable is PATH, remove the path that was added
             if (Test-Path $value) {
                 # Split the PATH by semicolon, remove the path, and join again
-                $env:PATH = ($env:PATH -split ";") | Where-Object { $_ -ne $value } -join ";"
+                $env:PATH = (($env:PATH -split ";") | Where-Object { $_ -ne $value }) -join ";"
                 Write-Host "Removed path: $value from PATH"
             } else {
                 # Remove the environment variable if it exists
-                Remove-Item -Path "Env:$key"
+                Remove-Item -Path "Env:$key" -ErrorAction SilentlyContinue
                 Write-Host "Removed environment variable: $key"
             }
-
         }
     }
     Write-Output "Environment variables removed from .env"

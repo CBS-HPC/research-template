@@ -19,15 +19,25 @@ def get_file_info(path):
         total_size = os.path.getsize(path) / (1024 * 1024)  # in MB
         file_formats = {os.path.splitext(path)[1].lower()}
     elif os.path.isdir(path):
-        # If it's a folder
-        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-        number_of_files = len(files)
-        total_size = sum(os.path.getsize(os.path.join(path, f)) for f in files) / (1024 * 1024)
-        file_formats = set(os.path.splitext(f)[1].lower() for f in files)
+        # Recursively walk through all subfolders and files
+        number_of_files = 0
+        total_size = 0
+        file_formats = set()
+        
+        for root, _, files in os.walk(path):
+            for f in files:
+                full_path = os.path.join(root, f)
+                if os.path.isfile(full_path):
+                    number_of_files += 1
+                    total_size += os.path.getsize(full_path)
+                    file_formats.add(os.path.splitext(f)[1].lower())
+        
+        total_size /= 1024 * 1024  # Convert to MB
     else:
         raise ValueError(f"Path does not exist or is not a file/folder: {path}")
     
     return number_of_files, total_size, file_formats
+
 
 def add_to_json(json_file_path, entry):
     """
