@@ -7,7 +7,7 @@ setup(
     entry_points={
         'console_scripts': [
             'run-backup=setup.run_backup:main',  # The CLI command and entry point
-            'set-datasets=setup.set_datasets:main',  # 'set-datasets' is the command to run, points to `main()` in `set_datasets.py`
+            'set-dataset=setup.set_dataset:main',  # 'set-datasets' is the command to run, points to `main()` in `set_datasets.py`
             'update-requirements=setup.update_requirements:main',
             'get-dependencies=setup.get_dependencies:main',
         ],

@@ -429,7 +429,6 @@ creating_readme(repo_name= repo_name,
                 emails = email,
                 activate_cmd = activate_cmd)
 
-
 download_README_template(local_file = "./DCAS template/README.md")
 
 os_type = platform.system().lower()

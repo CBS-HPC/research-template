@@ -8,11 +8,6 @@ import pathlib
 from utils import *
 from readme_templates import *
 
-# Change to project root directory
-project_root = pathlib.Path(__file__).resolve().parent.parent
-os.chdir(project_root)
-
-
 def get_file_info(file_paths):
     """
     Takes a list of full file paths and returns:
@@ -85,6 +80,7 @@ def add_to_json(json_file_path, entry):
         json_file_path (str): Path to the JSON file.
         entry (dict): The dataset metadata to add or update.
     """
+
     if os.path.exists(json_file_path):
         with open(json_file_path, "r") as json_file:
             datasets = json.load(json_file)
@@ -259,6 +255,11 @@ def main():
 
 
 if __name__ == "__main__":
+    
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent
+    os.chdir(project_root)
+    
     main()
 
 

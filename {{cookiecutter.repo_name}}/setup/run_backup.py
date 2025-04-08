@@ -1,4 +1,8 @@
 
+
+import os
+import pathlib
+
 from utils import *
 
 @ensure_correct_kernel
@@ -19,9 +23,14 @@ def run_backup(remote_backups,repo_name):
                     rclone_sync(rclone_repo, folder_to_backup=None)
 
 def main():
+    
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent
+    os.chdir(project_root)
+
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
     remote_backup = load_from_env("REMOTE_BACKUP", ".cookiecutter")
     run_backup(remote_backup, repo_name)
 
 if __name__ == "__main__":
-   main()
+    main()

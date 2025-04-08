@@ -4,10 +4,6 @@ import platform  # Add platform module
 
 from utils import *
 
-# Change to project root directory
-project_root = pathlib.Path(__file__).resolve().parent.parent
-os.chdir(project_root)
-
 def read_dependencies(dependencies_files,sections):
      # Ensure the lengths of dependencies_files and sections match
     if len(dependencies_files) != len(sections):
@@ -139,4 +135,9 @@ def main():
     update_requirements(dependencies_files=["src/dependencies.txt", "setup/dependencies.txt"], sections=["src", "setup"])
 
 if __name__ == "__main__":
+    
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent
+    os.chdir(project_root)
+    
     main()

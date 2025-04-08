@@ -13,7 +13,7 @@ import requests
 from contextlib import contextmanager
 from functools import wraps
 import getpass
-
+import pathlib
 
 required_libraries = ['python-dotenv','pyyaml'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
@@ -89,6 +89,48 @@ def check_path_format(path):
     return path
 
 def load_from_env(env_var: str, env_file=".env"):
+    """
+    Loads an environment variable's value from a .env file.
+    
+    Args:
+        env_var (str): The name of the environment variable to load.
+        env_file (str): The path to the .env file (default is ".env").
+        
+    Returns:
+        str or None: The value of the environment variable if found, otherwise None.
+    """
+
+    project_root = pathlib.Path(__file__).resolve().parent.parent
+    env_file_path = pathlib.Path(env_file)
+
+    # Attempt to read directly from the .env file
+    if env_file_path.exists():
+        env_values = dotenv_values(env_file)
+        if env_var.upper() in env_values:
+            env_value = env_values[env_var.upper()]
+            env_value = check_path_format(env_value) 
+            return env_value
+    
+    # If the env_file is not found, check in the project root directory
+    project_env_file = project_root / env_file
+    if project_env_file.exists():
+        env_values = dotenv_values(project_env_file)
+        if env_var.upper() in env_values:
+            env_value = env_values[env_var.upper()]
+            env_value = check_path_format(env_value) 
+            return env_value
+
+    # If not found directly, load the .env file into the environment
+    load_dotenv(env_file, override=True)
+    env_value = os.getenv(env_var.upper())
+    if env_value:
+        env_value = check_path_format(env_value) 
+    else:
+        env_value = None 
+
+    return env_value
+
+def load_from_env_old(env_var: str, env_file=".env"):
     """
     Loads an environment variable's value from a .env file.
     

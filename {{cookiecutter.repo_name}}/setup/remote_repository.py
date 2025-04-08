@@ -379,6 +379,19 @@ def install_gh(install_path=None):
             os.remove(installer_name)
             print(f"Installer {installer_name} removed.")
 
+def install_py_package():
+
+    # Change the current working directory to to setup folder
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+    # Run "pip install -e ."
+    result = subprocess.run(['pip', 'install', '-e', '.'], capture_output=True, text=True)
+
+    if result.returncode == 0:
+        print("Installation successful.")
+    else:
+        print(f"Error during installation: {result.stderr}")
+
 version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
 repo_name = load_from_env("REPO_NAME",".cookiecutter")
 code_repo = load_from_env("CODE_REPO",".cookiecutter")
@@ -411,3 +424,6 @@ update_requirements(dependencies_files = [file], sections= ["setup"])
 
 # Pushing to Git 
 git_push(flag,push_msg)
+
+# Installing package:
+install_py_package()
