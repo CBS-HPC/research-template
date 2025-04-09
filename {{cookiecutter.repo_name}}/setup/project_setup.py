@@ -331,7 +331,7 @@ def set_options(programming_language,version_control):
         if not selected_app: 
             print(f"{programming_language} path has not been set")
 
-    python_env_manager = python_env_manager.replace(python_version,"") 
+    python_env_manager = python_env_manager.replace(python_version,"").strip()
 
     conda_r_version, conda_python_version = select_version()
 
