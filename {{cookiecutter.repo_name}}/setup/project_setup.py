@@ -40,7 +40,7 @@ def make_executable(file_path):
         FileNotFoundError: If the file does not exist.
         PermissionError: If the script does not have permission to change file mode.
     """
-    os_type = platform.system().lower()=
+    os_type = platform.system().lower()
     if os_type == "darwin" or os_type == "linux":
         if not os.path.isfile(file_path):
             raise FileNotFoundError(f"No such file: '{file_path}'")
