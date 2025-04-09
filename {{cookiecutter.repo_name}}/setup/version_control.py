@@ -47,10 +47,11 @@ def setup_git(version_control,code_repo):
             
             # Creating its own git repo for "data"
             if flag:
-                curdir = os.getcwd()
+                #curdir = os.getcwd()
                 with change_dir("./data"):
                     flag = git_init("Initial commit","data")
-                    git_log_to_file(os.path.join(curdir, "data.gitlog"))
+                    git_log_to_file(os.path.join(".gitlog"))
+                    #git_log_to_file(os.path.join(curdir, "data.gitlog"))
              
         if flag:
             save_to_env(git_name,"GIT_USER") 

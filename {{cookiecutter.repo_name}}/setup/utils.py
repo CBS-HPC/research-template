@@ -87,7 +87,7 @@ def check_path_format(path):
                 path = r"{}".format(path.replace("\\", "/"))
     return path
 
-def load_from_env(env_var: str, env_file=".env"):
+def load_from_env(env_var: str, env_file: str = ".env"):
     """
     Loads an environment variable's value from a .env file.
     
@@ -123,7 +123,7 @@ def load_from_env(env_var: str, env_file=".env"):
 
     return env_value
 
-def save_to_env(env_var: str, env_name: str, env_file=".env"):
+def save_to_env(env_var: str, env_name: str, env_file: str = ".env"):
     """
     Saves or updates an environment variable in a .env file (case-insensitive for variable names).
     
@@ -170,7 +170,7 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
 
-def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
+def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"):
     """
     Adds the path of an executable binary to the system PATH permanently.
     """
@@ -501,7 +501,7 @@ def get_version(programming_language):
             return "Unknown"
     
     if programming_language.lower() == "python":
-        version  = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
+        version  = f"{subprocess.check_output([sys.executable, '--version']).decode().strip()}"
     elif programming_language.lower() == "r":
         version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
         version = version.stdout[0:17].strip()
@@ -554,17 +554,6 @@ def git_commit(msg: str = "") -> str:
             return None
 
     return None
-    
-def git_commit_old(msg:str=""):
-    if os.path.isdir(".git"):
-        # Set from .env file
-        is_installed('git')
-
-        try:
-            subprocess.run(["git", "add", "."], check=True)    
-            subprocess.run(["git", "commit", "-m", msg], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred: {e}")
 
 def git_push(flag:str,msg:str=""):
 
@@ -1271,7 +1260,7 @@ def install_rclone(install_path):
             return None
          
         # Clean up by deleting the zip file
-        #os.remove(local_zip)
+        os.remove(local_zip)
 
         rclone_path = os.path.join(install_path,rclone_folder[0] ,rclone_executable)
         print(f"rclone installed successfully at {rclone_path}.")
@@ -1402,7 +1391,8 @@ def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
 
     with change_dir("./data"):
         _ = git_commit("Rclone Backup")
-        git_log_to_file(os.path.join(folder_to_backup, "data.gitlog"))
+        git_log_to_file(".gitlog")
+        #git_log_to_file(os.path.join(folder_to_backup, "data.gitlog"))
     
     _ = git_commit("Rclone Backup")
     
