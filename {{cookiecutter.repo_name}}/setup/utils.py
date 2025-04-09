@@ -107,8 +107,7 @@ def load_from_env(env_var: str, env_file: str = ".env"):
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        project_root = pathlib.Path(__file__).resolve().parent.parent
-        env_file = project_root / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
 
     # Attempt to read directly from the .env file
     if env_file.exists():
@@ -148,8 +147,7 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env"):
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        project_root = pathlib.Path(__file__).resolve().parent.parent
-        env_file = project_root / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
 
     # Read the existing .env file if it exists
     env_lines = []
@@ -183,9 +181,10 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        project_root = pathlib.Path(__file__).resolve().parent.parent
-        env_file = project_root / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
 
+    # Ensure it's an absolute path
+    path = os.path.abspath(path)
 
     os_type = platform.system().lower()
     
@@ -208,14 +207,12 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
             # Immediately apply the change for the current script/session (only works if you're in a shell)
             subprocess.run(f'source {profile_file}', shell=True, executable='/bin/bash')
         
-        os.environ["PATH"] = f"{path}:{os.environ['PATH']}"
-
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
         
         if resolved_path:
             resolved_path = os.path.dirname(resolved_path)
-
+        print("HELLO")
         if resolved_path == path:
             print(f"{executable} binary is added to PATH and resolved correctly: {path}")
             path = get_relative_path(path)
@@ -294,8 +291,7 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        project_root = pathlib.Path(__file__).resolve().parent.parent
-        env_file = project_root / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
 
     if not executable:
         print("Executable must be provided.")
