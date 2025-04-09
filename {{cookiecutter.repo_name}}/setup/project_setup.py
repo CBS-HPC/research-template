@@ -29,35 +29,13 @@ file_ext_map = {
 }
 
 
-def make_executable(file_path):
-    """
-    Changes the file permission to make the file executable.
-    
-    Args:
-        file_path (str): The path to the file you want to make executable.
-        
-    Raises:
-        FileNotFoundError: If the file does not exist.
-        PermissionError: If the script does not have permission to change file mode.
-    """
-    os_type = platform.system().lower()
-    if os_type == "darwin" or os_type == "linux":
-        if not os.path.isfile(file_path):
-            raise FileNotFoundError(f"No such file: '{file_path}'")
-
-        # Get current permissions
-        st = os.stat(file_path)
-        
-        # Add executable bits for user, group, and others
-        os.chmod(file_path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        print(f"Made '{file_path}' executable.")
-
 def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
         python_env_manager = "Base Installation"    
     try:
+        print(os.getcwd())
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
@@ -374,9 +352,9 @@ setup_bash = "./setup/run_setup.sh"
 setup_powershell = "./setup/run_setup.ps1"
 miniconda_path =  "bin/miniconda3"
 
-make_executable(setup_bash)
-make_executable("./activate.sh")
-make_executable("./deactivate.sh")
+os.chmod("./activate.sh", 0o755)
+os.chmod("./deactivate.sh", 0o755)
+
 
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
