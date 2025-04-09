@@ -99,55 +99,20 @@ def load_from_env(env_var: str, env_file=".env"):
         str or None: The value of the environment variable if found, otherwise None.
     """
 
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-    env_file_path = pathlib.Path(env_file)
+    env_file = pathlib.Path(env_file)
+    if not env_file.exists():
+        project_root = pathlib.Path(__file__).resolve().parent.parent
+        env_file = project_root / env_file.name
 
     # Attempt to read directly from the .env file
-    if env_file_path.exists():
+    if env_file.exists():
         env_values = dotenv_values(env_file)
         if env_var.upper() in env_values:
             env_value = env_values[env_var.upper()]
             env_value = check_path_format(env_value) 
             return env_value
     
-    # If the env_file is not found, check in the project root directory
-    project_env_file = project_root / env_file
-    if project_env_file.exists():
-        env_values = dotenv_values(project_env_file)
-        if env_var.upper() in env_values:
-            env_value = env_values[env_var.upper()]
-            env_value = check_path_format(env_value) 
-            return env_value
 
-    # If not found directly, load the .env file into the environment
-    load_dotenv(env_file, override=True)
-    env_value = os.getenv(env_var.upper())
-    if env_value:
-        env_value = check_path_format(env_value) 
-    else:
-        env_value = None 
-
-    return env_value
-
-def load_from_env_old(env_var: str, env_file=".env"):
-    """
-    Loads an environment variable's value from a .env file.
-    
-    Args:
-        env_var (str): The name of the environment variable to load.
-        env_file (str): The path to the .env file (default is ".env").
-        
-    Returns:
-        str or None: The value of the environment variable if found, otherwise None.
-    """
-    # Attempt to read directly from the .env file
-    if os.path.exists(env_file):
-        env_values = dotenv_values(env_file)
-        if env_var.upper() in env_values:
-            env_value = env_values[env_var.upper()]
-            env_value = check_path_format(env_value) 
-            return env_value
-    
     # If not found directly, load the .env file into the environment
     load_dotenv(env_file, override=True)
     env_value = os.getenv(env_var.upper())
@@ -175,9 +140,14 @@ def save_to_env(env_var: str, env_name: str, env_file=".env"):
 
     env_var = check_path_format(env_var) 
 
+    env_file = pathlib.Path(env_file)
+    if not env_file.exists():
+        project_root = pathlib.Path(__file__).resolve().parent.parent
+        env_file = project_root / env_file.name
+
     # Read the existing .env file if it exists
     env_lines = []
-    if os.path.exists(env_file):
+    if env_file.exists():
         with open(env_file, 'r') as file:
             env_lines = file.readlines()
 
@@ -204,6 +174,13 @@ def exe_to_path(executable: str = None, path: str = None,env_file:str=".env"):
     """
     Adds the path of an executable binary to the system PATH permanently.
     """
+
+    env_file = pathlib.Path(env_file)
+    if not env_file.exists():
+        project_root = pathlib.Path(__file__).resolve().parent.parent
+        env_file = project_root / env_file.name
+
+
     os_type = platform.system().lower()
     
     if not executable or not path:
@@ -304,6 +281,12 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
     """
     Adds the path of an executable binary to an environment file.
     """
+
+    env_file = pathlib.Path(env_file)
+    if not env_file.exists():
+        project_root = pathlib.Path(__file__).resolve().parent.parent
+        env_file = project_root / env_file.name
+
     if not executable:
         print("Executable must be provided.")
         return False
@@ -1419,7 +1402,7 @@ def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
 
     with change_dir("./data"):
         _ = git_commit("Rclone Backup")
-        git_log_to_file(os.path.join(folder_to_backup, "data.txt"))
+        git_log_to_file(os.path.join(folder_to_backup, "data.gitlog"))
     
     _ = git_commit("Rclone Backup")
     

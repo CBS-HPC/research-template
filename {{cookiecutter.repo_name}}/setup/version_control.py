@@ -50,7 +50,7 @@ def setup_git(version_control,code_repo):
                 curdir = os.getcwd()
                 with change_dir("./data"):
                     flag = git_init("Initial commit","data")
-                    git_log_to_file(os.path.join(curdir, "data.txt"))
+                    git_log_to_file(os.path.join(curdir, "data.gitlog"))
              
         if flag:
             save_to_env(git_name,"GIT_USER") 

@@ -4,7 +4,7 @@ import sys
 import platform
 import re
 
-required_libraries = ['questionary','bs4'] 
+required_libraries = ['questionary'] 
 installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
 for lib in required_libraries:
@@ -433,12 +433,12 @@ os_type = platform.system().lower()
 
 if os_type == "windows":
     run_powershell(setup_powershell, env_path, python_env_manager, setup_version_control, setup_remote_repository)
-    activate_to_delete = "Activate.sh"
-    deactivate_to_delete = "Deactivate.sh"
+    activate_to_delete = "activate.sh"
+    deactivate_to_delete = "deactivate.sh"
 elif os_type == "darwin" or os_type == "linux":
     run_bash(setup_bash, env_path, python_env_manager, setup_version_control, setup_remote_repository)
-    activate_to_delete = "Activate.ps1"
-    deactivate_to_delete = "Deactivate.ps1"
+    activate_to_delete = "activate.ps1"
+    deactivate_to_delete = "aeactivate.ps1"
 
 # Deleting Setup scripts
 delete_files([os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
