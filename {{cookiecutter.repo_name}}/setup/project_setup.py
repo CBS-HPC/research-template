@@ -44,7 +44,7 @@ def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_
         os.chmod(script_path, 0o755)
 
         # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager, setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
+        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(), setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
         print(f"Script {script_path} executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")

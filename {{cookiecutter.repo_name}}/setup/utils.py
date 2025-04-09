@@ -38,6 +38,7 @@ import yaml
 @contextmanager
 def change_dir(destination):
     cur_dir = os.getcwd()
+    destination = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(destination)
     try:
         os.chdir(destination)
         yield
