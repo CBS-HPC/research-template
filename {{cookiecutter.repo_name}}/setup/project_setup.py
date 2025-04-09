@@ -37,6 +37,7 @@ def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_
     try:
         print(script_path)
         script_path = pathlib.Path(script_path)
+        script_path = pathlib.Path(__file__).resolve().parent.parent / script_path 
         print(script_path)
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
