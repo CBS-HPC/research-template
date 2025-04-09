@@ -35,10 +35,11 @@ def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_
     if not python_env_manager:
         python_env_manager = "Base Installation"    
     try:
-        print(script_path)
-        script_path = pathlib.Path(script_path)
-        script_path = pathlib.Path(__file__).resolve().parent.parent / script_path 
-        print(script_path)
+        script_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path)
+        env_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path)
+        setup_version_control_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_version_control_path)
+        setup_remote_repository_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_remote_repository_path)
+      
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
