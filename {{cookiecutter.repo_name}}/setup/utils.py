@@ -205,6 +205,8 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
             profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on the shell
             with open(profile_file, "a") as file:
                 file.write(f'\nexport PATH="{path}:$PATH"')
+            # Immediately apply the change for the current script/session (only works if you're in a shell)
+            subprocess.run(f'source {profile_file}', shell=True, executable='/bin/bash')
 
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
@@ -1439,23 +1441,6 @@ def check_rclone_remote(remote_name):
         return False
 
 #Check software
-def check_python_kernel():
-    # Load the desired python kernel path from the environment variable
-    python_kernel = load_from_env("PYTHON")
-    
-    # Check if the full executable path matches
-    if sys.executable == python_kernel  or os.path.dirname(sys.executable)== python_kernel:
-        print("The correct Python kernel (exact match) is being used.")
-        return True
-    else:
-        print(f"Warning: The current Python interpreter ({sys.executable}) does not match the expected kernel ({python_kernel}).")
-        return False
-
-def change_python_kernel(python_kernel, script_path,arguments =sys.argv[1:] ):
-    # Restart the script with the new Python interpreter
-    print(f"Restarting the script with {python_kernel}...")
-    subprocess.run([python_kernel, script_path] + arguments, check=True)
-
 def ensure_correct_kernel(func):
     """Decorator to ensure the function runs with the correct Python kernel."""
     @wraps(func)
@@ -1466,7 +1451,7 @@ def ensure_correct_kernel(func):
         if os_type == "windows":
             py_exe = "python.exe"
         elif os_type == "darwin" or os_type == "linux":
-            py_exe = "python.exe"
+            py_exe = "python"
 
         # If the kernel path doesn't contain "python.exe", append it
         if not python_kernel.endswith(py_exe):
@@ -1491,7 +1476,6 @@ def ensure_correct_kernel(func):
 
     return wrapper
    
-
 # Other
 def get_hardware_info():
     """

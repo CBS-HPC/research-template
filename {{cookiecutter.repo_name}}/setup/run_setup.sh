@@ -18,7 +18,7 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
         "venv")
             echo "Activating venv environment: $env_path"
             
-            venv_activate="./$env_path/bin/activate"
+            venv_activate="$env_path/bin/activate"
 
             if [ -f "$venv_activate" ]; then
                 echo "Activating venv using $venv_activate"
@@ -30,7 +30,7 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
         "virtualenv")
             echo "Activating virtualenv environment: $env_path"
             
-            virtualenv_activate="./$env_path/bin/activate"
+            virtualenv_activate="$env_path/bin/activate"
 
             if [ -f "$virtualenv_activate" ]; then
                 echo "Activating virtualenv using $virtualenv_activate"
