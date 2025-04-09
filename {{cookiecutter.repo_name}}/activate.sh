@@ -31,6 +31,9 @@ load_env() {
     fi
 }
 
+# Load environment variables from .env first
+load_env
+
 # Activate Conda environment if defined in the .env file
 if [ -n "$CONDA_ENV_PATH" ]; then
     echo "Activating Conda environment at $CONDA_ENV_PATH"
@@ -42,9 +45,6 @@ if [ -n "$VENV_ENV_PATH" ]; then
     echo "Activating virtual environment at $VENV_ENV_PATH"
     source "$VENV_ENV_PATH/bin/activate"
 fi
-
-# Load environment variables from .env
-load_env
 
 # Change prompt to reflect environment name (if desired)
 repo_name=$(basename "$PWD")  # Get the current directory name as the repo name

@@ -25,16 +25,36 @@ if (Test-Path $envFile) {
     Write-Warning ".env file not found"
 }
 
+# Helper function to get value from .env file
+function Get-EnvValueFromDotEnv {
+    param (
+        [string]$varName,
+        [string]$envFile = ".\.env"
+    )
+
+    # Check if the .env file exists
+    if (Test-Path $envFile) {
+        $line = Get-Content $envFile | Where-Object { $_ -match "^\s*$varName\s*=\s*(.+)$" }
+        if ($line -match "^\s*$varName\s*=\s*(.+)$") {
+            return $matches[1].Trim('"')
+        }
+    }
+
+    return $null
+}
+
 # Check if a Conda environment is defined in the .env
-if ($env:CONDA_ENV_PATH) {
-    Write-Output "Activating Conda environment at $env:CONDA_ENV_PATH"
-    conda activate $env:CONDA_ENV_PATH
+$condaEnvPath = Get-EnvValueFromDotEnv -varName "CONDA_ENV_PATH"
+if ($condaEnvPath) {
+    Write-Output "Activating Conda environment at $condaEnvPath"
+    conda activate $condaEnvPath
 }
 
 # Check if a venv path is defined in the .env
-if ($env:VENV_ENV_PATH) {
-    Write-Output "Activating virtual environment at $env:VENV_ENV_PATH"
-    . "$env:VENV_ENV_PATH\Scripts\Activate.ps1"
+$venvPath = Get-EnvValueFromDotEnv -varName "VENV_ENV_PATH"
+if ($venvPath) {
+    Write-Output "Activating virtual environment at $venvPath"
+    . "$venvPath\Scripts\Activate.ps1"
 }
 
 # Optional: Change prompt to reflect env name
