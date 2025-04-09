@@ -132,12 +132,13 @@ def update_requirements(dependencies_files: list = ["src/dependencies.txt"], rea
     write_to_readme(readme_file,software_requirements_section)
 
 def main():
-    update_requirements(dependencies_files=["./src/dependencies.txt", "./setup/dependencies.txt"], sections=["src", "setup"])
-
-if __name__ == "__main__":
-    
     # Change to project root directory
     project_root = pathlib.Path(__file__).resolve().parent.parent
     os.chdir(project_root)
+
+    update_requirements(dependencies_files=[project_root / pathlib.Path("./src/dependencies.txt"), project_root / pathlib.Path("./setup/dependencies.txt")], sections=["src", "setup"])
+
+if __name__ == "__main__":
     
+
     main()

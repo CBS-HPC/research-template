@@ -61,10 +61,11 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     
     setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd,programming_language)
 
+    file_description = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json")
      # Create and update README and Project Tree:
-    update_file_descriptions("README.md",programming_language, json_file="./setup/FILE_DESCRIPTIONS.json")
+    update_file_descriptions("README.md",programming_language, json_file=file_description)
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"./setup/FILE_DESCRIPTIONS.json")
+    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,file_description)
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """

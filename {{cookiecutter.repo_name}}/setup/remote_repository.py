@@ -409,8 +409,8 @@ if requirements_file == "requirements.txt":
 elif requirements_file == "environment.yml": 
     export_conda_env(repo_name)
 
-folder = "./setup/"
-file = "./setup/dependencies.txt"
+folder = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/")
+file = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/dependencies.txt")
 
 # Updating requirements.txt/environment.yaml  # FIX ME
 if python_env_manager.lower() in ["conda","venv"]:

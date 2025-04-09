@@ -207,6 +207,8 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
                 file.write(f'\nexport PATH="{path}:$PATH"')
             # Immediately apply the change for the current script/session (only works if you're in a shell)
             subprocess.run(f'source {profile_file}', shell=True, executable='/bin/bash')
+        
+        os.environ["PATH"] = f"{path}:{os.environ['PATH']}"
 
         # Check if executable is found in the specified path
         resolved_path = shutil.which(executable)
