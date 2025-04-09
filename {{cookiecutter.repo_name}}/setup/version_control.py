@@ -5,21 +5,10 @@ import platform
 import urllib.request
 import shutil
 
-
-#required_libraries = ['requests']
-required_libraries = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools'] 
-installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
-
-for lib in required_libraries:
-    try:
-        # Check if the library is already installed
-        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-            print(f"Installing {lib}...")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install {lib}: {e}")
-
 from utils import *
+
+pip_installer(required_libraries =  ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools'])
+
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     """Handle repository creation and log-in based on selected platform."""

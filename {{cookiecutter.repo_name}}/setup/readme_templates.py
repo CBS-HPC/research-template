@@ -8,24 +8,13 @@ import json
 import subprocess
 import sys
 
-required_libraries = ['python-dotenv','pyyaml','requests'] 
-installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
+from utils import *
 
-for lib in required_libraries:
-    try:
-        # Check if the library is already installed
-        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-            print(f"Installing {lib}...")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install {lib}: {e}")
+pip_installer(required_libraries =  ['python-dotenv','pyyaml','requests'])
 
 from dotenv import dotenv_values, load_dotenv
 import yaml
 import requests
-
-from utils import *
-
 
 # Determine file extension based on programming language
 ext_map = {
@@ -73,9 +62,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd,programming_language)
 
      # Create and update README and Project Tree:
-    update_file_descriptions("README.md",programming_language, json_file="setup/FILE_DESCRIPTIONS.json")
+    update_file_descriptions("README.md",programming_language, json_file="./setup/FILE_DESCRIPTIONS.json")
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"setup/FILE_DESCRIPTIONS.json")
+    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,"./setup/FILE_DESCRIPTIONS.json")
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """

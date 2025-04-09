@@ -8,22 +8,10 @@ import argparse
 import sys
 
 # Check and install required libraries
-
-required_libraries = ['bs4'] 
-installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
-
-for lib in required_libraries:
-    try:
-        # Check if the library is already installed
-        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-            print(f"Installing {lib}...")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install {lib}: {e}")
-
-from bs4 import BeautifulSoup
-
 from utils import *
+
+pip_installer(required_libraries = ['beautifulsoup4'] )
+from bs4 import BeautifulSoup
 
 def links_deic_storage(url):
     """

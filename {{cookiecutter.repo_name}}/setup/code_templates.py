@@ -3,18 +3,9 @@ import subprocess
 import sys
 from textwrap import dedent
 
+from utils import *
 
-required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat'] 
-installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
-
-for lib in required_libraries:
-    try:
-        # Check if the library is already installed
-        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-            print(f"Installing {lib}...")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install {lib}: {e}")
+pip_installer(required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat'] )
 
 import nbformat as nbf  # For creating Jupyter notebooks
 from dotenv import dotenv_values, load_dotenv

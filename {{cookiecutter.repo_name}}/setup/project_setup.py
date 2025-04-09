@@ -4,23 +4,13 @@ import sys
 import platform
 import re
 
-required_libraries = ['questionary'] 
-installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
-
-for lib in required_libraries:
-    try:
-        # Check if the library is already installed
-        if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-            print(f"Installing {lib}...")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install {lib}: {e}")
-
-import questionary
-
 from utils import *
 from code_templates import *
 from readme_templates import *
+
+
+pip_installer(required_libraries = ['questionary'])
+import questionary
 
 ext_map = {
     "r": "Rscript",
@@ -354,10 +344,10 @@ def multiple_backups(remote_backup):
             remote_backup = "None"
     return remote_backup
 
-setup_version_control = "setup/version_control.py"
-setup_remote_repository = "setup/remote_repository.py"
-setup_bash = "setup/run_setup.sh"
-setup_powershell = "setup/run_setup.ps1"
+setup_version_control = "./setup/version_control.py"
+setup_remote_repository = "./setup/remote_repository.py"
+setup_bash = "./setup/run_setup.sh"
+setup_powershell = "./setup/run_setup.ps1"
 miniconda_path =  "bin/miniconda3"
 
 project_name = "{{cookiecutter.project_name}}"
@@ -441,7 +431,7 @@ elif os_type == "darwin" or os_type == "linux":
     deactivate_to_delete = "aeactivate.ps1"
 
 # Deleting Setup scripts
-delete_files([os.path.abspath(__file__),"setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
+delete_files([os.path.abspath(__file__),"./setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
 
 # Updating README
 creating_readme()
