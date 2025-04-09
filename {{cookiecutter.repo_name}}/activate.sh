@@ -38,9 +38,9 @@ if [ -n "$CONDA_ENV_PATH" ]; then
 fi
 
 # Activate virtual environment if defined in the .env file
-if [ -n "$VENV_PATH" ]; then
-    echo "Activating virtual environment at $VENV_PATH"
-    source "$VENV_PATH/bin/activate"
+if [ -n "$VENV_ENV_PATH" ]; then
+    echo "Activating virtual environment at $VENV_ENV_PATH"
+    source "$VENV_ENV_PATH/bin/activate"
 fi
 
 # Load environment variables from .env

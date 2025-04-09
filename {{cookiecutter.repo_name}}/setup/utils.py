@@ -212,7 +212,7 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
         
         if resolved_path:
             resolved_path = os.path.dirname(resolved_path)
-        print("HELLO")
+            print("HELLO")
         if resolved_path == path:
             print(f"{executable} binary is added to PATH and resolved correctly: {path}")
             path = get_relative_path(path)
@@ -227,6 +227,8 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
             load_dotenv(env_file, override=True)
             return True
         else:
+            print("hello2")
+            print(resolved_path)
             print(f"{executable} binary is not found in the specified PATH: {path}")
             return False
     else:

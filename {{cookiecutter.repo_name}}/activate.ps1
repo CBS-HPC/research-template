@@ -32,9 +32,9 @@ if ($env:CONDA_ENV_PATH) {
 }
 
 # Check if a venv path is defined in the .env
-if ($env:VENV_PATH) {
-    Write-Output "Activating virtual environment at $env:VENV_PATH"
-    . "$env:VENV_PATH\Scripts\Activate.ps1"
+if ($env:VENV_ENV_PATH) {
+    Write-Output "Activating virtual environment at $env:VENV_ENV_PATH"
+    . "$env:VENV_ENV_PATH\Scripts\Activate.ps1"
 }
 
 # Optional: Change prompt to reflect env name
