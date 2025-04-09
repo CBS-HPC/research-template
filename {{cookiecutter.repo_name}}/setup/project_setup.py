@@ -1,4 +1,5 @@
 import os
+import stat
 import subprocess
 import sys
 import platform
@@ -7,7 +8,6 @@ import re
 from utils import *
 from code_templates import *
 from readme_templates import *
-
 
 pip_installer(required_libraries = ['questionary'])
 import questionary
@@ -27,6 +27,30 @@ file_ext_map = {
     "stata": "do",
     "sas": "sas"
 }
+
+
+def make_executable(file_path):
+    """
+    Changes the file permission to make the file executable.
+    
+    Args:
+        file_path (str): The path to the file you want to make executable.
+        
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        PermissionError: If the script does not have permission to change file mode.
+    """
+ 
+    if platform.system().lower()== "darwin" or os_type == "linux":
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError(f"No such file: '{file_path}'")
+
+        # Get current permissions
+        st = os.stat(file_path)
+        
+        # Add executable bits for user, group, and others
+        os.chmod(file_path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        print(f"Made '{file_path}' executable.")
 
 def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
     if not env_path:
@@ -350,6 +374,10 @@ setup_bash = "./setup/run_setup.sh"
 setup_powershell = "./setup/run_setup.ps1"
 miniconda_path =  "bin/miniconda3"
 
+make_executable(setup_bash)
+make_executable("./activate.sh")
+make_executable("./deactivate.sh")
+
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 authors = "{{cookiecutter.author_name}}"
@@ -420,7 +448,6 @@ creating_readme(repo_name= repo_name,
 download_README_template(local_file = "./DCAS template/README.md")
 
 os_type = platform.system().lower()
-
 if os_type == "windows":
     run_powershell(setup_powershell, env_path, python_env_manager, setup_version_control, setup_remote_repository)
     activate_to_delete = "activate.sh"
