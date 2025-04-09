@@ -1462,8 +1462,14 @@ def ensure_correct_kernel(func):
     def wrapper(*args, **kwargs):
         python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from the environment
 
+        os_type = platform.system().lower()
+        if os_type == "windows":
+            py_exe = "python.exe"
+        elif os_type == "darwin" or os_type == "linux":
+            py_exe = "python.exe"
+
         # If the kernel path doesn't contain "python.exe", append it
-        if "python.exe" not in python_kernel:
+        if not python_kernel.endswith(py_exe):
             python_kernel = os.path.join(python_kernel, "python.exe")
 
         # Get the current executable and its base folder
