@@ -1275,6 +1275,7 @@ def install_rclone(install_path):
 
         rclone_path = os.path.abspath(rclone_path)
 
+        os.chmod(rclone_path, 0o755)
         return rclone_path
 
     if not is_installed('rclone','Rclone'):
