@@ -540,7 +540,11 @@ def git_init_old(msg,rename):
     print(f"Created the following commit : {msg}")
     return True
 
-def git_init(msg, rename, path="."):
+def git_init(msg, rename, path: str =None):
+    
+    if not path: 
+        path = str(pathlib.Path(__file__).resolve().parent.parent)
+    
     # Ensure the target path exists
     if not os.path.exists(path):
         os.makedirs(path)
@@ -591,8 +595,12 @@ def git_commit_old(msg: str = "") -> str:
 
     return None
 
-def git_commit(msg: str = "", path: str = ".") -> str:
+def git_commit(msg: str = "", path: str = None) -> str:
     """Commits changes to Git in the given path and returns the commit hash."""
+    
+    if not path: 
+        path = str(pathlib.Path(__file__).resolve().parent.parent)
+    
     if os.path.isdir(os.path.join(path, ".git")):
         # Ensure Git is installed
         is_installed("git")
@@ -681,7 +689,11 @@ def git_push_old(flag:str,msg:str=""):
         print(f"An error occurred: {e}")
 
 def git_push(flag: str, msg: str = "", path: str = None):
-    def push_all(remote="origin", path="."):
+    def push_all(remote="origin", path: str =None):
+
+        if not path: 
+            path = str(pathlib.Path(__file__).resolve().parent.parent)
+
         try:
             # Get the name of the current branch
             current_branch = subprocess.check_output(
