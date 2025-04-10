@@ -396,7 +396,7 @@ def install_gh(install_path=None):
             if install_path:
                 install_path= os.path.abspath(install_path)
                 install_path = os.path.dirname(install_path)
-                return exe_to_path("gh",os.path.join(install_path, "bin"))
+                return exe_to_path("gh",install_path)
             else:
                 return False
         else:
