@@ -1548,7 +1548,7 @@ def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
         exclude_args.extend(["--exclude", pattern])
 
     with change_dir("./data"):
-        _ = git_commit("Rclone Backup")
+        _ = git_commit(msg = "Rclone Backup",path = os.getcwd())
         git_log_to_file(".gitlog")
         #git_log_to_file(os.path.join(folder_to_backup, "data.gitlog"))
     

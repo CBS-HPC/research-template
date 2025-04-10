@@ -32,13 +32,13 @@ def setup_git(version_control,code_repo):
             rename = None
             if code_repo.lower() == "github":
                 rename = "main"
-            flag = git_init("Initial commit",rename)
+            flag = git_init(msg = "Initial commit",rename = rename)
             
             # Creating its own git repo for "data"
             if flag:
                 #curdir = os.getcwd()
                 with change_dir("./data"):
-                    flag = git_init("Initial commit","data")
+                    flag = git_init(msg = "Initial commit", rename="data", path = os.getcwd())
                     git_log_to_file(os.path.join(".gitlog"))
                     #git_log_to_file(os.path.join(curdir, "data.gitlog"))
              
