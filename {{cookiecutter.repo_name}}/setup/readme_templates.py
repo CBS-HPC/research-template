@@ -61,7 +61,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     
     setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd,programming_language)
 
-    file_description = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json")
+    file_description = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json"))
      # Create and update README and Project Tree:
     update_file_descriptions("./README.md",programming_language, json_file=file_description)
     generate_readme(project_name, project_description,setup,usage,contact,"./README.md")
@@ -80,7 +80,7 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
         readme_file = "README.md"
 
 
-    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+    readme_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file))
 
     if os.path.exists(readme_file):
         return
@@ -170,12 +170,12 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
 
         return tree
 
-    json_file = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(json_file)
+    json_file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(json_file))
 
     if not readme_file:
         readme_file = "README.md"
     
-    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+    readme_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file))
 
     if not os.path.exists(readme_file):
         print(f"README file '{readme_file}' does not exist. Exiting.")
@@ -276,12 +276,12 @@ def update_file_descriptions(readme_file,programming_language, json_file="./setu
        # Read existing descriptions if the JSON file exists
     
 
-    json_file = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(json_file)
+    json_file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(json_file))
 
     if not readme_file:
         readme_file = "README.md"
     
-    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+    readme_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file))
 
     if os.path.exists(json_file):
         with open(json_file, "r", encoding="utf-8") as f:
@@ -453,7 +453,7 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     if not readme_file:
         readme_file = "README.md"
     
-    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+    readme_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file))
 
     try:
         with open(readme_file, "r", encoding="utf-8") as f:
@@ -570,7 +570,7 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
 # Download Readme template:
 def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", readme_file:str = "./README_DCAS_template.md"):
     
-    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+    readme_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file))
 
      # Check if the local file already exists
     if os.path.exists(readme_file):

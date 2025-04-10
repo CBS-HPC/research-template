@@ -79,7 +79,7 @@ def install_git(install_path=None):
                 print("Please provide an install path for Windows installation.")
                 return False
 
-            install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+            install_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path))
 
             # Download Git installer for Windows
             download_dir = os.path.dirname(install_path)
@@ -462,7 +462,7 @@ def install_git_annex_remote_rclone(install_path):
         repo_path = os.path.join(install_path, repo_name)
 
         # Create the bin folder if it doesn't exist
-        install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+        install_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path))
         #install_path = os.path.abspath(install_path or os.getcwd())
         os.makedirs(install_path, exist_ok=True)
 

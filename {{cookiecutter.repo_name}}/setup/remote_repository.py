@@ -275,7 +275,7 @@ def install_glab(install_path=None):
 
     os_type = platform.system().lower()
     
-    install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+    install_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path))
     #install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
 
     os.makedirs(install_path, exist_ok=True)
@@ -343,7 +343,7 @@ def install_gh(install_path=None):
 
     os_type = platform.system().lower()
 
-    install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+    install_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path))
     #install_path = os.path.abspath(install_path or os.getcwd())
 
     os.makedirs(install_path, exist_ok=True)
@@ -415,8 +415,8 @@ if requirements_file == "requirements.txt":
 elif requirements_file == "environment.yml": 
     export_conda_env(repo_name)
 
-folder = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/")
-file = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/dependencies.txt")
+folder = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/"))
+file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/dependencies.txt"))
 requirements_file  = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(requirements_file))
 
 # Updating requirements.txt/environment.yaml  # FIX ME

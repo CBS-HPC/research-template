@@ -38,7 +38,7 @@ import yaml
 @contextmanager
 def change_dir(destination):
     cur_dir = os.getcwd()
-    destination = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(destination)
+    destination = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(destination))
     try:
         os.chdir(destination)
         yield
@@ -1069,7 +1069,7 @@ def export_conda_env(env_path, output_file="environment.yml"):
     - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
     """
 
-    output_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file)
+    output_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file))
 
     try:
         # Use subprocess to run the conda export command
@@ -1331,7 +1331,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
 
 def create_requirements_txt(output_file:str="requirements.txt"):
 
-    output_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file)
+    output_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file))
 
     # Get the Python executable path from sys.executable
     python_executable = sys.executable

@@ -35,10 +35,10 @@ def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_
     if not python_env_manager:
         python_env_manager = "Base Installation"    
     try:
-        script_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path)
-        env_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path)
-        setup_version_control_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_version_control_path)
-        setup_remote_repository_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_remote_repository_path)
+        script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
+        setup_version_control_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_version_control_path))
+        setup_remote_repository_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_remote_repository_path))
       
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
@@ -124,7 +124,7 @@ def setup_virtual_environment(version_control, programming_language, python_env_
 
         return activate_cmd 
     
-    install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+    install_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path))
 
     pip_packages = set_pip_packages(version_control,programming_language)    
     activate_cmd = None
