@@ -9,13 +9,10 @@ import zipfile
 import glob
 from datetime import datetime
 import fnmatch
-import requests
 from contextlib import contextmanager
 from functools import wraps
 import getpass
 import pathlib
-
-
 
 def pip_installer(required_libraries:list = None):
     installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
@@ -29,11 +26,11 @@ def pip_installer(required_libraries:list = None):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-
-pip_installer(required_libraries= ['python-dotenv','pyyaml'])
+pip_installer(required_libraries =  ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools'])
 
 from dotenv import dotenv_values, load_dotenv
 import yaml
+import requests
 
 @contextmanager
 def change_dir(destination):

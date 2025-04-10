@@ -2,13 +2,9 @@ import os
 import subprocess
 import sys
 import platform
-import urllib.request
 import shutil
 
 from utils import *
-
-pip_installer(required_libraries =  ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools'])
-
 
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
     """Handle repository creation and log-in based on selected platform."""
