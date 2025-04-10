@@ -62,7 +62,7 @@ def run_powershell(script_path, env_path=None, python_env_manager=None, setup_ve
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "bin/miniconda3"):
+def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "./bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
 
@@ -124,6 +124,8 @@ def setup_virtual_environment(version_control, programming_language, python_env_
 
         return activate_cmd 
     
+    install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+
     pip_packages = set_pip_packages(version_control,programming_language)    
     activate_cmd = None
     env_name = None
@@ -354,7 +356,7 @@ setup_version_control = "./setup/version_control.py"
 setup_remote_repository = "./setup/remote_repository.py"
 setup_bash = "./setup/run_setup.sh"
 setup_powershell = "./setup/run_setup.ps1"
-miniconda_path =  "bin/miniconda3"
+miniconda_path =  "./bin/miniconda3"
 
 os.chmod("./activate.sh", 0o755)
 os.chmod("./deactivate.sh", 0o755)

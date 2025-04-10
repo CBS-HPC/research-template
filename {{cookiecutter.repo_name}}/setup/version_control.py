@@ -22,7 +22,7 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
 # Git Setup Functions
 def setup_git(version_control,code_repo):
 
-    if install_git("bin/git"):  
+    if install_git("./bin/git"):  
         flag, git_name, git_email = check_git_config()
 
         if not flag:
@@ -75,6 +75,8 @@ def install_git(install_path=None):
                 print("Please provide an install path for Windows installation.")
                 return False
 
+            install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+            
             # Download Git installer for Windows
             download_dir = os.path.dirname(install_path)
             installer_name = "Git-latest-64-bit.exe"
@@ -376,8 +378,8 @@ def setup_datalad(version_control,remote_storage,code_repo,repo_name):
         return
     
     # Install rclone git-annex-remote-rclone
-    install_rclone("bin")
-    install_git_annex_remote_rclone("bin")
+    install_rclone("./bin")
+    install_git_annex_remote_rclone("./bin")
 
     # Create datalad dataset
     datalad_create()
@@ -470,7 +472,8 @@ def install_git_annex_remote_rclone(install_path):
         repo_path = os.path.join(install_path, repo_name)
 
         # Create the bin folder if it doesn't exist
-        install_path = os.path.abspath(install_path or os.getcwd())
+        install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+        #install_path = os.path.abspath(install_path or os.getcwd())
         os.makedirs(install_path, exist_ok=True)
 
         # Check if the repository already exists

@@ -212,7 +212,7 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
         
         if resolved_path:
             resolved_path = os.path.dirname(resolved_path)
-            print("HELLO")
+            
         if resolved_path == path:
             print(f"{executable} binary is added to PATH and resolved correctly: {path}")
             path = get_relative_path(path)
@@ -227,8 +227,6 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
             load_dotenv(env_file, override=True)
             return True
         else:
-            print("hello2")
-            print(resolved_path)
             print(f"{executable} binary is not found in the specified PATH: {path}")
             return False
     else:
@@ -1150,7 +1148,7 @@ def create_venv_env(env_name, pip_packages=None):
 
         # Install pip packages if provided
         if pip_packages:
-            pip_path = os.path.join(env_path, 'bin', 'pip') if sys.platform != 'win32' else os.path.join(env_path, 'Scripts', 'pip')
+            pip_path = os.path.join(env_path, "bin", 'pip') if sys.platform != 'win32' else os.path.join(env_path, "Scripts", 'pip')
             subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         

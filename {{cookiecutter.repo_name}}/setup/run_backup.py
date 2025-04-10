@@ -8,7 +8,7 @@ from utils import *
 def run_backup(remote_backups,repo_name):
     
     if remote_backups.lower() != "none": 
-        if install_rclone("bin"):
+        if install_rclone("./bin"):
             remote_backups= [item.strip() for item in remote_backups.split(",")]
             for remote_backup in remote_backups:
                 if check_rclone_remote(remote_backup.lower()):

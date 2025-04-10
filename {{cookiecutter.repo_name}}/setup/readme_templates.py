@@ -65,7 +65,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
      # Create and update README and Project Tree:
     update_file_descriptions("README.md",programming_language, json_file=file_description)
     generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    create_tree("README.md", ['bin','.git','.datalad','.gitkeep','.env','__pycache__'] ,file_description)
+    create_tree("README.md", ["bin",".git",".datalad",".gitkeep",".env","__pycache__"] ,file_description)
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """

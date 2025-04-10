@@ -18,9 +18,9 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
     if version_control == None or not os.path.isdir(".git"):
         return False
     if code_repo and code_repo.lower() == "github":
-        flag = install_gh("bin/gh")     
+        flag = install_gh("./bin/gh")     
     elif code_repo and code_repo.lower() == "gitlab":
-        flag  = install_glab("bin/glab")
+        flag  = install_glab("./bin/glab")
     else:
         return False 
     if flag:    
@@ -274,7 +274,10 @@ def install_glab(install_path=None):
         return True
 
     os_type = platform.system().lower()
-    install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
+    
+    install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+    #install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
+
     os.makedirs(install_path, exist_ok=True)
     version = get_glab_version()
     nversion = version.lstrip("v")
@@ -339,7 +342,10 @@ def install_gh(install_path=None):
         return True
 
     os_type = platform.system().lower()
-    install_path = os.path.abspath(install_path or os.getcwd())
+
+    install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
+    #install_path = os.path.abspath(install_path or os.getcwd())
+
     os.makedirs(install_path, exist_ok=True)
 
     try:
