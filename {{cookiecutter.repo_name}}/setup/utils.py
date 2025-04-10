@@ -211,6 +211,7 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
         resolved_path = shutil.which(executable)
         
         if resolved_path:
+            resolved_path= os.path.abspath(resolved_path)
             resolved_path = os.path.dirname(resolved_path)
             
         if resolved_path == path:
@@ -928,7 +929,7 @@ def update_conda_env_file(file_path: str):
     else:
         print(f"'{file_path}' does not contain both 'name' and 'prefix' fields.")
 
-def export_conda_env(env_path, output_file='environment.yml'):
+def export_conda_env(env_path, output_file="environment.yml"):
     """
     Export the details of a conda environment to a YAML file.
     
@@ -936,6 +937,9 @@ def export_conda_env(env_path, output_file='environment.yml'):
     - env_name: str, name of the conda environment to export.
     - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
     """
+
+    output_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file)
+    
     try:
         # Use subprocess to run the conda export command
         with open(output_file, 'w') as f:
@@ -1194,7 +1198,10 @@ def create_virtualenv_env(env_name, pip_packages=None):
         print(f"Error: An unexpected error occurred: {e}")
         return None
 
-def create_requirements_txt(file:str="requirements.txt"):
+def create_requirements_txt(output_file:str="requirements.txt"):
+
+    output_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file)
+
     # Get the Python executable path from sys.executable
     python_executable = sys.executable
     
@@ -1204,7 +1211,7 @@ def create_requirements_txt(file:str="requirements.txt"):
     # Check if the pip freeze command was successful
     if result.returncode == 0:
         # Write the output of pip freeze to a requirements.txt file
-        with open(file, "w") as f:
+        with open(output_file, "w") as f:
             f.write(result.stdout)
         print("requirements.txt has been created successfully.")
     else:
@@ -1343,27 +1350,29 @@ def rclone_remote(remote_name: str = "deic storage",email:str = None, password:s
         print(f"An unexpected error occurred: {e}")
 
 def rclone_folder(remote_name, base_folder):
-    # Generate a timestamped folder name
-   
-        # Construct the command to create the timestamped backup folder
-        rclone_repo = f'{remote_name}:{base_folder}'
-        command = [
-            'rclone', 'mkdir', rclone_repo
-        ]
+    # Generate the rclone path
+    rclone_repo = f'{remote_name}:{base_folder}'
+    command = ['rclone', 'mkdir', rclone_repo]
+
+    try:
+        # Execute the command and capture output
+        subprocess.run(command, check=True, capture_output=True, text=True)
+        print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
         
-        try:
-            # Execute the command
-            subprocess.run(command, check=True)
-            print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
-            save_to_env(rclone_repo,"RCLODE_REPO")
+        save_to_env(rclone_repo, "RCLODE_REPO")
+        return rclone_repo
 
-            return rclone_repo
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to create backup folder: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+    except subprocess.CalledProcessError as e:
+        # Check if the specific SSH error is in stderr
+        if "couldn't connect SSH: ssh: handshake failed" in e.stderr:
+            if remote_name == "deic storage":
+                print('Connection to "Diec Storage" failed. Please log-on to "https://storage.deic.dk/" with MFA')
+        else:
+            print(f"Failed to create backup folder: {e.stderr.strip()}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
-        return None
+    return None
 
 def read_rcloneignore(folder):
     """Read the .rcloneignore file from the specified folder and return the patterns."""

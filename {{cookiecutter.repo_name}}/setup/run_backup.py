@@ -11,15 +11,19 @@ def run_backup(remote_backups,repo_name):
         if install_rclone("./bin"):
             remote_backups= [item.strip() for item in remote_backups.split(",")]
             for remote_backup in remote_backups:
+                rclone_repo = None
                 if check_rclone_remote(remote_backup.lower()):
                     rclone_repo = load_from_env("RCLODE_REPO")
-                else:
+            
+                if not rclone_repo:
                     email, password = remote_user_info(remote_backup.lower())
                     rclone_remote(remote_backup.lower(),email, password)
                     rclone_repo = rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
             
                 if rclone_repo:
                     rclone_sync(rclone_repo, folder_to_backup=None)
+                else: 
+                    print(f"Failed to backup to {remote_backup}")
 
 def main():
     # Change to project root directory

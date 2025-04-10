@@ -63,9 +63,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
     file_description = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json")
      # Create and update README and Project Tree:
-    update_file_descriptions("README.md",programming_language, json_file=file_description)
-    generate_readme(project_name, project_description,setup,usage,contact,"README.md")
-    create_tree("README.md", ["bin",".git",".datalad",".gitkeep",".env","__pycache__"] ,file_description)
+    update_file_descriptions("./README.md",programming_language, json_file=file_description)
+    generate_readme(project_name, project_description,setup,usage,contact,"./README.md")
+    create_tree("./README.md", ["bin",".git",".datalad",".gitkeep",".env","__pycache__"] ,file_description)
     
 def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
     """
@@ -77,7 +77,11 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
     - project_description (str): A short description of the project.
     """
     if readme_file is None:
-        readme_file = "README.md" 
+        readme_file = "README.md"
+
+
+    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+
     if os.path.exists(readme_file):
         return
     
@@ -132,7 +136,7 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     print(f"README.md created at: {readme_file}")
 
 # Project Tree
-def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root_folder=None):
+def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESCRIPTIONS.json", root_folder=None):
     """
     Updates the "Project Tree" section in a README.md file with the project structure.
 
@@ -166,8 +170,12 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
 
         return tree
 
+    json_file = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(json_file)
+
     if not readme_file:
         readme_file = "README.md"
+    
+    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
 
     if not os.path.exists(readme_file):
         print(f"README file '{readme_file}' does not exist. Exiting.")
@@ -177,7 +185,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         ignore_list = []  # Default to an empty list if not provided
 
 
-    if isinstance(file_descriptions, str) and file_descriptions.endswith(".json") and os.path.exists(file_descriptions): 
+    if isinstance(json_file, str) and json_file.endswith(".json") and os.path.exists(json_file): 
         with open(file_descriptions, "r", encoding="utf-8") as json_file:
             file_descriptions = json.load(json_file)
     else:
@@ -229,12 +237,12 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
 
     print(f"'Project Tree' section updated in '{readme_file}'.")
 
-def update_file_descriptions(readme_path,programming_language, json_file="FILE_DESCRIPTIONS.json"):
+def update_file_descriptions(readme_file,programming_language, json_file="./setup/FILE_DESCRIPTIONS.json"):
     """
     Reads the project tree from an existing README.md and updates a FILE_DESCRIPTIONS.json file.
 
     Parameters:
-    - readme_path (str): Path to the README.md file.
+    - readme_file (str): Path to the README.md file.
     - json_file (str): The name of the JSON file for file descriptions.
 
     Returns:
@@ -267,6 +275,14 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
 
        # Read existing descriptions if the JSON file exists
     
+
+    json_file = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(json_file)
+
+    if not readme_file:
+        readme_file = "README.md"
+    
+    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+
     if os.path.exists(json_file):
         with open(json_file, "r", encoding="utf-8") as f:
             file_descriptions = json.load(f)
@@ -322,11 +338,11 @@ def update_file_descriptions(readme_path,programming_language, json_file="FILE_D
         with open(json_file, "w", encoding="utf-8") as file:
             json.dump(file_descriptions, file, indent=4, ensure_ascii=False)
 
-    if not os.path.exists(readme_path):
+    if not os.path.exists(readme_file):
         return 
 
     # Read the README.md and extract the "Project Tree" section
-    with open(readme_path, "r", encoding="utf-8") as f:
+    with open(readme_file, "r", encoding="utf-8") as f:
         readme_content = f.read()
 
     # Extract the project tree section using regex
@@ -422,19 +438,25 @@ def generate_dataset_table(json_file_path):
         # If the data is not a list, raise an error
         raise TypeError(f"Expected a list of datasets but got {type(data)}.")
 
-def dataset_to_readme(markdown_table: str, readme_path: str = 'README.md'):
+def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     """
     Updates or appends the '## Dataset List' section in the README file.
 
     Parameters:
         markdown_table (str): The markdown table to insert.
-        readme_path (str): Path to the README file.
+        readme_file (str): Path to the README file.
     """
     section_title = "## Dataset List"
     new_dataset_section = f"{section_title}\n\n{markdown_table.strip()}\n"
 
+
+    if not readme_file:
+        readme_file = "README.md"
+    
+    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+
     try:
-        with open(readme_path, "r", encoding="utf-8") as f:
+        with open(readme_file, "r", encoding="utf-8") as f:
             readme_content = f.read()
 
         if section_title in readme_content:
@@ -453,10 +475,10 @@ def dataset_to_readme(markdown_table: str, readme_path: str = 'README.md'):
         updated_content = new_dataset_section
 
     # Write the updated content to the README file
-    with open(readme_path, "w", encoding="utf-8") as f:
+    with open(readme_file, "w", encoding="utf-8") as f:
         f.write(updated_content.strip())
 
-    print(f"{readme_path} successfully updated with dataset section.")
+    print(f"{readme_file} successfully updated with dataset section.")
 
 
 # CITATION.cff
@@ -546,14 +568,16 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
 # Download Readme template:
-def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", local_file:str = "README_DCAS_template.md"):
+def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", readme_file:str = "./README_DCAS_template.md"):
     
+    readme_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file)
+
      # Check if the local file already exists
-    if os.path.exists(local_file):
+    if os.path.exists(readme_file):
         return
     
     # Ensure the parent directory exists
-    folder_path = os.path.dirname(local_file)
+    folder_path = os.path.dirname(readme_file)
     os.makedirs(folder_path, exist_ok=True)
 
     # Send GET request to the raw file URL
@@ -562,7 +586,7 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
     # Check if the request was successful
     if response.status_code == 200:
         # Save the content to a file
-        with open(local_file, 'wb') as file:
+        with open(readme_file, 'wb') as file:
             file.write(response.content)
     else:
-        print(f"Failed to download {local_file} from {url}")
+        print(f"Failed to download {readme_file} from {url}")
