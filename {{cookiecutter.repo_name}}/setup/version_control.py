@@ -22,7 +22,11 @@ def setup_version_control(version_control,remote_storage,code_repo,repo_name):
 # Git Setup Functions
 def setup_git(version_control,code_repo):
 
-    if install_git("./bin/git"):  
+    if install_git("./bin/git"): 
+
+        # Ensure that chdir is at project folder
+        os.chdir(pathlib.Path(__file__).resolve().parent.parent )
+        
         flag, git_name, git_email = check_git_config()
 
         if not flag:
@@ -76,7 +80,7 @@ def install_git(install_path=None):
                 return False
 
             install_path = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path)
-            
+
             # Download Git installer for Windows
             download_dir = os.path.dirname(install_path)
             installer_name = "Git-latest-64-bit.exe"
