@@ -246,7 +246,8 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     
     print(f"{code_repo} username and token added to {env_file}")
 
-def setup_repo(version_control,code_repo,repo_name,description):
+
+def setup_repo_old(version_control,code_repo,repo_name,description):
     #if not repo_login(version_control,repo_name,code_repo):
     if repo_login(version_control,repo_name,code_repo): # FIX ME !!
         username,privacy_setting = repo_details(version_control,code_repo,repo_name)
@@ -255,6 +256,21 @@ def setup_repo(version_control,code_repo,repo_name,description):
             flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
             if flag:
                 repo_to_env_file(code_repo,username,repo_name)
+        return flag
+    else:
+        return False 
+def setup_repo(version_control,code_repo,repo_name,description):
+    
+    flag = repo_login(version_control,repo_name,code_repo)
+    
+    if not flag:
+        username,privacy_setting = repo_details(version_control,code_repo,repo_name)
+        flag = repo_init(code_repo)
+    
+    if flag: 
+        flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
+        if flag:
+            repo_to_env_file(code_repo,username,repo_name)
         return flag
     else:
         return False 
