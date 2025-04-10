@@ -15,6 +15,9 @@ from update_requirements import update_requirements
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 
+    # Change Dir to project_root
+    os.chdir(str(pathlib.Path(__file__).resolve().parent.parent))
+
     if version_control == None or not os.path.isdir(".git"):
         return False
     if code_repo and code_repo.lower() == "github":
