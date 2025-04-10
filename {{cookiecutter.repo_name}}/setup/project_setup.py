@@ -9,9 +9,6 @@ from utils import *
 from code_templates import *
 from readme_templates import *
 
-pip_installer(required_libraries = ['questionary'])
-import questionary
-
 ext_map = {
     "r": "Rscript",
     "python": "python",
@@ -340,7 +337,10 @@ def set_options(programming_language,version_control):
     return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version 
 
 def multiple_backups(remote_backup):
+
     if remote_backup == "Multiple":
+        pip_installer(required_libraries = ['questionary'])
+        import questionary
         options = ["Deic Storage", "Dropbox", "Onedrive", "Local"]
         remote_backup = questionary.checkbox(
             "Select remote backups:",
