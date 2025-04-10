@@ -264,10 +264,10 @@ def setup_repo(version_control,code_repo,repo_name,description):
     flag = repo_login(version_control,repo_name,code_repo)
     
     if not flag:
-        username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         flag = repo_init(code_repo)
     
     if flag: 
+        username,privacy_setting = repo_details(version_control,code_repo,repo_name)
         flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
         if flag:
             repo_to_env_file(code_repo,username,repo_name)
