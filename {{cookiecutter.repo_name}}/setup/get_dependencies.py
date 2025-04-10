@@ -17,7 +17,7 @@ def resolve_parent_module(module_name):
     return module_name
 
 @ensure_correct_kernel
-def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None,install_cmd:str=None):
+def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt", requirements_file:str=None, install_cmd:str=None):
     
     def get_dependencies_from_file(python_files):
         used_packages = set()

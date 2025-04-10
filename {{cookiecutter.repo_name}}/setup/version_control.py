@@ -206,20 +206,6 @@ def setup_git_config(version_control,git_name,git_email):
         print(f"Failed to configure Git: {e}")
         return False,git_name,git_email
         
-def git_init(msg,rename):
-
-    # Initialize a Git repository if one does not already exist
-    if not os.path.isdir(".git"):
-        subprocess.run(["git", "init"], check=True)
-        print("Initialized a new Git repository.")
-
-    if rename:
-        # Rename branch to 'main' if it was initialized as 'master'
-        subprocess.run(["git", "branch", "-m", "master", rename], check=True)
-    _= git_commit(msg)
-    print(f"Created the following commit : {msg}")
-    return True
-
 # DVC Setup Functions
 def setup_dvc(version_control,remote_storage,code_repo,repo_name):
 

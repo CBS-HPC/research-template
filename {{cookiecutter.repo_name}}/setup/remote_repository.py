@@ -417,6 +417,7 @@ elif requirements_file == "environment.yml":
 
 folder = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/")
 file = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/dependencies.txt")
+requirements_file  = pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(requirements_file)
 
 # Updating requirements.txt/environment.yaml  # FIX ME
 if python_env_manager.lower() in ["conda","venv"]:

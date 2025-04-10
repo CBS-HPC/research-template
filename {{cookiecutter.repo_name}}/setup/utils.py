@@ -529,7 +529,39 @@ def get_version(programming_language):
 
 
 # Git Functions:
-def git_commit(msg: str = "") -> str:
+def git_init_old(msg,rename):
+
+    # Initialize a Git repository if one does not already exist
+    if not os.path.isdir(".git"):
+        subprocess.run(["git", "init"], check=True)
+        print("Initialized a new Git repository.")
+
+    if rename:
+        # Rename branch to 'main' if it was initialized as 'master'
+        subprocess.run(["git", "branch", "-m", "master", rename], check=True)
+    _= git_commit(msg)
+    print(f"Created the following commit : {msg}")
+    return True
+
+def git_init(msg, rename, path="."):
+    # Ensure the target path exists
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # Initialize a Git repository if one does not already exist
+    if not os.path.isdir(os.path.join(path, ".git")):
+        subprocess.run(["git", "init"], check=True, cwd=path)
+        print(f"Initialized a new Git repository in {path}.")
+
+    if rename:
+        subprocess.run(["git", "branch", "-m", "master", rename], check=True, cwd=path)
+
+    _ = git_commit(msg, path)
+    print(f"Created the following commit: {msg}")
+    return True
+
+
+def git_commit_old(msg: str = "") -> str:
     """Commits changes to Git and returns the commit hash."""
     if os.path.isdir(".git"):
         # Ensure Git is installed
@@ -562,7 +594,39 @@ def git_commit(msg: str = "") -> str:
 
     return None
 
-def git_push(flag:str,msg:str=""):
+def git_commit(msg: str = "", path: str = ".") -> str:
+    """Commits changes to Git in the given path and returns the commit hash."""
+    if os.path.isdir(os.path.join(path, ".git")):
+        # Ensure Git is installed
+        is_installed("git")
+
+        try:
+            # Stage all changes
+            subprocess.run(["git", "add", "."], check=True, cwd=path)
+
+            try:
+                subprocess.run(["git", "commit", "-m", msg], check=True, cwd=path)
+            except subprocess.CalledProcessError:
+                print("No changes to commit.")
+
+            # Extract commit hash
+            commit_hash = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                check=True,
+                cwd=path
+            ).stdout.strip()
+
+            return commit_hash
+
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred: {e}")
+            return None
+
+    return None
+
+def git_push_old(flag:str,msg:str=""):
 
     def push_all(remote="origin"):
         try:
@@ -616,6 +680,73 @@ def git_push(flag:str,msg:str=""):
                     subprocess.run(["git", "push", "origin", branch], check=True)
                 else:
                     subprocess.run(["git", "push", "--all"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
+
+def git_push(flag: str, msg: str = "", path: str = "."):
+    def push_all(remote="origin", path="."):
+        try:
+            # Get the name of the current branch
+            current_branch = subprocess.check_output(
+                ["git", "branch", "--show-current"],
+                text=True,
+                cwd=path
+            ).strip()
+
+            # Get all local branches
+            branches = subprocess.check_output(
+                ["git", "branch"],
+                text=True,
+                cwd=path
+            ).strip().splitlines()
+
+            # Clean up branch names
+            branches = [branch.strip().replace("* ", "") for branch in branches]
+
+            # Filter out the current branch
+            branches_to_push = [branch for branch in branches if branch != current_branch]
+
+            # Push each branch except the current one
+            for branch in branches_to_push:
+                subprocess.run(["git", "push", remote, branch], check=True, cwd=path)
+
+            print(f"Successfully pushed all branches except '{current_branch}'")
+        except subprocess.CalledProcessError as e:
+            print(f"Error occurred while pushing branches: {e}")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+    try:
+        if os.path.isdir(os.path.join(path, ".datalad")):
+            # Ensure required tools are installed
+            is_installed('git')
+            is_installed('datalad')
+            is_installed('git-annex')
+            is_installed('rclone')
+
+            subprocess.run(["datalad", "save", "-m", msg], check=True, cwd=path)
+            push_all(path=path)
+
+        elif os.path.isdir(os.path.join(path, ".git")):
+            commit_hash = git_commit(msg, path=path)
+            if commit_hash:
+                if flag:
+                    result = subprocess.run(
+                        ["git", "branch", "--show-current"],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                        cwd=path
+                    )
+                    branch = result.stdout.strip()
+                    if branch:
+                        subprocess.run(["git", "push", "origin", branch], check=True, cwd=path)
+                        print(f"Pushed current branch '{branch}' to origin.")
+                    else:
+                        subprocess.run(["git", "push", "--all"], check=True, cwd=path)
+                        print("Pushed all branches to origin.")
+            else:
+                print("No commit created — nothing to push.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
@@ -939,7 +1070,7 @@ def export_conda_env(env_path, output_file="environment.yml"):
     """
 
     output_file= pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file)
-    
+
     try:
         # Use subprocess to run the conda export command
         with open(output_file, 'w') as f:
