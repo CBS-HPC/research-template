@@ -362,21 +362,31 @@ def install_gh(install_path=None):
             # Install GitHub CLI
             subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
             print(f"GitHub CLI (gh) installed successfully to {install_path}.")
+            return exe_to_path("gh",os.path.join(install_path, "bin"))
 
         elif os_type == "darwin":  # macOS
             # Using Homebrew to install GitHub CLI
             subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
             print(f"GitHub CLI (gh) installed successfully to {install_path}.")
+            return exe_to_path("gh",os.path.join(install_path, "bin"))
 
         elif os_type == "linux":
             subprocess.run(["sudo", "apt", "update"], check=True)
             subprocess.run(["sudo", "apt", "install", "-y", "gh"], check=True)
             print(f"GitHub CLI (gh) installed successfully.")
+
+            # Check if executable is found in the specified path
+            install_path =shutil.which("gh")
+            if install_path:
+                install_path= os.path.abspath(install_path)
+                install_path = os.path.dirname(install_path)
+                return exe_to_path("gh",os.path.join(install_path, "bin"))
+            else:
+                return False
         else:
             print("Unsupported operating system.")
             return False
 
-        return exe_to_path("gh",os.path.join(install_path, "bin"))
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to install GitHub CLI: {e}")
