@@ -680,7 +680,7 @@ def git_push_old(flag:str,msg:str=""):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-def git_push(flag: str, msg: str = "", path: str = "."):
+def git_push(flag: str, msg: str = "", path: str = None):
     def push_all(remote="origin", path="."):
         try:
             # Get the name of the current branch
@@ -713,6 +713,8 @@ def git_push(flag: str, msg: str = "", path: str = "."):
         except Exception as e:
             print(f"Unexpected error: {e}")
 
+    if not path: 
+        path = str(pathlib.Path(__file__).resolve().parent.parent)
     try:
         if os.path.isdir(os.path.join(path, ".datalad")):
             # Ensure required tools are installed
