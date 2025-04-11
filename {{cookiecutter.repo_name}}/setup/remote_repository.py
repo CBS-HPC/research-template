@@ -39,39 +39,44 @@ def install_py_package():
     else:
         print(f"Error during installation: {result.stderr}")
 
-version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
-repo_name = load_from_env("REPO_NAME",".cookiecutter")
-code_repo = load_from_env("CODE_REPO",".cookiecutter")
-project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+@ensure_correct_kernel
+def main():
+    version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
+    python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
-# Create Remote Repository
-flag = setup_remote_repository(version_control,code_repo,repo_name,project_description)
+    # Create Remote Repository
+    flag = setup_remote_repository(version_control,code_repo,repo_name,project_description)
 
-install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
-requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
+    install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
+    requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
 
-if requirements_file == "requirements.txt":
-    create_requirements_txt(requirements_file)
-elif requirements_file == "environment.yml": 
-    export_conda_env(repo_name)
+    if requirements_file == "requirements.txt":
+        create_requirements_txt(requirements_file)
+    elif requirements_file == "environment.yml": 
+        export_conda_env(repo_name)
 
-folder = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/"))
-file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/dependencies.txt"))
-requirements_file  = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(requirements_file))
+    folder = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/"))
+    file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/dependencies.txt"))
+    requirements_file  = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(requirements_file))
 
-# Updating requirements.txt/environment.yaml  # FIX ME
-if python_env_manager.lower() in ["conda","venv"]:
-    get_setup_dependencies(folder_path = folder, file_name = file , requirements_file = requirements_file,install_cmd = install_cmd)
-    push_msg = f"'{requirements_file}' and '{file}' created and 'Requirements' section in README.md updated"
-else:
-    get_setup_dependencies(folder_path = folder, file_name = file, requirements_file = None,install_cmd = None)
-    push_msg = "requirements.txt created"
+    # Updating requirements.txt/environment.yaml  # FIX ME
+    if python_env_manager.lower() in ["conda","venv"]:
+        get_setup_dependencies(folder_path = folder, file_name = file , requirements_file = requirements_file,install_cmd = install_cmd)
+        push_msg = f"'{requirements_file}' and '{file}' created and 'Requirements' section in README.md updated"
+    else:
+        get_setup_dependencies(folder_path = folder, file_name = file, requirements_file = None,install_cmd = None)
+        push_msg = "requirements.txt created"
 
-update_requirements(dependencies_files = [file], sections= ["setup"])
+    update_requirements(dependencies_files = [file], sections= ["setup"])
 
-# Pushing to Git 
-git_push(flag,push_msg)
+    # Pushing to Git 
+    git_push(flag,push_msg)
 
-# Installing package:
-install_py_package()
+    # Installing package:
+    install_py_package()
+
+if __name__ == "__main__":
+    main()

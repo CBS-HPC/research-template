@@ -26,7 +26,7 @@ file_ext_map = {
 }
 
 
-def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
+def run_bash(script_path, env_path=None, python_env_manager=None, version_control_path=None, remote_repository_path=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
@@ -34,26 +34,26 @@ def run_bash(script_path, env_path=None, python_env_manager=None, setup_version_
     try:
         script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
         env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
-        setup_version_control_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_version_control_path))
-        setup_remote_repository_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(setup_remote_repository_path))
+        version_control_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(version_control_path))
+        remote_repository_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(remote_repository_path))
       
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
         # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(), setup_version_control_path, setup_remote_repository_path])  # Pass repo_name and paths to the script
+        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(), version_control_path, remote_repository_path])  # Pass repo_name and paths to the script
         print(f"Script {script_path} executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def run_powershell(script_path, env_path=None, python_env_manager=None, setup_version_control_path=None, setup_remote_repository_path=None):
+def run_powershell(script_path, env_path=None, python_env_manager=None, version_control_path=None, remote_repository_path=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
         python_env_manager = "Base Installation"    
     
     try:
-        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,setup_version_control_path,setup_remote_repository_path])
+        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,version_control_path,remote_repository_path])
         print(f"Script {script_path} executed successfully.")
     
     except subprocess.CalledProcessError as e:
@@ -277,7 +277,6 @@ def set_options(programming_language,version_control):
         
         return r_version, python_version
 
-
     python_version = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
     environment_opts = ["Conda",f"Venv {python_version}",f"Base Installation {python_version}"]
     python_env_manager = None
@@ -352,8 +351,8 @@ def multiple_backups(remote_backup):
             remote_backup = "None"
     return remote_backup
 
-setup_version_control = "./setup/version_control.py"
-setup_remote_repository = "./setup/remote_repository.py"
+version_control_path = "./setup/version_control.py"
+remote_repository_path = "./setup/remote_repository.py"
 setup_bash = "./setup/run_setup.sh"
 setup_powershell = "./setup/run_setup.ps1"
 miniconda_path =  "./bin/miniconda3"
@@ -406,7 +405,7 @@ save_to_env(os.getcwd(),"PROJECT_PATH")
 git_user_info(version_control)
 
 # Set git repo info
-repo_user,_,_ = git_repo_user(version_control,repo_name,code_repo)
+repo_user,_,_ = repo_user_info(version_control,repo_name,code_repo)
 
 # Setup RClone backup remote
 setup_remote_backup(remote_backup,repo_name)
@@ -433,16 +432,16 @@ download_README_template(readme_file = "./DCAS template/README.md")
 
 os_type = platform.system().lower()
 if os_type == "windows":
-    run_powershell(setup_powershell, env_path, python_env_manager, setup_version_control, setup_remote_repository)
+    run_powershell(setup_powershell, env_path, python_env_manager, version_control_path, remote_repository_path)
     activate_to_delete = "activate.sh"
     deactivate_to_delete = "deactivate.sh"
 elif os_type == "darwin" or os_type == "linux":
-    run_bash(setup_bash, env_path, python_env_manager, setup_version_control, setup_remote_repository)
+    run_bash(setup_bash, env_path, python_env_manager, version_control_path, remote_repository_path)
     activate_to_delete = "activate.ps1"
     deactivate_to_delete = "aeactivate.ps1"
 
 # Deleting Setup scripts
-delete_files([os.path.abspath(__file__),"./setup/code_templates.py",setup_version_control,setup_remote_repository, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
+delete_files([os.path.abspath(__file__),"./setup/code_templates.py",version_control_path,remote_repository_path, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
 
 # Updating README
 creating_readme()
