@@ -2448,6 +2448,10 @@ def ensure_correct_kernel(func):
     def wrapper(*args, **kwargs):
         python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from the environment
 
+        # If no specific kernel is set, just run the function normally
+        if not python_kernel:
+            return func(*args, **kwargs)
+        
         os_type = platform.system().lower()
         if os_type == "windows":
             py_exe = "python.exe"
