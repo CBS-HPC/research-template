@@ -2457,7 +2457,7 @@ def ensure_correct_kernel(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from the environment
-
+        
         # If no specific kernel is set, just run the function normally
         if not python_kernel:
             return func(*args, **kwargs)
@@ -2470,7 +2470,7 @@ def ensure_correct_kernel(func):
 
         # If the kernel path doesn't contain "python.exe", append it
         if not python_kernel.endswith(py_exe):
-            python_kernel = os.path.join(python_kernel, "python.exe")
+            python_kernel = os.path.join(python_kernel, py_exe)
 
         # Get the current executable and its base folder
         current_executable = sys.executable

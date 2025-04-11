@@ -1,5 +1,4 @@
 import os
-import stat
 import subprocess
 import sys
 import platform
@@ -438,7 +437,7 @@ if os_type == "windows":
 elif os_type == "darwin" or os_type == "linux":
     run_bash(setup_bash, env_path, python_env_manager, version_control_path, remote_repository_path)
     activate_to_delete = "activate.ps1"
-    deactivate_to_delete = "aeactivate.ps1"
+    deactivate_to_delete = "deactivate.ps1"
 
 # Deleting Setup scripts
 delete_files([os.path.abspath(__file__),"./setup/code_templates.py",setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])

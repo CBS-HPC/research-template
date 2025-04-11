@@ -14,8 +14,8 @@ load_env() {
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
-                # Convert paths to absolute if the value is a directory
-                if [ "$key" == "VENV_ENV_PATH" ] || [ "$key" == "CONDA_ENV_PATH" ]; then
+                # Handle specific keys for absolute paths
+                if [ "$key" == "VENV_ENV_PATH" ] || [ "$key" == "CONDA_ENV_PATH" ] || [ "$key" == "CONDA" ]; then
                     # Convert the value to an absolute path if it's a relative path
                     abs_value=$(realpath "$value")
                     export "$key"="$abs_value"
@@ -26,7 +26,7 @@ load_env() {
                     export PATH="$abs_path:$PATH"
                     echo "Added $key to PATH ($abs_path)"
                 else
-                    # Otherwise, set the environment variable
+                    # Set the environment variable normally
                     export "$key"="$value"
                     echo "Loaded variable: $key=$value"
                 fi
@@ -41,11 +41,14 @@ load_env() {
 # Load environment variables from .env first
 load_env
 
+
 # Activate Conda environment if defined in the .env file
-if [ -n "$CONDA_ENV_PATH" ]; then
+if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then
     echo "Activating Conda environment at $CONDA_ENV_PATH"
+    source $CONDA/conda.sh  # Directly source the conda.sh script
     conda activate "$CONDA_ENV_PATH"
 fi
+
 
 # Activate virtual environment if defined in the .env file
 if [ -n "$VENV_ENV_PATH" ]; then

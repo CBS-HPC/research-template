@@ -21,7 +21,8 @@ def main():
             save_to_env(check_path_format(exe_path), programming_language.upper())
             save_to_env(get_version(programming_language), f"{programming_language.upper()}_VERSION",".cookiecutter")
 
-    save_to_env(check_path_format(sys.executable), "PYTHON")
+    #save_to_env(check_path_format(sys.executable), "PYTHON")
+    save_to_env(sys.executable, "PYTHON")
     save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
 
     # Setup Version Control
