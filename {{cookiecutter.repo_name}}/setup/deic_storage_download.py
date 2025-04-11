@@ -10,6 +10,7 @@ import sys
 # Check and install required libraries
 from utils import *
 
+
 pip_installer(required_libraries = ['beautifulsoup4'] )
 from bs4 import BeautifulSoup
 
@@ -105,8 +106,7 @@ def deic_storage_download(link, save_dir, n_workers=1):
     file_paths = extract_file_paths(links)
     download_files_parallel(file_paths, save_dir, n_workers)
 
-if __name__ == "__main__":
-
+def main():
     # Command-line argument parser
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")
     parser.add_argument("remote_path", help="URL link to the dataset")
@@ -114,6 +114,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     deic_storage_download(args.remote_path, args.destination)
+  
+
+if __name__ == "__main__":
+    main()
 
 #link = "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f"
 
