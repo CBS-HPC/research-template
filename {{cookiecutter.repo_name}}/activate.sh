@@ -41,14 +41,13 @@ load_env() {
 # Load environment variables from .env first
 load_env
 
-
 # Activate Conda environment if defined in the .env file
 if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then
     echo "Activating Conda environment at $CONDA_ENV_PATH"
-    source $CONDA/conda.sh  # Directly source the conda.sh script
-    conda activate "$CONDA_ENV_PATH"
+    eval "$($CONDA/conda shell.bash hook)"
+    conda init
+    echo "conda activate $CONDA_ENV_PATH" >> ~/.bashrc
 fi
-
 
 # Activate virtual environment if defined in the .env file
 if [ -n "$VENV_ENV_PATH" ]; then

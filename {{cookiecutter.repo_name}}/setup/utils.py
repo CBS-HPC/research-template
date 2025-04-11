@@ -1679,16 +1679,16 @@ def install_gh(install_path=None):
             subprocess.run(["sudo", "apt", "install", "-y", "gh"], check=True)
             print(f"GitHub CLI (gh) installed successfully.")
 
-            # Check if executable is found in the specified path
-            install_path =shutil.which("gh")
-            if install_path:
+            # Move to "install_path"
+            path = shutil.which("gh")
+            if path:
+                subprocess.run(["sudo", "mv", path, os.path.join(install_path,'gh')], check=True)
                 return exe_to_path("gh",os.path.dirname(os.path.abspath(install_path)))
             else:
                 return False
         else:
             print("Unsupported operating system.")
             return False
-
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to install GitHub CLI: {e}")
