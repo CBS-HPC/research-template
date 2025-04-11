@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Path to .env file
-envFile=".env"
+# Allow custom .env file path as first argument
+envFile="${1:-.env}"
 
 # Function to load environment variables from .env file
 load_env() {
@@ -15,18 +15,26 @@ load_env() {
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
                 # Handle specific keys for absolute paths
-                if [ "$key" == "VENV_ENV_PATH" ] || [ "$key" == "CONDA_ENV_PATH" ] || [ "$key" == "CONDA" ]; then
-                    # Convert the value to an absolute path if it's a relative path
+                if [[ "$key" == "VENV_ENV_PATH" || "$key" == "CONDA_ENV_PATH" || "$key" == "CONDA" || "$key" == "GH" ]]; then
                     abs_value=$(realpath "$value")
                     export "$key"="$abs_value"
                     echo "Loaded $key as absolute path: $abs_value"
+
                 elif [ -d "$value" ]; then
-                    # Convert relative paths to absolute and add to PATH
+                    # Add directory to PATH
                     abs_path=$(realpath "$value")
                     export PATH="$abs_path:$PATH"
                     echo "Added $key to PATH ($abs_path)"
+
+                elif [ -x "$value" ]; then
+                    # If it's an executable file, add its directory to PATH
+                    abs_path=$(realpath "$value")
+                    bin_dir=$(dirname "$abs_path")
+                    export PATH="$bin_dir:$PATH"
+                    echo "Added $key (executable) to PATH ($bin_dir)"
+
                 else
-                    # Set the environment variable normally
+                    # Set normal environment variable
                     export "$key"="$value"
                     echo "Loaded variable: $key=$value"
                 fi
@@ -38,15 +46,14 @@ load_env() {
     fi
 }
 
-# Load environment variables from .env first
+# Load environment variables from .env file
 load_env
 
-# Activate Conda environment if defined in the .env file
+# Activate Conda environment
 if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then
     echo "Activating Conda environment at $CONDA_ENV_PATH"
     eval "$($CONDA/conda shell.bash hook)"
-    conda init
-    echo "conda activate $CONDA_ENV_PATH" >> ~/.bashrc
+    conda activate "$CONDA_ENV_PATH"
 fi
 
 # Activate virtual environment if defined in the .env file
@@ -55,6 +62,14 @@ if [ -n "$VENV_ENV_PATH" ]; then
     source "$VENV_ENV_PATH/bin/activate"
 fi
 
-# Change prompt to reflect environment name (if desired)
-repo_name=$(basename "$PWD")  # Get the current directory name as the repo name
-export PS1="[$repo_name] \$ "
+# FIX ME !!!! NEED TO LOAD ALL PATHs from .env after VENV or CONDA
+# Ensure the gh binary is in the PATH (after activating the virtual environment)
+if [ -n "$GH" ]; then
+    export PATH="$GH:$PATH"
+    echo "Added GH directory to PATH: $GH"
+fi
+
+# Set prompt to reflect current repo and environment name
+repo_name=$(basename "$PWD")
+env_label=$(basename "$VENV_ENV_PATH" 2>/dev/null || basename "$CONDA_ENV_PATH" 2>/dev/null)
+export PS1="[$repo_name:$env_label] \$ "

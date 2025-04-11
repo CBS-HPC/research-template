@@ -1682,7 +1682,7 @@ def install_gh(install_path=None):
             # Move to "install_path"
             path = shutil.which("gh")
             if path:
-                subprocess.run(["sudo", "mv", path, os.path.join(install_path,'gh')], check=True)
+                subprocess.run(["sudo", "mv", path, os.path.join(install_path,'gh','gh')], check=True)
                 return exe_to_path("gh",os.path.dirname(os.path.abspath(install_path)))
             else:
                 return False
