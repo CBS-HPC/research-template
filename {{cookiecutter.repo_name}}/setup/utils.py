@@ -649,11 +649,9 @@ def git_push(flag: str, msg: str = "", path: str = None):
                     )
                     branch = result.stdout.strip()
                     if branch:
-                        repo_login()
                         subprocess.run(["git", "push", "origin", branch], check=True, cwd=path)
                         print(f"Pushed current branch '{branch}' to origin.")
                     else:
-                        repo_login()
                         subprocess.run(["git", "push", "--all"], check=True, cwd=path)
                         print("Pushed all branches to origin.")
             else:
@@ -788,30 +786,31 @@ def repo_details(version_control,code_repo,repo_name):
 
     return username, privacy_setting
 
-def repo_login(version_control = None, repo_name = None , code_repo = None):
+def get_login_credentials(code_repo):
+    """Returns the user, token, and command based on the code repository."""
+    if code_repo.lower() == "github":
+        user = load_from_env('GITHUB_USER')
+        token = load_from_env('GH_TOKEN')
+        command = ['gh', 'auth', 'login', '--with-token']
 
-    def get_login_credentials(code_repo):
-        """Returns the user, token, and command based on the code repository."""
-        if code_repo.lower() == "github":
-            user = load_from_env('GITHUB_USER')
-            token = load_from_env('GH_TOKEN')
-            command = ['gh', 'auth', 'login', '--with-token']
+    elif code_repo.lower() == "gitlab":
+        user = load_from_env('GITLAB_USER')
+        token = load_from_env('GL_TOKEN')
+        hostname = load_from_env('GL_HOSTNAME')
 
-        elif code_repo.lower() == "gitlab":
-            user = load_from_env('GITLAB_USER')
-            token = load_from_env('GL_TOKEN')
-            hostname = load_from_env('GL_HOSTNAME')
-
-            if hostname:
-                command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
-            else:
-                return None, None, None
-
+        if hostname:
+            command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
         else:
             return None, None, None
 
-        return user, token, command
+    else:
+        return None, None, None
 
+    return user, token, command
+
+def repo_login(version_control = None, repo_name = None , code_repo = None):
+
+  
     def authenticate(command, token):
         """Attempts to authenticate using the provided command and token."""
         try:
@@ -888,6 +887,13 @@ def repo_create(code_repo,username, privacy_setting, repo_name, description):
                 'gh', "repo", "create", f"{username}/{repo_name}",
                 f"--{privacy_setting}", "--description", description, "--source", ".", "--push"
             ], check=True)
+
+            subprocess.run(["git", "config", "--global", "credential.helper", "store"],check=True)
+
+            _, token, _= get_login_credentials(code_repo)
+            subprocess.run(["git", "push", f"https://{username}:{token}@github.com/{username}/{repo_name}.git"],check=True)
+
+
         elif code_repo.lower() == "gitlab":
              subprocess.run([
                 'glab', "repo", "create",
