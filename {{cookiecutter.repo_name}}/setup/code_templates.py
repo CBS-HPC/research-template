@@ -105,11 +105,12 @@ def create_python_script(folder_path, script_name, purpose):
 # {purpose} code
 
 import os
+import sys
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 raw_data = os.path.join(base_path, "data", "raw")
 interim_data = os.path.join(base_path, "data", "interrim")
 processed_data = os.path.join(base_path, "data", "processed")
-setup_path  os.path.join(base_path, "setup") 
+setup_path = os.path.join(base_path, "setup") 
 sys.path.append(setup_path)
 from utils import *
 

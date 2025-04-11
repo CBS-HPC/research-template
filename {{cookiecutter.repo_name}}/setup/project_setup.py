@@ -441,7 +441,7 @@ elif os_type == "darwin" or os_type == "linux":
     deactivate_to_delete = "aeactivate.ps1"
 
 # Deleting Setup scripts
-delete_files([os.path.abspath(__file__),"./setup/code_templates.py",version_control_path,remote_repository_path, setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
+delete_files([os.path.abspath(__file__),"./setup/code_templates.py",setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
 
 # Updating README
 creating_readme()

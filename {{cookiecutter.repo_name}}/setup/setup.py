@@ -11,7 +11,8 @@ setup(
             'update-requirements=update_requirements:main',
             'get-dependencies=get_dependencies:main',
             'install-dependencies=install_dependencies:main',
-            'deic-download=your_package.deic_storage:main',
+            'deic-download=deic_storage:main',
+            'run-setup=run_setup:main',
         ],
     },
     install_requires=[

@@ -1418,16 +1418,26 @@ def repo_create(code_repo,username, privacy_setting, repo_name, description):
     try:
         _, token, _= get_login_credentials(code_repo)
 
-        if code_repo.lower() ==  "github":    
-            subprocess.run(['gh', "repo", "create", f"{username}/{repo_name}",f"--{privacy_setting}", "--description", description, "--source", ".", "--push"], check=True)
+        if code_repo.lower() ==  "github":
+            try:
+                subprocess.run(['gh', 'repo', 'view', f'{username}/{repo_name}'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"Repository '{username}/{repo_name}' already exists on GitHub.")
+            except subprocess.CalledProcessError:
+                subprocess.run(['gh', "repo", "create", f"{username}/{repo_name}",f"--{privacy_setting}", "--description", description, "--source", ".", "--push"], check=True)
+                print(f"Repository {repo_name} created and pushed successfully.")
+
         elif code_repo.lower() == "gitlab":
-            subprocess.run(['glab', "repo", "create",f"--{privacy_setting}", "--description", description], check=True)
+            try:
+                subprocess.run(['glab', 'repo', 'view', f'{username}/{repo_name}'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"Repository '{username}/{repo_name}' already exists on GitLab.")
+            except subprocess.CalledProcessError:
+                subprocess.run(['glab', "repo", "create",f"--{privacy_setting}", "--description", description], check=True)
+                print(f"Repository {repo_name} created and pushed successfully.")
              
         subprocess.run(["git", "config", "--global", "credential.helper", "store"],check=True)
         subprocess.run(["git", "push", f"https://{username}:{token}@{code_repo.lower()}.com/{username}/{repo_name}.git"],check=True)
         
             
-        print(f"Repository {repo_name} created and pushed successfully.")
         return True, username,repo_name   # Return True if everything is successful
     except Exception as e:
         print(f"Failed to create '{username}/{repo_name}' on Github")
