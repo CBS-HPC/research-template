@@ -26,6 +26,7 @@ def run_backup(remote_backups,repo_name):
                     print(f"Failed to backup to {remote_backup}")
 
 def main():
+
     # Change to project root directory
     project_root = pathlib.Path(__file__).resolve().parent.parent
     os.chdir(project_root)

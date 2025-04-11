@@ -14,10 +14,17 @@ load_env() {
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
-                # Check if value is a valid directory path and add to PATH
-                if [ -d "$value" ]; then
-                    export PATH="$value:$PATH"
-                    echo "Added $key to PATH"
+                # Convert paths to absolute if the value is a directory
+                if [ "$key" == "VENV_ENV_PATH" ] || [ "$key" == "CONDA_ENV_PATH" ]; then
+                    # Convert the value to an absolute path if it's a relative path
+                    abs_value=$(realpath "$value")
+                    export "$key"="$abs_value"
+                    echo "Loaded $key as absolute path: $abs_value"
+                elif [ -d "$value" ]; then
+                    # Convert relative paths to absolute and add to PATH
+                    abs_path=$(realpath "$value")
+                    export PATH="$abs_path:$PATH"
+                    echo "Added $key to PATH ($abs_path)"
                 else
                     # Otherwise, set the environment variable
                     export "$key"="$value"
