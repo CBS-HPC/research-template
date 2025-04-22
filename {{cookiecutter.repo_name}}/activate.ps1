@@ -61,15 +61,28 @@ $condaPath      = Get-EnvValueFromDotEnv -varName "CONDA"
 $condaEnvPath   = Get-EnvValueFromDotEnv -varName "CONDA_ENV_PATH"
 $venvEnvPath    = Get-EnvValueFromDotEnv -varName "VENV_ENV_PATH"
 
-if ($condaPath) {
-    $fullCondaPath = Resolve-Path -Path $condaPath
-    $env:CONDA = $fullCondaPath
-    Write-Host "Loaded CONDA as absolute path: $fullCondaPath"
-}
-
-if ($condaEnvPath -and $env:CONDA) {
+if ($condaEnvPath -and $condaPath) {
     Write-Output "Activating Conda environment at $condaEnvPath"
-    & "$env:CONDA\Scripts\activate.bat" $condaEnvPath
+    $rawCondaPath = Resolve-Path -Path $condaPath
+
+
+    if ($rawCondaPath) {
+        # Normalize and resolve the full path
+        $resolvedCondaPath = Resolve-Path -Path $rawCondaPath | Select-Object -ExpandProperty Path
+    
+        # Check if it ends in "Library\bin"
+        if ($resolvedCondaPath -like "*\Library\bin") {
+            # Move up two levels to reach root Conda directory
+            $condaPath = Split-Path (Split-Path $resolvedCondaPath)
+            Write-Warning "⚠️  CONDA path appears to be inside 'Library\\bin'. Adjusting to root path: $condaPath"
+        } else {
+            $condaPath = $resolvedCondaPath
+        }
+    
+    }
+
+    & "$condaPath\shell\condabin\conda-hook.ps1"
+    conda activate "$condaEnvPath"
 }
 
 if ($venvEnvPath) {

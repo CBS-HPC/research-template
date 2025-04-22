@@ -31,22 +31,32 @@ ext_map = {
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None):
 
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
-        setup = "```\n"
+    
+        py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+
+        setup = ""
         if repo_name and repo_user:
+            setup += "**Download Repository**\n"
+            "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
+            setup += "```\n"
             if code_repo.lower() in ["github","gitlab"]:
                 web_repo = code_repo.lower()
                 setup += f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
-        setup += f"cd {repo_name}\n"
-        setup += "```\n"
+        
+        setup += ("**Navigate to Directory**\n"
+                f"cd {repo_name}\n"
+                "```\n")
 
         os_type = platform.system().lower()
         if os_type == "windows":
             setup += (
-                "Activate on Windows (PowerShell):\n"
+                "**Activate on Windows (PowerShell)**\n"
+                "This will activates project paths, environment variables and virtual environments found in the '.env' file \n"
                 "```\n"
                 "activate.ps1\n"
                 "```\n"
-                "Deactivate on Windows (PowerShell):\n"
+                "**Deactivate on Windows (PowerShell)**\n"
+                "This will deactivates project paths, environment variables and virtual environments found in the '.env' file \n"
                 "```\n"
                 "deactivate.ps1\n"
                 "```\n"
@@ -54,18 +64,29 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
         elif os_type in ("darwin", "linux"):
             setup += (
-                "Activate on Linux/macOS (bash):\n"
+                "**Activate on Linux/macOS (bash)**\n"
+                "This will activates project paths, environment variables and virtual environments found in the '.env' file \n"
                 "```\n"
                 "source activate.sh\n"
                 "```\n"
-                "Deactivate on Linux/macOS (bash):\n"
+                "**Deactivate on Linux/macOS (bash)**\n"
+                "This will deactivates project paths, environment variables and virtual environments found in the '.env' file \n"
                 "```\n"
                 "source deactivate.sh\n"
                 "```\n"
             )
         
+        py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+
+        if py_manager.lower() != "conda":
+            py_version = get_version("PYTHON")
+            setup += {f"**Software Re-installation using {py_version}**\n"
+                f"The function below re-installs all ./setup and ./src software dependencies. The script should be executed using **{py_version}**\n"}
+        else:
+            setup += {f"**Software Re-installation using Conda**\n"
+                "The function below re-installs all ./setup and ./src software dependencies.\n"}
+        
         setup += (
-                "Re-install project dependencies:\n"
                 "```\n"
                 "python setup/run_setup.py\n"
                 "```\n"
@@ -73,6 +94,10 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
   
         usage = "```\n"
         if programming_language.lower() != "none":
+            
+            software_version = get_version(programming_language)
+            usage += f"### {software_version}\n" 
+
             file_extension = ext_map.get(programming_language.lower(), "txt")
             usage += f"{programming_language.lower()} src/main.{file_extension}\n"
         
@@ -80,11 +105,11 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             
         contact = ""
         if authors:
-            contact += f"- **Name:** {authors}\n"
+            contact += f"**Name:** {authors}\n"
         if orcids:
-            contact += f"- **ORCID:** {orcids}\n"
+            contact += f"**ORCID:** {orcids}\n"
         if emails:
-            contact += f"- **Email:** {emails}\n"
+            contact += f"**Email:** {emails}\n"
         
         return setup,usage,contact
     
@@ -125,6 +150,7 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 {contact}
 
 ## Installation
+
 {setup}
 
 ## Usage
