@@ -415,6 +415,7 @@ create_citation_file(project_name,version,authors,orcids,version_control,doi=Non
 # Create Virtual Environment
 env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
+
 # Creating README
 creating_readme(repo_name= repo_name, 
                 repo_user = repo_name, 
@@ -424,8 +425,8 @@ creating_readme(repo_name= repo_name,
                 programming_language = programming_language,
                 authors = authors,
                 orcids = orcids,
-                emails = email,
-                activate_cmd = activate_cmd)
+                emails = email)
+                
 
 download_README_template(readme_file = "./DCAS template/README.md")
 

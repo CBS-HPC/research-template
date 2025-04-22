@@ -52,6 +52,35 @@ load_env() {
     fi
 }
 
+verify_env_paths() {
+    echo ""
+    echo "Verifying paths from $envFile..."
+
+    local missing_paths=0
+
+    while IFS='=' read -r key value; do
+        if [[ ! "$key" =~ ^[[:space:]]*# && -n "$key" ]]; then
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
+
+            # Check if the value appears to be a path
+            if [[ "$value" == /* || "$value" == ./* ]]; then
+                if [ ! -e "$value" ]; then
+                    echo "❌ Missing path for $key: $value"
+                    missing_paths=1
+                fi
+            fi
+        fi
+    done < "$envFile"
+
+    if [[ $missing_paths -eq 1 ]]; then
+        echo ""
+        echo "⚠️ Some paths are missing. Run 'install-dependencies' to re-install the project."
+    else
+        echo "✅ All required paths exist."
+    fi
+}
+
 # Load VENV and CONDA variables
 activate_env
 
@@ -75,3 +104,6 @@ load_env
 repo_name=$(basename "$PWD")
 env_label=$(basename "$VENV_ENV_PATH" 2>/dev/null || basename "$CONDA_ENV_PATH" 2>/dev/null)
 export PS1="[$repo_name:$env_label] \$ "
+
+# check missing paths
+verify_env_paths

@@ -28,9 +28,9 @@ ext_map = {
        # file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
 
 # README.md
-def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None, activate_cmd = None):
+def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None):
 
-    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,activate_cmd,programming_language):
+    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
         setup = "```\n"
         if repo_name and repo_user:
             if code_repo.lower() in ["github","gitlab"]:
@@ -39,9 +39,38 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         setup += f"cd {repo_name}\n"
         setup += "```\n"
 
-        if activate_cmd:
-            setup += f"{activate_cmd}\n"
+        os_type = platform.system().lower()
+        if os_type == "windows":
+            setup += (
+                "Activate on Windows (PowerShell):\n"
+                "```\n"
+                "activate.ps1\n"
+                "```\n"
+                "Deactivate on Windows (PowerShell):\n"
+                "```\n"
+                "deactivate.ps1\n"
+                "```\n"
+            )
 
+        elif os_type in ("darwin", "linux"):
+            setup += (
+                "Activate on Linux/macOS (bash):\n"
+                "```\n"
+                "source activate.sh\n"
+                "```\n"
+                "Deactivate on Linux/macOS (bash):\n"
+                "```\n"
+                "source deactivate.sh\n"
+                "```\n"
+            )
+        
+        setup += (
+                "Re-install project dependencies:\n"
+                "```\n"
+                "python setup/run_setup.py\n"
+                "```\n"
+            )
+  
         usage = "```\n"
         if programming_language.lower() != "none":
             file_extension = ext_map.get(programming_language.lower(), "txt")
@@ -59,7 +88,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         
         return setup,usage,contact
     
-    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails, activate_cmd,programming_language)
+    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails,programming_language)
 
     file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json"))
 

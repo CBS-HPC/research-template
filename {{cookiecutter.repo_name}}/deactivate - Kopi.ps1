@@ -8,19 +8,9 @@ if ($env:CONDA_ENV_PATH) {
 }
 
 # Deactivate the venv if it was activated
-if ($env:VENV_ENV_PATH) {
+if ($env:VENV_PATH) {
     Write-Output "Deactivating virtual environment"
     deactivate
-}
-
-# Helper to clean a value from PATH
-function Remove-FromPath {
-    param (
-        [string]$target
-    )
-
-    $cleaned = ($env:PATH -split ";" | Where-Object { $_ -and ($_ -ne $target) }) -join ";"
-    $env:PATH = $cleaned
 }
 
 # Remove the environment variables set during activation
@@ -28,22 +18,18 @@ if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
         if ($_ -match "^\s*([^#][^=]+?)\s*=\s*(.+)$") {
             $key = $matches[1].Trim()
-            $value = $matches[2].Trim().Trim('"').Trim("'")
+            $value = $matches[2].Trim()
 
-            # If the value was a path and is in PATH, remove it
-            try {
-                $resolved = Resolve-Path -Path $value -ErrorAction Stop
-                $resolvedPath = $resolved.Path
-                if ($env:PATH -split ";" | Where-Object { $_ -eq $resolvedPath }) {
-                    Remove-FromPath -target $resolvedPath
-                    Write-Host "Removed $resolvedPath from PATH"
-                }
-            } catch {
-                # Skip path resolution errors silently
-            }
+            # Remove quotes around values (both single and double quotes)
+            $value = $value.Trim('"').Trim("'")
 
-            # Always unset the environment variable
-            if (Test-Path "Env:$key") {
+            # If the variable is PATH, remove the path that was added
+            if (Test-Path $value) {
+                # Split the PATH by semicolon, remove the path, and join again
+                $env:PATH = (($env:PATH -split ";") | Where-Object { $_ -ne $value }) -join ";"
+                Write-Host "Removed path: $value from PATH"
+            } else {
+                # Remove the environment variable if it exists
                 Remove-Item -Path "Env:$key" -ErrorAction SilentlyContinue
                 Write-Host "Removed environment variable: $key"
             }
@@ -54,7 +40,7 @@ if (Test-Path $envFile) {
     Write-Warning ".env file not found"
 }
 
-# Reset prompt
+# Reset the prompt to the default state
 function global:prompt {
     return "PS $($executionContext.SessionState.Path.CurrentLocation)> "
 }
