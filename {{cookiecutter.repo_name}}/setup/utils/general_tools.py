@@ -28,7 +28,7 @@ from dotenv import dotenv_values, load_dotenv
 @contextmanager
 def change_dir(destination):
     cur_dir = os.getcwd()
-    destination = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(destination))
+    destination = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(destination))
     try:
         os.chdir(destination)
         yield
@@ -97,7 +97,7 @@ def load_from_env(env_var: str, env_file: str = ".env"):
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
 
     # Attempt to read directly from the .env file
     if env_file.exists():
@@ -137,7 +137,7 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env"):
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
 
     # Read the existing .env file if it exists
     env_lines = []
@@ -171,7 +171,7 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
 
     # Ensure it's an absolute path
     path = os.path.abspath(path)
@@ -282,7 +282,7 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent / env_file.name
+        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
 
     if not executable:
         print("Executable must be provided.")

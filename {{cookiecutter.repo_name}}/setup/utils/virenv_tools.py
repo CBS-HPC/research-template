@@ -22,7 +22,7 @@ def setup_virtual_environment(version_control, programming_language, python_env_
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """    
-    install_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path))
+    install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
 
     pip_packages = set_pip_packages(version_control,programming_language)    
     env_name = None
@@ -268,7 +268,7 @@ def export_conda_env(env_path, output_file="environment.yml"):
     - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
     """
 
-    output_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file))
+    output_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(output_file))
 
     try:
         # Use subprocess to run the conda export command
@@ -530,7 +530,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
 
 def create_requirements_txt(output_file:str="requirements.txt"):
 
-    output_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(output_file))
+    output_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(output_file))
 
     # Get the Python executable path from sys.executable
     python_executable = sys.executable
