@@ -23,8 +23,12 @@ def write_script(folder_path, script_name, extension, content):
     file_path = os.path.join(folder_path, file_name)
 
     file_path= str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path(file_path))
+
     with open(file_path, "w") as file:
-        file.write(content)
+        if isinstance(str,content):
+            file.write(content)
+        else:
+            nbf.write(content, file)
 
 
 def create_scripts(programming_language, folder_path):
@@ -1446,10 +1450,12 @@ def create_matlab_notebooks(folder_path):
     write_script(folder_path, script_name, extension, content)
 
 def create_sas_notebook(folder_path):
+  
+
     extension = ".ipynb"
     script_name = "workflow"
     
-    content = nbf.v4.new_notebook()
+    content= nbf.v4.new_notebook()
 
     # First cell: Configure SAS setup for Jupyter (without running functions)
     cells = [
@@ -1469,5 +1475,5 @@ def create_sas_notebook(folder_path):
         nbf.v4.new_code_cell("sas.submit('visualization_main.sas')")
     ]
     content.cells.extend(cells)
-
+    
     write_script(folder_path, script_name, extension, content)
