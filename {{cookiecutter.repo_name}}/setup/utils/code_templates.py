@@ -22,7 +22,7 @@ def write_script(folder_path, script_name, extension, content):
     file_name = f"{script_name}{extension}"
     file_path = os.path.join(folder_path, file_name)
 
-    file_path= str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path(file_path))
+    file_path= str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(file_path))
 
     with open(file_path, "w") as file:
         if isinstance(content,str):
