@@ -1287,10 +1287,10 @@ def create_notebooks(programming_language, folder_path):
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
 def create_python_notebook(folder_path):
-    file_name = "workflow.ipynb"
-    file_path = os.path.join(folder_path, file_name)
+    extension = ".ipynb"
+    script_name = "workflow"
 
-    nb = nbf.v4.new_notebook()
+    content = nbf.v4.new_notebook()
 
     # First cell: Import all scripts
     cells = [
@@ -1313,16 +1313,13 @@ def create_python_notebook(folder_path):
         nbf.v4.new_markdown_cell("### Run visualization"),
         nbf.v4.new_code_cell("visualization.main()")
     ]
-    nb.cells.extend(cells)
+    content.cells.extend(cells)
 
-    # Write the notebook to a file
-    with open(file_path, "w") as f:
-        nbf.write(nb, f)
+    write_script(folder_path, script_name, extension, content)
 
 def create_r_notebook(folder_path):
-    file_name = "workflow.Rmd"
-    file_path = os.path.join(folder_path, file_name)
-
+    extension = ".Rmd"
+    script_name = "workflow"
     # Create RMarkdown content with the requested structure
     content = dedent(r"""{% raw %}
     ---
@@ -1357,15 +1354,13 @@ def create_r_notebook(folder_path):
     ```
     {% endraw %}""")
 
-    # Write the RMarkdown content to a file
-    with open(file_path, "w") as file:
-        file.write(content)
+    write_script(folder_path, script_name, extension, content)
 
 def create_stata_notebook(folder_path):
-    file_name = "workflow.ipynb"
-    file_path = os.path.join(folder_path, file_name)
-    
-    nb = nbf.v4.new_notebook()
+    extension = ".ipynb"
+    script_name = "workflow"
+
+    content = nbf.v4.new_notebook()
 
     # First cell: Configure Stata setup
     cells = [
@@ -1392,22 +1387,17 @@ def create_stata_notebook(folder_path):
                              "do src/visualization.do\n"
                              "visualization_main()")
     ]
-    nb.cells.extend(cells)
+    content.cells.extend(cells)
 
-    # Write the notebook to a file
-    with open(file_path, "w") as f:
-        nbf.write(nb, f)
+    write_script(folder_path, script_name, extension, content)
 
 def create_matlab_notebooks(folder_path):
-    # Create MATLAB notebook (.mlx) and Jupyter notebook
-    mlx_file_name = "workflow.mlx"
-    mlx_file_path = os.path.join(folder_path, mlx_file_name)
-    
+  
     # Create Jupyter notebook using jupyter-matlab-proxy
-    ipynb_file_name = "workflow.ipynb"
-    ipynb_file_path = os.path.join(folder_path, ipynb_file_name)
+    extension = ".ipynb"
+    script_name = "workflow"
 
-    nb = nbf.v4.new_notebook()
+    content= nbf.v4.new_notebook()
 
     # First cell: Load necessary paths and scripts (without running functions)
     cells = [
@@ -1426,14 +1416,17 @@ def create_matlab_notebooks(folder_path):
         nbf.v4.new_markdown_cell("### Run visualization"),
         nbf.v4.new_code_cell("visualization_main()")
     ]
-    nb.cells.extend(cells)
 
-    # Write the Jupyter notebook to a file
-    with open(ipynb_file_path, "w") as f:
-        nbf.write(nb, f)
+    content.cells.extend(cells)
+
+    write_script(folder_path, script_name, extension, content)
+   
+    # Create MATLAB notebook (.mlx) and Jupyter notebook
+    extension = ".mlx"
+    script_name = "workflow"
 
     # For .mlx file, write MATLAB-specific workflow
-    mlx_content = dedent(r"""%% Workflow: Running all steps in order
+    content = dedent(r"""%% Workflow: Running all steps in order
     % MATLAB Setup
     addpath('src')
 
@@ -1450,14 +1443,13 @@ def create_matlab_notebooks(folder_path):
     visualization_main()
     """)
 
-    with open(mlx_file_path, "w") as f:
-        f.write(mlx_content)
+    write_script(folder_path, script_name, extension, content)
 
 def create_sas_notebook(folder_path):
-    file_name = "workflow.ipynb"
-    file_path = os.path.join(folder_path, file_name)
+    extension = ".ipynb"
+    script_name = "workflow"
     
-    nb = nbf.v4.new_notebook()
+    content = nbf.v4.new_notebook()
 
     # First cell: Configure SAS setup for Jupyter (without running functions)
     cells = [
@@ -1476,8 +1468,6 @@ def create_sas_notebook(folder_path):
         nbf.v4.new_markdown_cell("### Run visualization"),
         nbf.v4.new_code_cell("sas.submit('visualization_main.sas')")
     ]
-    nb.cells.extend(cells)
+    content.cells.extend(cells)
 
-    # Write the notebook to a file
-    with open(file_path, "w") as f:
-        nbf.write(nb, f)
+    write_script(folder_path, script_name, extension, content)
