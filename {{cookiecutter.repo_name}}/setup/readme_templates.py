@@ -229,11 +229,17 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
     if not readme_file:
         readme_file = "README.md"
     
-    readme_file= str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file))
+    readme_file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(readme_file))
 
     if not os.path.exists(readme_file):
         print(f"README file '{readme_file}' does not exist. Exiting.")
         return
+
+    if not root_folder:
+        root_folder = str(pathlib.Path(__file__).resolve().parent.parent)
+        #root_folder = os.getcwd()
+    else:
+        root_folder = os.path.abspath(root_folder)
 
     if ignore_list is None:
         ignore_list = []  # Default to an empty list if not provided
@@ -244,9 +250,6 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
             file_descriptions = json.load(json_file)
     else:
         file_descriptions = None
-
-    if not root_folder:
-        root_folder = os.getcwd()
 
     # Read the existing README.md content
     with open(readme_file, "r", encoding="utf-8") as file:
@@ -555,7 +558,6 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
     author_names = re.split(r'[;,]', authors) if authors else []
     orcid_list = re.split(r'[;,]', orcids) if orcids else []
 
-
     # Create a structured list of author dictionaries
     author_data_list = []
     for i, name in enumerate(author_names):
@@ -618,7 +620,8 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
     }
 
     # Write to CITATION.cff
-    with open("CITATION.cff", "w") as cff_file:
+    file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("CITATION.cff"))
+    with open(file, "w") as cff_file:
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
 # Download Readme template:
