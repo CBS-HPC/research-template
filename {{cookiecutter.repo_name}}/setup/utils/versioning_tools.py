@@ -5,8 +5,8 @@ import platform
 import shutil
 import pathlib
 
-from general_tools import *
-from backup_tools import *
+from .general_tools import *
+from .backup_tools import *
 
 # Version Control
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):

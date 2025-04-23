@@ -5,7 +5,7 @@ import platform
 import urllib.request
 import pathlib
 
-from general_tools import *
+from .general_tools import *
 
 pip_installer(required_libraries =  ['pyyaml'])
 

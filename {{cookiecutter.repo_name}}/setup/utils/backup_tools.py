@@ -6,9 +6,8 @@ import zipfile
 import glob
 import getpass
 
-sys.path.insert(0, os.path.abspath("utils"))
-from general_tools import *
-from versioning_tools import *
+from .general_tools import *
+from .versioning_tools import *
 
 pip_installer(required_libraries =  ['requests'])
 
