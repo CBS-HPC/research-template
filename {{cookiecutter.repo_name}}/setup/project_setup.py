@@ -6,8 +6,6 @@ import re
 import pathlib
 
 from utils import *
-#from code_templates import *
-#from readme_templates import *
 
 ext_map = {
     "r": "Rscript",
@@ -26,7 +24,7 @@ file_ext_map = {
 }
 
 
-def run_bash(script_path, env_path=None, python_env_manager=None, version_control_path=None, remote_repository_path=None):
+def run_bash(script_path, env_path=None, python_env_manager=None,intro_path=None, version_control_path=None, remote_repository_path=None, outro_path=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
@@ -34,26 +32,28 @@ def run_bash(script_path, env_path=None, python_env_manager=None, version_contro
     try:
         script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
         env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
+        intro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(intro_path))
         version_control_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(version_control_path))
         remote_repository_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(remote_repository_path))
-      
+        outro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(outro_path))
+        
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
         # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(), version_control_path, remote_repository_path])  # Pass repo_name and paths to the script
+        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(),intro_path,version_control_path, remote_repository_path,outro_path])  # Pass repo_name and paths to the script
         print(f"Script {script_path} executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def run_powershell(script_path, env_path=None, python_env_manager=None, version_control_path=None, remote_repository_path=None):
+def run_powershell(script_path, env_path=None, python_env_manager=None, intro_path=None, version_control_path=None, remote_repository_path=None, outro_path=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
         python_env_manager = "Base Installation"    
     
     try:
-        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,version_control_path,remote_repository_path])
+        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,intro_path,version_control_path,remote_repository_path,outro_path])
         print(f"Script {script_path} executed successfully.")
     
     except subprocess.CalledProcessError as e:
@@ -234,6 +234,8 @@ def multiple_backups(remote_backup):
             remote_backup = "None"
     return remote_backup
 
+intro_path = "./setup/intro.py"
+outro_path = "./setup/outro.py"
 version_control_path = "./setup/version_control.py"
 remote_repository_path = "./setup/remote_repository.py"
 setup_bash = "./setup/run_setup.sh"
@@ -259,11 +261,6 @@ remote_backup = "{{cookiecutter.remote_backup}}"
 remote_backup = multiple_backups(remote_backup)
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
-
-# Create scripts and notebook
-#if programming_language.lower() != "none":
-#    create_scripts(programming_language, "src")
-#    create_notebooks(programming_language, "notebooks")
 
 # Set project info to .cookiecutter
 save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
@@ -293,47 +290,11 @@ repo_user,_,_ = repo_user_info(version_control,repo_name,code_repo)
 # Setup RClone backup remote
 setup_remote_backup(remote_backup,repo_name)
 
-# Create scripts and notebook
-#if programming_language.lower() != "none":
-#    create_scripts(programming_language, "src")
-#    create_notebooks(programming_language, "notebooks")
-
 # Create Virtual Environment
 env_path = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
-
-# Create a citation file
-#create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
-
-# Creating README
-#creating_readme(repo_name= repo_name, 
-#                repo_user = repo_name, 
-#                project_name = project_name,
-#                project_description = project_description,
-#                code_repo = code_repo,
-#                programming_language = programming_language,
-#                authors = authors,
-#                orcids = orcids,
-#                emails = email)
-                
-
-#download_README_template(readme_file = "./DCAS template/README.md")
-
 os_type = platform.system().lower()
 if os_type == "windows":
-    run_powershell(setup_powershell, env_path, python_env_manager, version_control_path, remote_repository_path)
-    #activate_to_delete = "activate.sh"
-    #deactivate_to_delete = "deactivate.sh"
+    run_powershell(setup_powershell, env_path, python_env_manager, intro_path, version_control_path, remote_repository_path, outro_path)
 elif os_type == "darwin" or os_type == "linux":
-    run_bash(setup_bash, env_path, python_env_manager, version_control_path, remote_repository_path)
-    #activate_to_delete = "activate.ps1"
-    #deactivate_to_delete = "deactivate.ps1"
-
-# Deleting Setup scripts
-#delete_files([os.path.abspath(__file__),"./setup/code_templates.py",setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
-
-# Updating README
-#creating_readme()
-
-# Pushing to Git
-#git_push(load_from_env("CODE_REPO",".cookiecutter")!= "None","README.md updated")
+    run_bash(setup_bash, env_path, python_env_manager, intro_path, version_control_path, remote_repository_path, outro_path)

@@ -3,8 +3,10 @@
 # Get the env_path, env_manager, and script paths passed from input
 env_path=$1
 env_manager=$2
-version_control_path=$3
-remote_repository_path=$4
+intro_path=$3
+version_control_path=$4
+remote_repository_path=$5
+outro_path=$6
 
 # Activate environment based on the environment manager
 if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installation" ]; then
@@ -48,6 +50,14 @@ else
 fi
 
 # Check if the script paths are provided and run them
+
+if [ -f "$intro_path" ]; then
+    echo "Running intro.py from $intro_path..."
+    python "$intro_path"
+else
+    echo "Error: $intro_path not found."
+fi
+
 if [ -f "$version_control_path" ]; then
     echo "Running version_control.py from $version_control_path..."
     python "$version_control_path"
@@ -60,6 +70,13 @@ if [ -f "$remote_repository_path" ]; then
     python "$remote_repository_path"
 else
     echo "Error: $remote_repository_path not found."
+fi
+
+if [ -f "$outro_path" ]; then
+    echo "Running outro.py from $outro_path..."
+    python "$outro_path"
+else
+    echo "Error: $outro_path not found."
 fi
 
 echo "Environment setup completed successfully."

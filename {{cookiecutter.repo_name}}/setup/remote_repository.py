@@ -1,6 +1,6 @@
 import os
 import subprocess
-import platform
+
 
 from utils import *
 from readme_templates import *
@@ -103,22 +103,5 @@ def main():
     # Installing package:
     install_py_package()
     
-    os_type = platform.system().lower()
-    if os_type == "windows":
-        activate_to_delete = "activate.sh"
-        deactivate_to_delete = "deactivate.sh"
-    elif os_type == "darwin" or os_type == "linux":
-        activate_to_delete = "activate.ps1"
-        deactivate_to_delete = "deactivate.ps1"
-
-    # Deleting Setup scripts
-    delete_files(["./setup/project_setup.py","./setup/code_templates.py","./setup/run_setup.sh","./setup/run_setup.ps1",activate_to_delete,deactivate_to_delete])
-
-    # Updating README
-    creating_readme()
-
-    # Pushing to Git
-    git_push(load_from_env("CODE_REPO",".cookiecutter")!= "None","README.md updated")
-
 if __name__ == "__main__":
     main()

@@ -4,8 +4,10 @@
 param (
     [string]$env_path,
     [string]$env_manager,  # Environment manager: Conda, venv, or virtualenv
+    [string]$intro_path,
     [string]$version_control_path,
-    [string]$remote_repository_path
+    [string]$remote_repository_path,
+    [string]$outro_path
 )
 
 # Activate environment based on the environment manager
@@ -51,6 +53,13 @@ if ($env_path -ne "Base Installation" -and $env_manager -ne "Base Installation")
 }
 
 # Check if the script paths are provided and run them
+if (Test-Path $intro_path) {
+    Write-Output "Running intro.py from $intro_path..."
+    python $intro_path
+} else {
+    Write-Output "Error: $intro_path not found."
+}
+
 if (Test-Path $version_control_path) {
     Write-Output "Running version_control.py from $version_control_path..."
     python $version_control_path
@@ -63,6 +72,13 @@ if (Test-Path $remote_repository_path) {
     python $remote_repository_path
 } else {
     Write-Output "Error: $remote_repository_path not found."
+}
+
+if (Test-Path $outro_path) {
+    Write-Output "Running outro.py from $outro_path..."
+    python $outro_path
+} else {
+    Write-Output "Error: $outro_path not found."
 }
 
 Write-Output "Environment setup completed successfully."
