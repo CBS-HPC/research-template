@@ -1,5 +1,6 @@
 import os
 from textwrap import dedent
+import pathlib
 
 from utils import *
 
@@ -7,6 +8,23 @@ pip_installer(required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat'
 
 import nbformat as nbf  # For creating Jupyter notebooks
 from dotenv import dotenv_values, load_dotenv
+
+def write_script(folder_path, script_name, extension, content):
+    """
+    Writes the content to a script file in the specified folder path.
+    
+    Parameters:
+    folder_path (str): The folder where the script will be saved.
+    script_name (str): The name of the script.
+    extension (str): The file extension (e.g., ".py", ".R").
+    content (str): The content to be written to the script.
+    """
+    file_name = f"{script_name}{extension}"
+    file_path = os.path.join(folder_path, file_name)
+
+    file_path= str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path(file_path))
+    with open(file_path, "w") as file:
+        file.write(content)
 
 
 def create_scripts(programming_language, folder_path):
@@ -21,10 +39,6 @@ def create_scripts(programming_language, folder_path):
 
     if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
         return
-    
-    print("dre")
-    print(programming_language.lower())
-    print(type(programming_language.lower()))
     
     # Ensure the folder exists
     if not os.path.exists(folder_path):
@@ -186,22 +200,6 @@ def create_sas_script(folder_path, script_name, purpose):
 %{script_name}_main;
 """
     write_script(folder_path, script_name, extension, content)
-
-def write_script(folder_path, script_name, extension, content):
-    """
-    Writes the content to a script file in the specified folder path.
-    
-    Parameters:
-    folder_path (str): The folder where the script will be saved.
-    script_name (str): The name of the script.
-    extension (str): The file extension (e.g., ".py", ".R").
-    content (str): The content to be written to the script.
-    """
-    file_name = f"{script_name}{extension}"
-    file_path = os.path.join(folder_path, file_name)
-
-    with open(file_path, "w") as file:
-        file.write(content)
 
 # Create Main()
 def create_main(programming_language, folder_path):
