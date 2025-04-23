@@ -5,8 +5,8 @@ import zipfile
 import glob
 import getpass
 
-from general_utils import *
-from vc_utils import *
+from general_tools import *
+from versioning_tools import *
 
 pip_installer(required_libraries =  ['requests'])
 

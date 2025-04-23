@@ -5,8 +5,8 @@ import platform
 import shutil
 import pathlib
 
-from general_utils import *
-from backup_utils import *
+from general_tools import *
+from backup_tools import *
 
 # Version Control
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
@@ -336,36 +336,6 @@ def git_push(flag: str, msg: str = "", path: str = None):
                 print("No commit created — nothing to push.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
-
-def git_user_info(version_control):
-    if version_control.lower() in ["git", "datalad", "dvc"]:
-        # Load defaults
-        default_name = load_from_env("AUTHORS", ".cookiecutter")
-        default_email = load_from_env("EMAIL", ".cookiecutter")
-
-        git_name = None
-        git_email = None
-
-        while not git_name or not git_email:
-            # Prompt with defaults
-            name_prompt = f"Enter your Git user name [{default_name}]: "
-            email_prompt = f"Enter your Git user email [{default_email}]: "
-
-            git_name = input(name_prompt).strip() or default_name
-            git_email = input(email_prompt).strip() or default_email
-
-            # Check if inputs are valid
-            if not git_name or not git_email:
-                print("Both name and email are required.")
-
-        print(f"\nUsing Git user name: {git_name}")
-        print(f"Using Git user email: {git_email}\n")
-
-        save_to_env(git_name, 'GIT_USER')
-        save_to_env(git_email, 'GIT_EMAIL')
-        return git_name, git_email
-    else:
-        return None, None
 
 def git_log_to_file(output_file_path):
     """

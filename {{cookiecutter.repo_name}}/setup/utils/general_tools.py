@@ -6,6 +6,7 @@ import shutil
 from contextlib import contextmanager
 from functools import wraps
 import pathlib
+import getpass
 
 def pip_installer(required_libraries:list = None):
     installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
@@ -19,7 +20,7 @@ def pip_installer(required_libraries:list = None):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-pip_installer(required_libraries =  ['python-dotenv','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools'])
+pip_installer(required_libraries =  ['python-dotenv'])
 
 from dotenv import dotenv_values, load_dotenv
 
@@ -339,6 +340,7 @@ def is_installed(executable: str = None, name: str = None):
         print(f"{name} is not on Path")
         return False
 
+# FIX ME - Not used
 def set_from_env():
   
     is_installed('git')
@@ -348,71 +350,244 @@ def set_from_env():
     is_installed('git-annex-remote-rclone')
 
 
-# Common Env Functions
-def load_env_file(extensions = ['.yml', '.txt']):
-    
-    def get_file_path(extensions = ['.yml', '.txt']):
-        """
-        Prompt the user to provide the path to a .yml or .txt file and check if the file exists and is the correct format.
-        
-        Returns:
-        - str: Validated file path if the file exists and has the correct extension.
-        """
+# Setting Options
+def git_user_info(version_control):
+    if version_control.lower() in ["git", "datalad", "dvc"]:
+        # Load defaults
+        default_name = load_from_env("AUTHORS", ".cookiecutter")
+        default_email = load_from_env("EMAIL", ".cookiecutter")
 
-        # Prompt the user for the file path
-        file_path = input("Please enter the path to a .yml or .txt file: ").strip()
-            
-        # Check if the file exists
-        if not os.path.isfile(file_path):
-            print("The file does not exist. Please try again.")
-            return None
-            
-        # Check the file extension
-        _, file_extension = os.path.splitext(file_path)
-        if file_extension.lower() not in extensions:
-            print(f"Invalid file format. The file must be a {extensions}")
-            return None
-        
-        # If both checks pass, return the valid file path
-        return file_path
+        git_name = None
+        git_email = None
 
-    if '.txt' in extensions and '.yml' in extensions:
-        msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' or 'requirements.txt' file? (yes/no):" 
-        error= "no 'environment.yaml' or 'requirements.txt' file was loaded"
-    elif '.txt' in extensions:
-        msg = "Do you want to create a virtual environment from a pre-existing 'requirements.txt' file? (yes/no):"
-        error= "no 'requirements.txt' file was loaded"
-    elif '.yml' in extensions:
-        msg = "Do you want to create a virtual environment from a pre-existing 'environment.yaml' file? (yes/no):"
-        error= "no 'environment.yaml' file was loaded"
-    
-    confirm = ask_yes_no(msg)
+        while not git_name or not git_email:
+            # Prompt with defaults
+            name_prompt = f"Enter your Git user name [{default_name}]: "
+            email_prompt = f"Enter your Git user email [{default_email}]: "
 
-    if confirm:
-        env_file = get_file_path(extensions)
-        if env_file is None:
-            print(error)
-        return env_file
+            git_name = input(name_prompt).strip() or default_name
+            git_email = input(email_prompt).strip() or default_email
+
+            # Check if inputs are valid
+            if not git_name or not git_email:
+                print("Both name and email are required.")
+
+        print(f"\nUsing Git user name: {git_name}")
+        print(f"Using Git user email: {git_email}\n")
+
+        save_to_env(git_name, 'GIT_USER')
+        save_to_env(git_email, 'GIT_EMAIL')
+        return git_name, git_email
     else:
-        return None
+        return None, None
 
-def set_pip_packages(version_control,programming_language):
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools']
-    if programming_language.lower()  == 'python':
-        install_packages.extend(['jupyterlab'])
-    elif programming_language.lower()  == 'stata':
-        install_packages.extend(['jupyterlab','stata_setup'])
-    elif programming_language.lower()  == 'matlab':
-        install_packages.extend(['jupyterlab','jupyter-matlab-proxy'])
-    elif programming_language.lower() == 'sas':
-        install_packages.extend(['jupyterlab','saspy'])
-
-    if version_control.lower()  == "dvc" and not is_installed('dvc','DVC'):
-        install_packages.extend(['dvc[all]'])
-    elif version_control.lower()  == "datalad" and not is_installed('datalad','Datalad'):
-        install_packages.extend(['datalad-installer','datalad','pyopenssl'])
+def repo_user_info(version_control,repo_name,code_repo):
     
-    return install_packages
+    if code_repo.lower() in ["github","gitlab"] and version_control.lower() in ["git","datalad","dvc"]: 
+        repo_user = None 
+        privacy_setting = None
+        default_setting = "private"
+        while not repo_user or not privacy_setting:
+            repo_user = input(f"Enter your {code_repo} username: ").strip()
+            privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
+
+            if privacy_setting not in ["private", "public"]:
+                print("Invalid choice. Defaulting to 'private'.")
+                privacy_setting = None
+
+        save_to_env(repo_user,f"{code_repo}_USER")
+        save_to_env(privacy_setting,f"{code_repo}_PRIVACY")
+        save_to_env(repo_name,f"{code_repo}_REPO") 
+
+        if code_repo.lower() == "github":
+            token = load_from_env('GH_TOKEN')
+        elif code_repo.lower() == "gitlab":
+            token = load_from_env('GL_TOKEN')
+ 
+        if not token:
+           while not token: 
+                token = getpass.getpass(f"Enter {code_repo} token: ").strip()
+                #token = input(f"Enter {code_repo} token: ").strip()
+
+        if code_repo.lower() == "github":
+            save_to_env(token,'GH_TOKEN')
+        elif code_repo.lower() == "gitlab":
+            save_to_env(token,'GL_TOKEN')
+ 
+
+        return repo_user, privacy_setting, token
+    else:
+        return None, None,None
+
+
+# Setting programming language 
+def set_programming_language(programming_language):
+
+    def search_apps(app: str):
+        """
+        Search for executables matching partial app names in the system's PATH.
+
+        Args:
+            app (str): Partial name of the application to search for.
+
+        Returns:
+            list: A list of paths matching the executable pattern.
+        """
+        found_paths = []
+        system_paths = os.environ["PATH"].split(os.pathsep)  # Split PATH into directories
+
+        # Check if the app is a single letter
+        is_single_letter_app = len(app) == 1
+
+        for directory in system_paths:
+            if os.path.isdir(directory):  # Check if the PATH directory exists
+                try:
+                    for file in os.listdir(directory):
+                        # Extract the filename without extension
+                        filename_without_ext = os.path.splitext(os.path.basename(file))[0].lower()
+
+                        # Match exactly if the app is a single letter, or partially if it's longer
+                        if is_single_letter_app:
+                            if filename_without_ext == app.lower():
+                                full_path = os.path.join(directory, file)
+                                if os.access(full_path, os.X_OK):  # Check if file is executable
+                                    found_paths.append(full_path)
+                        else:
+                            if app.lower() in filename_without_ext:
+                                full_path = os.path.join(directory, file)
+                                if os.access(full_path, os.X_OK):  # Check if file is executable
+                                    found_paths.append(full_path)
+
+                except PermissionError:
+                    continue  # Skip directories with permission issues
+
+        if not found_paths:
+            print(f"No executables found for app '{app}'.")
+
+        found_paths = list(set(found_paths))
+
+        return found_paths
+
+    def choose_apps(app: str, found_apps: list):
+        """
+        Prompt the user to choose one path for each application pattern, 
+        with an option to select 'None'.
+
+        Args:
+            app (str): The application name to choose a path for.
+            found_apps (list): List of matching paths for the application.
+
+        Returns:
+            tuple: A tuple containing the filename without extension and the selected path.
+                Returns (None, None) if 'Select None' is chosen.
+        """
+        
+        if len(found_apps) == 0:
+            return None, None
+        
+        print(f"\nChoose a path for '{app}':")
+        # Add the 'Select None' option
+        print("  [0] Select None")
+        
+        for i, path in enumerate(found_apps):
+            print(f"  [{i + 1}] {path}")
+            
+        while True:
+            try:
+                choice = int(input(f"Enter your choice (0-{len(found_apps)}): "))
+                
+                if choice == 0:  # Select None option
+                    print("No path selected.")
+                    return None, None
+                elif 1 <= choice <= len(found_apps):  # Valid path selection
+                    selected_path = found_apps[choice - 1]
+                    print(f"Selected: {selected_path}")
+                    
+                    # Extract filename without extension
+                    filename_with_extension = os.path.basename(selected_path)
+                    filename = os.path.splitext(filename_with_extension)[0]
+                    
+                    return filename, selected_path
+                else:
+                    print("Invalid choice. Please enter a number within the range.")
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+                return None, None
+
+    def manual_apps():
+        """
+        Allow manual input of the executable path if no path is chosen 
+        and automatically resolve the application name. Re-prompts if the path 
+        contains single backslashes.
+
+        Returns:
+            tuple: A tuple containing the resolved application name and selected path.
+        """
+        print("\nNo path was selected. Please input the executable path manually.")
+
+        msg = "Enter the full path to the executable e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
+        # Prompt the user to input the path to the executable
+        while True:
+            selected_path = input(msg).strip()
+            selected_path = selected_path.replace("'", "").replace('"', '')     
+            selected_path = check_path_format(selected_path)
+    
+            if os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
+                break  # Exit loop if the file exists and is executable
+            else:
+                answer = ask_yes_no("Invalid path. Do you want to input a new path? (yes/no)")
+                
+                if answer:
+                    msg = "Enter the full path to the executable with forward slashes('/') e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
+                    continue  # Re-prompt the user if single backslashes are detected   
+                else:
+                    return None, None
+
+        # Resolve the application name by extracting the filename without extension
+        filename_with_extension = os.path.basename(selected_path)
+        filename = os.path.splitext(filename_with_extension)[0]
+
+        return filename, selected_path
+
+    found_apps = search_apps(programming_language)
+    _, selected_path = choose_apps(programming_language,found_apps)
+
+    if not selected_path: 
+        _, selected_path =manual_apps()
+
+    if  selected_path:    
+        #save_to_env(os.path.dirname(selected_path),programming_language.upper())
+        save_to_env(selected_path,programming_language.upper())
+        save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
+    return programming_language
+
+def get_version(programming_language):
+    
+    if programming_language != "python":
+        exe_path = load_from_env(programming_language)
+        exe_path  = check_path_format(exe_path)
+        if not exe_path:
+            return "Unknown"
+    
+    if programming_language.lower() == "python":
+        version  = f"{subprocess.check_output([sys.executable, '--version']).decode().strip()}"
+    elif programming_language.lower() == "r":
+        version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
+        version = version.stdout[0:17].strip()
+    elif programming_language.lower() == "matlab":
+        version = subprocess.run([exe_path, "-batch", "disp(version)"], capture_output=True, text=True)
+        version = f"Matlab {version.stdout.strip()}"
+    elif programming_language.lower() == "stata":
+        # Extract edition based on executable name
+        edition = "SE" if "SE" in exe_path else ("MP" if "MP" in exe_path else "IC")
+        # Extract version from the folder name (e.g., Stata18 -> 18)
+        version = os.path.basename(os.path.dirname(exe_path)).replace('Stata', '')
+        # Format the output as Stata version and edition
+        version = f"Stata {version} {edition}"
+    elif programming_language.lower() == "sas": # FIX ME
+        version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
+        version =version.stdout.strip()  # Returns version info
+    return version
 
 
 #Check software

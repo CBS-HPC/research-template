@@ -5,7 +5,7 @@ import platform
 import re
 import pathlib
 
-from utils import *
+from utils.general_tools import *
 
 ext_map = {
     "r": "Rscript",
@@ -22,7 +22,6 @@ file_ext_map = {
     "stata": "do",
     "sas": "sas"
 }
-
 
 def run_bash(script_path, env_path=None, python_env_manager=None,intro_path=None, version_control_path=None, remote_repository_path=None, outro_path=None):
     if not env_path:
@@ -58,30 +57,6 @@ def run_powershell(script_path, env_path=None, python_env_manager=None, intro_pa
     
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
-
-def delete_files(file_paths:list=[]):
-    """
-    Deletes a list of files specified by their paths.
-
-    Args:
-        file_paths (list): A list of file paths to be deleted.
-
-    Returns:
-        dict: A dictionary with file paths as keys and their status as values.
-              The status can be "Deleted", "Not Found", or an error message.
-    """
-    results = {}
-    for file_path in file_paths:
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                results[file_path] = "Deleted"
-            else:
-                results[file_path] = "Not Found"
-        except Exception as e:
-            results[file_path] = f"Error: {e}"
-
-    return results
 
 def prompt_user(question, options):
     """
@@ -245,7 +220,6 @@ miniconda_path =  "./bin/miniconda3"
 os.chmod("./activate.sh", 0o755)
 os.chmod("./deactivate.sh", 0o755)
 
-
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 authors = "{{cookiecutter.author_name}}"
@@ -288,9 +262,11 @@ git_user_info(version_control)
 repo_user,_,_ = repo_user_info(version_control,repo_name,code_repo)
 
 # Setup RClone backup remote
+from utils.backup_tools import *
 setup_remote_backup(remote_backup,repo_name)
 
 # Create Virtual Environment
+from utils.virenv_tools import *
 env_path = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
 os_type = platform.system().lower()

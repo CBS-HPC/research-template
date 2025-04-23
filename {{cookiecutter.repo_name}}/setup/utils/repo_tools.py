@@ -4,13 +4,10 @@ import platform
 import shutil
 import zipfile
 import tarfile
-from contextlib import contextmanager
-from functools import wraps
-import getpass
 import pathlib
 
-from general_utils import *
-from vc_utils import *
+from general_tools import *
+from versioning_tools import *
 
 pip_installer(required_libraries =  ['requests'])
 
@@ -405,40 +402,3 @@ def install_gh(install_path=None):
             os.remove(installer_name)
             print(f"Installer {installer_name} removed.")
 
-def repo_user_info(version_control,repo_name,code_repo):
-    
-    if code_repo.lower() in ["github","gitlab"] and version_control.lower() in ["git","datalad","dvc"]: 
-        repo_user = None 
-        privacy_setting = None
-        default_setting = "private"
-        while not repo_user or not privacy_setting:
-            repo_user = input(f"Enter your {code_repo} username: ").strip()
-            privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
-
-            if privacy_setting not in ["private", "public"]:
-                print("Invalid choice. Defaulting to 'private'.")
-                privacy_setting = None
-
-        save_to_env(repo_user,f"{code_repo}_USER")
-        save_to_env(privacy_setting,f"{code_repo}_PRIVACY")
-        save_to_env(repo_name,f"{code_repo}_REPO") 
-
-        if code_repo.lower() == "github":
-            token = load_from_env('GH_TOKEN')
-        elif code_repo.lower() == "gitlab":
-            token = load_from_env('GL_TOKEN')
- 
-        if not token:
-           while not token: 
-                token = getpass.getpass(f"Enter {code_repo} token: ").strip()
-                #token = input(f"Enter {code_repo} token: ").strip()
-
-        if code_repo.lower() == "github":
-            save_to_env(token,'GH_TOKEN')
-        elif code_repo.lower() == "gitlab":
-            save_to_env(token,'GL_TOKEN')
- 
-
-        return repo_user, privacy_setting, token
-    else:
-        return None, None,None
