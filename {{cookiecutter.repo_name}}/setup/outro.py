@@ -17,6 +17,7 @@ def delete_files(file_paths:list=[]):
     """
     results = {}
     for file_path in file_paths:
+        file_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(file_path))
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
