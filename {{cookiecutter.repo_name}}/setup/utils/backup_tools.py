@@ -1,10 +1,12 @@
 import os
+import sys
 import subprocess
 import platform
 import zipfile
 import glob
 import getpass
 
+sys.path.insert(0, os.path.abspath("utils"))
 from general_tools import *
 from versioning_tools import *
 
