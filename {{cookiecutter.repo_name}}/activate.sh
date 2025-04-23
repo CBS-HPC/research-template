@@ -29,7 +29,15 @@ load_env() {
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
+                # Skip core env activation vars
                 if [[ "$key" != "VENV_ENV_PATH" && "$key" != "CONDA_ENV_PATH" && "$key" != "CONDA" ]]; then
+
+                    # Skip setting PYTHON if VENV or CONDA are active
+                    if [[ "$key" == "PYTHON" && (-n "$VENV_ENV_PATH" || -n "$CONDA_ENV_PATH") ]]; then
+                        echo "⏩ Skipping PYTHON path because virtual environment is active"
+                        continue
+                    fi
+
                     if [ -d "$value" ]; then
                         abs_path=$(realpath "$value")
                         export PATH="$abs_path:$PATH"
