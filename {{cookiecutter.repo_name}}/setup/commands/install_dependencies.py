@@ -4,8 +4,14 @@ import re
 import importlib.util
 import pathlib
 
+# Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from utils import *
+
+# Ensure the working directory is the project root
+project_root = pathlib.Path(__file__).resolve().parent.parent
+os.chdir(project_root)
+
+from utils import **
 
 def parse_dependencies(file_path="dependencies.txt"):
     required_libraries = []

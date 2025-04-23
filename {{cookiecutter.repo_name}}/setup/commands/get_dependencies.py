@@ -9,7 +9,13 @@ import yaml
 from typing import Optional, Dict, Set, List
 import pathlib
 
+# Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+# Ensure the working directory is the project root
+project_root = pathlib.Path(__file__).resolve().parent.parent
+os.chdir(project_root)
+
 from utils import *
 
 def resolve_parent_module(module_name):

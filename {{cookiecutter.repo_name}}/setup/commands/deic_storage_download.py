@@ -1,5 +1,4 @@
 import requests
-import subprocess
 import re
 import os
 import urllib.parse
@@ -7,8 +6,13 @@ import multiprocessing
 import argparse
 import sys
 
-import pathlib
+# Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+# Ensure the working directory is the project root
+project_root = pathlib.Path(__file__).resolve().parent.parent
+os.chdir(project_root)
+
 from utils import *
 
 

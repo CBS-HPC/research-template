@@ -33,8 +33,7 @@ load_env() {
                 if [[ "$key" != "VENV_ENV_PATH" && "$key" != "CONDA_ENV_PATH" && "$key" != "CONDA" ]]; then
 
                     # Skip setting PYTHON if VENV or CONDA are active
-                    if [[ "$key" == "PYTHON" && (-n "$VENV_ENV_PATH" || -n "$CONDA_ENV_PATH") ]]; then
-                        echo "⏩ Skipping PYTHON path because virtual environment is active"
+                    if [[ "$key" == "PYTHON" || "$key" == "GH_TOKEN" || "$key" == "GL_TOKEN" ]]; then
                         continue
                     fi
 
@@ -101,7 +100,7 @@ fi
 
 # Activate virtual environment if defined
 if [ -n "$VENV_ENV_PATH" ]; then
-    echo "Activating virtual environment at $VENV_ENV_PATH"
+    echo "Activating Venv environment at $VENV_ENV_PATH"
     source "$VENV_ENV_PATH/bin/activate"
 fi
 

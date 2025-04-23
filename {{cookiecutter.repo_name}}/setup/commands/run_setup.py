@@ -6,7 +6,13 @@ import sys
 #sys.path.append(setup_path)
 
 
+# Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+# Ensure the working directory is the project root
+project_root = pathlib.Path(__file__).resolve().parent.parent
+os.chdir(project_root)
+
 from utils import *
 
 @ensure_correct_kernel

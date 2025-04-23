@@ -6,8 +6,12 @@ import subprocess
 from datetime import datetime
 import pathlib
 
-
+# Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+# Ensure the working directory is the project root
+project_root = pathlib.Path(__file__).resolve().parent.parent
+os.chdir(project_root)
 
 from utils import *
 
@@ -83,7 +87,9 @@ def add_to_json(json_file_path, entry):
         json_file_path (str): Path to the JSON file.
         entry (dict): The dataset metadata to add or update.
     """
-
+  
+    json_file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(json_file_path))
+    
     if os.path.exists(json_file_path):
         with open(json_file_path, "r") as json_file:
             datasets = json.load(json_file)
@@ -110,6 +116,8 @@ def add_to_json(json_file_path, entry):
     with open(json_file_path, "w") as json_file:
         json.dump(datasets, json_file, indent=4)
     print(f"Metadata saved to {json_file_path}")
+
+    return json_file_path
 
 def set_dataset(data_name, destination, source:str = None, run_command:str = None,json_file_path:str = "./datasets.json" , doi:str = None,citation:str = None,license:str=None):
     """
@@ -190,7 +198,7 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
         new_entry["license"] = license
 
     # Add or update the JSON metadata
-    add_to_json(json_file_path, new_entry)
+    json_file_path = add_to_json(json_file_path, new_entry)
 
     return json_file_path
 
