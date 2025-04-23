@@ -38,10 +38,10 @@ def main():
 
     # Create scripts and notebook
     if programming_language.lower() != "none":
+        "Hello"
         create_scripts(programming_language, "src")
         create_notebooks(programming_language, "notebooks")
-
-        
+ 
     # Create a citation file
     create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
 
