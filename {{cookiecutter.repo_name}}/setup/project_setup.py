@@ -3,10 +3,11 @@ import subprocess
 import sys
 import platform
 import re
+import pathlib
 
 from utils import *
-from code_templates import *
-from readme_templates import *
+#from code_templates import *
+#from readme_templates import *
 
 ext_map = {
     "r": "Rscript",
@@ -57,123 +58,6 @@ def run_powershell(script_path, env_path=None, python_env_manager=None, version_
     
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
-
-def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "./bin/miniconda3"):
-    """
-    Create a virtual environment for Python or R based on the specified programming language.
-
-    Parameters:
-    - repo_name: str, name of the virtual environment.
-    - programming_language: str, 'python' or 'R' to specify the language for the environment.
-    """    
-    def create_command(activate_cmd :str=None ,step:int = 0):
-        
-        if step in [1,2]:
-            install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
-        if step == 1:
-            activate_cmd = f"### Conda Installation\n"
-            if programming_language.lower() != "python":
-                activate_cmd += f"The conda environment is used for project setup functionalities in the './setup' folder\n"
-            else:
-                activate_cmd += f"The conda environment is used for project code ('./src' folder) and setup functionalities ('./setup' folder)\n"
-
-            activate_cmd += "```\n"
-            activate_cmd += f"{install_cmd}\n"
-            activate_cmd = f"conda activate {env_name}\n"
-            activate_cmd += "```"
-        
-        elif step == 2: 
-            activate_cmd = f"### {python_version}\n"
-            if programming_language.lower() != "python":
-                activate_cmd += f"The venv environment is used for project setup functionalities in the './setup' folder\n"
-            else:
-                activate_cmd += f"The venv environment is used for project code ('./src' folder) and setup functionalities ('./setup' folder)\n"
-          
-            activate_cmd += "```\n"
-            activate_cmd += f"python -m venv {env_name}\n"
-            activate_cmd += f"./{env_name}/Scripts/activate\n"
-            activate_cmd += "```\n"
-
-            activate_cmd += "Install using requirements.txt for full environment\n"
-            activate_cmd += "```\n"
-            activate_cmd += f"{install_cmd}\n"
-            activate_cmd += "```\n"
-
-        elif step == 3:
-            activate_cmd = f"### {python_version}\n"
-            activate_cmd += f"The python environment is used for project setup functionalities in the './setup' folder\n"
-            activate_cmd += "```\n"
-            activate_cmd += f"python ./setup/install_dependencies.py\n"
-            activate_cmd += "```\n"
-            activate_cmd = activate_cmd.replace("\\", "/")
-
-        elif step == 4:
-            if activate_cmd and r_env_manager.lower() != "conda":
-                if programming_language.lower() not in ["python","none"]:
-                    software_version = get_version(programming_language)
-                    activate_cmd += f"### {software_version}\n"  
-                    activate_cmd += f"The environment is used for project code in the './src' folder\n"
-                    activate_cmd += "```\n"
-                    activate_cmd += f"{ext_map[programming_language.lower()]} ./src/install_dependencies.{file_ext_map[programming_language.lower()]}\n"
-                    activate_cmd += "```\n"
-                activate_cmd = activate_cmd.replace("\\", "/")
-
-        return activate_cmd 
-    
-    install_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(install_path))
-
-    pip_packages = set_pip_packages(version_control,programming_language)    
-    activate_cmd = None
-    env_name = None
-  
-    if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
-    
-        install_packages = []
-        
-        if python_env_manager.lower() == "conda":
-            if conda_python_version:
-                install_packages.extend([f'python={conda_python_version}'])
-            else:
-                install_packages.extend(['python'])
-
-        if r_env_manager.lower() == "conda":
-            if conda_r_version:
-                install_packages.extend([f'r-base={conda_r_version}'])
-            else:
-                install_packages.extend(['r-base'])
-
-        conda_packages = set_conda_packages(version_control,install_packages,code_repo)
-
-        if python_env_manager and python_env_manager.lower() == "conda":
-            env_name = setup_conda(install_path=install_path,repo_name=repo_name,conda_packages=conda_packages, pip_packages=pip_packages, env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
-        else:
-            env_name = setup_conda(install_path=install_path, repo_name=repo_name,conda_packages=conda_packages, pip_packages=None,env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
-        
-        if env_name:
-            activate_cmd = create_command(activate_cmd=activate_cmd ,step = 1)
-
-    elif python_env_manager.lower() in ["venv","virtualenv"]:
-        if python_env_manager.lower() == "venv":
-            env_name = create_venv_env(repo_name,pip_packages)
-        elif python_env_manager.lower() == "virtualenv":
-            env_name = create_virtualenv_env(repo_name,pip_packages)  
-        if env_name:
-            python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
-            activate_cmd = create_command(activate_cmd=activate_cmd ,step = 2)
-    else:
-        python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
-        activate_cmd = create_command(activate_cmd=activate_cmd ,step = 3)
-    
-    if env_name:
-        env_name = env_name.replace("\\", "/")
-    
-    activate_cmd = create_command(activate_cmd=activate_cmd ,step = 4)
-
-    if not env_name or not python_env_manager: 
-        subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
-        print(f'Packages {pip_packages} installed successfully in the current environment.')
-
-    return env_name, activate_cmd
 
 def delete_files(file_paths:list=[]):
     """
@@ -377,9 +261,9 @@ programming_language, authors, orcids = correct_format(programming_language, aut
 programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
 
 # Create scripts and notebook
-if programming_language.lower() != "none":
-    create_scripts(programming_language, "src")
-    create_notebooks(programming_language, "notebooks")
+#if programming_language.lower() != "none":
+#    create_scripts(programming_language, "src")
+#    create_notebooks(programming_language, "notebooks")
 
 # Set project info to .cookiecutter
 save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
@@ -409,42 +293,47 @@ repo_user,_,_ = repo_user_info(version_control,repo_name,code_repo)
 # Setup RClone backup remote
 setup_remote_backup(remote_backup,repo_name)
 
-# Create a citation file
-create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
+# Create scripts and notebook
+#if programming_language.lower() != "none":
+#    create_scripts(programming_language, "src")
+#    create_notebooks(programming_language, "notebooks")
 
 # Create Virtual Environment
-env_path, activate_cmd = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,miniconda_path)
+env_path = setup_virtual_environment(version_control,programming_language,python_env_manager,r_env_manager,code_repo,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
+
+# Create a citation file
+#create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
 
 # Creating README
-creating_readme(repo_name= repo_name, 
-                repo_user = repo_name, 
-                project_name = project_name,
-                project_description = project_description,
-                code_repo = code_repo,
-                programming_language = programming_language,
-                authors = authors,
-                orcids = orcids,
-                emails = email)
+#creating_readme(repo_name= repo_name, 
+#                repo_user = repo_name, 
+#                project_name = project_name,
+#                project_description = project_description,
+#                code_repo = code_repo,
+#                programming_language = programming_language,
+#                authors = authors,
+#                orcids = orcids,
+#                emails = email)
                 
 
-download_README_template(readme_file = "./DCAS template/README.md")
+#download_README_template(readme_file = "./DCAS template/README.md")
 
 os_type = platform.system().lower()
 if os_type == "windows":
     run_powershell(setup_powershell, env_path, python_env_manager, version_control_path, remote_repository_path)
-    activate_to_delete = "activate.sh"
-    deactivate_to_delete = "deactivate.sh"
+    #activate_to_delete = "activate.sh"
+    #deactivate_to_delete = "deactivate.sh"
 elif os_type == "darwin" or os_type == "linux":
     run_bash(setup_bash, env_path, python_env_manager, version_control_path, remote_repository_path)
-    activate_to_delete = "activate.ps1"
-    deactivate_to_delete = "deactivate.ps1"
+    #activate_to_delete = "activate.ps1"
+    #deactivate_to_delete = "deactivate.ps1"
 
 # Deleting Setup scripts
-delete_files([os.path.abspath(__file__),"./setup/code_templates.py",setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
+#delete_files([os.path.abspath(__file__),"./setup/code_templates.py",setup_bash,setup_powershell,activate_to_delete,deactivate_to_delete])
 
 # Updating README
-creating_readme()
+#creating_readme()
 
 # Pushing to Git
-git_push(load_from_env("CODE_REPO",".cookiecutter")!= "None","README.md updated")
+#git_push(load_from_env("CODE_REPO",".cookiecutter")!= "None","README.md updated")

@@ -1,6 +1,4 @@
 import os
-import subprocess
-import sys
 import json
 import re
 import os
@@ -25,7 +23,7 @@ ext_map = {
     "sas": "sas"
 }
 
-       # file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
+# file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
 
 # README.md
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None):
