@@ -21,6 +21,11 @@ def create_scripts(programming_language, folder_path):
 
     if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
         return
+    
+    print("dre")
+    print(programming_language.lower())
+    print(type(programming_language.lower()))
+    
     # Ensure the folder exists
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
