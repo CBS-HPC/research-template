@@ -1,4 +1,3 @@
-
 import sys
 import shutil
 
@@ -32,16 +31,22 @@ def main():
     orcids = load_from_env("ORCIDS",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
     email = load_from_env("EMAIL",".cookiecutter")
- 
+    
+    print("hello")
+    print(programming_language)
+
     # Set to .env
     set_program_path(programming_language)
 
+    print("hello2")
+    print(programming_language)
+
     # Create scripts and notebook
-    if programming_language.lower() != "none":
-        "Hello"
-        create_scripts(programming_language, "src")
-        create_notebooks(programming_language, "notebooks")
- 
+    create_scripts(programming_language, "src")
+    create_notebooks(programming_language, "notebooks")
+    
+    print("hello3")
+    print(programming_language)
     # Create a citation file
     create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
 

@@ -1,6 +1,4 @@
 import os
-import subprocess
-import sys
 from textwrap import dedent
 
 from utils import *
@@ -20,6 +18,9 @@ def create_scripts(programming_language, folder_path):
     programming_language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the scripts will be saved.
     """
+
+    if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
+        return
     # Ensure the folder exists
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -1261,6 +1262,9 @@ def create_notebooks(programming_language, folder_path):
     programming_language (str): The language for which to create the notebook.
     folder_path (str): The directory where the notebook will be saved.
     """
+    if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
+        return
+    
     # Ensure the notebooks folder exists
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
