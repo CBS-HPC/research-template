@@ -25,7 +25,7 @@ def write_script(folder_path, script_name, extension, content):
     file_path= str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path(file_path))
 
     with open(file_path, "w") as file:
-        if isinstance(str,content):
+        if isinstance(content,str):
             file.write(content)
         else:
             nbf.write(content, file)
