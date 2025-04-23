@@ -5,3 +5,5 @@ from .backup_tools import *
 from .repo_tools import *
 from .versioning_tools import *
 from .virenv_tools import *
+from .code_templates import *
+from .readme_templates import *

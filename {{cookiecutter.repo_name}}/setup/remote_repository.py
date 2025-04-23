@@ -3,9 +3,8 @@ import subprocess
 
 
 from utils import *
-from readme_templates import *
-from get_dependencies import get_setup_dependencies
-from update_requirements import update_requirements
+from commands.get_dependencies import get_setup_dependencies
+from commands.update_requirements import update_requirements
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""

@@ -1,6 +1,4 @@
 from utils import *
-from code_templates import *
-from readme_templates import *
 
 @ensure_correct_kernel
 def main():

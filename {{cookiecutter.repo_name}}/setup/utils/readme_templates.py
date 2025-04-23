@@ -8,9 +8,8 @@ import pathlib
 
 from utils import *
 
-pip_installer(required_libraries =  ['python-dotenv','pyyaml','requests'])
+pip_installer(required_libraries =  ['pyyaml','requests'])
 
-from dotenv import dotenv_values, load_dotenv
 import yaml
 import requests
 

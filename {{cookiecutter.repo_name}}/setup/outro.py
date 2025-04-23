@@ -2,7 +2,6 @@ import os
 import platform
 
 from utils import *
-from readme_templates import *
 
 def delete_files(file_paths:list=[]):
     """
@@ -40,7 +39,7 @@ def main():
         deactivate_to_delete = "deactivate.ps1"
 
     # Deleting Setup scripts
-    delete_files(["./setup/project_setup.py","./setup/code_templates.py","./setup/run_setup.sh","./setup/run_setup.ps1","./setup/intro.py","./setup/outro.py",activate_to_delete,deactivate_to_delete])
+    delete_files(["./setup/project_setup.py","./setup/run_setup.sh","./setup/run_setup.ps1","./setup/intro.py","./setup/outro.py",activate_to_delete,deactivate_to_delete])
 
     # Updating README
     creating_readme()

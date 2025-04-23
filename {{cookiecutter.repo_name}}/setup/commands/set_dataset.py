@@ -1,12 +1,15 @@
 import os
+import sys
 import json
 import argparse
 import subprocess
 from datetime import datetime
 import pathlib
 
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
 from utils import *
-from readme_templates import *
 
 def get_file_info(file_paths):
     """
@@ -257,7 +260,7 @@ def main():
 if __name__ == "__main__":
     
     # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
     
     main()
