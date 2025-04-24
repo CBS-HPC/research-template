@@ -42,7 +42,8 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
             echo "Activating Conda environment: $env_path"
             
 
-            source activate.sh
+            script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+            source "$script_dir/activate.sh"
             #load_conda
             
             # Activate Conda environment
