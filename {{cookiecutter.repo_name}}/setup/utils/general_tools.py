@@ -96,11 +96,12 @@ def check_path_format(path, project_root=None):
         # Now adjust slashes depending on platform
         system_name = platform.system()
         if system_name == "Windows":
-            path = r"{}".format(path.replace("/", r"\\"))
+            path = r"{}".format(path.replace("/", "\\"))
             #path = r"{}".format(path.replace("\\", r"\\"))
         else:  # Linux/macOS
             #path = r"{}".format(path.replace("\\", r"\\"))
             path = r"{}".format(path.replace("\\", "/"))
+        path = os.path.normpath(path)
 
     return path
 
