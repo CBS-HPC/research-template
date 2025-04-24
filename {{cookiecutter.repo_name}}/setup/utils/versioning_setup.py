@@ -25,7 +25,7 @@ def set_program_path(programming_language):
 def main():
 
     #Set the current working directory
-    os.chdir(pathlib.Path(__file__).resolve().parent.parent)
+    os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
 
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")

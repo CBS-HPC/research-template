@@ -23,7 +23,7 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
 
     # Change Dir to project_root
-    os.chdir(str(pathlib.Path(__file__).resolve().parent.parent))
+    os.chdir(str(pathlib.Path(__file__).resolve().parent.parent.parent))
 
     if version_control == None or not os.path.isdir(".git"):
         return False
@@ -42,7 +42,7 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
 def install_py_package():
 
     # Change the current working directory to to setup folder
-    # Set the current working directory
+   
     os.chdir(pathlib.Path(__file__).resolve().parent.parent)
     #os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -82,7 +82,7 @@ def delete_files(file_paths:list=[]):
 def main():
     
     #Set the current working directory
-    os.chdir(pathlib.Path(__file__).resolve().parent.parent)
+    os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
 
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
@@ -101,9 +101,9 @@ def main():
     elif requirements_file == "environment.yml": 
         export_conda_env(repo_name)
 
-    folder = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/"))
-    file = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path("./setup/dependencies.txt"))
-    requirements_file  = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(requirements_file))
+    folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/"))
+    file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
+    requirements_file  = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
 
     # Updating requirements.txt/environment.yaml  # FIX ME
     if python_env_manager.lower() in ["conda","venv"]:
