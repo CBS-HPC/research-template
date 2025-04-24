@@ -173,7 +173,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         conda_pip_install(env_path, pip_packages)
         export_conda_env(env_path)
         
-        env_path = os.path.relpath(env_path)
+        #env_path = os.path.relpath(env_path)
         save_to_env(env_path,"CONDA_ENV_PATH")
         return env_path
     else:
@@ -484,7 +484,7 @@ def create_venv_env(env_name, pip_packages=None):
             subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
-        env_path = os.path.relpath(env_path)
+        #env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VENV_ENV_PATH")
 
         # Return the path to the virtual environment
@@ -513,7 +513,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
             subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
         
-        env_path = os.path.relpath(env_path)
+        #env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VIRTUALENV_ENV_PATH")
 
         # Return the path to the virtual environment
