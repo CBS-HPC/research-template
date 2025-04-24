@@ -143,7 +143,9 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
     # Get the absolute path to the environment
     env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/conda/{repo_name}"))
     print(str(pathlib.Path(__file__).resolve().parent.parent.parent))
-    
+    print(str(pathlib.Path(f"./bin/conda/{repo_name}")))
+    print(env_path)
+
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
             env_file = generate_env_yml(repo_name,env_file)
