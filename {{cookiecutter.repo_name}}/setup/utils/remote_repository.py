@@ -1,8 +1,12 @@
 import os
 import subprocess
 
+from .repo_tools import *
+#from utils import *
 
-from utils import *
+# Ensure the project root is in sys.path
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
 from commands.get_dependencies import get_setup_dependencies
 from commands.update_requirements import update_requirements
 

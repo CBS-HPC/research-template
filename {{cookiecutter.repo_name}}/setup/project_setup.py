@@ -211,8 +211,8 @@ def multiple_backups(remote_backup):
 
 intro_path = "./setup/intro.py"
 outro_path = "./setup/outro.py"
-version_control_path = "./setup/version_control.py"
-remote_repository_path = "./setup/remote_repository.py"
+version_control_path = "./setup/utils/version_control.py"
+remote_repository_path = "./setup/utils/remote_repository.py"
 setup_bash = "./setup/run_setup.sh"
 setup_powershell = "./setup/run_setup.ps1"
 miniconda_path =  "./bin/miniconda3"
