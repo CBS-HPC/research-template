@@ -1,13 +1,21 @@
 import os
+import sys
 import subprocess
 import pathlib
 
-from .repo_tools import *
-
-# Ensure the project root is in sys.path
+# Ensure project root is in sys.path when run directly
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
+from utils.repo_tools import *
+
 from commands.get_dependencies import get_setup_dependencies
+
+#from .repo_tools import *
+
+# Ensure the project root is in sys.path
+#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+#from commands.get_dependencies import get_setup_dependencies
 from commands.update_requirements import update_requirements
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
@@ -71,6 +79,7 @@ def delete_files(file_paths:list=[]):
 
 @ensure_correct_kernel
 def main():
+    
     #Set the current working directory
     os.chdir(pathlib.Path(__file__).resolve().parent.parent)
 

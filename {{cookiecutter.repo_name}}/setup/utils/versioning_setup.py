@@ -3,7 +3,10 @@ import os
 import pathlib
 import shutil
 
-from .versioning_tools import *
+# Ensure project root is in sys.path when run directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+from utils.versioning_tools import *
 
 def set_program_path(programming_language):
     if programming_language.lower() not in ["python","none"]:
