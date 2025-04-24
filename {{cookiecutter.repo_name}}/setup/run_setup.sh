@@ -18,9 +18,9 @@ load_conda() {
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
-                if [["$key" == "CONDA" ]]; then
+                if [[ "$key" == "CONDA" ]]; then
                     abs_value=$(realpath "$value")
-                    export "$key"="$abs_value"
+                    export CONDA="$abs_value"
                 fi
             fi
         done < "$envFile"
@@ -42,8 +42,12 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
                 eval "$($CONDA/conda shell.bash hook)"
                 conda activate "$env_path"
             else
-                echo "Error: No Conda installation found."
+                echo "Error: conda script not found."
             fi
+            # Adjust the source path to match your Conda installation
+            #source ~/anaconda3/etc/profile.d/conda.sh
+            
+            #conda activate "$env_path"
             ;;
         "venv")
             echo "Activating venv environment: $env_path"
