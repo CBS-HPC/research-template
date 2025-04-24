@@ -20,14 +20,14 @@ def setup_remote_backup(remote_backups,repo_name):
         remote_backups= [item.strip() for item in remote_backups.split(",")]
         for remote_backup in remote_backups:
             email, password = remote_user_info(remote_backup.lower())
-            if install_rclone("bin"):
+            if install_rclone("./bin"):
                 rclone_remote(remote_backup.lower(),email, password)
                 _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
        
 def install_rclone(install_path):
     """Download and extract rclone to the specified bin folder."""
 
-    def download_rclone(install_path):
+    def download_rclone(install_path="./bin"):
         os_type = platform.system().lower()
         
         # Set the URL and executable name based on the OS
@@ -42,7 +42,7 @@ def install_rclone(install_path):
             return None
 
         # Create the bin folder if it doesn't exist
-        install_path = os.path.abspath(install_path or os.getcwd())
+        install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
         os.makedirs(install_path, exist_ok=True)
     
         # Download rclone

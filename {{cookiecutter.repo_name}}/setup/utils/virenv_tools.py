@@ -141,11 +141,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
             return False
 
     # Get the absolute path to the environment
-    #env_path = os.path.abspath(os.path.join("bin", "conda", repo_name))
-    #env_path = os.path.relpath(env_path)
-    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(os.path.join("bin", "conda", repo_name)))
-
- 
+    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/conda/{repo_name}"))
 
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
@@ -476,9 +472,7 @@ def create_venv_env(env_name, pip_packages=None):
     """Create a Python virtual environment using venv and install packages."""
     try:
         # Get the absolute path to the environment
-        #env_path = os.path.abspath(os.path.join("bin", "venv", env_name))
-        #env_path = os.path.relpath(env_path)
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(os.path.join("bin", "venv", env_name)))
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/venv/{env_name}"))
         
         # Create the virtual environment
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
@@ -507,9 +501,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
     """Create a Python virtual environment using virtualenv and install packages."""
     try:
         # Get the absolute path to the environment
-        #env_path = os.path.abspath(os.path.join("bin", "virtualenv", env_name))
-        #env_path = os.path.relpath(env_path)
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(os.path.join("bin", "virtualenv", env_name)))
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/virtualenv/{env_name}"))
 
         # Create the virtual environment
         subprocess.run(['virtualenv', env_path], check=True)
