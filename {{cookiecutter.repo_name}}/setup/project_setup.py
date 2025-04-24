@@ -217,9 +217,6 @@ setup_bash = "./setup/run_setup.sh"
 setup_powershell = "./setup/run_setup.ps1"
 miniconda_path =  "./bin/miniconda3"
 
-os.chmod("./activate.sh", 0o755)
-os.chmod("./deactivate.sh", 0o755)
-
 project_name = "{{cookiecutter.project_name}}"
 project_description = "{{cookiecutter.description}}"
 authors = "{{cookiecutter.author_name}}"
@@ -273,4 +270,7 @@ os_type = platform.system().lower()
 if os_type == "windows":
     run_powershell(setup_powershell, env_path, python_env_manager, intro_path, version_control_path, remote_repository_path, outro_path)
 elif os_type == "darwin" or os_type == "linux":
+    os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./activate.sh")), 0o755)
+    os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./deactivate.sh")), 0o755)
     run_bash(setup_bash, env_path, python_env_manager, intro_path, version_control_path, remote_repository_path, outro_path)
+    
