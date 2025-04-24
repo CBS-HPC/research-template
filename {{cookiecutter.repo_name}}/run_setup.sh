@@ -18,13 +18,23 @@ load_conda() {
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
-                # If CONDA path, resolve it to an absolute path
                 if [[ "$key" == "CONDA" ]]; then
-                    # Resolve relative to the script's directory
                     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-                    abs_value="$(realpath -m "$script_dir/$value")"
-                    export CONDA="$abs_value"
-                    echo "Resolved CONDA path: $CONDA"
+                    
+                    # If value is not absolute, resolve it relative to script_dir
+                    if [[ "$value" != /* ]]; then
+                        abs_value="$(realpath -m "$script_dir/$value")"
+                    else
+                        abs_value="$value"
+                    fi
+
+                    # Check if the resulting path contains the conda binary
+                    if [ -x "$abs_value/conda" ]; then
+                        export CONDA="$abs_value"
+                        echo "Resolved and found Conda at: $CONDA"
+                    else
+                        echo "Warning: Conda binary not found at $abs_value/conda"
+                    fi
                 fi
             fi
         done < "$envFile"
@@ -40,21 +50,13 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
     case "$env_manager" in
         "conda")
             echo "Activating Conda environment: $env_path"
-            
-
             script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
             cd "$script_dir"
-            echo "0"
             load_conda
-            echo "1"
             # Activate Conda environment
             if [ -n "$CONDA" ]; then
-                echo "2"
                 eval "$($CONDA/conda shell.bash hook)"
-                echo "3"
                 conda activate "$env_path"
-                echo "4"
-                echo "Conda environment $env_path is active"
             else
                 echo "Error: conda script not found."
             fi
