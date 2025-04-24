@@ -69,9 +69,9 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
-def check_path_format(path_str, project_root=None):
-    if not path_str:
-        return path_str
+def check_path_format(path, project_root=None):
+    if not path:
+        return path
 
     if any(sep in path for sep in ["/", "\\", ":"]) and os.path.exists(path):  # ":" for Windows drive letters
         # Set default project root if not provided
@@ -79,7 +79,7 @@ def check_path_format(path_str, project_root=None):
             project_root = pathlib.Path(__file__).resolve().parents[2]
 
         # Resolve both paths fully
-        path = pathlib.Path(path_str).resolve()
+        path = pathlib.Path(path).resolve()
         project_root = pathlib.Path(project_root).resolve()
 
         if not path.exists():
