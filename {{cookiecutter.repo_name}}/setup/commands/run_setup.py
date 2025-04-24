@@ -17,8 +17,8 @@ from utils import *
 
 @ensure_correct_kernel
 def main():
-    import version_control
-    import remote_repository
+    #import version_control
+    #import remote_repository
     
     # Change to project root directory
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent

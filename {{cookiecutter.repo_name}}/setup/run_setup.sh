@@ -59,14 +59,14 @@ else
 fi
 
 if [ -f "$version_control_path" ]; then
-    echo "Running version_control.py from $version_control_path..."
+    echo "Running versioning_setup.py from $version_control_path..."
     python "$version_control_path"
 else
     echo "Error: $version_control_path not found."
 fi
 
 if [ -f "$remote_repository_path" ]; then
-    echo "Running remote_repository.py from $remote_repository_path..."
+    echo "Running repo_setup.py from $remote_repository_path..."
     python "$remote_repository_path"
 else
     echo "Error: $remote_repository_path not found."

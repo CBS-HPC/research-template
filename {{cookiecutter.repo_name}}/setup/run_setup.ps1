@@ -61,14 +61,14 @@ if (Test-Path $intro_path) {
 }
 
 if (Test-Path $version_control_path) {
-    Write-Output "Running version_control.py from $version_control_path..."
+    Write-Output "Running versioning_setup.pys from $version_control_path..."
     python $version_control_path
 } else {
     Write-Output "Error: $version_control_path not found."
 }
 
 if (Test-Path $remote_repository_path) {
-    Write-Output "Running remote_repository.py from $remote_repository_path..."
+    Write-Output "Running repo_setup.py from $remote_repository_path..."
     python $remote_repository_path
 } else {
     Write-Output "Error: $remote_repository_path not found."
