@@ -3,7 +3,6 @@ import sys
 import pathlib
 import argparse
 
-
 # Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
@@ -35,9 +34,6 @@ def run_backup(remote_backups,repo_name):
                     print(f"Failed to backup to {remote_backup}")
 
 def main():
-    # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
 
     # Add command-line argument parsing
     parser = argparse.ArgumentParser(description="Run backup process")
@@ -50,4 +46,14 @@ def main():
     run_backup(remote_backup, repo_name)
 
 if __name__ == "__main__":
+    
+    # Ensure the project root is in sys.path
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+
+    from utils import *
+
     main()

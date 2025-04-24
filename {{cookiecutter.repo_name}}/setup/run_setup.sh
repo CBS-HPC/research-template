@@ -8,14 +8,42 @@ version_control_path=$4
 remote_repository_path=$5
 outro_path=$6
 
+# Allow custom .env file path as first argument
+envFile="${1:-.env}"
+
+load_conda() {
+    if [ -f "$envFile" ]; then
+        while IFS='=' read -r key value; do
+            if [[ ! "$key" =~ ^[[:space:]]*# && -n "$key" ]]; then
+                key=$(echo "$key" | xargs)
+                value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
+
+                if [["$key" == "CONDA" ]]; then
+                    abs_value=$(realpath "$value")
+                    export "$key"="$abs_value"
+                fi
+            fi
+        done < "$envFile"
+    else
+        echo "Warning: $envFile not found"
+    fi
+}
+
+
 # Activate environment based on the environment manager
 if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installation" ]; then
     case "$env_manager" in
         "conda")
             echo "Activating Conda environment: $env_path"
-            # Adjust the source path to match your Conda installation
-            source ~/anaconda3/etc/profile.d/conda.sh
-            conda activate "$env_path"
+            
+            load_conda
+            # Activate Conda environment
+            if [ -n "$CONDA" ]; then
+                eval "$($CONDA/conda shell.bash hook)"
+                conda activate "$env_path"
+            else
+                echo "Error: No Conda installation found."
+            fi
             ;;
         "venv")
             echo "Activating venv environment: $env_path"
