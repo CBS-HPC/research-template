@@ -6,14 +6,14 @@ import argparse
 # Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-# Ensure the working directory is the project root
-project_root = pathlib.Path(__file__).resolve().parent.parent
-os.chdir(project_root)
-
 from utils import *
 
 @ensure_correct_kernel
 def run_backup(remote_backups,repo_name):
+    
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
     
     if remote_backups.lower() != "none": 
         if install_rclone("./bin"):
@@ -46,14 +46,4 @@ def main():
     run_backup(remote_backup, repo_name)
 
 if __name__ == "__main__":
-    
-    # Ensure the project root is in sys.path
-    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-    # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-
-    from utils import *
-
     main()

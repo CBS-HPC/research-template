@@ -79,19 +79,20 @@ def check_path_format(path, project_root=None):
             project_root = pathlib.Path(__file__).resolve().parents[2]
 
         # Resolve both paths fully
-        path = pathlib.Path(path).resolve()
+        #path = pathlib.Path(path).resolve()
         project_root = pathlib.Path(project_root).resolve()
 
-        if not path.exists():
-            return str(path)  # Return as-is if it doesn't exist
+        #if not path.exists():
+        #    return str(path)  # Return as-is if it doesn't exist
 
-        try:
+        #try:
             # If path is within the project, return as relative (e.g. ./bin/venv/...)
-            relative_path = path.relative_to(project_root)
-            path = f"./{relative_path.as_posix()}"
-        except ValueError:
+            #relative_path = path.relative_to(project_root)
+    
+            #path = f"./{relative_path.as_posix()}"
+        #except ValueError:
             # Path is outside project, use absolute form
-            path = str(path)
+            #path = str(path)
 
         # Now adjust slashes depending on platform
         system_name = platform.system()

@@ -18,9 +18,13 @@ load_conda() {
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
+                # If CONDA path, resolve it to an absolute path
                 if [[ "$key" == "CONDA" ]]; then
-                    abs_value=$(realpath "$value")
+                    # Resolve relative to the script's directory
+                    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                    abs_value="$(realpath -m "$script_dir/$value")"
                     export CONDA="$abs_value"
+                    echo "Resolved CONDA path: $CONDA"
                 fi
             fi
         done < "$envFile"
@@ -30,6 +34,7 @@ load_conda() {
 }
 
 
+
 # Activate environment based on the environment manager
 if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installation" ]; then
     case "$env_manager" in
@@ -37,6 +42,7 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
             echo "Activating Conda environment: $env_path"
             
             load_conda
+            
             # Activate Conda environment
             if [ -n "$CONDA" ]; then
                 eval "$($CONDA/conda shell.bash hook)"
