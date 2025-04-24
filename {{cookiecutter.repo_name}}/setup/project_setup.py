@@ -258,7 +258,7 @@ save_to_env(code_repo,"CODE_REPO",".cookiecutter")
 
 # Set to .env
 #save_to_env(os.getcwd(),"PROJECT_PATH")
-save_to_env(pathlib.Path(__file__).resolve().parents[1],"PROJECT_PATH")
+save_to_env(str(pathlib.Path(__file__).resolve().parents[1]),"PROJECT_PATH")
 
 # Set git user info
 git_user_info(version_control)
