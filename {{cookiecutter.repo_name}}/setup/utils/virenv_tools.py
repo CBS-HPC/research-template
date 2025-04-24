@@ -141,8 +141,11 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
             return False
 
     # Get the absolute path to the environment
-    env_path = os.path.abspath(os.path.join("bin", "conda", repo_name))
-    env_path = os.path.relpath(env_path)
+    #env_path = os.path.abspath(os.path.join("bin", "conda", repo_name))
+    #env_path = os.path.relpath(env_path)
+    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(os.path.join("bin", "conda", repo_name)))
+
+ 
 
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
@@ -174,7 +177,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         conda_pip_install(env_path, pip_packages)
         export_conda_env(env_path)
         
-        #env_path = os.path.relpath(env_path)
+        env_path = os.path.relpath(env_path)
         save_to_env(env_path,"CONDA_ENV_PATH")
         return env_path
     else:
@@ -473,8 +476,9 @@ def create_venv_env(env_name, pip_packages=None):
     """Create a Python virtual environment using venv and install packages."""
     try:
         # Get the absolute path to the environment
-        env_path = os.path.abspath(os.path.join("bin", "venv", env_name))
-        env_path = os.path.relpath(env_path)
+        #env_path = os.path.abspath(os.path.join("bin", "venv", env_name))
+        #env_path = os.path.relpath(env_path)
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(os.path.join("bin", "venv", env_name)))
         
         # Create the virtual environment
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
@@ -486,7 +490,7 @@ def create_venv_env(env_name, pip_packages=None):
             subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
-        #env_path = os.path.relpath(env_path)
+        env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VENV_ENV_PATH")
 
         # Return the path to the virtual environment
@@ -503,8 +507,10 @@ def create_virtualenv_env(env_name, pip_packages=None):
     """Create a Python virtual environment using virtualenv and install packages."""
     try:
         # Get the absolute path to the environment
-        env_path = os.path.abspath(os.path.join("bin", "virtualenv", env_name))
-        env_path = os.path.relpath(env_path)
+        #env_path = os.path.abspath(os.path.join("bin", "virtualenv", env_name))
+        #env_path = os.path.relpath(env_path)
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(os.path.join("bin", "virtualenv", env_name)))
+
         # Create the virtual environment
         subprocess.run(['virtualenv', env_path], check=True)
         print(f'Virtualenv environment "{env_path}" for Python created successfully.')
@@ -515,7 +521,7 @@ def create_virtualenv_env(env_name, pip_packages=None):
             subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
         
-        #env_path = os.path.relpath(env_path)
+        env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VIRTUALENV_ENV_PATH")
 
         # Return the path to the virtual environment
