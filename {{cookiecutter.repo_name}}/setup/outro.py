@@ -37,14 +37,14 @@ def main():
 
     os_type = platform.system().lower()
     if os_type == "windows":
-        activate_to_delete = "activate.sh"
-        deactivate_to_delete = "deactivate.sh"
+        activate_to_delete = "./activate.sh"
+        deactivate_to_delete = "./deactivate.sh"
     elif os_type == "darwin" or os_type == "linux":
-        activate_to_delete = "activate.ps1"
-        deactivate_to_delete = "deactivate.ps1"
+        activate_to_delete = "./activate.ps1"
+        deactivate_to_delete = "./deactivate.ps1"
 
     # Deleting Setup scripts
-    delete_files(["./setup/project_setup.py","./setup/run_setup.sh","./setup/run_setup.ps1","./setup/intro.py","./setup/outro.py",activate_to_delete,deactivate_to_delete])
+    delete_files(["./setup/project_setup.py","./run_setup.sh","./run_setup.ps1","./setup/intro.py","./setup/outro.py",activate_to_delete,deactivate_to_delete])
 
     # Updating README
     creating_readme()
