@@ -80,8 +80,8 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             setup += (f"**Software Re-installation using {py_version}**\n"
                 f"The function below re-installs all ./setup and ./src software dependencies. The script should be executed using **{py_version}**\n")
         else:
-            setup += {f"**Software Re-installation using Conda**\n"
-                "The function below re-installs all ./setup and ./src software dependencies.\n"}
+            setup += (f"**Software Re-installation using Conda**\n"
+                "The function below re-installs all ./setup and ./src software dependencies.\n")
         
         setup += (
                 "```\n"
