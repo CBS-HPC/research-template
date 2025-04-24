@@ -2,10 +2,10 @@ import os
 import subprocess
 import pathlib
 
+from .repo_tools import *
+
 # Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-from utils import *
 
 from commands.get_dependencies import get_setup_dependencies
 from commands.update_requirements import update_requirements

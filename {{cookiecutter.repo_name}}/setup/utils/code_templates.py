@@ -2,12 +2,12 @@ import os
 from textwrap import dedent
 import pathlib
 
-from utils import *
+from .general_tools import *
 
-pip_installer(required_libraries = ['python-dotenv','rpds-py==0.21.0','nbformat'] )
+pip_installer(required_libraries = ['rpds-py==0.21.0','nbformat'] )
 
 import nbformat as nbf  # For creating Jupyter notebooks
-from dotenv import dotenv_values, load_dotenv
+
 
 def write_script(folder_path, script_name, extension, content):
     """

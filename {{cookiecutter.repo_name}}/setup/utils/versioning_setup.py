@@ -3,7 +3,7 @@ import os
 import pathlib
 import shutil
 
-from utils import *
+from .versioning_tools import *
 
 def set_program_path(programming_language):
     if programming_language.lower() not in ["python","none"]:
@@ -21,11 +21,8 @@ def set_program_path(programming_language):
 @ensure_correct_kernel
 def main():
 
-    # Get the parent of the parent folder (2 levels up from current file)
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-
-# Set it as the current working directory
-    os.chdir(project_root)
+    #Set the current working directory
+    os.chdir(pathlib.Path(__file__).resolve().parent.parent)
 
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
