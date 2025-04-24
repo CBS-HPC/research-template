@@ -475,8 +475,10 @@ def create_venv_env(env_name, pip_packages=None):
     """Create a Python virtual environment using venv and install packages."""
     try:
         # Get the absolute path to the environment
-        #env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"/bin/venv/{env_name}"))
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent / f"bin/venv/{env_name}"))
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"/bin/venv/{env_name}"))
+        #env_path = str(pathlib.Path(__file__).resolve().parent.parent / f"bin/venv/{env_name}")
+        print(str(pathlib.Path(__file__).resolve().parent.parent.parent))
+        print(str(pathlib.Path(f"/bin/venv/{env_name}")))
         print(env_path)
         # Create the virtual environment
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
