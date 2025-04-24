@@ -44,20 +44,18 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
 
             script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
             cd "$script_dir"
-            #source "$script_dir/activate.sh"
+            
             load_conda
             
             # Activate Conda environment
             if [ -n "$CONDA" ]; then
                 eval "$($CONDA/conda shell.bash hook)"
                 conda activate "$env_path"
+                echo "Conda environment $env_path is active"
             else
                 echo "Error: conda script not found."
             fi
-            # Adjust the source path to match your Conda installation
-            #source ~/anaconda3/etc/profile.d/conda.sh
             
-            #conda activate "$env_path"
             ;;
         "venv")
             echo "Activating venv environment: $env_path"
