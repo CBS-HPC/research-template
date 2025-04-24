@@ -101,7 +101,7 @@ def check_path_format(path, project_root=None):
         else:  # Linux/macOS
             #path = r"{}".format(path.replace("\\", r"\\"))
             path = r"{}".format(path.replace("\\", "/"))
-        path = os.path.normpath(path)
+        #path = os.path.normpath(path)
 
     return path
 
