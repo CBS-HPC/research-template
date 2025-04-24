@@ -1,7 +1,7 @@
 import sys
 import shutil
 
-from .versioning_tools import *
+from versioning_tools import *
 
 def set_program_path(programming_language):
     if programming_language.lower() not in ["python","none"]:
