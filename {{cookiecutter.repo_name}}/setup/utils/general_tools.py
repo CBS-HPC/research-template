@@ -69,7 +69,43 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
-def check_path_format(path):
+def check_path_format(path_str, project_root=None):
+    if not path_str:
+        return path_str
+
+    if any(sep in path for sep in ["/", "\\", ":"]) and os.path.exists(path):  # ":" for Windows drive letters
+        # Set default project root if not provided
+        if project_root is None:
+            project_root = pathlib.Path(__file__).resolve().parents[2]
+
+        # Resolve both paths fully
+        path = pathlib.Path(path_str).resolve()
+        project_root = pathlib.Path(project_root).resolve()
+
+        if not path.exists():
+            return str(path)  # Return as-is if it doesn't exist
+
+        try:
+            # If path is within the project, return as relative (e.g. ./bin/venv/...)
+            relative_path = path.relative_to(project_root)
+            path = f"./{relative_path.as_posix()}"
+        except ValueError:
+            # Path is outside project, use absolute form
+            path = str(path)
+
+        # Now adjust slashes depending on platform
+        system_name = platform.system()
+        if system_name == "Windows":
+            path = r"{}".format(path.replace("/", r"\\"))
+            #path = r"{}".format(path.replace("\\", r"\\"))
+        else:  # Linux/macOS
+            #path = r"{}".format(path.replace("\\", r"\\"))
+            path = r"{}".format(path.replace("\\", "/"))
+
+    return path
+
+# FIX ME
+def check_path_format_old(path):
 
     if path:
         # Determine if the value is a path (heuristic check)
