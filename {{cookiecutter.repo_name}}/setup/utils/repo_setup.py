@@ -6,7 +6,8 @@ import pathlib
 # Ensure project root is in sys.path when run directly
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from utils import *
+from utils.repo_tools import *
+from utils.virenv_tools import *
 
 from commands.get_dependencies import get_setup_dependencies
 
