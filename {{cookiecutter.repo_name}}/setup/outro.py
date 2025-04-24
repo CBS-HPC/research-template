@@ -1,4 +1,5 @@
 import os
+import pathlib
 import platform
 
 from utils import *
@@ -30,6 +31,10 @@ def delete_files(file_paths:list=[]):
 
 @ensure_correct_kernel
 def main():
+
+    #Set the current working directory
+    os.chdir(pathlib.Path(__file__).resolve().parent.parent)
+
     os_type = platform.system().lower()
     if os_type == "windows":
         activate_to_delete = "activate.sh"

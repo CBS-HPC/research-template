@@ -133,7 +133,7 @@ def write_to_readme(readme_file,software_requirements_section):
     print(f"{readme_file} successfully updated.")
 
 @ensure_correct_kernel
-def update_requirements(dependencies_files: list = ["src/dependencies.txt"], readme_file: str = "README.md", sections: list = ["src"]):
+def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], readme_file: str = "README.md", sections: list = ["src"]):
    
     software_requirements_section =read_dependencies(dependencies_files,sections)
 
@@ -144,7 +144,7 @@ def main():
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
 
-    update_requirements(dependencies_files=[project_root / pathlib.Path("./src/dependencies.txt"), project_root / pathlib.Path("./setup/dependencies.txt")], sections=["src", "setup"])
+    update_requirements(dependencies_files=[project_root / pathlib.Path("./src/dependencies.txt"), project_root / pathlib.Path("./setup/dependencies.txt")], sections=["src", "/setup"])
 
 if __name__ == "__main__":
     

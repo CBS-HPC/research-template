@@ -104,21 +104,6 @@ def check_path_format(path, project_root=None):
 
     return path
 
-# FIX ME
-def check_path_format_old(path):
-
-    if path:
-        # Determine if the value is a path (heuristic check)
-        if any(sep in path for sep in ["/", "\\", ":"]) and os.path.exists(path):  # ":" for Windows drive letters
-            system_name = platform.system()
-            if system_name == "Windows":
-                path = r"{}".format(path.replace("/", r"\\"))
-                #path = r"{}".format(path.replace("\\", r"\\"))
-            else:  # Linux/macOS
-                #path = r"{}".format(path.replace("\\", r"\\"))
-                path = r"{}".format(path.replace("\\", "/"))
-    return path
-
 def load_from_env(env_var: str, env_file: str = ".env"):
     """
     Loads an environment variable's value from a .env file.
