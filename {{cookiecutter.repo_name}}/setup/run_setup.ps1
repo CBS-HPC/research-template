@@ -23,7 +23,7 @@ if ($env_path -ne "Base Installation" -and $env_manager -ne "Base Installation")
         "venv" {
             Write-Output "Activating venv environment: $env_path"
 
-            $venv_activate = "./$env_path/Scripts/activate"
+            $venv_activate = "$env_path/Scripts/activate"
 
             if (Test-Path $venv_activate) {
                 Write-Output "Activating venv using $venv_activate"
@@ -35,7 +35,7 @@ if ($env_path -ne "Base Installation" -and $env_manager -ne "Base Installation")
         "virtualenv" {
             Write-Output "Activating virtualenv environment: $env_path"
 
-            $virtualenv_activate = "./$env_path/Scripts/activate"
+            $virtualenv_activate = "$env_path/Scripts/activate"
 
             if (Test-Path $virtualenv_activate) {
                 Write-Output "Activating virtualenv using $virtualenv_activate"
@@ -61,7 +61,7 @@ if (Test-Path $intro_path) {
 }
 
 if (Test-Path $version_control_path) {
-    Write-Output "Running versioning_setup.pys from $version_control_path..."
+    Write-Output "Running versioning_setup.py from $version_control_path..."
     python $version_control_path
 } else {
     Write-Output "Error: $version_control_path not found."
