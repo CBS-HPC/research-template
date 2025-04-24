@@ -141,8 +141,9 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
             return False
 
     # Get the absolute path to the environment
-    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"/bin/conda/{repo_name}"))
-
+    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/conda/{repo_name}"))
+    print(str(pathlib.Path(__file__).resolve().parent.parent.parent))
+    
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
             env_file = generate_env_yml(repo_name,env_file)
@@ -473,7 +474,7 @@ def create_venv_env(env_name, pip_packages=None):
     try:
         # Get the absolute path to the environment
         #env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"/bin/venv/{env_name}"))
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(f"/bin/venv/{env_name}"))
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent / f"bin/venv/{env_name}"))
         print(env_path)
         # Create the virtual environment
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
