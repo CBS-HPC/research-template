@@ -52,6 +52,13 @@ def run_powershell(script_path, env_path=None, python_env_manager=None, intro_pa
         python_env_manager = "Base Installation"    
     
     try:
+        script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
+        intro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(intro_path))
+        version_control_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(version_control_path))
+        remote_repository_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(remote_repository_path))
+        outro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(outro_path))
+                                                                                       
         subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,intro_path,version_control_path,remote_repository_path,outro_path])
         print(f"Script {script_path} executed successfully.")
     
