@@ -7,7 +7,8 @@ import pathlib
 import platform
 
 
-from utils import *
+#from utils import *
+from .general_tools import *
 
 pip_installer(required_libraries =  ['pyyaml','requests'])
 
@@ -28,101 +29,130 @@ ext_map = {
 # README.md
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None):
 
+
+    def read_treeignore(file_path=".treeignore"):
+        """
+        Reads the .treeignore file and returns a list of ignored paths.
+        
+        Parameters:
+        file_path (str): Path to the .treeignore file (default is ".treeignore").
+        
+        Returns:
+        list: A list of ignored paths from the .treeignore file.
+        """
+        ignore_list = []
+        file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
+
+        try:
+            with open(file_path, 'r') as f:
+                for line in f:
+                    # Strip leading/trailing whitespace and ignore empty lines or comments
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        ignore_list.append(line)
+        except FileNotFoundError:
+            print(f"Warning: {file_path} not found. Returning empty ignore list.")
+        
+        return ignore_list
+
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
-    
+        def set_usage(programming_language,software_version):
+            usage = ("## Project Activation \n"
+                    "Project paths, environment variables, and virtual environments can be **activated** and **deactivated as shown below. These configurations are found in the '.env' file. \n"
+                    "**The '.env' file is excluded from this repository. To replicate this repository, please refer to the 'Installation' section below.**\n"
+                    )
 
-        setup = ""
+        
+            os_type = platform.system().lower()
+            if os_type == "windows":
+                usage += (
+                    "\n**Activate on Windows (PowerShell)**\n\n"
+                    "```\n"
+                    "activate.ps1\n"
+                    "```\n"
+                    "\n**Deactivate on Windows (PowerShell)**\n\n"
+                    "```\n"
+                    "deactivate.ps1\n"
+                    "```\n"
+                )
 
+            elif os_type in ("darwin", "linux"):
+                usage += (
+                    "\n**Activate on Linux/macOS (bash)** \n\n"
+                    "```\n"
+                    "source activate.sh\n"
+                    "```\n"
+                    "\n**Deactivate on Linux/macOS (bash)** \n\n"
+                    "```\n"
+                    "source deactivate.sh\n"
+                    "```\n"
+                )
+            
+            if programming_language.lower() != "none":
+                usage += (f"### {software_version}\n"
+                "The main 'project code' can be executed by running the function below.\n"
+                ) 
+
+                usage += "```\n"
+                file_extension = ext_map.get(programming_language.lower(), "txt")
+                usage += f"{programming_language.lower()} src/main.{file_extension}\n"
+                usage += "```"
+            return usage
+
+        def set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo):            
+            setup = ""
+
+            if repo_name and repo_user:
+                setup += "### Clone Project Repository\n"
+                "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
+                setup += "```\n"
+                if code_repo.lower() in ["github","gitlab"]:
+                    web_repo = code_repo.lower()
+                    setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
+                            "```\n")
+            setup += ("### Navigate to Directory\n"
+                    "```\n"
+                    f"cd {repo_name}\n"
+                    "```\n")
+
+            setup += ("### Setup Project Virtual Environment\n"
+                    "The needed software environment can be re-installed in serveral ways. The project provides both a **'environment.yml'** and **'requirements.txt'** files allowing for **conda** and **pip** installations of the **Python** environment.\n"
+                    
+                    f"**{py_version}** is needed for a proper pip installation\n"
+
+                    )
+            if programming_language.lower() =="r":
+
+                setup += f"The 'environment.yml' includes also the {software_version}"
+
+
+            setup += "**Script Installation**\n"
+            if programming_language.lower() not in ["none", "python"]:
+                setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for both **{py_version}** and **{software_version}**\n"
+            elif programming_language.lower() == "none":
+                setup +=  f"The function below installs all **setup** (./setup) dependencies for **{py_version}** dependencies.\n"
+            else: 
+                setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for **{py_version}** dependencies.\n"
+                                    
+            setup += ("```\n"
+                    "python setup/run_setup.py \n"
+                    "```\n")
+            return setup
+        
         py_version = get_version("PYTHON")
         software_version = get_version(programming_language)
-        if repo_name and repo_user:
-            setup += "### Clone Project Repository**\n"
-            "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
-            setup += "```\n"
-            if code_repo.lower() in ["github","gitlab"]:
-                web_repo = code_repo.lower()
-                setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
-                        "```\n"
-                        "```\n")
-        setup += ("### Navigate to Directory**\n"
-                f"cd {repo_name}\n"
-                "```\n")
 
-        setup += ("### Setup Project Virtual Environment**\n"
-                "This environment can be re-created in serveral ways. The project provides both a 'environment.yml' and 'requirements.txt' files allowing for **conda** and **pip** installations of the **Python** environment.\n"
-                
-                f"**{py_version}** is needed for a proper pip installation\n"
+        setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
+        usage = set_usage(programming_language,software_version)
 
-                )
-        if programming_language.lower() =="r":
-
-            setup += f"The 'environment.yml' includes also the {software_version}"
-
-
-        setup += "**Script Installation**\n"
-        if programming_language.lower() not in ["none", "python"]:
-            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for both **{py_version}** and **{software_version}**\n"
-        elif programming_language.lower() == "none":
-            setup +=  f"The function below installs all **setup** (./setup) dependencies for **{py_version}** dependencies.\n"
-        else: 
-            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for **{py_version}** dependencies.\n"
-                                
-        setup += ("```\n"
-                "python setup/run_setup.py \n"
-                "```\n")
-
-
-        usage = ("### Project Activation \n"
-                "Project paths, environment variables, and virtual environments can be activated as described below. These configurations are found in the '.env' file. \n"
-                "The '.env' file is excluded from this repository. To replicate this repository, please refer to the 'Installation' section below. \n"
-                )
-
-
-
-        os_type = platform.system().lower()
-        if os_type == "windows":
-            usage += (
-                "**Activate on Windows (PowerShell)**\n"
-                "```\n"
-                "activate.ps1\n"
-                "```\n"
-                "**Deactivate on Windows (PowerShell)**\n"
-                "This will deactivates project paths, environment variables and virtual environments found in the '.env' file \n"
-                "```\n"
-                "deactivate.ps1\n"
-                "```\n"
-            )
-
-        elif os_type in ("darwin", "linux"):
-            usage += (
-                "**Activate on Linux/macOS (bash)** \n\n"
-                "```\n"
-                "source activate.sh\n"
-                "```\n"
-                "**Deactivate on Linux/macOS (bash)** \n\n"
-                "```\n"
-                "source deactivate.sh\n"
-                "```\n"
-            )
-        
-        usage += "```\n"
-        if programming_language.lower() != "none":
-            usage += (f"### {software_version}\n"
-            "The main 'project code' can be executed by running the function below.\n"
-            ) 
-
-            file_extension = ext_map.get(programming_language.lower(), "txt")
-            usage += f"{programming_language.lower()} src/main.{file_extension}\n"
-        
-        usage += "```"
             
         contact = ""
         if authors:
-            contact += f"**Name:** {authors}\n"
+            contact += f"**Name:** {authors}\n\n"
         if orcids:
-            contact += f"**ORCID:** {orcids}\n"
+            contact += f"**ORCID:** {orcids}\n\n"
         if emails:
-            contact += f"**Email:** {emails}\n"
+            contact += f"**Email:** {emails}\n\n"
         
         return setup,usage,contact
     
@@ -133,7 +163,11 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
      # Create and update README and Project Tree:
     update_file_descriptions("./README.md",programming_language, json_file=file_descriptions)
     generate_readme(project_name, project_description,install,usage,contact,"./README.md")
-    create_tree("./README.md", ["bin",".git",".datalad",".gitkeep",".env","__pycache__"] ,file_descriptions)
+
+    ignore_list = read_treeignore()
+
+    #ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__"]
+    create_tree("./README.md",ignore_list ,file_descriptions)
     
 def generate_readme(project_name, project_description,install,usage,contact,readme_file = None):
     """
@@ -162,7 +196,6 @@ def generate_readme(project_name, project_description,install,usage,contact,read
 ## Contact Information
 {contact}
 
-## Usage
 {usage}
 
 ## Installation

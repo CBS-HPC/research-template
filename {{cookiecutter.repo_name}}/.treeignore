@@ -1,0 +1,6 @@
+bin/
+.git
+.datalad
+.gitkeep
+.env
+__pycache__/
