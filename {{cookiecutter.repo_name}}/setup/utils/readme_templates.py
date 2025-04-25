@@ -7,8 +7,11 @@ import pathlib
 import platform
 
 
+# Ensure the project root is in sys.path
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
 #from utils import *
-from .general_tools import *
+from utils.general_tools import *
 
 pip_installer(required_libraries =  ['pyyaml','requests'])
 
@@ -403,8 +406,9 @@ def update_file_descriptions(readme_file,programming_language, json_file="./setu
             "docs": "Directory for documentation files.",
             "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",
             "results": "Directory for generated results from the project.",
-            "setup": "Directory containing setup files and scripts to configure the project environment.",
+            "setup": "Directory containing local python package containing setup files, scripts and functions to configure the project environment.",
             "DCAS template": "Directory containing 'replication package' template for the DCAS (Data and Code Sharing) standard",
+            "utils": "Python module containing the relevant scripts and function of the 'setup' package",
 
             # Setup files
             ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
