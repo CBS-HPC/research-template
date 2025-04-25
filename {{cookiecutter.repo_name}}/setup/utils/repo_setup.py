@@ -8,16 +8,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils.repo_tools import *
 from utils.virenv_tools import *
-
-from commands.get_dependencies import get_setup_dependencies
-
-#from .repo_tools import *
-
-# Ensure the project root is in sys.path
-#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-#from commands.get_dependencies import get_setup_dependencies
-from commands.update_requirements import update_requirements
+from utils.get_dependencies import get_setup_dependencies
+from utils.update_requirements import update_requirements
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -42,9 +34,7 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
 def install_py_package():
 
     # Change the current working directory to to setup folder
-   
     os.chdir(pathlib.Path(__file__).resolve().parent.parent)
-    #os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     # Run "pip install -e ."
     result = subprocess.run(['pip', 'install', '-e', '.'], capture_output=True, text=True)
@@ -81,9 +71,6 @@ def delete_files(file_paths:list=[]):
 @ensure_correct_kernel
 def main():
     
-    #Set the current working directory
-    os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
-
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
@@ -122,4 +109,9 @@ def main():
     install_py_package()
     
 if __name__ == "__main__":
+    
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     main()

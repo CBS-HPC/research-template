@@ -5,10 +5,6 @@ from utils import *
 
 @ensure_correct_kernel
 def main():
-
-    #Set the current working directory
-    os.chdir(pathlib.Path(__file__).resolve().parent.parent)
-
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
@@ -42,4 +38,9 @@ def main():
     download_README_template(readme_file = "./DCAS template/README.md")
 
 if __name__ == "__main__":
+
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+
     main()

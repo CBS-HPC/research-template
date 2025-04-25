@@ -43,8 +43,6 @@ load_conda() {
     fi
 }
 
-
-
 # Activate environment based on the environment manager
 if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installation" ]; then
     case "$env_manager" in
@@ -52,7 +50,9 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
             echo "Activating Conda environment: $env_path"
             script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
             cd "$script_dir"
+
             load_conda
+            
             # Activate Conda environment
             if [ -n "$CONDA" ]; then
                 eval "$($CONDA/conda shell.bash hook)"
@@ -65,6 +65,9 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
         "venv")
             echo "Activating venv environment: $env_path"
             
+            script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+            cd "$script_dir"
+
             venv_activate="$env_path/bin/activate"
 
             if [ -f "$venv_activate" ]; then

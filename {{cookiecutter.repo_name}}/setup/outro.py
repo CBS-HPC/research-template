@@ -31,10 +31,6 @@ def delete_files(file_paths:list=[]):
 
 @ensure_correct_kernel
 def main():
-
-    #Set the current working directory
-    os.chdir(pathlib.Path(__file__).resolve().parent.parent)
-
     os_type = platform.system().lower()
     if os_type == "windows":
         activate_to_delete = "./activate.sh"
@@ -53,4 +49,9 @@ def main():
     git_push(load_from_env("CODE_REPO",".cookiecutter")!= "None","README.md updated")
 
 if __name__ == "__main__":
+    
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+
     main()

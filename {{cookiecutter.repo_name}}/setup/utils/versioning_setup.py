@@ -23,10 +23,6 @@ def set_program_path(programming_language):
 
 @ensure_correct_kernel
 def main():
-
-    #Set the current working directory
-    os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
-
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
@@ -40,4 +36,9 @@ def main():
     setup_version_control(version_control,remote_storage,code_repo,repo_name)
 
 if __name__ == "__main__":
+    
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     main()
