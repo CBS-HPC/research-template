@@ -1,7 +1,9 @@
 
-bin/venv/
-bin/conda/
-bin/miniconda3/
+bin/
+#bin/venv/
+#bin/conda/
+#bin/miniconda3/
+#bin/rclone*
 
 # DotEnv configuration
 #.env
