@@ -7,7 +7,6 @@ from utils import *
 @ensure_correct_kernel
 def main():
 
-    print(sys.executable)
     # Ensure the working directory is the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)

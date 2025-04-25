@@ -29,26 +29,57 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
     
-        py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
         setup = ""
+
+
         if repo_name and repo_user:
-            setup += "**Download Repository**\n"
+            setup += "### Clone Project Repository**\n"
             "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
             setup += "```\n"
             if code_repo.lower() in ["github","gitlab"]:
                 web_repo = code_repo.lower()
-                setup += f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
-        
-        setup += ("**Navigate to Directory**\n"
+                setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
+                        "```\n"
+                        "```\n")
+        setup += ("### Navigate to Directory**\n"
                 f"cd {repo_name}\n"
                 "```\n")
 
+        setup += ("### Setup Project Virtual Environment**\n"
+                "This environment can be re-created in serveral ways. The project provides both a 'environment.yml' and 'requirements.txt' files allowing for **conda** and **pip** installations of the **Python** environment.\n"
+                
+                f"**{get_version("PYTHON")}** is needed for a proper pip installation\n"
+
+                )
+        if programming_language.lower() =="r":
+            setup += f"The 'environment.yml' includes also the {get_version(programming_language)}"
+
+
+        setup += "**Script Installation**\n"
+        if programming_language.lower() not in ["none", "python"]:
+            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for both **{get_version("PYTHON")}** and **get_version(programming_language)**\n"
+        elif programming_language.lower() == "none":
+            setup +=  f"The function below installs all **setup** (./setup) dependencies for **{get_version("PYTHON")}** dependencies.\n"
+        else: 
+            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for **{get_version("PYTHON")}** dependencies.\n"
+                                
+        setup += ("```\n"
+                "python setup/run_setup.py \n"
+                "```\n")
+
+
+        usage = ("### Project Activation \n"
+                "Project paths, environment variables, and virtual environments can be activated as described below. These configurations are found in the '.env' file. \n"
+                "The '.env' file is excluded from this repository. To replicate this repository, please refer to the 'Installation' section below. \n"
+                )
+
+
+
         os_type = platform.system().lower()
         if os_type == "windows":
-            setup += (
+            usage += (
                 "**Activate on Windows (PowerShell)**\n"
-                "This will activates project paths, environment variables and virtual environments found in the '.env' file \n"
                 "```\n"
                 "activate.ps1\n"
                 "```\n"
@@ -60,40 +91,24 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             )
 
         elif os_type in ("darwin", "linux"):
-            setup += (
-                "**Activate on Linux/macOS (bash)**\n"
-                "This will activates project paths, environment variables and virtual environments found in the '.env' file \n"
+            usage += (
+                "**Activate on Linux/macOS (bash)** \n\n"
                 "```\n"
                 "source activate.sh\n"
                 "```\n"
-                "**Deactivate on Linux/macOS (bash)**\n"
-                "This will deactivates project paths, environment variables and virtual environments found in the '.env' file \n"
+                "**Deactivate on Linux/macOS (bash)** \n\n"
                 "```\n"
                 "source deactivate.sh\n"
                 "```\n"
             )
         
-        py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
-
-        if py_manager.lower() != "conda":
-            py_version = get_version("PYTHON")
-            setup += (f"**Software Re-installation using {py_version}**\n"
-                f"The function below re-installs all ./setup and ./src software dependencies. The script should be executed using **{py_version}**\n")
-        else:
-            setup += (f"**Software Re-installation using Conda**\n"
-                "The function below re-installs all ./setup and ./src software dependencies.\n")
-        
-        setup += (
-                "```\n"
-                "python setup/run_setup.py\n"
-                "```\n"
-            )
-  
-        usage = "```\n"
+        usage += "```\n"
         if programming_language.lower() != "none":
             
             software_version = get_version(programming_language)
-            usage += f"### {software_version}\n" 
+            usage += (f"### {software_version}\n"
+            "The main 'project code' can be executed by running the function below.\n"
+            ) 
 
             file_extension = ext_map.get(programming_language.lower(), "txt")
             usage += f"{programming_language.lower()} src/main.{file_extension}\n"
@@ -110,16 +125,16 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         
         return setup,usage,contact
     
-    setup, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails,programming_language)
+    install, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails,programming_language)
 
     file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json"))
 
      # Create and update README and Project Tree:
     update_file_descriptions("./README.md",programming_language, json_file=file_descriptions)
-    generate_readme(project_name, project_description,setup,usage,contact,"./README.md")
+    generate_readme(project_name, project_description,install,usage,contact,"./README.md")
     create_tree("./README.md", ["bin",".git",".datalad",".gitkeep",".env","__pycache__"] ,file_descriptions)
     
-def generate_readme(project_name, project_description,setup,usage,contact,readme_file = None):
+def generate_readme(project_name, project_description,install,usage,contact,readme_file = None):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -146,12 +161,11 @@ def generate_readme(project_name, project_description,setup,usage,contact,readme
 ## Contact Information
 {contact}
 
-## Installation
-
-{setup}
-
 ## Usage
 {usage}
+
+## Installation
+{install}
 
 ## Project Tree
 The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the FILE_DESCRIPTIONS.json file.
