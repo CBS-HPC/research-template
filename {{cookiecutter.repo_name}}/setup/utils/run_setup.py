@@ -3,10 +3,9 @@ import pathlib
 import sys
 
 # Ensure the project root is in sys.path
-#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils import *
-
 
 @ensure_correct_kernel
 def main():

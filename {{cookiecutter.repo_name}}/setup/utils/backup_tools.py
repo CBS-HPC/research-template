@@ -5,13 +5,10 @@ import platform
 import zipfile
 import glob
 import getpass
+import pathlib
 
 from .general_tools import *
 from .versioning_tools import *
-
-pip_installer(required_libraries =  ['requests'])
-
-import requests
 
 # RClone:
 def setup_remote_backup(remote_backups,repo_name):
@@ -24,7 +21,7 @@ def setup_remote_backup(remote_backups,repo_name):
                 rclone_remote(remote_backup.lower(),email, password)
                 _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
        
-def install_rclone(install_path):
+def install_rclone2(install_path):
     """Download and extract rclone to the specified bin folder."""
 
     def download_rclone(install_path="./bin"):

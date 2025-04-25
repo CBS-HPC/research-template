@@ -5,6 +5,10 @@ from utils import *
 
 @ensure_correct_kernel
 def main():
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")

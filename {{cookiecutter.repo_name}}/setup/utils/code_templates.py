@@ -19,8 +19,15 @@ def write_script(folder_path, script_name, extension, content):
     extension (str): The file extension (e.g., ".py", ".R").
     content (str): The content to be written to the script.
     """
+    # Create the folder if it doesn't exist
+    full_folder_path = pathlib.Path(__file__).resolve().parent.parent.parent / folder_path
+    full_folder_path.mkdir(parents=True, exist_ok=True)
+
+
     file_name = f"{script_name}{extension}"
     file_path = os.path.join(folder_path, file_name)
+
+        # Ensure the notebooks folder exists
 
     file_path= str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(file_path))
 
@@ -44,10 +51,6 @@ def create_scripts(programming_language, folder_path):
     if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
         return
     
-    # Ensure the folder exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
     # Script details based on purpose
     scripts = {
         "data_collection": "Data extraction/scraping",
@@ -81,10 +84,7 @@ def create_step_script(programming_language, folder_path, script_name, purpose):
     script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
     purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
     """
-    # Ensure the folder path exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    
+
     # Call the appropriate function based on the language
     if programming_language.lower() == "r":
         create_r_script(folder_path, script_name, purpose)
@@ -214,10 +214,7 @@ def create_main(programming_language, folder_path):
     programming_language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
     folder_path (str): The directory where the workflow script will be saved.
     """
-    # Ensure the folder path exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    
+ 
     # Call the appropriate function based on the language
     if programming_language.lower() == "r":
         create_r_main(folder_path)
@@ -388,10 +385,7 @@ def create_get_dependencies(programming_language, folder_path):
     programming_language (str): The programming language (e.g., "r", "python", "stata", "matlab", "sas").
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
-    # Ensure the folder path exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    
+  
     # Call the appropriate function based on the language
     if programming_language.lower() == "r":
         create_get_r_dependencies(folder_path)
@@ -943,10 +937,7 @@ def create_install_dependencies(programming_language, folder_path):
     programming_language (str): The programming language (e.g., "r", "python", "stata", "matlab", "sas").
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
-    # Ensure the folder path exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    
+
     # Call the appropriate function based on the language
     if programming_language.lower() == "r":
         create_install_r_dependencies(folder_path)
@@ -1272,10 +1263,6 @@ def create_notebooks(programming_language, folder_path):
     if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
         return
     
-    # Ensure the notebooks folder exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
     # Call the appropriate function based on the language
     if programming_language.lower() == "python":
         create_python_notebook(folder_path)

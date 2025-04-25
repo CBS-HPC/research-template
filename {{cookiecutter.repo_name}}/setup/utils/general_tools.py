@@ -24,7 +24,6 @@ pip_installer(required_libraries =  ['python-dotenv'])
 
 from dotenv import dotenv_values, load_dotenv
 
-
 @contextmanager
 def change_dir(destination):
     cur_dir = os.getcwd()
@@ -371,7 +370,6 @@ def set_from_env():
     is_installed('rclone')
     is_installed('git-annex-remote-rclone')
 
-
 # Setting Options
 def git_user_info(version_control):
     if version_control.lower() in ["git", "datalad", "dvc"]:
@@ -440,7 +438,6 @@ def repo_user_info(version_control,repo_name,code_repo):
         return repo_user, privacy_setting, token
     else:
         return None, None,None
-
 
 # Setting programming language 
 def set_programming_language(programming_language):
@@ -610,7 +607,6 @@ def get_version(programming_language):
         version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
         version =version.stdout.strip()  # Returns version info
     return version
-
 
 #Check software
 def ensure_correct_kernel(func):

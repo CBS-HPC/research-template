@@ -4,13 +4,13 @@ import ast
 import sys
 import sysconfig
 from datetime import datetime
-import importlib.metadata
+
 import yaml
-from typing import Optional, Dict, Set, List
+from typing import Dict, List
 import pathlib
 
 # Ensure the project root is in sys.path
-#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils import *
 

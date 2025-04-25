@@ -1,13 +1,13 @@
 import requests
 import re
 import os
-import urllib.parse
 import multiprocessing
 import argparse
 import sys
+import pathlib
 
 # Ensure the project root is in sys.path
-#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils import *
 

@@ -11,8 +11,6 @@ pip_installer(required_libraries =  ['pyyaml'])
 
 import yaml
 
-
-
 # Virtual Environment
 def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "./bin/miniconda3"):
     """
