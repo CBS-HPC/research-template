@@ -4,6 +4,7 @@ import re
 import os
 import json
 import pathlib
+import platform
 
 
 from utils import *
@@ -32,7 +33,8 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
         setup = ""
 
-
+        py_version = get_version("PYTHON")
+        software_version = get_version(programming_language)
         if repo_name and repo_user:
             setup += "### Clone Project Repository**\n"
             "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
@@ -49,20 +51,21 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         setup += ("### Setup Project Virtual Environment**\n"
                 "This environment can be re-created in serveral ways. The project provides both a 'environment.yml' and 'requirements.txt' files allowing for **conda** and **pip** installations of the **Python** environment.\n"
                 
-                f"**{get_version("PYTHON")}** is needed for a proper pip installation\n"
+                f"**{py_version}** is needed for a proper pip installation\n"
 
                 )
         if programming_language.lower() =="r":
-            setup += f"The 'environment.yml' includes also the {get_version(programming_language)}"
+
+            setup += f"The 'environment.yml' includes also the {software_version}"
 
 
         setup += "**Script Installation**\n"
         if programming_language.lower() not in ["none", "python"]:
-            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for both **{get_version("PYTHON")}** and **get_version(programming_language)**\n"
+            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for both **{py_version}** and **{software_version}**\n"
         elif programming_language.lower() == "none":
-            setup +=  f"The function below installs all **setup** (./setup) dependencies for **{get_version("PYTHON")}** dependencies.\n"
+            setup +=  f"The function below installs all **setup** (./setup) dependencies for **{py_version}** dependencies.\n"
         else: 
-            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for **{get_version("PYTHON")}** dependencies.\n"
+            setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for **{py_version}** dependencies.\n"
                                 
         setup += ("```\n"
                 "python setup/run_setup.py \n"
@@ -104,8 +107,6 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         
         usage += "```\n"
         if programming_language.lower() != "none":
-            
-            software_version = get_version(programming_language)
             usage += (f"### {software_version}\n"
             "The main 'project code' can be executed by running the function below.\n"
             ) 
