@@ -1,7 +1,39 @@
 #!/bin/bash
 
-# Path to .env file (same as the one used in activate.sh)
-envFile=".env"
+
+# Allow custom .env file path as first argument
+envFile="${1:-.env}"
+
+reset_env() {
+    unset CONDA_ENV_PATH
+    unset CONDA
+    unset VENV_ENV_PATH
+    unset "$CONDA_ENV_PATH"
+    unset "$CONDA"
+    unset "$VENV_ENV_PATH"
+    # Optionally reset other environment variables like PATH if necessary
+    export PATH=$(echo $PATH | sed -e 's/:\/.*conda.*//g' -e 's/:\/.*venv.*//g') # Removes paths related to conda or venv
+}
+
+activate_env() {
+    if [ -f "$envFile" ]; then
+        while IFS='=' read -r key value; do
+            if [[ ! "$key" =~ ^[[:space:]]*# && -n "$key" ]]; then
+                key=$(echo "$key" | xargs)
+                value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
+                if [[ "$key" == "VENV_ENV_PATH" || "$key" == "CONDA_ENV_PATH" ]]; then
+                    abs_value=$(realpath "$value")
+                    export "$key"="$abs_value"
+                    echo "Loaded $key as absolute path: $abs_value"
+                fi
+            fi
+        done < "$envFile"
+    else
+        echo "Warning: $envFile not found"
+    fi
+}
+
+activate_env
 
 # Deactivate Conda environment if it was activated
 if [ -n "$CONDA_ENV_PATH" ]; then
@@ -14,6 +46,8 @@ if [ -n "$VENV_ENV_PATH" ]; then
     echo "Deactivating virtual environment"
     deactivate
 fi
+
+reset_env 
 
 # Remove the environment variables and PATH additions from .env
 if [ -f "$envFile" ]; then
@@ -43,6 +77,7 @@ if [ -f "$envFile" ]; then
 else
     echo "Warning: $envFile not found"
 fi
+
 
 # Reset prompt
 export PS1="\$ "

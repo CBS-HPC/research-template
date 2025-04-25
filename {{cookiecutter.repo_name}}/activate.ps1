@@ -38,7 +38,7 @@ function Verify-EnvPaths {
                 # Check if it looks like a path
                 if ($value -match '^(?:\.\\|\.\/|\.\.\\|\.\.\/|\/|[a-zA-Z]:\\)') {
                     if (-not (Test-Path $value)) {
-                        Write-Host "❌ Missing path for $key : $value" -ForegroundColor Red
+                        Write-Host "Missing path for $key : $value" -ForegroundColor Red
                         $missingPaths = $true 
                     }
                 }
@@ -47,9 +47,9 @@ function Verify-EnvPaths {
 
         if ($missingPaths) {
             Write-Host ""
-            Write-Host "⚠️  Some paths are missing. Run 'install-dependencies' to re-install the project." -ForegroundColor Yellow
+            Write-Host "Some paths are missing. Run 'install-dependencies' to re-install the project." -ForegroundColor Yellow
         } else {
-            Write-Host "✅ All required paths exist." -ForegroundColor Green
+            Write-Host "All required paths exist." -ForegroundColor Green
         }
     } else {
         Write-Warning "$envFile not found"
@@ -65,7 +65,6 @@ if ($condaEnvPath -and $condaPath) {
     Write-Output "Activating Conda environment at $condaEnvPath"
     $rawCondaPath = Resolve-Path -Path $condaPath
 
-
     if ($rawCondaPath) {
         # Normalize and resolve the full path
         $resolvedCondaPath = Resolve-Path -Path $rawCondaPath | Select-Object -ExpandProperty Path
@@ -74,11 +73,9 @@ if ($condaEnvPath -and $condaPath) {
         if ($resolvedCondaPath -like "*\Library\bin") {
             # Move up two levels to reach root Conda directory
             $condaPath = Split-Path (Split-Path $resolvedCondaPath)
-            Write-Warning "⚠️  CONDA path appears to be inside 'Library\\bin'. Adjusting to root path: $condaPath"
         } else {
             $condaPath = $resolvedCondaPath
         }
-    
     }
 
     & "$condaPath\shell\condabin\conda-hook.ps1"
@@ -98,21 +95,15 @@ if (Test-Path $envFile) {
             $value = $matches[2].Trim('"')
 
             # Skip variables already handled
-            if ($key -notin @("VENV_ENV_PATH", "CONDA_ENV_PATH", "CONDA")) {
+            if ($key -notin @("VENV_ENV_PATH", "CONDA_ENV_PATH", "CONDA","PYTHON")) {
                 if (Test-Path $value) {
-                    # Add path to PATH
                     $resolved = Resolve-Path -Path $value
                     $env:PATH = "$resolved;$env:PATH"
                     Write-Host "Added $key to PATH: $resolved"
-                } else {
-                    # Set regular environment variable
-                    Set-Item -Path "Env:$key" -Value $value
-                    Write-Host "Loaded variable: $key"
                 }
             }
         }
     }
-    Write-Output "Remaining environment variables loaded from .env"
 } else {
     Write-Warning ".env file not found"
 }

@@ -3,14 +3,24 @@
 # Allow custom .env file path as first argument
 envFile="${1:-.env}"
 
+reset_env() {
+    unset CONDA_ENV_PATH
+    unset CONDA
+    unset VENV_ENV_PATH
+    unset "$CONDA_ENV_PATH"
+    unset "$CONDA"
+    unset "$VENV_ENV_PATH"
+    # Optionally reset other environment variables like PATH if necessary
+    export PATH=$(echo $PATH | sed -e 's/:\/.*conda.*//g' -e 's/:\/.*venv.*//g') # Removes paths related to conda or venv
+}
+
 activate_env() {
     if [ -f "$envFile" ]; then
         while IFS='=' read -r key value; do
             if [[ ! "$key" =~ ^[[:space:]]*# && -n "$key" ]]; then
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
-
-                if [[ "$key" == "VENV_ENV_PATH" || "$key" == "CONDA_ENV_PATH" || "$key" == "CONDA" ]]; then
+                if [[ "$key" == "VENV_ENV_PATH" || "$key" == "CONDA_ENV_PATH" ]]; then
                     abs_value=$(realpath "$value")
                     export "$key"="$abs_value"
                     echo "Loaded $key as absolute path: $abs_value"
@@ -29,14 +39,7 @@ load_env() {
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
-                # Skip core env activation vars
-                if [[ "$key" != "VENV_ENV_PATH" && "$key" != "CONDA_ENV_PATH" && "$key" != "CONDA" ]]; then
-
-                    # Skip setting PYTHON if VENV or CONDA are active
-                    if [[ "$key" == "PYTHON" || "$key" == "GH_TOKEN" || "$key" == "GL_TOKEN" ]]; then
-                        continue
-                    fi
-
+                if [[ "$key" != "VENV_ENV_PATH" && "$key" != "CONDA_ENV_PATH" && "$key" != "CONDA" && "$key" != "PYTHON" ]]; then
                     if [ -d "$value" ]; then
                         abs_path=$(realpath "$value")
                         export PATH="$abs_path:$PATH"
@@ -46,9 +49,6 @@ load_env() {
                         bin_dir=$(dirname "$abs_path")
                         export PATH="$bin_dir:$PATH"
                         echo "Added $key (executable) to PATH ($bin_dir)"
-                    else
-                        export "$key"="$value"
-                        echo "Loaded variable: $key=$value"
                     fi
                 fi
             fi
@@ -88,7 +88,8 @@ verify_env_paths() {
     fi
 }
 
-# Load VENV and CONDA variables
+reset_env
+
 activate_env
 
 # Activate Conda environment
@@ -110,6 +111,7 @@ load_env
 # Set prompt
 repo_name=$(basename "$PWD")
 env_label=$(basename "$VENV_ENV_PATH" 2>/dev/null || basename "$CONDA_ENV_PATH" 2>/dev/null)
+
 export PS1="[$repo_name:$env_label] \$ "
 
 # check missing paths
