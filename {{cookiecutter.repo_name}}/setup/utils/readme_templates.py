@@ -60,9 +60,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         return ignore_list
 
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
+       
         def set_usage(programming_language,software_version):
-            usage = ("## Project Activation \n"
-                    "Project paths, environment variables, and virtual environments can be **activated** and **deactivated as shown below. These configurations are found in the '.env' file. \n"
+            usage = ("Project paths, environment variables, and virtual environments can be **activated** and **deactivated as shown below. These configurations are found in the '.env' file. \n"
                     "**The '.env' file is excluded from this repository. To replicate this repository, please refer to the 'Installation' section below.**\n"
                     )
 
@@ -107,36 +107,54 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             setup = ""
 
             if repo_name and repo_user:
-                setup += "### Clone Project Repository\n"
+                setup += "### Clone the Project Repository\n"
                 "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
+                "Clone the repository using the following command:\n"
                 setup += "```\n"
                 if code_repo.lower() in ["github","gitlab"]:
                     web_repo = code_repo.lower()
                     setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
                             "```\n")
-            setup += ("### Navigate to Directory\n"
+            setup += ("### Navigate to the Project Directory\n"
+                    "Change into the project directory:\n"  
                     "```\n"
                     f"cd {repo_name}\n"
                     "```\n")
 
-            setup += ("### Setup Project Virtual Environment\n"
-                    "The needed software environment can be re-installed in serveral ways. The project provides both a **'environment.yml'** and **'requirements.txt'** files allowing for **conda** and **pip** installations of the **Python** environment.\n"
+            setup += ("### Setting Up the Project's Virtual Environment\n"
+                      
+                    "There are multiple ways to set up the environment. The project provides both `Conda`, `pip` or `./setup/run_setup.py` methods for installation.\n"
+
+                    "None of the methods below will be able to install supported programming softwares: **SAS**, **Stata** or **Matlab**."
                     
-                    f"**{py_version}** is needed for a proper pip installation\n"
+                    "**R** installation is only supported using `Conda` or `./setup/run_setup.py`")
 
+
+            setup += ("**Conda Setup**\n"
+                    "You can use the `environment.yml` file to install the required dependencies with Conda:\n"
+                    "```\n"
+                    "conda env create -f environment.yml\n"
+                    "```\n"
                     )
+            
             if programming_language.lower() =="r":
+                setup += f"The `environment.yml` will also install **{software_version}**"
 
-                setup += f"The 'environment.yml' includes also the {software_version}"
+            setup += ("**Pip Setup**\n"
+                    f"Alternatively, if you prefer pip, install the dependencies using the `requirements.txt` file with {py_version}:\n"
+                    "```\n"
+                    "pip install -r requirements.txt\n"
+                    "```\n"
+                    )
+            
+            setup += "**`./setup/run_setup.py` Installation**\n"
 
-
-            setup += "**Script Installation**\n"
             if programming_language.lower() not in ["none", "python"]:
-                setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for both **{py_version}** and **{software_version}**\n"
+                setup +=  f"To install all the setup and project dependencies (**{py_version}** and **{software_version}**), run the following script:\n"
             elif programming_language.lower() == "none":
-                setup +=  f"The function below installs all **setup** (./setup) dependencies for **{py_version}** dependencies.\n"
-            else: 
-                setup +=  f"The function below installs all **setup** (./setup) and **project code** (./src) dependencies for **{py_version}** dependencies.\n"
+                setup +=  f"To install all the setup dependencies (**{py_version}**), run the following script:\n"
+            else:
+                setup +=  f"To install all the setup and project dependencies (**{py_version}**), run the following script:\n"
                                     
             setup += ("```\n"
                     "python setup/run_setup.py \n"
@@ -168,9 +186,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     update_file_descriptions("./README.md",programming_language, json_file=file_descriptions)
     generate_readme(project_name, project_description,install,usage,contact,"./README.md")
 
-    ignore_list = read_treeignore()
+    #ignore_list = read_treeignore()
 
-    #ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__"]
+    ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
     create_tree("./README.md",ignore_list ,file_descriptions)
     
 def generate_readme(project_name, project_description,install,usage,contact,readme_file = None):
@@ -197,12 +215,21 @@ def generate_readme(project_name, project_description,install,usage,contact,read
 
 {project_description}
 
+
+
 ## Contact Information
 {contact}
+
+## Environment Setup
+
+**The software below were installed on the follow operation system: {platform.platform() }**
 
 {usage}
 
 ## Installation
+
+Follow these steps to set up the project on your local machine:
+
 {install}
 
 ## Project Tree
