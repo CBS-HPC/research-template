@@ -68,6 +68,12 @@ def delete_files(file_paths:list=[]):
 
     return results
 
+def make_r_safe_path(path: str) -> str:
+    """Convert a file path to R-safe format (slashes + quotes)."""
+    path = os.path.abspath(path)
+    path_fixed = path.replace("\\", "/")  # 1. Fix slashes
+    return f"\"{path_fixed}\""             # 2. Wrap in quotes
+
 @ensure_correct_kernel
 def main():
     
@@ -105,11 +111,20 @@ def main():
         push_msg = "requirements.txt created"
 
     if programming_language.lower() == "r":
-        # Call the setup script using the function
-        r_script_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R"))
-        project_root = os.path.abspath(str(pathlib.Path(__file__).resolve().parent.parent.parent))
-        output = run_script("r", f'{r_script_path} "{project_root}"')
+
+           # Call the setup script using the function
+        r_script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R")))
+        project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
+        
+
+        cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root]
+        
+        print(r_script_path)
+        print(project_root)
+        
+        output = run_script("r", cmd)
         print(output)
+
    
 
     update_requirements(dependencies_files = [file], sections= ["setup"])
