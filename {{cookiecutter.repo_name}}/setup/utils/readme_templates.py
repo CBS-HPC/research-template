@@ -12,7 +12,8 @@ import platform
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils import *
-#from utils.general_tools import *
+
+from .general_tools import *
 
 pip_installer(required_libraries =  ['pyyaml','requests'])
 
@@ -176,7 +177,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             
             return contact
         
-        py_version = get_version("PYTHON")
+        py_version = get_version("python")
         software_version = get_version(programming_language)
 
         setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
@@ -231,7 +232,9 @@ def generate_readme(project_name, project_description,install,usage,contact,read
 
 ## Environment Setup
 
-**The software below were installed on the follow operation system: {platform.platform() }**
+The project software below were installed on the follow operation system: **{platform.platform() }**
+
+The project setup 
 
 {usage}
 
