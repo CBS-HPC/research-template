@@ -39,8 +39,16 @@ def main():
         activate_to_delete = "./activate.ps1"
         deactivate_to_delete = "./deactivate.ps1"
 
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+
+    files_to_remove = ["./setup/project_setup.py","./run_setup.sh","./run_setup.ps1","./setup/intro.py","./setup/outro.py",activate_to_delete,deactivate_to_delete]
+
+    if programming_language.lower() != 'r':
+        files_to_remove.append("./setup/renv_setup.R")
+
+
     # Deleting Setup scripts
-    delete_files(["./setup/project_setup.py","./run_setup.sh","./run_setup.ps1","./setup/intro.py","./setup/outro.py",activate_to_delete,deactivate_to_delete])
+    delete_files(files_to_remove
 
     # Updating README
     creating_readme()

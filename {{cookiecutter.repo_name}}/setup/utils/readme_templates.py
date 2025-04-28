@@ -62,14 +62,10 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
        
         def set_usage(programming_language,software_version):
-            usage = ("To set up the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file. \n"
-                    "⚠️ The `.env` file is excluded from this repository for security reasons. To replicate this environment, please follow the instructions in the **Installation** section.\n"
-                    )
 
-        
             os_type = platform.system().lower()
             if os_type == "windows":
-                usage += (
+                usage = (
                     "\n**Activate on Windows (PowerShell)**\n\n"
                     "```powershell\n"
                     "./activate.ps1\n"
@@ -81,7 +77,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
                 )
 
             elif os_type in ("darwin", "linux"):
-                usage += (
+                usage = (
                     "\n**Activate on Linux/macOS (bash)** \n\n"
                     "```bash\n"
                     "source activate.sh\n"
@@ -93,9 +89,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
                 )
             
             if programming_language.lower() != "none":
-                usage += (f"### {software_version}\n"
-                "The main 'project code' can be executed by running the function below.\n"
-                ) 
+                usage += (f"### Run Project Code\n"
+                        f"The project code is written in **{software_version}**.\n\n"
+                        "You can execute the main project script by running the following command:\n")
 
                 usage += "```\n"
                 file_extension = ext_map.get(programming_language.lower(), "txt")
@@ -121,49 +117,51 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
                     f"cd {repo_name}\n"
                     "```\n")
 
-            setup += f"""This project supports multiple methods for setting up the python environment:
+            setup += "### Software Installation\n"
+            setup += "The primary method for setting up this project's environment is by using the provided setup script:\n\n"
+            setup += "#### Recommended: Using the Custom Setup Script\n"
 
-- Using **Conda** with `environment.yml`
-- Using **pip** with `requirements.txt`
-- Using the custom script: `./setup/run_setup.py`
+            if programming_language.lower() == "r":
+                setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies:"
+            else: 
+                setup += f"Run the following command to automatically install all {py_version} dependencies:"
 
-> **Note:**  
-> These methods do **not** install external proprietary software such as **SAS**, **Stata**, or **Matlab**.  
-> Installation of **R** is only supported via **Conda** or the `./setup/run_setup.py` script.
-
-
-"""
-
-        
-            setup += ("\n**Conda Setup**\n"
-                    "You can use the `environment.yml` file to install the required dependencies with Conda:\n"
-                    "```\n"
-                    "conda env create -f environment.yml\n"
-                    "```\n"
-                    )
             
-            if programming_language.lower() =="r":
-                setup += f"The `environment.yml` will also install **{software_version}**"
+            setup += ( "```\n"
+                    "python setup/run_setup.pyn"
+                    "```\n")    
 
-            setup += ("\n**Pip Setup**\n"
-                    f"Alternatively, if you prefer pip, install the dependencies using the `requirements.txt` file with {py_version}:\n"
-                    "```\n"
-                    "pip install -r requirements.txt\n"
-                    "```\n"
-                    )
+            if programming_language.lower() in ["matlab","stata","sas"]:
+                setup +=f"These methods do **not** install external the proprietary software **{software_version}**."
+
+            setup += "#### Alternative Manual Installation Methods\n\n"
+            setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
+
+            setup += "**Conda Setup**\n\n"
+            setup += "Install the required dependencies using Conda and the provided `environment.yml` file:\n"
+            setup += "```\n"
+            setup += "conda env create -f environment.yml\n"
+            setup += "```\n\n"
+
+            if programming_language.lower() == "r":
+                setup += f"> ⚡ Note: The `environment.yml` file will also install **{software_version}** alongside Python packages.\n\n"
+
+            setup += "**Pip Setup**\n\n"
+            setup += "Alternatively, you can install the Python dependencies using `requirements.txt`:\n"
+            setup += "```\n"
+            setup += "pip install -r requirements.txt\n"
+            setup += "```\n\n"
             
-            setup += "**\n`./setup/run_setup.py` Installation**\n"
+            if programming_language.lower() == "r":
+                setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
+                setup += "**Installing R Dependencies with renv**\n\n"
+                setup += f"The project's R environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`).\n\n"
+                setup += "To install the R environment:\n"
+                setup += "```\n"
+                setup += "Rscript -e \"renv::restore()\"\n"
+                setup += "```\n\n"
+                setup += f"> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.\n\n"
 
-            if programming_language.lower() not in ["none", "python"]:
-                setup +=  f"To install all the setup and project dependencies (**{py_version}** and **{software_version}**), run the following script:\n"
-            elif programming_language.lower() == "none":
-                setup +=  f"To install all the setup dependencies (**{py_version}**), run the following script:\n"
-            else:
-                setup +=  f"To install all the setup and project dependencies (**{py_version}**), run the following script:\n"
-                                    
-            setup += ("```\n"
-                    "python setup/run_setup.py \n"
-                    "```\n")
             return setup
         
         def set_contact(authors, orcids, emails):
@@ -184,8 +182,6 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
         usage = set_usage(programming_language,software_version)
         contact = set_contact(authors, orcids, emails)
             
-
-        
         return setup,usage,contact
     
     install, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails,programming_language)
@@ -232,13 +228,26 @@ def generate_readme(project_name, project_description,programming_language,insta
 ## Contact Information
 {contact}
 
+## System and Environment Information
+
+The project was developed and tested on the following operating system:
+
+- **Operating System**: {platform.platform()}
+
+The environments were set up using:
+
+- **Project setup scripts** (`./setup`) installed with **{py_version}**
+- **Project code** (`./src`) installed with **{software_version}**
+
 ## Environment Setup
 
-The project was conducted on the follow operation system: **{platform.platform() }**
 
-The project setup (`./setup`) was installed using **{py_version}**
+### Project Configuration
 
-The project code (`./src`) was installed using **{software_version}** 
+To configure the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file.
+
+> ⚠️ The `.env` file is excluded from this repository for security reasons. To replicate the environment, please follow the instructions in the [Installation](#installation) section.
+
 
 {usage}
 
