@@ -83,11 +83,11 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             elif os_type in ("darwin", "linux"):
                 usage += (
                     "\n**Activate on Linux/macOS (bash)** \n\n"
-                    "```\n"
+                    "```bash\n"
                     "source activate.sh\n"
                     "```\n"
                     "\n**Deactivate on Linux/macOS (bash)** \n\n"
-                    "```\n"
+                    "```bash\n"
                     "source deactivate.sh\n"
                     "```\n"
                 )
@@ -135,7 +135,6 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 """
 
         
-
             setup += ("\n**Conda Setup**\n"
                     "You can use the `environment.yml` file to install the required dependencies with Conda:\n"
                     "```\n"

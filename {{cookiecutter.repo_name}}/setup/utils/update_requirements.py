@@ -102,8 +102,8 @@ def write_to_readme(readme_file,software_requirements_section):
             file.write(header)
 
     try:
-        with open(readme_file, "r") as f:
-            readme_content = f.read()
+        with open(readme_file, "r", encoding="utf-8") as file:
+            readme_content = file.read()
 
         # Check if the "### Software Requirements" section exists
         if "### Software Requirements" in readme_content:
@@ -123,8 +123,8 @@ def write_to_readme(readme_file,software_requirements_section):
     updated_content = updated_content.replace("---## Software Requirements","")
 
     # Write the updated content to the README file
-    with open(readme_file, "w") as f:
-        f.write(updated_content.strip())
+    with open(readme_file, "w",encoding="utf-8") as file:
+        file.write(updated_content.strip())
 
     print(f"{readme_file} successfully updated.")
 
