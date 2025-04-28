@@ -84,7 +84,7 @@ def main():
     install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
     requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
     
-    
+
     create_requirements_txt(requirements_file)
     if requirements_file == "requirements.txt": 
         create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
@@ -105,10 +105,10 @@ def main():
         push_msg = "requirements.txt created"
 
     if programming_language.lower() == "r":
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R"))
-        print("Hello")
         # Call the setup script using the function
-        output = run_script("r", str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R")))
+        r_script_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R"))
+        project_root = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        output = run_script("r", f"{r_script_path} {project_root}")
         print(output)
    
 

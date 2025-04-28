@@ -1,6 +1,8 @@
 # setup/renv_setup.R
 
-# Helper for safe NULL handling
+# ----------- Helper Functions ------------
+
+# Safe null operator
 `%||%` <- function(x, y) if (!is.null(x)) x else y
 
 # Install and load renv
@@ -12,23 +14,30 @@ install_renv <- function() {
   message("renv installed and loaded.")
 }
 
-# Find the project root one folder up from the script location
-get_project_root <- function() {
-  # Check if RStudio is running
-  if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
-    # RStudio session: get active document path
+# Detect project root based on script file path
+get_project_root <- function(file_path = NULL) {
+  if (!is.null(file_path)) {
+    script_path <- normalizePath(dirname(file_path))
+  } else if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
     script_path <- normalizePath(dirname(rstudioapi::getActiveDocumentContext()$path))
   } else {
-    # Non-RStudio session (e.g., running from terminal or Python)
-    script_path <- normalizePath(dirname(sys.frames()[[1]]$ofile))
+    args <- commandArgs(trailingOnly = FALSE)
+    file_arg <- grep("--file=", args, value = TRUE)
+    if (length(file_arg) > 0) {
+      script_path <- normalizePath(dirname(sub("--file=", "", file_arg)))
+    } else {
+      script_path <- normalizePath(getwd())
+    }
   }
+  
   project_root <- normalizePath(file.path(script_path, ".."))
+  message(sprintf("Detected project root: %s", project_root))
   return(project_root)
 }
 
 # Initialize renv environment
-renv_init <- function() {
-  root <- get_project_root()
+renv_init <- function(file_path = NULL) {
+  root <- get_project_root(file_path)
   lockfile_path <- file.path(root, "renv.lock")
   
   if (!file.exists(lockfile_path)) {
@@ -40,18 +49,18 @@ renv_init <- function() {
   }
 }
 
-# Snapshot environment state
-renv_snapshot <- function() {
-  root <- get_project_root()
+# Snapshot environment
+renv_snapshot <- function(file_path = NULL) {
+  root <- get_project_root(file_path)
   lockfile_path <- file.path(root, "renv.lock")
   
   renv::snapshot(lockfile = lockfile_path)
   message("Environment snapshot updated.")
 }
 
-# Restore environment from lockfile
-renv_restore <- function(check_r_version = TRUE) {
-  root <- get_project_root()
+# Restore environment
+renv_restore <- function(file_path = NULL, check_r_version = TRUE) {
+  root <- get_project_root(file_path)
   lockfile_path <- file.path(root, "renv.lock")
   
   if (!file.exists(lockfile_path)) {
@@ -77,8 +86,21 @@ renv_restore <- function(check_r_version = TRUE) {
   message("Environment restored from project root lockfile.")
 }
 
-# ---- Example usage ----
+# ----------- Main Script ------------
+
+# Parse file_path argument
+args <- commandArgs(trailingOnly = TRUE)
+file_path <- NULL
+
+if (length(args) > 0) {
+  file_path <- args[1]
+  message(sprintf("Input script path received: %s", file_path))
+} else {
+  message("No file_path argument provided. Falling back to auto-detection.")
+}
+
+# Install renv and perform actions
 install_renv()
-renv_init()
-renv_snapshot()
-# renv_restore()
+renv_init(file_path)
+renv_snapshot(file_path)
+# renv_restore(file_path)

@@ -136,7 +136,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
             setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
 
-            setup += "#### Install with Conda**\n"
+            setup += "#### Install with Conda:\n"
             setup += "Install the required dependencies using Conda and the provided `environment.yml` file:\n"
             setup += "```\n"
             setup += "conda env create -f environment.yml\n"
@@ -145,7 +145,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             if programming_language.lower() == "r":
                 setup += f"> ⚡ Note: The `environment.yml` file will also install **{software_version}** alongside Python packages.\n\n"
 
-            setup += "#### Install using Pip\n"
+            setup += "#### Install using Pip:\n"
             setup += "Alternatively, you can install the Python dependencies using `requirements.txt`:\n"
             setup += "```\n"
             setup += "pip install -r requirements.txt\n"
@@ -154,9 +154,8 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             if programming_language.lower() == "r":
                 setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
                 
-                setup += "### Install R dependencies using renv**\n\n"
-                setup += f"The project's R environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`).\n\n"
-                setup += f"#### To install the {software_version}** environment:\n"
+                setup += "#### Install R dependencies using renv:\n\n"
+                setup += f"The project's R environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
                 setup += "```\n"
                 setup += "Rscript -e \"renv::restore()\"\n"
                 setup += "```\n\n"
