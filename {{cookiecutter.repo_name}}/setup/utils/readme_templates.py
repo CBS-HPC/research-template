@@ -62,8 +62,8 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
        
         def set_usage(programming_language,software_version):
-            usage = ("Project paths, environment variables, and virtual environments can be **activated** and **deactivated as shown below. These configurations are found in the '.env' file. \n"
-                    "**The '.env' file is excluded from this repository. To replicate this repository, please refer to the 'Installation' section below.**\n"
+            usage = ("To set up the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file. \n"
+                    "⚠️ The `.env` file is excluded from this repository for security reasons. To replicate this environment, please follow the instructions in the **Installation** section.\n"
                     )
 
         
@@ -71,12 +71,12 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             if os_type == "windows":
                 usage += (
                     "\n**Activate on Windows (PowerShell)**\n\n"
-                    "```\n"
-                    "activate.ps1\n"
+                    "```powershell\n"
+                    "./activate.ps1\n"
                     "```\n"
                     "\n**Deactivate on Windows (PowerShell)**\n\n"
-                    "```\n"
-                    "deactivate.ps1\n"
+                    "```powershell\n"
+                    "./deactivate.ps1\n"
                     "```\n"
                 )
 
@@ -121,16 +121,22 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
                     f"cd {repo_name}\n"
                     "```\n")
 
-            setup += ("### Setting Up the Project's Virtual Environment\n"
-                      
-                    "There are multiple ways to set up the environment. The project provides both `Conda`, `pip` or `./setup/run_setup.py` methods for installation.\n"
+            setup += f"""This project supports multiple methods for setting up the python environment:
 
-                    "None of the methods below will be able to install supported programming softwares: **SAS**, **Stata** or **Matlab**."
-                    
-                    "**R** installation is only supported using `Conda` or `./setup/run_setup.py`")
+- Using **Conda** with `environment.yml`
+- Using **pip** with `requirements.txt`
+- Using the custom script: `./setup/run_setup.py`
+
+> **Note:**  
+> These methods do **not** install external proprietary software such as **SAS**, **Stata**, or **Matlab**.  
+> Installation of **R** is only supported via **Conda** or the `./setup/run_setup.py` script.
 
 
-            setup += ("**Conda Setup**\n"
+"""
+
+        
+
+            setup += ("\n**Conda Setup**\n"
                     "You can use the `environment.yml` file to install the required dependencies with Conda:\n"
                     "```\n"
                     "conda env create -f environment.yml\n"
@@ -140,14 +146,14 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             if programming_language.lower() =="r":
                 setup += f"The `environment.yml` will also install **{software_version}**"
 
-            setup += ("**Pip Setup**\n"
+            setup += ("\n**Pip Setup**\n"
                     f"Alternatively, if you prefer pip, install the dependencies using the `requirements.txt` file with {py_version}:\n"
                     "```\n"
                     "pip install -r requirements.txt\n"
                     "```\n"
                     )
             
-            setup += "**`./setup/run_setup.py` Installation**\n"
+            setup += "**\n`./setup/run_setup.py` Installation**\n"
 
             if programming_language.lower() not in ["none", "python"]:
                 setup +=  f"To install all the setup and project dependencies (**{py_version}** and **{software_version}**), run the following script:\n"
