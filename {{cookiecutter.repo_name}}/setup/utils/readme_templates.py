@@ -122,22 +122,21 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             setup += "#### Recommended: Using the Custom Setup Script\n"
 
             if programming_language.lower() == "r":
-                setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies:"
+                setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies::\n\n"
             else: 
-                setup += f"Run the following command to automatically install all {py_version} dependencies:"
+                setup += f"Run the following command to automatically install all {py_version} dependencies::\n\n"
 
             
-            setup += ( "```\n"
-                    "python setup/run_setup.pyn"
+            setup += ("```\n"
+                    "python setup/run_setup.pyn\n"
                     "```\n")    
 
             if programming_language.lower() in ["matlab","stata","sas"]:
                 setup +=f"These methods do **not** install external the proprietary software **{software_version}**."
 
-            setup += "#### Alternative Manual Installation Methods\n\n"
             setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
 
-            setup += "**Conda Setup**\n\n"
+            setup += "#### Install with Conda**\n"
             setup += "Install the required dependencies using Conda and the provided `environment.yml` file:\n"
             setup += "```\n"
             setup += "conda env create -f environment.yml\n"
@@ -146,7 +145,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             if programming_language.lower() == "r":
                 setup += f"> ⚡ Note: The `environment.yml` file will also install **{software_version}** alongside Python packages.\n\n"
 
-            setup += "**Pip Setup**\n\n"
+            setup += "#### Install using Pip\n"
             setup += "Alternatively, you can install the Python dependencies using `requirements.txt`:\n"
             setup += "```\n"
             setup += "pip install -r requirements.txt\n"
@@ -154,9 +153,10 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             
             if programming_language.lower() == "r":
                 setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
-                setup += "**Installing R Dependencies with renv**\n\n"
+                
+                setup += "### Install R dependencies using renv**\n\n"
                 setup += f"The project's R environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`).\n\n"
-                setup += "To install the R environment:\n"
+                setup += f"#### To install the {software_version}** environment:\n"
                 setup += "```\n"
                 setup += "Rscript -e \"renv::restore()\"\n"
                 setup += "```\n\n"

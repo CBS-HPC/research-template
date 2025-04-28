@@ -1,5 +1,9 @@
 # setup/renv_setup.R
 
+# Helper for safe NULL handling
+`%||%` <- function(x, y) if (!is.null(x)) x else y
+
+# Install and load renv
 install_renv <- function() {
   if (!requireNamespace("renv", quietly = TRUE)) {
     install.packages("renv")
@@ -8,13 +12,21 @@ install_renv <- function() {
   message("renv installed and loaded.")
 }
 
+# Find the project root one folder up from the script location
 get_project_root <- function() {
-  # Assumes this script is inside "setup/" under the project root
-  script_path <- normalizePath(dirname(sys.frame(1)$ofile %||% rstudioapi::getActiveDocumentContext()$path))
+  # Check if RStudio is running
+  if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+    # RStudio session: get active document path
+    script_path <- normalizePath(dirname(rstudioapi::getActiveDocumentContext()$path))
+  } else {
+    # Non-RStudio session (e.g., running from terminal or Python)
+    script_path <- normalizePath(dirname(sys.frames()[[1]]$ofile))
+  }
   project_root <- normalizePath(file.path(script_path, ".."))
   return(project_root)
 }
 
+# Initialize renv environment
 renv_init <- function() {
   root <- get_project_root()
   lockfile_path <- file.path(root, "renv.lock")
@@ -28,6 +40,7 @@ renv_init <- function() {
   }
 }
 
+# Snapshot environment state
 renv_snapshot <- function() {
   root <- get_project_root()
   lockfile_path <- file.path(root, "renv.lock")
@@ -36,6 +49,7 @@ renv_snapshot <- function() {
   message("Environment snapshot updated.")
 }
 
+# Restore environment from lockfile
 renv_restore <- function(check_r_version = TRUE) {
   root <- get_project_root()
   lockfile_path <- file.path(root, "renv.lock")
@@ -64,9 +78,7 @@ renv_restore <- function(check_r_version = TRUE) {
 }
 
 # ---- Example usage ----
-
 install_renv()
-# Uncomment what you want:
 renv_init()
 renv_snapshot()
 # renv_restore()
