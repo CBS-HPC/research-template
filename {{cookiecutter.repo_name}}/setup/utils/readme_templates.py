@@ -122,9 +122,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
             setup += "#### Recommended: Using the Custom Setup Script *(currently under development)*\n"
 
             if programming_language.lower() == "r":
-                setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies::\n\n"
+                setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies:\n\n"
             else: 
-                setup += f"Run the following command to automatically install all {py_version} dependencies::\n\n"
+                setup += f"Run the following command to automatically install all {py_version} dependencies:\n\n"
             setup += ("```\n"
                     "python setup/run_setup.pyn\n"
                     "```\n")    
