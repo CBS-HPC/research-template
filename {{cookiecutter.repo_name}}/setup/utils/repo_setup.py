@@ -108,7 +108,7 @@ def main():
         # Call the setup script using the function
         r_script_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R"))
         project_root = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-        output = run_script("r", f"{r_script_path} "{project_root}"")
+        output = run_script("r", f'{r_script_path} "{project_root}"')
         print(output)
    
 
