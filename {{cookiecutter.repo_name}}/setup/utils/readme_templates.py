@@ -119,23 +119,19 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
             setup += "### Software Installation\n"
             setup += "The primary method for setting up this project's environment is by using the provided setup script:\n\n"
-            setup += "#### Recommended: Using the Custom Setup Script\n"
+            setup += "#### Recommended: Using the Custom Setup Script *(currently under development)*\n"
 
             if programming_language.lower() == "r":
                 setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies::\n\n"
             else: 
                 setup += f"Run the following command to automatically install all {py_version} dependencies::\n\n"
-
-            
             setup += ("```\n"
                     "python setup/run_setup.pyn\n"
                     "```\n")    
-
             if programming_language.lower() in ["matlab","stata","sas"]:
                 setup +=f"These methods do **not** install external the proprietary software **{software_version}**."
-
             setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
-
+            
             setup += "#### Install with Conda:\n"
             setup += "Install the required dependencies using Conda and the provided `environment.yml` file:\n"
             setup += "```\n"
