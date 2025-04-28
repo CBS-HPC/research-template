@@ -33,7 +33,6 @@ ext_map = {
 # README.md
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None):
 
-
     def read_treeignore(file_path=".treeignore"):
         """
         Reads the .treeignore file and returns a list of ignored paths.
@@ -188,7 +187,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json"))
 
      # Create and update README and Project Tree:
-    update_file_descriptions("./README.md",programming_language, json_file=file_descriptions)
+    update_file_descriptions(programming_language,"./README.md", json_file=file_descriptions)
     generate_readme(project_name, project_description,install,usage,contact,"./README.md")
 
     #ignore_list = read_treeignore()
@@ -237,8 +236,9 @@ Follow these steps to set up the project on your local machine:
 
 {install}
 
-## Project Tree
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the FILE_DESCRIPTIONS.json file.
+## Project Directory Structure
+
+The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `setup/FILE_DESCRIPTIONS.json` file.
 ```
 
 ```
@@ -341,24 +341,21 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
     # Check for "Project Tree" section
     start_index = None
     for i, line in enumerate(readme_content):
-        #if "Project Tree" in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
-        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the FILE_DESCRIPTIONS.json file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
+        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `setup/FILE_DESCRIPTIONS.json` file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
             start_index = i + 2 
             break
 
     if start_index is None:
-        print("No 'Project Tree' section found in the README. No changes made.")
+        print("No 'Project Directory Structure' section found in the README. No changes made.")
         return
 
     # Find the end of the "Project Tree" section
     end_index = start_index
     while end_index < len(readme_content) and readme_content[end_index].strip() != "```":
-    #while end_index < len(readme_content) and readme_content[end_index].strip() != "------------":
         end_index += 1
 
     if end_index >= len(readme_content):
-        print("No closing line ('```') found for 'Project Tree'. No changes made.")
-        #print("No closing line ('------------') found for 'Project Tree'. No changes made.")
+        print("No closing line ('```') found for 'Project Directory Structure'. No changes made.")
         return
 
     # Generate the folder tree structure
@@ -375,9 +372,9 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
     with open(readme_file, "w", encoding="utf-8") as file:
         file.writelines(updated_content)
 
-    print(f"'Project Tree' section updated in '{readme_file}'.")
+    print(f"'Project Directory Structure' section updated in '{readme_file}'.")
 
-def update_file_descriptions(readme_file,programming_language, json_file="./setup/FILE_DESCRIPTIONS.json"):
+def update_file_descriptions(programming_language, readme_file = "README.md", json_file="./setup/FILE_DESCRIPTIONS.json"):
     """
     Reads the project tree from an existing README.md and updates a FILE_DESCRIPTIONS.json file.
 
@@ -389,44 +386,33 @@ def update_file_descriptions(readme_file,programming_language, json_file="./setu
     - None
     """
 
-    def src_file_descriptions(programming_language):
+    def create_file_descriptions(programming_language,json_file):
 
-        src_template = {
-            "data_collection": "Script to collect and import raw data from external sources.",
-            "get_dependencies": "Checks and retrieves necessary {language} package dependencies.",
-            "install_dependencies": "Installs any missing {language} packages required for the project.",
-            "main": "The entry point script that orchestrates the workflow of the project.",
-            "modeling": "Defines the process for building and training models using the data.",
-            "preprocessing": "Handles data cleaning and transformation tasks.",
-            "utils": "Contains helper functions for common tasks throughout the project.",
-            "visualization": "Generates visual outputs such as charts, graphs, and plots."
-        }
-        
+        def src_file_descriptions(programming_language):
 
-        file_extension = ext_map.get(programming_language.lower(), "txt")  # Default to "txt" if language is unknown
+            src_template = {
+                "data_collection": "Script to collect and import raw data from external sources.",
+                "get_dependencies": "Checks and retrieves necessary {language} package dependencies.",
+                "install_dependencies": "Installs any missing {language} packages required for the project.",
+                "main": "The entry point script that orchestrates the workflow of the project.",
+                "modeling": "Defines the process for building and training models using the data.",
+                "preprocessing": "Handles data cleaning and transformation tasks.",
+                "utils": "Contains helper functions for common tasks throughout the project.",
+                "visualization": "Generates visual outputs such as charts, graphs, and plots."
+            }
+            
 
-        # Generate the descriptions by replacing placeholders in the template
-        descriptions = {}
-        for key, description in src_template.items():
-            file_name = f"{key}.{file_extension}"  # Create the file name with the correct extension
-            descriptions[file_name] = description.format(language=programming_language)
+            file_extension = ext_map.get(programming_language.lower(), "txt")  # Default to "txt" if language is unknown
 
-        return descriptions
+            # Generate the descriptions by replacing placeholders in the template
+            descriptions = {}
+            for key, description in src_template.items():
+                file_name = f"{key}.{file_extension}"  # Create the file name with the correct extension
+                descriptions[file_name] = description.format(language=programming_language)
 
-       # Read existing descriptions if the JSON file exists
-    
+            return descriptions
 
-    json_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
 
-    if not readme_file:
-        readme_file = "README.md"
-    
-    readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
-
-    if os.path.exists(json_file):
-        with open(json_file, "r", encoding="utf-8") as f:
-            file_descriptions = json.load(f)
-    else:
         file_descriptions = {
             
             # Directories
@@ -470,7 +456,6 @@ def update_file_descriptions(readme_file,programming_language, json_file="./setu
             
         }
 
-
         if programming_language:
             # Update the existing dictionary with the new descriptions
             file_descriptions.update(src_file_descriptions(programming_language))
@@ -479,40 +464,52 @@ def update_file_descriptions(readme_file,programming_language, json_file="./setu
         with open(json_file, "w", encoding="utf-8") as file:
             json.dump(file_descriptions, file, indent=4, ensure_ascii=False)
 
-    if not os.path.exists(readme_file):
-        return 
+        return file_descriptions
 
-    # Read the README.md and extract the "Project Tree" section
-    with open(readme_file, "r", encoding="utf-8") as f:
-        readme_content = f.read()
+    def update_file_descriptions(json_file,readme_file):
+        
+        # Read the README.md and extract the "Project Tree" section
+        with open(readme_file, "r", encoding="utf-8") as f:
+            readme_content = f.read()
 
-    # Extract the project tree section using regex
-    tree_match = re.search(r"Project Tree\s*[-=]+\s*\n([\s\S]+)", readme_content)
-    if not tree_match:
-        print("Project Tree section not found in README.md")
-        return
+        # Extract the project tree section using regex
+        tree_match = re.search(r"Project Directory Structure\s*[-=]+\s*\n([\s\S]+)", readme_content)
+        if not tree_match:
+            print("'Project Directory Structure' section not found in README.md")
+            return
 
-    project_tree = tree_match.group(1)
+        project_tree = tree_match.group(1)
 
-    # Extract file descriptions from the project tree
-    tree_lines = project_tree.splitlines()
-    for line in tree_lines:
-        while line.startswith("│   "):
-            line = line[4:]  # Remove prefix (4 characters)
-        match = re.match(r"^\s*(├──|└──|\|.*)?\s*(\S+)\s*(<- .+)?$", line)
-        if match:
-            filename = match.group(2).strip()
-            description = match.group(3)  # This captures everything after '<-'
-            if description:
-                description = description.strip()[3:]  # Remove the '<- ' part and get the description text
-            if description:
-                file_descriptions[filename] = description
+        # Extract file descriptions from the project tree
+        tree_lines = project_tree.splitlines()
+        for line in tree_lines:
+            while line.startswith("│   "):
+                line = line[4:]  # Remove prefix (4 characters)
+            match = re.match(r"^\s*(├──|└──|\|.*)?\s*(\S+)\s*(<- .+)?$", line)
+            if match:
+                filename = match.group(2).strip()
+                description = match.group(3)  # This captures everything after '<-'
+                if description:
+                    description = description.strip()[3:]  # Remove the '<- ' part and get the description text
+                if description:
+                    file_descriptions[filename] = description
 
-    # Write the updated descriptions to the JSON file
-    with open(json_file, "w", encoding="utf-8") as f:
-        json.dump(file_descriptions, f, indent=4, ensure_ascii=False)
+        # Write the updated descriptions to the JSON file
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(file_descriptions, f, indent=4, ensure_ascii=False)
 
-    print(f"File descriptions updated in {json_file}")
+        print(f"File descriptions updated in {json_file}")
+
+    json_file   = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
+    readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
+
+    if os.path.exists(json_file):
+        with open(json_file, "r", encoding="utf-8") as f:
+            file_descriptions = json.load(f)
+    else:
+        file_descriptions = create_file_descriptions(programming_language,json_file)
+
+    update_file_descriptions(json_file,readme_file)
 
 # Dataset Table
 def generate_dataset_table(json_file_path):
