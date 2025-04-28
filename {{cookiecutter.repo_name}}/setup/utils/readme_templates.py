@@ -468,6 +468,9 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
     def update_file_descriptions(json_file,readme_file):
         
+        
+        if os.path.exists(readme_file):
+            return
         # Read the README.md and extract the "Project Tree" section
         with open(readme_file, "r", encoding="utf-8") as f:
             readme_content = f.read()
