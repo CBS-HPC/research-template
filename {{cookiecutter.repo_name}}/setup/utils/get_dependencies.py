@@ -27,14 +27,17 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         used_packages = set()
 
         for file in python_files:
-            with open(file, "r", encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=file)
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    tree = ast.parse(f.read(), filename=file)
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Import):
                         for alias in node.names:
                             used_packages.add(resolve_parent_module(alias.name))
                     elif isinstance(node, ast.ImportFrom) and node.module:
                         used_packages.add(resolve_parent_module(node.module))
+            except (SyntaxError, UnicodeDecodeError) as e:
+                print(f"Skipping {file} due to parse error: {e}")
         
         # List Python standard library modules by checking files in the standard library path
         std_lib_path = sysconfig.get_paths()["stdlib"]

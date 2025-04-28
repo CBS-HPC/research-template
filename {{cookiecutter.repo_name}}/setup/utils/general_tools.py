@@ -609,6 +609,107 @@ def get_version(programming_language):
         version =version.stdout.strip()  # Returns version info
     return version
 
+
+def get_version(programming_language):
+    
+    if programming_language != "python":
+        exe_path = load_from_env(programming_language)
+        exe_path  = check_path_format(exe_path)
+        if not exe_path:
+            return "Unknown"
+    
+    if programming_language.lower() == "python":
+        version  = f"{subprocess.check_output([sys.executable, '--version']).decode().strip()}"
+    elif programming_language.lower() == "r":
+        version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
+        version = version.stdout[0:17].strip()
+    elif programming_language.lower() == "matlab":
+        version = subprocess.run([exe_path, "-batch", "disp(version)"], capture_output=True, text=True)
+        version = f"Matlab {version.stdout.strip()}"
+    elif programming_language.lower() == "stata":
+        # Extract edition based on executable name
+        edition = "SE" if "SE" in exe_path else ("MP" if "MP" in exe_path else "IC")
+        # Extract version from the folder name (e.g., Stata18 -> 18)
+        version = os.path.basename(os.path.dirname(exe_path)).replace('Stata', '')
+        # Format the output as Stata version and edition
+        version = f"Stata {version} {edition}"
+    elif programming_language.lower() == "sas": # FIX ME
+        version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
+        version =version.stdout.strip()  # Returns version info
+    return version
+
+
+def run_script(programming_language, script_command=None):
+    """
+    Runs a script or fetches version info for different programming languages.
+    
+    Args:
+        programming_language (str): Programming language name (e.g., 'python', 'r', etc.)
+        script_command (str, optional): Script/command to execute. Optional for languages like Stata.
+    
+    Returns:
+        str: Output or version string.
+    """
+    programming_language = programming_language.lower()
+
+    if programming_language != "python":
+        exe_path = load_from_env(programming_language)
+        exe_path = check_path_format(exe_path)
+        if not exe_path:
+            return "Unknown executable path"
+
+    try:
+        if programming_language == "python":
+            result = subprocess.run(
+                [sys.executable, "-c", script_command],
+                capture_output=True, text=True, check=True
+            )
+            return result.stdout.strip()
+
+        elif programming_language == "r":
+            if script_command.endswith(".R"):
+                result = subprocess.run(
+                    [exe_path, "--vanilla", "--file=" + script_command],
+                    capture_output=True, text=True, check=True
+                )
+            else:
+                result = subprocess.run(
+                    [exe_path, "-e", script_command],
+                    capture_output=True, text=True, check=True
+                )
+            return result.stdout.strip()
+
+        elif programming_language == "matlab":
+            result = subprocess.run(
+                [exe_path, "-batch", script_command],
+                capture_output=True, text=True, check=True
+            )
+            return result.stdout.strip()
+
+        elif programming_language == "stata":
+            # For Stata, run the executable with --version (or equivalent) to print version
+            result = subprocess.run(
+                [exe_path, "/q", "about"],  # /q quiet start, "about" prints version
+                capture_output=True, text=True
+            )
+            return result.stdout.strip() if result.stdout else "Stata version information not captured."
+
+        elif programming_language == "sas":
+            result = subprocess.run(
+                [exe_path, "-SYSIN", script_command],
+                capture_output=True, text=True, check=True
+            )
+            return result.stdout.strip()
+
+        else:
+            return f"Language {programming_language} not supported."
+
+    except subprocess.CalledProcessError as e:
+        return f"Error running script: {e.stderr.strip()}"
+
+
+
+
 def set_program_path(programming_language):
 
     if programming_language.lower() not in ["python","none"]:

@@ -48,7 +48,7 @@ def main():
 
 
     # Deleting Setup scripts
-    delete_files(files_to_remove
+    delete_files(files_to_remove)
 
     # Updating README
     creating_readme()

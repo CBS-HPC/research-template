@@ -84,11 +84,13 @@ def main():
     install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
     requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
     
+    
+    create_requirements_txt(requirements_file)
     if requirements_file == "requirements.txt": 
-        create_requirements_txt(requirements_file)
         create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
     elif requirements_file == "environment.yml": 
         export_conda_env(repo_name)
+
 
     folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/"))
     file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
@@ -101,6 +103,14 @@ def main():
     else:
         get_setup_dependencies(folder_path = folder, file_name = file, requirements_file = None,install_cmd = None)
         push_msg = "requirements.txt created"
+
+    if programming_language.lower() == "r":
+        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R"))
+        print("Hello")
+        # Call the setup script using the function
+        output = run_script("r", str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R")))
+        print(output)
+   
 
     update_requirements(dependencies_files = [file], sections= ["setup"])
 
