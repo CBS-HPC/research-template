@@ -76,15 +76,17 @@ def main():
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
     python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
 
     # Create Remote Repository
     flag = setup_remote_repository(version_control,code_repo,repo_name,project_description)
 
     install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
     requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
-
-    if requirements_file == "requirements.txt":
+    
+    if requirements_file == "requirements.txt": 
         create_requirements_txt(requirements_file)
+        create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
     elif requirements_file == "environment.yml": 
         export_conda_env(repo_name)
 

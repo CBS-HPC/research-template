@@ -524,9 +524,9 @@ def create_virtualenv_env(env_name, pip_packages=None):
         print(f"Error: An unexpected error occurred: {e}")
         return None
 
-def create_requirements_txt(output_file:str="requirements.txt"):
+def create_requirements_txt(requirements_file:str="requirements.txt"):
 
-    output_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(output_file))
+    requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
 
     # Get the Python executable path from sys.executable
     python_executable = sys.executable
@@ -537,9 +537,64 @@ def create_requirements_txt(output_file:str="requirements.txt"):
     # Check if the pip freeze command was successful
     if result.returncode == 0:
         # Write the output of pip freeze to a requirements.txt file
-        with open(output_file, "w") as f:
+        with open(requirements_file, "w") as f:
             f.write(result.stdout)
         print("requirements.txt has been created successfully.")
     else:
         print("Error running pip freeze:", result.stderr)
+
+def create_conda_environment_yml(r_version=None,requirements_file:str="requirements.txt", output_file:str="environment.yml"):
+    """
+    Creates a Conda environment.yml based on a pip requirements.txt file, 
+    the current Python version, and optionally an R version.
+    
+    Parameters:
+    - requirements_file (str): Path to the pip requirements.txt file.
+    - output_file (str): Path to output the generated environment.yml file (default 'environment.yml').
+    - r_version (str, optional): R version string like "R version 4.4.3" (default None).
+    """
+    requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
+    output_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(output_file))
+
+
+    if not os.path.exists(requirements_file):
+        raise FileNotFoundError(f"Requirements file not found: {requirements_file}")
+
+    # Get the current Python version
+    version_output = subprocess.check_output([sys.executable, '--version']).decode().strip()
+    python_version = version_output.split()[1]  # Get '3.10.12'
+
+    # Read the requirements.txt
+    with open(requirements_file, "r", encoding="utf-8") as f:
+        pip_dependencies = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+    # Build the basic dependencies list
+    conda_dependencies = [f'python={python_version}']
+
+    # If R version is provided, extract version number and add R base package
+    if r_version:
+        try:
+            # Expect input like "R version 4.4.3"
+            r_version_number = r_version.split()[-1]  # Get '4.4.3'
+            conda_dependencies.append(f'r-base={r_version_number}')
+        except Exception as e:
+            print(f"Warning: Could not parse R version. Got error: {e}")
+
+    # Add pip dependencies
+    conda_dependencies.append({'pip': pip_dependencies})
+
+    # Create environment.yml structure
+    conda_env = {
+        'name': 'auto_env',
+        'dependencies': conda_dependencies
+    }
+
+    # Write the environment.yml
+    import yaml
+    with open(output_file, "w", encoding="utf-8") as f:
+        yaml.dump(conda_env, f, default_flow_style=False, sort_keys=False)
+
+    print(f"✅ Conda environment file created: {output_file}")
+
+
 

@@ -5,17 +5,21 @@ import pathlib
 from utils import *
 
 def set_program_path(programming_language):
+
     if programming_language.lower() not in ["python","none"]:
         exe_path = load_from_env(programming_language.upper())
+        
         if not exe_path:
             exe_path = shutil.which(programming_language.lower())
-            if exe_path:
-                save_to_env(check_path_format(exe_path), programming_language.upper())
-                save_to_env(get_version(programming_language), f"{programming_language.upper()}_VERSION",".cookiecutter")
+        
+        if exe_path:
+            save_to_env(check_path_format(exe_path), programming_language.upper())
+            save_to_env(get_version(programming_language), f"{programming_language.upper()}_VERSION",".cookiecutter")
 
     if not load_from_env("PYTHON"):
         save_to_env(sys.executable, "PYTHON")
         save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
+
 
 
 @ensure_correct_kernel

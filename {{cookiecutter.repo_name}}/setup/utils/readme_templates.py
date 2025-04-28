@@ -194,14 +194,14 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
 
      # Create and update README and Project Tree:
     update_file_descriptions(programming_language,"./README.md", json_file=file_descriptions)
-    generate_readme(project_name, project_description,install,usage,contact,"./README.md")
+    generate_readme(project_name, project_description,programming_language,install,usage,contact,"./README.md")
 
     #ignore_list = read_treeignore()
 
     ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
     create_tree("./README.md",ignore_list ,file_descriptions)
     
-def generate_readme(project_name, project_description,install,usage,contact,readme_file = None):
+def generate_readme(project_name, project_description,programming_language,install,usage,contact,readme_file = None):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -219,7 +219,9 @@ def generate_readme(project_name, project_description,install,usage,contact,read
     if os.path.exists(readme_file):
         return
     
-
+    py_version = get_version("python")
+    software_version = get_version(programming_language)
+    
     # Project header
     header = f"""# {project_name}
 
@@ -232,9 +234,11 @@ def generate_readme(project_name, project_description,install,usage,contact,read
 
 ## Environment Setup
 
-The project software below were installed on the follow operation system: **{platform.platform() }**
+The project was conducted on the follow operation system: **{platform.platform() }**
 
-The project setup 
+The project setup (`./setup`) was installed using **{py_version}**
+
+The project code (`./src`) was installed using **{software_version}** 
 
 {usage}
 
@@ -246,7 +250,7 @@ Follow these steps to set up the project on your local machine:
 
 ## Project Directory Structure
 
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `setup/FILE_DESCRIPTIONS.json` file.
+The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./setup/FILE_DESCRIPTIONS.json` file.
 ```
 
 ```
@@ -349,7 +353,7 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
     # Check for "Project Tree" section
     start_index = None
     for i, line in enumerate(readme_content):
-        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `setup/FILE_DESCRIPTIONS.json` file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
+        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./setup/FILE_DESCRIPTIONS.json` file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
             start_index = i + 2 
             break
 
