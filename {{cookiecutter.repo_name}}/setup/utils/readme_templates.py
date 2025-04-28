@@ -165,20 +165,25 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
                     "```\n")
             return setup
         
+        def set_contact(authors, orcids, emails):
+            contact = ""
+            if authors:
+                contact += f"**Name:** {authors}\n\n"
+            if orcids:
+                contact += f"**ORCID:** {orcids}\n\n"
+            if emails:
+                contact += f"**Email:** {emails}\n\n"
+            
+            return contact
+        
         py_version = get_version("PYTHON")
         software_version = get_version(programming_language)
 
         setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
         usage = set_usage(programming_language,software_version)
-
+        contact = set_contact(authors, orcids, emails)
             
-        contact = ""
-        if authors:
-            contact += f"**Name:** {authors}\n\n"
-        if orcids:
-            contact += f"**ORCID:** {orcids}\n\n"
-        if emails:
-            contact += f"**Email:** {emails}\n\n"
+
         
         return setup,usage,contact
     
@@ -468,8 +473,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
     def update_file_descriptions(json_file,readme_file):
         
-        
-        if os.path.exists(readme_file):
+        if not os.path.exists(readme_file):
             return
         # Read the README.md and extract the "Project Tree" section
         with open(readme_file, "r", encoding="utf-8") as f:

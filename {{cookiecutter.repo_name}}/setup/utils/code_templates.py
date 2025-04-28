@@ -432,7 +432,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
     def get_dependencies_from_file(python_files):
         used_packages = set()
         for file in python_files:
-            with open(file, "r") as f:
+            with open(file, "r", encoding="utf-8") as f:
                 tree = ast.parse(f.read(), filename=file)
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Import):
