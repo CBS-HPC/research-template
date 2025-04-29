@@ -9,6 +9,7 @@ import platform
 import pathspec
 
 
+
 # Ensure the project root is in sys.path
 #sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
@@ -16,10 +17,11 @@ import pathspec
 
 from .general_tools import *
 
-pip_installer(required_libraries =  ['pyyaml','requests'])
+pip_installer(required_libraries =  ['pyyaml','requests','pathspec'])
 
 import yaml
 import requests
+import pathspec
 
 # Determine file extension based on programming language
 ext_map = {

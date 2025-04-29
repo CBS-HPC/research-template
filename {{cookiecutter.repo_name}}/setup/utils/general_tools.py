@@ -675,9 +675,6 @@ def run_script(programming_language, script_command=None):
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip()}"
 
-
-
-
 def set_program_path(programming_language):
 
     if programming_language.lower() not in ["python","none"]:
