@@ -99,13 +99,13 @@ def download_files_parallel(file_paths, save_dir, n_workers):
         for path in file_paths:
             download_file_worker(path, save_dir)
 
-@ensure_correct_kernel
 def deic_storage_download(link, save_dir, n_workers=1):
     """ Download files from the given link using parallel workers or sequentially """
     links = links_deic_storage(link)
     file_paths = extract_file_paths(links)
     download_files_parallel(file_paths, save_dir, n_workers)
 
+@ensure_correct_kernel
 def main():
     # Command-line argument parser
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")

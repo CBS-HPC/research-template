@@ -9,25 +9,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from utils import *
 
 def read_dependencies(dependencies_files,sections):
-     # Ensure the lengths of dependencies_files and sections match
-    if len(dependencies_files) != len(sections):
-        raise ValueError("The number of dependencies files must match the number of sections.")
-
-    # Initialize the Software Requirements section with the header
-    software_requirements_section = "### Software Requirements\n\n"
-    software_requirements_section += f"**The software below were installed on the follow operation system: {platform.platform() }**\n\n"
-
-    # Iterate through all dependency files and corresponding sections
-    for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
-        # Check if the dependencies file exists
-        if not os.path.exists(dependencies_file):
-            print(f"Dependencies file '{dependencies_file}' not found. Skipping.")
-            continue
-
-        # Read the content from the dependencies file
-        with open(dependencies_file, "r") as f:
-            content = f.readlines()
-
+     
+    def collect_dependencies(content):
+        
         current_software = None
         software_dependencies = {}
 
@@ -60,6 +44,29 @@ def read_dependencies(dependencies_files,sections):
             if current_software and "==" in line:
                 package, version = line.split("==")
                 software_dependencies[current_software]["dependencies"].append((package, version))
+        
+        return software_dependencies, package, version
+
+    # Ensure the lengths of dependencies_files and sections match
+    if len(dependencies_files) != len(sections):
+        raise ValueError("The number of dependencies files must match the number of sections.")
+
+    # Initialize the Software Requirements section with the header
+    software_requirements_section = "### Software Requirements\n\n"
+    software_requirements_section += f"**The software below were installed on the follow operation system: {platform.platform() }**\n\n"
+
+    # Iterate through all dependency files and corresponding sections
+    for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
+        # Check if the dependencies file exists
+        if not os.path.exists(dependencies_file):
+            print(f"Dependencies file '{dependencies_file}' not found. Skipping.")
+            continue
+
+        # Read the content from the dependencies file
+        with open(dependencies_file, "r") as f:
+            content = f.readlines()
+
+        software_dependencies, package, version = collect_dependencies(content)
 
         # Add the subheading section if it exists
         if section:
@@ -82,24 +89,7 @@ def read_dependencies(dependencies_files,sections):
 def write_to_readme(readme_file,software_requirements_section):
         # Check if the README file exists
     if not os.path.exists(readme_file):
-        # Project header
-        header = f"""## Creating a replication package
-
-    https://datacodestandard.org/
-
-    https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html
-
-    https://social-science-data-editors.github.io/template_README/
-
-## Dataset list
-
-## Computational requirements
-
-### Software Requirements
-    """
-        # Write the README.md content
-        with open(readme_file, "w",encoding="utf-8") as file:
-            file.write(header)
+        creating_readme(programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
 
     try:
         with open(readme_file, "r", encoding="utf-8") as file:
@@ -128,15 +118,22 @@ def write_to_readme(readme_file,software_requirements_section):
 
     print(f"{readme_file} successfully updated.")
 
-@ensure_correct_kernel
-def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], readme_file: str = "README.md", sections: list = ["src"]):
+def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], readme_file: str = "./README.md", sections: list = ["src"]):
    
     software_requirements_section =read_dependencies(dependencies_files,sections)
 
     write_to_readme(readme_file,software_requirements_section)
 
+@ensure_correct_kernel
 def main():
-    update_requirements(dependencies_files=[project_root / pathlib.Path("./src/dependencies.txt"), project_root / pathlib.Path("./setup/dependencies.txt")], sections=["src", "/setup"])
+
+    files = [str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt")),
+            str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
+            ]
+
+    readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
+
+    update_requirements(dependencies_files=files,readme_file = readme_file ,sections=["src", "/setup"])
 
 if __name__ == "__main__":
     # Change to project root directory

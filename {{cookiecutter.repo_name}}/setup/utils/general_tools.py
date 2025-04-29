@@ -637,9 +637,8 @@ def run_script(programming_language, script_command=None):
             return result.stdout.strip()
 
         elif programming_language == "r":
-
              # Here script_command is a list
-            cmd = [exe_path] + script_command
+            cmd = [exe_path,"--vanilla"] + script_command
 
             result = subprocess.run(
                 cmd,

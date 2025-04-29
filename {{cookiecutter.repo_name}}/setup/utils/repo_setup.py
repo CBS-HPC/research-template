@@ -87,49 +87,32 @@ def main():
     # Create Remote Repository
     flag = setup_remote_repository(version_control,code_repo,repo_name,project_description)
 
-    install_cmd = load_from_env("INSTALL_CMD",".cookiecutter")
     requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
-    
-
-    create_requirements_txt(requirements_file)
-    if requirements_file == "requirements.txt": 
+    create_requirements_txt("requirements.txt")
+    if requirements_file == "requirements.txt":
         create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
     elif requirements_file == "environment.yml": 
         export_conda_env(repo_name)
 
-
-    folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/"))
+    folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
     file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
-    requirements_file  = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
+    get_setup_dependencies(folder_path = folder, file_name = file)
 
-    # Updating requirements.txt/environment.yaml  # FIX ME
-    if python_env_manager.lower() in ["conda","venv"]:
-        get_setup_dependencies(folder_path = folder, file_name = file , requirements_file = requirements_file,install_cmd = install_cmd)
-        push_msg = f"'{requirements_file}' and '{file}' created and 'Requirements' section in README.md updated"
-    else:
-        get_setup_dependencies(folder_path = folder, file_name = file, requirements_file = None,install_cmd = None)
-        push_msg = "requirements.txt created"
 
     if programming_language.lower() == "r":
-
-           # Call the setup script using the function
+        # Call the setup script using the function
         r_script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R")))
         project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
-        
-
-        cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root]
-        
-        print(r_script_path)
-        print(project_root)
-        
+        cmd = ["--file=" + r_script_path, "--args", project_root] 
+        #cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root]  
         output = run_script("r", cmd)
-        print(output)
 
    
 
     update_requirements(dependencies_files = [file], sections= ["setup"])
 
-    # Pushing to Git 
+    # Pushing to Git
+    push_msg = f" `requirements.txt`, `environment.yml` and '{file}' created and 'Requirements' section in README.md updated" 
     git_push(flag,push_msg)
 
     # Installing package:

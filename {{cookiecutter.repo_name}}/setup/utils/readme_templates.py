@@ -8,13 +8,6 @@ import pathlib
 import platform
 import pathspec
 
-
-
-# Ensure the project root is in sys.path
-#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-#from utils import *
-
 from .general_tools import *
 
 pip_installer(required_libraries =  ['pyyaml','requests','pathspec'])
@@ -31,9 +24,6 @@ ext_map = {
     "stata": "do",
     "sas": "sas"
 }
-
-# file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
-
 
 programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
 version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
@@ -578,7 +568,8 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             readme_content = f.read()
 
         # Extract the project tree section using regex
-        tree_match = re.search(r"Project Directory Structure\s*[-=]+\s*\n([\s\S]+)", readme_content)
+        tree_match = re.search(r"##\s*Project Directory Structure\s*\n+([\s\S]+?)```", readme_content)
+        #tree_match = re.search(r"Project Directory Structure\s*[-=]+\s*\n([\s\S]+)", readme_content)
         if not tree_match:
             print("'Project Directory Structure' section not found in README.md")
             return

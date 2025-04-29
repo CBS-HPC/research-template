@@ -15,13 +15,71 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils import *
 
+
+# Determine file extension based on programming language
+ext_map = {
+    "r": "R",
+    "python": "py",
+    "matlab": "m",
+    "stata": "do",
+    "sas": "sas"
+}
+
+def run_get_dependencies(programming_language, folder_path="./src"):
+    """
+    Runs the get_dependencies.* script for the specified programming language.
+
+    Args:
+        programming_language (str): Programming language name ('python', 'r', etc.)
+        folder_path (str): The folder where get_dependencies.* is located (default: 'setup').
+
+    Returns:
+        str: Output from running the dependency script or error message.
+    """
+    programming_language = programming_language.lower()
+    ext = ext_map.get(programming_language)
+
+    if ext is None:
+        return f"Unsupported programming language: {programming_language}"
+
+    script_filename = f"get_dependencies.{ext}"
+    script_path = os.path.join(folder_path, script_filename)
+
+    if not os.path.exists(script_path):
+        return f"Dependency script not found: {script_path}"
+
+    try:
+        if programming_language == "python":
+            with open(script_path, "r") as f:
+                script_content = f.read()
+            return run_script(programming_language, script_command=script_content)
+
+        elif programming_language == "r":
+            return run_script(programming_language, script_command=[script_path])
+
+        elif programming_language == "matlab":
+            return run_script(programming_language, script_command=script_path)
+
+        elif programming_language == "sas":
+            return run_script(programming_language, script_command=script_path)
+
+        elif programming_language == "stata":
+            # Special case: Stata scripts may behave differently
+            return run_script(programming_language, script_command=script_path)
+
+        else:
+            return f"Unsupported language in script execution: {programming_language}"
+
+    except Exception as e:
+        return f"Failed to run dependency script: {str(e)}"
+
+
 def resolve_parent_module(module_name):
     if '.' in module_name:
         return module_name.split('.')[0]
     return module_name
 
-@ensure_correct_kernel
-def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt", requirements_file:str=None, install_cmd:str=None):
+def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt"):
     
     def get_dependencies_from_file(python_files):
         used_packages = set()
@@ -95,9 +153,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
-    elif folder_path == "":
-        folder_path =  os.getcwd()
-    
+
     print(f"Scanning folder: {folder_path}")
     python_files = []
     for root, dirs, files in os.walk(folder_path):
@@ -109,10 +165,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         print("No Python files found in the specified folder.")
         return
 
-    if requirements_file:
-        installed_packages = process_requirements(requirements_file)
-    else:
-        installed_packages  = get_dependencies_from_file(python_files)
+    installed_packages  = get_dependencies_from_file(python_files)
 
     # Write to file
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -130,23 +183,31 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         f.write(f"Timestamp: {timestamp}\n\n")
         f.write("Files checked:\n")
         f.write("\n".join(relative_python_files) + "\n\n")
-        
-        if install_cmd:
-            f.write("Install Command:\n")
-            f.write(f"{install_cmd}\n\n")
-
         f.write("Dependencies:\n")
         for package, version in installed_packages .items():
             f.write(f"{package}=={version}\n")
 
     print(f"{file_name} successfully generated at {output_file}")
 
+@ensure_correct_kernel
 def main():
-    get_setup_dependencies()
+
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+
+    setup_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
+    setup_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
+    get_setup_dependencies(folder_path=setup_folder,file_name =setup_file)
+
+    src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
+    if programming_language.lower() == "python":
+        src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
+        src_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
+        get_setup_dependencies(folder_path=src_folder,file_name=src_file)
+    else:
+        run_get_dependencies(programming_language, folder_path=src_folder)
 
 if __name__ == "__main__":
     # Ensure the working directory is the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
-
     main()

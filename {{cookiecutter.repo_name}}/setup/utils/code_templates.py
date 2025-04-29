@@ -410,36 +410,39 @@ import ast
 import sys
 import sysconfig
 from datetime import datetime
-import importlib.util
-import importlib.metadata
+import importlib
+
 import yaml
-from typing import Optional, Dict, Set, List
+from typing import Dict, List
+import pathlib
 
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-setup_path  os.path.join(base_path, "setup") 
-sys.path.append(setup_path)
+# Ensure the project root is in sys.path
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
 from utils import *
-
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
         return module_name.split('.')[0]
     return module_name
 
-@ensure_correct_kernel
-def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt",requirements_file:str=None,install_cmd:str=None):
+def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt"):
     
     def get_dependencies_from_file(python_files):
         used_packages = set()
+
         for file in python_files:
-            with open(file, "r", encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=file)
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    tree = ast.parse(f.read(), filename=file)
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Import):
                         for alias in node.names:
                             used_packages.add(resolve_parent_module(alias.name))
                     elif isinstance(node, ast.ImportFrom) and node.module:
                         used_packages.add(resolve_parent_module(node.module))
+            except (SyntaxError, UnicodeDecodeError) as e:
+                print(f"Skipping {file} due to parse error: {e}")
         
         # List Python standard library modules by checking files in the standard library path
         std_lib_path = sysconfig.get_paths()["stdlib"]
@@ -497,9 +500,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     if folder_path is None:
         folder_path = os.path.dirname(os.path.abspath(__file__))
-    elif folder_path == "":
-        folder_path =  os.getcwd()
-    
+
     print(f"Scanning folder: {folder_path}")
     python_files = []
     for root, dirs, files in os.walk(folder_path):
@@ -511,10 +512,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         print("No Python files found in the specified folder.")
         return
 
-    if requirements_file:
-        installed_packages = process_requirements(requirements_file)
-    else:
-        installed_packages  = get_dependencies_from_file(python_files)
+    installed_packages  = get_dependencies_from_file(python_files)
 
     # Write to file
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -532,20 +530,21 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         f.write(f"Timestamp: {timestamp}\n\n")
         f.write("Files checked:\n")
         f.write("\n".join(relative_python_files) + "\n\n")
-        
-        if install_cmd:
-            f.write("Install Command:\n")
-            f.write(f"{install_cmd}\n\n")
-
         f.write("Dependencies:\n")
         for package, version in installed_packages .items():
             f.write(f"{package}=={version}\n")
 
     print(f"{file_name} successfully generated at {output_file}")
 
-if __name__ == "__main__":
+@ensure_correct_kernel
+def main():
     get_setup_dependencies()
 
+if __name__ == "__main__":
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    main()
 {% endraw %}
 """
     write_script(folder_path, "get_dependencies", extension, content)
@@ -631,8 +630,9 @@ get_dependencies <- function(folder_path = NULL, file_name = "dependencies.txt",
   r_version <- paste(R.version$version.string)
   
   # Collect the list of files checked (relative paths)
-  checked_files <- paste(r_files, collapse = "\n")
-  
+  relative_r_files <- file.path(".", gsub(paste0(normalizePath(folder_path, winslash = "/"), "/?"), "", normalizePath(r_files, winslash = "/")))
+  checked_files <- paste(relative_r_files, collapse = "\n")
+
   # Get the current timestamp
   timestamp <- Sys.time()
   formatted_timestamp <- format(timestamp, "%Y-%m-%d %H:%M:%S")
@@ -646,7 +646,7 @@ writeLines(
     paste("Timestamp:", timestamp),
     "",
     "Files checked:",
-    relative_python_files,
+    checked_files,
     "",
     if (!is.null(install_cmd)) c("Install Command:", install_cmd, ""),
     "Dependencies:"
@@ -666,6 +666,7 @@ writeLines(
 if (interactive()) {
   get_dependencies(NULL)
 }
+
 {% endraw %}
 """
     
@@ -1464,3 +1465,26 @@ def create_sas_notebook(folder_path):
     content.cells.extend(cells)
     
     write_script(folder_path, script_name, extension, content)
+
+
+@ensure_correct_kernel
+def main():
+
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+  
+    # Create scripts and notebook
+    create_scripts(programming_language, "./src")
+    create_notebooks(programming_language, "./notebooks")
+
+    
+if __name__ == "__main__":
+
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+
+    main()
