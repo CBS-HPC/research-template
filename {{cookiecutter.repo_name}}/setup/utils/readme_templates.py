@@ -6,6 +6,7 @@ import os
 import json
 import pathlib
 import platform
+import pathspec
 
 
 # Ensure the project root is in sys.path
@@ -35,6 +36,15 @@ ext_map = {
 def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None):
 
     def read_treeignore(file_path=".treeignore"):
+        """Load ignore rules from a .gitignore-style file."""
+        file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            patterns = f.read().splitlines()
+        spec = pathspec.PathSpec.from_lines('gitwildmatch', patterns)
+        return spec
+
+    def read_treeignore_old(file_path=".treeignore"):
         """
         Reads the .treeignore file and returns a list of ignored paths.
         
@@ -151,7 +161,7 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
                 setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
                 
                 setup += "#### Install R dependencies using renv:\n\n"
-                setup += f"The project's R environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
+                setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
                 setup += "```\n"
                 setup += "Rscript -e \"renv::restore()\"\n"
                 setup += "```\n\n"
@@ -187,9 +197,9 @@ def creating_readme(repo_name= None, repo_user = None ,project_name=None, projec
     update_file_descriptions(programming_language,"./README.md", json_file=file_descriptions)
     generate_readme(project_name, project_description,programming_language,install,usage,contact,"./README.md")
 
-    #ignore_list = read_treeignore()
+    ignore_list = read_treeignore()
 
-    ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
+    #ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
     create_tree("./README.md",ignore_list ,file_descriptions)
     
 def generate_readme(project_name, project_description,programming_language,install,usage,contact,readme_file = None):
@@ -289,6 +299,9 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     print(f"README.md created at: {readme_file}")
 
 # Project Tree
+
+
+
 def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESCRIPTIONS.json", root_folder=None):
     """
     Updates the "Project Tree" section in a README.md file with the project structure.
@@ -299,7 +312,41 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
     - file_descriptions (dict): Descriptions for files and directories.
     - root_folder (str): The root folder to generate the tree structure from. Defaults to the current working directory.
     """
-    def generate_tree(folder_path,file_descriptions,prefix=""):
+
+    def generate_tree(folder_path, file_descriptions, ignore_spec=None, prefix=""):
+        """
+        Recursively generates a tree structure of the folder, respecting ignore rules.
+
+        Parameters:
+        - folder_path (str): The root folder path.
+        - file_descriptions (dict): Optional descriptions for files.
+        - ignore_spec (PathSpec): PathSpec object for ignore rules.
+        - prefix (str): The prefix for the current level of the tree.
+        """
+        tree = []
+        items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
+        for index, item in enumerate(items):
+            item_path = os.path.join(folder_path, item)
+            
+            # Calculate relative path for ignore checking
+            rel_path = os.path.relpath(item_path, start=folder_path)
+
+            if ignore_spec and ignore_spec.match_file(rel_path):
+                continue
+
+            is_last = index == len(items) - 1
+            tree_symbol = "└── " if is_last else "├── "
+            description = f" <- {file_descriptions.get(item, '')}" if file_descriptions and item in file_descriptions else ""
+            tree.append(f"{prefix}{tree_symbol}{item}{description}")
+
+            if os.path.isdir(item_path):
+                child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
+                tree.extend(generate_tree(item_path, file_descriptions, ignore_spec=ignore_spec, prefix=child_prefix))
+
+        return tree
+
+
+    def generate_tree_old(folder_path,file_descriptions,prefix=""):
         """
         Recursively generates a tree structure of the folder.
 
@@ -336,7 +383,6 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
 
     if not root_folder:
         root_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-        #root_folder = os.getcwd()
     else:
         root_folder = os.path.abspath(root_folder)
 

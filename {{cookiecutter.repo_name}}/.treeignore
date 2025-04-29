@@ -1,5 +1,5 @@
-bin
-utils
+bin/*
+utils/*
 setup.egg-info
 .git
 .datalad
