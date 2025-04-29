@@ -10,9 +10,9 @@ import pathspec
 
 
 # Ensure the project root is in sys.path
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from utils import *
+#from utils import *
 
 from .general_tools import *
 
@@ -45,8 +45,7 @@ project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 email = load_from_env("EMAIL",".cookiecutter")
 
 def create_content(programming_language):
-    
-    
+      
     def set_usage(programming_language,software_version):
 
         os_type = platform.system().lower()
@@ -256,6 +255,20 @@ Follow these steps to set up the project on your local machine:
 
 {install}
 
+## Dataset List
+
+To set up or configure a dataset, run the following command:
+
+```
+set-dataset
+```
+
+**The following datasets are included in the project:**
+
+| Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |
+|------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
+
+
 ## Project Directory Structure
 
 The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./setup/FILE_DESCRIPTIONS.json` file.
@@ -277,9 +290,6 @@ The following are examples of journals that endorse the Data and Code Availabili
 For a full list of journals, visit [here](https://datacodestandard.org/journals/).
 
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal.
-
-
-## Dataset List
 
 ## Computational Requirements
 
@@ -677,7 +687,8 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
         markdown_table (str): The markdown table to insert.
         readme_file (str): Path to the README file.
     """
-    section_title = "## Dataset List"
+    section_title = "**The following datasets are included in the project:**"
+
     new_dataset_section = f"{section_title}\n\n{markdown_table.strip()}\n"
 
 
@@ -821,16 +832,3 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
             file.write(response.content)
     else:
         print(f"Failed to download {readme_file} from {url}")
-
-
-def main():
-    creating_readme(programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
-
-
-if __name__ == "__main__":
-    
-    # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-    
-    main()

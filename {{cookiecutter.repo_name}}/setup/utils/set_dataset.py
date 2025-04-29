@@ -244,7 +244,7 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
             with open(dcas_readme, 'w') as markdown_file:
                 markdown_file.write(full_table)
         else:
-            print("No dataset to adde")
+            print("No datasets were detected")
     except Exception as e:
         print(e)
 
