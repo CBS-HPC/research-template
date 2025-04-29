@@ -1,8 +1,8 @@
 bin/*
 utils/*
 setup.egg-info
-.git
-.datalad
+.git/
+.datalad/
 .gitkeep
 .env
 __pycache__

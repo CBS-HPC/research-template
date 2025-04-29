@@ -75,7 +75,7 @@ def get_all_files(destination):
             all_files.add(full_path)
     return all_files
 
-def add_to_json(json_file_path, entry):
+def add_to_json(json_file_path:str = ".data/datasets.json", entry=None):
     """
     Adds or updates an entry in the JSON file.
 
@@ -115,7 +115,7 @@ def add_to_json(json_file_path, entry):
 
     return json_file_path
 
-def set_dataset(data_name, destination, source:str = None, run_command:str = None,json_file_path:str = "./datasets.json" , doi:str = None,citation:str = None,license:str=None):
+def set_dataset(data_name, destination, source:str = None, run_command:str = None,json_file_path:str = ".data/datasets.json" , doi:str = None,citation:str = None,license:str=None):
     """
     Executes a data download process and tracks created files in the specified path.
 
@@ -194,7 +194,7 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
         new_entry["license"] = license
 
     # Add or update the JSON metadata
-    json_file_path = add_to_json(json_file_path, new_entry)
+    json_file_path = add_to_json(json_file_path=json_file_path, entry=new_entry)
 
     return json_file_path
 
@@ -225,6 +225,7 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
 
         return all_files
 
+    json_file_path = None
     # If all input parameters are None, gather all files and folders from './data/raw/'
     if all(param is None for param in [data_name, source, run_command, destination, doi, citation, license]):
         data_files = get_data_files()
@@ -236,11 +237,14 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
         json_file_path = set_dataset(data_name = data_name, destination = destination, source=source, run_command=run_command, json_file_path="./data/datasets.json", doi=doi, citation=citation, license=license)
 
     try:
-        markdown_table, full_table = generate_dataset_table(json_file_path)
-        dataset_to_readme(markdown_table)
-
-        with open("DCAS template/dataset_list.md", 'w') as markdown_file:
-            markdown_file.write(full_table)
+        if json_file_path:
+            markdown_table, full_table = generate_dataset_table(json_file_path)
+            dataset_to_readme(markdown_table)
+            dcas_readme = str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path("./DCAS template/dataset_list.md"))
+            with open(dcas_readme, 'w') as markdown_file:
+                markdown_file.write(full_table)
+        else:
+            print("No dataset to adde")
     except Exception as e:
         print(e)
 

@@ -10,7 +10,6 @@ from utils.versioning_tools import *
 
 @ensure_correct_kernel
 def main():
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")

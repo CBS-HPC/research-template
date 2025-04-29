@@ -46,12 +46,11 @@ def main():
     if programming_language.lower() != 'r':
         files_to_remove.append("./setup/renv_setup.R")
 
-
     # Deleting Setup scripts
     delete_files(files_to_remove)
 
     # Updating README
-    creating_readme()
+    creating_readme(programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
 
     # Pushing to Git
     git_push(load_from_env("CODE_REPO",".cookiecutter")!= "None","README.md updated")

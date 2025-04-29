@@ -32,177 +32,166 @@ ext_map = {
 
 # file_extension = ext_map.get(programming_language, "txt")  # Default to "txt" if language is unknown
 
-# README.md
-def creating_readme(repo_name= None, repo_user = None ,project_name=None, project_description= None, code_repo=None, programming_language = "None", authors = None, orcids = None, emails = None):
 
-    def read_treeignore(file_path=".treeignore"):
-        """Load ignore rules from a .gitignore-style file."""
-        file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
+programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
+repo_name = load_from_env("REPO_NAME",".cookiecutter")
+code_repo = load_from_env("CODE_REPO",".cookiecutter")
+project_name = load_from_env("PROJECT_NAME",".cookiecutter")
+version = load_from_env("VERSION",".cookiecutter")
+authors = load_from_env("AUTHORS",".cookiecutter")
+orcids = load_from_env("ORCIDS",".cookiecutter")
+project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
+email = load_from_env("EMAIL",".cookiecutter")
 
-        with open(file_path, "r", encoding="utf-8") as f:
-            patterns = f.read().splitlines()
-        spec = pathspec.PathSpec.from_lines('gitwildmatch', patterns)
-        return spec
-
-    def read_treeignore_old(file_path=".treeignore"):
-        """
-        Reads the .treeignore file and returns a list of ignored paths.
-        
-        Parameters:
-        file_path (str): Path to the .treeignore file (default is ".treeignore").
-        
-        Returns:
-        list: A list of ignored paths from the .treeignore file.
-        """
-        ignore_list = []
-        file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
-
-        try:
-            with open(file_path, 'r') as f:
-                for line in f:
-                    # Strip leading/trailing whitespace and ignore empty lines or comments
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        ignore_list.append(line)
-        except FileNotFoundError:
-            print(f"Warning: {file_path} not found. Returning empty ignore list.")
-        
-        return ignore_list
-
-    def create_content(repo_name, repo_user, code_repo,authors, orcids, emails,programming_language):
-       
-        def set_usage(programming_language,software_version):
-
-            os_type = platform.system().lower()
-            if os_type == "windows":
-                usage = (
-                    "\n**Activate on Windows (PowerShell)**\n\n"
-                    "```powershell\n"
-                    "./activate.ps1\n"
-                    "```\n"
-                    "\n**Deactivate on Windows (PowerShell)**\n\n"
-                    "```powershell\n"
-                    "./deactivate.ps1\n"
-                    "```\n"
-                )
-
-            elif os_type in ("darwin", "linux"):
-                usage = (
-                    "\n**Activate on Linux/macOS (bash)** \n\n"
-                    "```bash\n"
-                    "source activate.sh\n"
-                    "```\n"
-                    "\n**Deactivate on Linux/macOS (bash)** \n\n"
-                    "```bash\n"
-                    "source deactivate.sh\n"
-                    "```\n"
-                )
-            
-            if programming_language.lower() != "none":
-                usage += (f"### Run Project Code\n"
-                        f"The project code is written in **{software_version}**.\n\n"
-                        "You can execute the main project script by running the following command:\n")
-
-                usage += "```\n"
-                file_extension = ext_map.get(programming_language.lower(), "txt")
-                usage += f"{programming_language.lower()} src/main.{file_extension}\n"
-                usage += "```"
-            return usage
-
-        def set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo):            
-            setup = ""
-
-            if repo_name and repo_user:
-                setup += "### Clone the Project Repository\n"
-                "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
-                "Clone the repository using the following command:\n"
-                setup += "```\n"
-                if code_repo.lower() in ["github","gitlab"]:
-                    web_repo = code_repo.lower()
-                    setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
-                            "```\n")
-            setup += ("### Navigate to the Project Directory\n"
-                    "Change into the project directory:\n"  
-                    "```\n"
-                    f"cd {repo_name}\n"
-                    "```\n")
-
-            setup += "### Software Installation\n"
-            setup += "The primary method for setting up this project's environment is by using the provided setup script:\n\n"
-            setup += "#### Recommended: Using the Custom Setup Script *(currently under development)*\n"
-
-            if programming_language.lower() == "r":
-                setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies:\n\n"
-            else: 
-                setup += f"Run the following command to automatically install all {py_version} dependencies:\n\n"
-            setup += ("```\n"
-                    "python setup/run_setup.pyn\n"
-                    "```\n")    
-            if programming_language.lower() in ["matlab","stata","sas"]:
-                setup +=f"These methods do **not** install external the proprietary software **{software_version}**."
-            setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
-            
-            setup += "#### Install with Conda:\n"
-            setup += "Install the required dependencies using Conda and the provided `environment.yml` file:\n"
-            setup += "```\n"
-            setup += "conda env create -f environment.yml\n"
-            setup += "```\n\n"
-
-            if programming_language.lower() == "r":
-                setup += f"> ⚡ Note: The `environment.yml` file will also install **{software_version}** alongside Python packages.\n\n"
-
-            setup += "#### Install using Pip:\n"
-            setup += "Alternatively, you can install the Python dependencies using `requirements.txt`:\n"
-            setup += "```\n"
-            setup += "pip install -r requirements.txt\n"
-            setup += "```\n\n"
-            
-            if programming_language.lower() == "r":
-                setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
-                
-                setup += "#### Install R dependencies using renv:\n\n"
-                setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
-                setup += "```\n"
-                setup += "Rscript -e \"renv::restore()\"\n"
-                setup += "```\n\n"
-                setup += f"> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.\n\n"
-
-            return setup
-        
-        def set_contact(authors, orcids, emails):
-            contact = ""
-            if authors:
-                contact += f"**Name:** {authors}\n\n"
-            if orcids:
-                contact += f"**ORCID:** {orcids}\n\n"
-            if emails:
-                contact += f"**Email:** {emails}\n\n"
-            
-            return contact
-        
-        py_version = get_version("python")
-        software_version = get_version(programming_language)
-
-        setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
-        usage = set_usage(programming_language,software_version)
-        contact = set_contact(authors, orcids, emails)
-            
-        return setup,usage,contact
+def create_content(programming_language):
     
-    install, usage, contact = create_content(repo_name, repo_user, code_repo, authors, orcids, emails,programming_language)
+    
+    def set_usage(programming_language,software_version):
 
+        os_type = platform.system().lower()
+        if os_type == "windows":
+            usage = (
+                "\n**Activate on Windows (PowerShell)**\n\n"
+                "```powershell\n"
+                "./activate.ps1\n"
+                "```\n"
+                "\n**Deactivate on Windows (PowerShell)**\n\n"
+                "```powershell\n"
+                "./deactivate.ps1\n"
+                "```\n"
+            )
+
+        elif os_type in ("darwin", "linux"):
+            usage = (
+                "\n**Activate on Linux/macOS (bash)** \n\n"
+                "```bash\n"
+                "source activate.sh\n"
+                "```\n"
+                "\n**Deactivate on Linux/macOS (bash)** \n\n"
+                "```bash\n"
+                "source deactivate.sh\n"
+                "```\n"
+            )
+        
+        if programming_language.lower() != "none":
+            usage += (f"### Run Project Code\n"
+                    f"The project code is written in **{software_version}**.\n\n"
+                    "You can execute the main project script by running the following command:\n")
+
+            usage += "```\n"
+            file_extension = ext_map.get(programming_language.lower(), "txt")
+            usage += f"{programming_language.lower()} src/main.{file_extension}\n"
+            usage += "```"
+        return usage
+
+    def set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo):            
+        setup = ""
+
+        if repo_name and repo_user:
+            setup += "### Clone the Project Repository\n"
+            "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
+            "Clone the repository using the following command:\n"
+            setup += "```\n"
+            if code_repo.lower() in ["github","gitlab"]:
+                web_repo = code_repo.lower()
+                setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
+                        "```\n")
+        setup += ("### Navigate to the Project Directory\n"
+                "Change into the project directory:\n"  
+                "```\n"
+                f"cd {repo_name}\n"
+                "```\n")
+
+        setup += "### Software Installation\n"
+        setup += "The primary method for setting up this project's environment is by using the provided setup script:\n\n"
+        setup += "#### Recommended: Using the Custom Setup Script *(currently under development)*\n"
+
+        if programming_language.lower() == "r":
+            setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies:\n\n"
+        else: 
+            setup += f"Run the following command to automatically install all {py_version} dependencies:\n\n"
+        setup += ("```\n"
+                "python setup/run_setup.pyn\n"
+                "```\n")    
+        if programming_language.lower() in ["matlab","stata","sas"]:
+            setup +=f"These methods do **not** install external the proprietary software **{software_version}**."
+        setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
+        
+        setup += "#### Install with Conda:\n"
+        setup += "Install the required dependencies using Conda and the provided `environment.yml` file:\n"
+        setup += "```\n"
+        setup += "conda env create -f environment.yml\n"
+        setup += "```\n\n"
+
+        if programming_language.lower() == "r":
+            setup += f"> ⚡ Note: The `environment.yml` file will also install **{software_version}** alongside Python packages.\n\n"
+
+        setup += "#### Install using Pip:\n"
+        setup += "Alternatively, you can install the Python dependencies using `requirements.txt`:\n"
+        setup += "```\n"
+        setup += "pip install -r requirements.txt\n"
+        setup += "```\n\n"
+        
+        if programming_language.lower() == "r":
+            setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
+            
+            setup += "#### Install R dependencies using renv:\n\n"
+            setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
+            setup += "```\n"
+            setup += "Rscript -e \"renv::restore()\"\n"
+            setup += "```\n\n"
+            setup += f"> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.\n\n"
+
+        return setup
+
+    def set_contact(authors, orcids, emails):
+        contact = ""
+        if authors:
+            contact += f"**Name:** {authors}\n\n"
+        if orcids:
+            contact += f"**ORCID:** {orcids}\n\n"
+        if emails:
+            contact += f"**Email:** {emails}\n\n"
+        
+        return contact
+
+        programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    
+        programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    
+
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    authors = load_from_env("AUTHORS",".cookiecutter")
+    orcids = load_from_env("ORCIDS",".cookiecutter")
+    emails = load_from_env("EMAIL",".cookiecutter")
+    repo_user = load_from_env(f"{code_repo}_USER")
+
+    py_version = get_version("python")
+    software_version = get_version(programming_language)
+
+    setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
+    usage = set_usage(programming_language,software_version)
+    contact = set_contact(authors, orcids, emails)
+        
+    return setup,usage,contact
+
+# README.md
+def creating_readme(programming_language = "None"):
+
+    # Create and update README and Project Tree:
     file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json"))
-
-     # Create and update README and Project Tree:
     update_file_descriptions(programming_language,"./README.md", json_file=file_descriptions)
-    generate_readme(project_name, project_description,programming_language,install,usage,contact,"./README.md")
+
+    generate_readme(programming_language,"./README.md")
 
     ignore_list = read_treeignore()
-
     #ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
+   
     create_tree("./README.md",ignore_list ,file_descriptions)
     
-def generate_readme(project_name, project_description,programming_language,install,usage,contact,readme_file = None):
+def generate_readme(programming_language,readme_file = None):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -212,7 +201,7 @@ def generate_readme(project_name, project_description,programming_language,insta
     - project_description (str): A short description of the project.
     """
     if readme_file is None:
-        readme_file = "README.md"
+        readme_file = "./README.md"
 
 
     readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
@@ -220,6 +209,11 @@ def generate_readme(project_name, project_description,programming_language,insta
     if os.path.exists(readme_file):
         return
     
+    install, usage, contact = create_content(programming_language)
+    
+    project_name = load_from_env("PROJECT_NAME",".cookiecutter")
+    project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
+
     py_version = get_version("python")
     software_version = get_version(programming_language)
     
@@ -299,8 +293,39 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     print(f"README.md created at: {readme_file}")
 
 # Project Tree
+def read_treeignore(file_path=".treeignore"):
+    """Load ignore rules from a .gitignore-style file."""
+    file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
 
+    with open(file_path, "r", encoding="utf-8") as f:
+        patterns = f.read().splitlines()
+    spec = pathspec.PathSpec.from_lines('gitwildmatch', patterns)
+    return spec
 
+def read_treeignore_old(file_path=".treeignore"):
+    """
+    Reads the .treeignore file and returns a list of ignored paths.
+    
+    Parameters:
+    file_path (str): Path to the .treeignore file (default is ".treeignore").
+    
+    Returns:
+    list: A list of ignored paths from the .treeignore file.
+    """
+    ignore_list = []
+    file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
+
+    try:
+        with open(file_path, 'r') as f:
+            for line in f:
+                # Strip leading/trailing whitespace and ignore empty lines or comments
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    ignore_list.append(line)
+    except FileNotFoundError:
+        print(f"Warning: {file_path} not found. Returning empty ignore list.")
+    
+    return ignore_list
 
 def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESCRIPTIONS.json", root_folder=None):
     """
@@ -313,23 +338,27 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
     - root_folder (str): The root folder to generate the tree structure from. Defaults to the current working directory.
     """
 
-    def generate_tree(folder_path, file_descriptions, ignore_spec=None, prefix=""):
+    def generate_tree(folder_path, file_descriptions, ignore_spec=None, prefix="", root_path=None):
         """
         Recursively generates a tree structure of the folder, respecting ignore rules.
 
         Parameters:
-        - folder_path (str): The root folder path.
+        - folder_path (str): The current folder path.
         - file_descriptions (dict): Optional descriptions for files.
         - ignore_spec (PathSpec): PathSpec object for ignore rules.
         - prefix (str): The prefix for the current level of the tree.
+        - root_path (str): The root path of the project, needed for correct relative paths.
         """
+        if root_path is None:
+            root_path = folder_path  # First call: set root path
+        
         tree = []
-        items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
+        items = sorted(os.listdir(folder_path))
         for index, item in enumerate(items):
             item_path = os.path.join(folder_path, item)
-            
-            # Calculate relative path for ignore checking
-            rel_path = os.path.relpath(item_path, start=folder_path)
+
+            # Correct: compute rel_path relative to root
+            rel_path = os.path.relpath(item_path, start=root_path).replace("\\", "/")  # Always use forward slashes
 
             if ignore_spec and ignore_spec.match_file(rel_path):
                 continue
@@ -341,7 +370,7 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
 
             if os.path.isdir(item_path):
                 child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path, file_descriptions, ignore_spec=ignore_spec, prefix=child_prefix))
+                tree.extend(generate_tree(item_path, file_descriptions, ignore_spec=ignore_spec, prefix=child_prefix, root_path=root_path))
 
         return tree
 
@@ -421,7 +450,7 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
         return
 
     # Generate the folder tree structure
-    tree_structure = generate_tree(root_folder,file_descriptions)
+    tree_structure = generate_tree(folder_path = root_folder,file_descriptions = file_descriptions,ignore_spec=ignore_list,root_path=root_folder)
 
     # Replace the old tree structure in the README
     updated_content = (
@@ -612,7 +641,7 @@ def generate_dataset_table(json_file_path):
                 # Extract required information from the JSON data
                 data_name = entry.get("data_name", "N/A")
                 data_files = " ; ".join(entry.get("data_files", ["Not available"]))  # Newline separated
-                data_sizes = " ; ".join(entry.get("data_size", ["Not available"]))  # Newline separated
+                data_sizes = " ; ".join(str(size) for size in entry.get("data_size", ["Not available"]))
                 location = entry.get("destination", "N/A")
                 hash = entry.get("hash", "N/A")
                 provided = "Provided" if entry.get("data_files") else "Can be re-created"
@@ -792,3 +821,16 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
             file.write(response.content)
     else:
         print(f"Failed to download {readme_file} from {url}")
+
+
+def main():
+    creating_readme(programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
+
+
+if __name__ == "__main__":
+    
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
+    main()
