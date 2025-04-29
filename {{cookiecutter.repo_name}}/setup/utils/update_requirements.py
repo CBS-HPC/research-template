@@ -84,7 +84,7 @@ def read_dependencies(dependencies_files,sections):
 
         software_requirements_section += "\n---\n"
 
-        return software_requirements_section
+    return software_requirements_section
 
 def write_to_readme(readme_file,software_requirements_section):
         # Check if the README file exists

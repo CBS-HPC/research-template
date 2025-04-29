@@ -38,7 +38,7 @@ email = load_from_env("EMAIL",".cookiecutter")
 
 def create_content(programming_language):
       
-    def set_usage(programming_language,software_version):
+    def set_project(programming_language,software_version):
 
         os_type = platform.system().lower()
         if os_type == "windows":
@@ -64,16 +64,6 @@ def create_content(programming_language):
                 "source deactivate.sh\n"
                 "```\n"
             )
-        
-        if programming_language.lower() != "none":
-            usage += (f"### Run Project Code\n"
-                    f"The project code is written in **{software_version}**.\n\n"
-                    "You can execute the main project script by running the following command:\n")
-
-            usage += "```\n"
-            file_extension = ext_map.get(programming_language.lower(), "txt")
-            usage += f"{programming_language.lower()} src/main.{file_extension}\n"
-            usage += "```"
         return usage
 
     def set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo):            
@@ -147,10 +137,101 @@ def create_content(programming_language):
         
         return contact
 
-        programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    
-        programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    
+    def set_script_structure(programming_language,software_version):
+        """
+        Generate the README section for Script Structure and Usage based on the programming language.
+
+        Args:
+            programming_language (str): One of ['r', 'python', 'stata', 'matlab', 'sas']
+
+        Returns:
+            str: Formatted README section
+        """
+
+        programming_language = programming_language.lower()
+
+        if programming_language not in ["r", "python", "stata", "matlab", "sas"]:
+            raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
+
+        # Language-specific syntax settings
+        if programming_language == "r":
+            main_syntax = "::main()"
+            comment_prefix = "#"
+            source_cmd = "source('"
+            source_ext = ".R')"
+        elif programming_language == "python":
+            main_syntax = ".main()"
+            comment_prefix = "#"
+            source_cmd = "import "
+            source_ext = ""  # Python uses import without extension
+        elif programming_language == "stata":
+            main_syntax = "_main"
+            comment_prefix = "*"
+            source_cmd = "do "
+            source_ext = ".do"
+        elif programming_language == "matlab":
+            main_syntax = "_main()"
+            comment_prefix = "%"
+            source_cmd = "run('"
+            source_ext = ".m')"
+        elif programming_language == "sas":
+            main_syntax = "_main"
+            comment_prefix = "*"
+            source_cmd = "%include \""
+            source_ext = ".sas\";"
+
+        # Build the README text
+        structure_usage = f"""
+   
+    The project is written in **{software_version}** and includes modular scripts for standardized data science workflows, organized under `src/`.
+
+    Each script is structured to:
+    - Define a `main()` function for execution
+    - Set up project paths automatically (raw, interim, processed, results)
+    - Remain passive unless the `main()` is explicitly called
+
+    The typical workflow includes the following steps:
+
+    1. **Data Collection** — Import or generate datasets.
+    2. **Preprocessing** — Clean and transform data.
+    3. **Modeling** — Train and evaluate machine learning models.
+    4. **Visualization** — Generate plots and graphs.
+    5. **Utilities** — Provide helper functions.
+
+    ### Execution Order
+
+    The `src/main.{programming_language if programming_language != 'python' else 'py'}` file orchestrates the workflow by:
+
+    {comment_prefix} Install dependencies
+    {source_cmd}install_dependencies{source_ext}
+        
+    {comment_prefix} Load scripts
+    {source_cmd}data_collection{source_ext}
+    {source_cmd}preprocessing{source_ext}
+    {source_cmd}modeling{source_ext}
+    {source_cmd}visualization{source_ext}
+    {source_cmd}utils{source_ext}
+
+    {comment_prefix} Run main functions
+    data_collection{main_syntax}
+    preprocessing{main_syntax}
+    modeling{main_syntax}
+    visualization{main_syntax}
+    utils{main_syntax}
+
+    ### Output Paths
+
+    | Step             | Output Directory          |
+    |------------------|----------------------------|
+    | Data Collection  | `data/raw/`                 |
+    | Preprocessing    | `data/interim/`             |
+    | Modeling         | `data/processed/`           |
+    | Visualization    | `results/figures/`          |
+
+    All scripts use relative paths based on their location, ensuring portability and reproducibility across systems.
+    """
+
+        return structure_usage
 
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
@@ -163,10 +244,12 @@ def create_content(programming_language):
     software_version = get_version(programming_language)
 
     setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
-    usage = set_usage(programming_language,software_version)
+    activate = set_project(programming_language,software_version)
     contact = set_contact(authors, orcids, emails)
+
+    usage = set_script_structure(programming_language,software_version)
         
-    return setup,usage,contact
+    return setup,activate,contact,usage
 
 # README.md
 def creating_readme(programming_language = "None"):
@@ -200,7 +283,7 @@ def generate_readme(programming_language,readme_file = None):
     if os.path.exists(readme_file):
         return
     
-    install, usage, contact = create_content(programming_language)
+    install, activate, contact,usage = create_content(programming_language)
     
     project_name = load_from_env("PROJECT_NAME",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
@@ -212,8 +295,6 @@ def generate_readme(programming_language,readme_file = None):
     header = f"""# {project_name}
 
 {project_description}
-
-
 
 ## Contact Information
 {contact}
@@ -231,7 +312,6 @@ The environments were set up using:
 
 ## Environment Setup
 
-
 ### Project Configuration
 
 To configure the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file.
@@ -239,13 +319,18 @@ To configure the project's environment—including project paths, environment va
 > ⚠️ The `.env` file is excluded from this repository for security reasons. To replicate the environment, please follow the instructions in the [Installation](#installation) section.
 
 
-{usage}
+{activate}
 
 ## Installation
 
 Follow these steps to set up the project on your local machine:
 
 {install}
+
+
+## Script Structure and Usage
+
+{usage}
 
 ## Dataset List
 
