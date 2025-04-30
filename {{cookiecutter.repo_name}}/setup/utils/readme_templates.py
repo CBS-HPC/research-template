@@ -38,7 +38,7 @@ email = load_from_env("EMAIL",".cookiecutter")
 
 def create_content(programming_language):
       
-    def set_project(programming_language,software_version):
+    def set_project():
 
         os_type = platform.system().lower()
         if os_type == "windows":
@@ -181,55 +181,55 @@ def create_content(programming_language):
             source_ext = ".sas\";"
 
         # Build the README text
-        structure_usage = f"""
-   
-    The project is written in **{software_version}** and includes modular scripts for standardized data science workflows, organized under `src/`.
+        structure_usage = f"""The project is written in **{software_version}** and includes modular scripts for standardized data science workflows, organized under `src/`.
 
-    Each script is structured to:
-    - Define a `main()` function for execution
-    - Set up project paths automatically (raw, interim, processed, results)
-    - Remain passive unless the `main()` is explicitly called
+Each script is structured to:
+- Define a `main()` function for execution
+- Set up project paths automatically (raw, interim, processed, results)
+- Remain passive unless the `main()` is explicitly called
 
-    The typical workflow includes the following steps:
+The typical workflow includes the following steps:
 
-    1. **Data Collection** — Import or generate datasets.
-    2. **Preprocessing** — Clean and transform data.
-    3. **Modeling** — Train and evaluate machine learning models.
-    4. **Visualization** — Generate plots and graphs.
-    5. **Utilities** — Provide helper functions.
+1. **Data Collection** — Import or generate datasets.
+2. **Preprocessing** — Clean and transform data.
+3. **Modeling** — Train and evaluate machine learning models.
+4. **Visualization** — Generate plots and graphs.
+5. **Utilities** — Provide helper functions.
 
-    ### Execution Order
+### Execution Order
 
-    The `src/main.{programming_language if programming_language != 'python' else 'py'}` file orchestrates the workflow by:
+The `src/main.{programming_language if programming_language != 'python' else 'py'}` file orchestrates the workflow by:
 
-    {comment_prefix} Install dependencies
-    {source_cmd}install_dependencies{source_ext}
-        
-    {comment_prefix} Load scripts
-    {source_cmd}data_collection{source_ext}
-    {source_cmd}preprocessing{source_ext}
-    {source_cmd}modeling{source_ext}
-    {source_cmd}visualization{source_ext}
-    {source_cmd}utils{source_ext}
+```
+{comment_prefix} Install dependencies
+{source_cmd}install_dependencies{source_ext}
+    
+{comment_prefix} Load scripts
+{source_cmd}data_collection{source_ext}
+{source_cmd}preprocessing{source_ext}
+{source_cmd}modeling{source_ext}
+{source_cmd}visualization{source_ext}
+{source_cmd}utils{source_ext}
 
-    {comment_prefix} Run main functions
-    data_collection{main_syntax}
-    preprocessing{main_syntax}
-    modeling{main_syntax}
-    visualization{main_syntax}
-    utils{main_syntax}
+{comment_prefix} Run main functions
+data_collection{main_syntax}
+preprocessing{main_syntax}
+modeling{main_syntax}
+visualization{main_syntax}
+utils{main_syntax}
+```
 
-    ### Output Paths
+### Output Paths
 
-    | Step             | Output Directory          |
-    |------------------|----------------------------|
-    | Data Collection  | `data/raw/`                 |
-    | Preprocessing    | `data/interim/`             |
-    | Modeling         | `data/processed/`           |
-    | Visualization    | `results/figures/`          |
+| Step             | Output Directory          |
+|------------------|----------------------------|
+| Data Collection  | `data/raw/`                 |
+| Preprocessing    | `data/interim/`             |
+| Modeling         | `data/processed/`           |
+| Visualization    | `results/figures/`          |
 
-    All scripts use relative paths based on their location, ensuring portability and reproducibility across systems.
-    """
+All scripts use relative paths based on their location, ensuring portability and reproducibility across systems.
+"""
 
         return structure_usage
 
@@ -244,7 +244,7 @@ def create_content(programming_language):
     software_version = get_version(programming_language)
 
     setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
-    activate = set_project(programming_language,software_version)
+    activate = set_project()
     contact = set_contact(authors, orcids, emails)
 
     usage = set_script_structure(programming_language,software_version)
