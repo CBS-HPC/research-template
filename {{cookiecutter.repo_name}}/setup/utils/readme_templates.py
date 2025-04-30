@@ -767,22 +767,16 @@ set-dataset
 | Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |
 |------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
 
-
 ## Project Directory Structure
 
 The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file.
 ```
 
 ```
-
 ## Creating a Replication Package Based on DCAS
 
 {dcas}
 
-## Computational Requirements
-
-### Software Requirements
-    
 """
 
     # Write the README.md content
