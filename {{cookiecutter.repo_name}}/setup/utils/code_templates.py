@@ -26,9 +26,6 @@ def write_script(folder_path, script_name, extension, content):
 
     file_name = f"{script_name}{extension}"
     file_path = os.path.join(folder_path, file_name)
-
-        # Ensure the notebooks folder exists
-
     file_path= str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(file_path))
 
     with open(file_path, "w") as file:
@@ -101,8 +98,7 @@ def create_step_script(programming_language, folder_path, script_name, purpose):
 
 def create_r_script(folder_path, script_name, purpose):
     extension = ".R"
-    content = f"""
-{% raw %}
+    content = f"""{% raw %}
 # {purpose} code
 
 base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
@@ -237,6 +233,9 @@ def create_r_main(folder_path):
 # Install dependencies
 source('install_dependencies.R')
 
+# Load utilities
+source("utils.R")  # <- shared functions, not a step
+
 # Load Scripts
 source('data_collection.R')
 source('preprocessing.R')
@@ -263,10 +262,11 @@ def create_python_main(folder_path):
 # Main: Running all steps in order
 
 import os
+import sys
+
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-setup_path  os.path.join(base_path, "setup") 
-sys.path.append(setup_path)
-from utils import *
+src_path = os.path.join(base_path, "src")
+sys.path.append(src_path)
 
 @ensure_correct_kernel
 def main():
@@ -274,7 +274,10 @@ def main():
     import install_dependencies
     install_dependencies.main()
 
-    # Load Scripts
+    # Load utility functions (not executed directly)
+    import utils  # <- provides helper functions
+
+    # Load main workflow scripts
     import data_collection
     import preprocessing
     import modeling
@@ -305,6 +308,9 @@ def create_stata_main(folder_path):
 * Install dependencies
 do "install_dependencies.do"
 
+* Load utility functions (not executed directly)
+do "utils.do"
+
 * Load Scripts
 do "data_collection.do"
 do "preprocessing.do"
@@ -333,6 +339,9 @@ def create_matlab_main(folder_path):
 % Install dependencies
 run('install_dependencies.m');
 
+% Load utility functions (not executed)
+run('utils.m');
+
 % Run data collection
 data_collection_main();
 
@@ -354,6 +363,9 @@ def create_sas_main(folder_path):
 
 * Install dependencies
 %include "install_dependencies.sas";
+
+* Load utilities
+%include "utils.sas";
 
 * Load Scripts;
 %include "data_collection.sas";
@@ -402,8 +414,7 @@ def create_get_dependencies(programming_language, folder_path):
 
 def create_get_python_dependencies(folder_path):
     extension = ".py"
-    content = r"""
-{% raw %}
+    content = r"""{% raw %}
 import os
 import subprocess
 import ast
@@ -551,8 +562,7 @@ if __name__ == "__main__":
 
 def create_get_r_dependencies(folder_path):
     extension = ".R"
-    content = r"""
-{% raw %}    
+    content = r"""{% raw %}    
 get_dependencies <- function(folder_path = NULL, file_name = "dependencies.txt",install_cmd=NULL) {
   
   # If folder_path is not provided, use the folder of the current script
@@ -674,8 +684,7 @@ if (interactive()) {
 
 def create_get_matlab_dependencies(folder_path):
     extension = ".m"
-    content = r"""
-{% raw %}      
+    content = r"""{% raw %}      
 function get_dependencies(folder_path,file_name,install_cmd)
     % If folder_path is not provided, use the folder of the current script
     if nargin < 1
@@ -775,8 +784,7 @@ end
 # FIX ME 
 def create_get_sas_dependencies(folder_path):
     extension = ".m"
-    content = r"""
-{% raw %}     
+    content = r"""{% raw %}     
 %macro get_dependencies(folder_path);
     /* Check if folder_path is provided; if not, set it to current working directory */
     %if &folder_path = %then %do;
@@ -849,8 +857,7 @@ def create_get_sas_dependencies(folder_path):
 def create_get_stata_dependencies(folder_path):
 
     extension = ".do"
-    content = r"""
-{% raw %}
+    content = r"""{% raw %}
 capture program drop get_dependencies
 
 program define get_dependencies
@@ -961,8 +968,7 @@ def create_install_python_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies.py script will be saved.
     """
     extension = ".py"
-    content = r"""
-{% raw %}    
+    content = r"""{% raw %}    
 import subprocess
 import sys
 import re
@@ -1058,8 +1064,7 @@ def create_install_r_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".R"
-    content = r"""
-{% raw %}    
+    content = r"""{% raw %}    
 install_dependencies <- function(file_path = NULL) {
   # If no file_path is specified, look for dependencies.txt in the script folder
   if (is.null(file_path)) {
@@ -1126,8 +1131,7 @@ def create_install_matlab_dependencies(folder_path):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".m"
-    content = r"""
-{% raw %}  
+    content = r"""{% raw %}  
 function install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
@@ -1284,27 +1288,43 @@ def create_python_notebook(folder_path):
 
     content = nbf.v4.new_notebook()
 
-    # First cell: Import all scripts
     cells = [
-        nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
-        nbf.v4.new_markdown_cell("### Loading Scripts"),
+        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order"),
+
+        nbf.v4.new_markdown_cell("### Install dependencies"),
         nbf.v4.new_code_cell(
             "import sys\n"
-            "sys.path.append('src')\n"
+            "import os\n"
+            "base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))\n"
+            "src_path = os.path.join(base_path, 'src')\n"
+            "if src_path not in sys.path:\n"
+            "    sys.path.append(src_path)\n"
+            "import install_dependencies\n"
+            "install_dependencies.main()"
+        ),
+
+        nbf.v4.new_markdown_cell("### Load Scripts"),
+        nbf.v4.new_code_cell(
+            "import utils  # helper functions only, not executed directly\n"
             "import data_collection\n"
             "import preprocessing\n"
             "import modeling\n"
-            "import visualization\n"
+            "import visualization"
         ),
-        nbf.v4.new_markdown_cell("### Run data collection"),
+
+        nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("data_collection.main()"),
-        nbf.v4.new_markdown_cell("### Run preprocessing"),
+
+        nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("preprocessing.main()"),
-        nbf.v4.new_markdown_cell("### Run modeling"),
+
+        nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("modeling.main()"),
-        nbf.v4.new_markdown_cell("### Run visualization"),
+
+        nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("visualization.main()")
     ]
+
     content.cells.extend(cells)
 
     write_script(folder_path, script_name, extension, content)
@@ -1315,32 +1335,42 @@ def create_r_notebook(folder_path):
     # Create RMarkdown content with the requested structure
     content = dedent(r"""{% raw %}
     ---
-    title: "Workflow: Running all steps in order"
+    title: "Workflow: Running All Steps in Order"
     output: html_document
     ---
 
     # Workflow
 
-    ## Load Scripts
-    ```{r}             
-    source("src/data_collection.R")
-    source("src/preprocessing.R")
-    source("src/modeling.R")
-    source("src/visualization.R")
+    ## Install Dependencies
+    ```{r}
+    source("install_dependencies.R")
     ```
-    ## Run data collection
+
+    ## Load Utility and Workflow Scripts
+    ```{r}
+    source("utils.R")  # shared helper functions, not executed directly
+    source("data_collection.R")
+    source("preprocessing.R")
+    source("modeling.R")
+    source("visualization.R")
+    ```
+
+    ## Run Data Collection
     ```{r}
     data_collection::main()
     ```
-    ## Run preprocessing
+
+    ## Run Preprocessing
     ```{r}
     preprocessing::main()
     ```
-    ## Run modeling
+
+    ## Run Modeling
     ```{r}
     modeling::main()
     ```
-    ## Run visualization
+
+    ## Run Visualization
     ```{r}
     visualization::main()
     ```
@@ -1354,116 +1384,125 @@ def create_stata_notebook(folder_path):
 
     content = nbf.v4.new_notebook()
 
-    # First cell: Configure Stata setup
     cells = [
-        nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
+        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order (Stata)"),
+
         nbf.v4.new_markdown_cell("### Stata Setup"),
         nbf.v4.new_code_cell(
             "import stata_setup\n"
-            "stata_setup.config('/work/stata17', 'se')\n"
+            "stata_setup.config('/work/stata17', 'se')  # Adjust to your Stata installation path"
         ),
-        nbf.v4.new_markdown_cell("### Run data collection"),
+
+        nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do src/data_collection.do\n"
-                             "data_collection_main()"),
-        nbf.v4.new_markdown_cell("### Run preprocessing"),
+                             "do data_collection.do\n"
+                             "data_collection_main"),
+
+        nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do src/preprocessing.do\n"
-                             "preprocessing_main()"),
-        nbf.v4.new_markdown_cell("### Run modeling"),
+                             "do preprocessing.do\n"
+                             "preprocessing_main"),
+
+        nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do src/modeling.do\n"
-                             "modeling_main()"),
-        nbf.v4.new_markdown_cell("### Run visualization"),
+                             "do modeling.do\n"
+                             "modeling_main"),
+
+        nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do src/visualization.do\n"
-                             "visualization_main()")
+                             "do visualization.do\n"
+                             "visualization_main")
     ]
+
     content.cells.extend(cells)
 
     write_script(folder_path, script_name, extension, content)
 
-def create_matlab_notebooks(folder_path):
-  
-    # Create Jupyter notebook using jupyter-matlab-proxy
+def create_matlab_notebook(folder_path):
+    # --- 1. Create Jupyter Notebook (.ipynb) with MATLAB kernel ---
     extension = ".ipynb"
     script_name = "workflow"
+    content = nbf.v4.new_notebook()
 
-    content= nbf.v4.new_notebook()
-
-    # First cell: Load necessary paths and scripts (without running functions)
     cells = [
-        nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
-        nbf.v4.new_markdown_cell("### MATLAB Setup (using jupyter-matlab-proxy)"),
+        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order (MATLAB)"),
+
+        nbf.v4.new_markdown_cell("### MATLAB Setup (via jupyter-matlab-proxy)"),
         nbf.v4.new_code_cell(
             "%%matlab\n"
-            "addpath('src')\n"
+            "% Add project source path to MATLAB\n"
+            "addpath(fullfile(pwd, 'src'));\n"
+            "run('install_dependencies.m');"
         ),
-        nbf.v4.new_markdown_cell("### Run data collection"),
-        nbf.v4.new_code_cell("data_collection_main()"),
-        nbf.v4.new_markdown_cell("### Run preprocessing"),
-        nbf.v4.new_code_cell("preprocessing_main()"),
-        nbf.v4.new_markdown_cell("### Run modeling"),
-        nbf.v4.new_code_cell("modeling_main()"),
-        nbf.v4.new_markdown_cell("### Run visualization"),
-        nbf.v4.new_code_cell("visualization_main()")
+
+        nbf.v4.new_markdown_cell("### Run Data Collection"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "data_collection_main();"),
+
+        nbf.v4.new_markdown_cell("### Run Preprocessing"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "preprocessing_main();"),
+
+        nbf.v4.new_markdown_cell("### Run Modeling"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "modeling_main();"),
+
+        nbf.v4.new_markdown_cell("### Run Visualization"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "visualization_main();")
     ]
 
     content.cells.extend(cells)
-
     write_script(folder_path, script_name, extension, content)
-   
-    # Create MATLAB notebook (.mlx) and Jupyter notebook
+
+    # --- 2. Create MATLAB Live Script (.mlx) version ---
     extension = ".mlx"
-    script_name = "workflow"
-
-    # For .mlx file, write MATLAB-specific workflow
-    content = dedent(r"""%% Workflow: Running all steps in order
+    content = dedent("""\
+    %% Workflow: Running All Steps in Order
     % MATLAB Setup
-    addpath('src')
+    addpath(fullfile(pwd, 'src'));
+    run('install_dependencies.m');
 
-    %% Run data collection
-    data_collection_main()
+    %% Run Data Collection
+    data_collection_main();
 
-    %% Run preprocessing
-    preprocessing_main()
+    %% Run Preprocessing
+    preprocessing_main();
 
-    %% Run modeling
-    modeling_main()
+    %% Run Modeling
+    modeling_main();
 
-    %% Run visualization
-    visualization_main()
+    %% Run Visualization
+    visualization_main();
     """)
-
     write_script(folder_path, script_name, extension, content)
 
 def create_sas_notebook(folder_path):
-  
-
     extension = ".ipynb"
     script_name = "workflow"
-    
-    content= nbf.v4.new_notebook()
 
-    # First cell: Configure SAS setup for Jupyter (without running functions)
+    content = nbf.v4.new_notebook()
+
     cells = [
-        nbf.v4.new_markdown_cell("# Workflow: Running all steps in order"),
+        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order (SAS)"),
+
         nbf.v4.new_markdown_cell("### SAS Setup (using sas_kernel)"),
-        nbf.v4.new_code_cell(
-            "import saspy\n"
-            "sas = saspy.SASsession()\n"
-        ),
-        nbf.v4.new_markdown_cell("### Run data collection"),
-        nbf.v4.new_code_cell("sas.submit('data_collection_main.sas')"),
-        nbf.v4.new_markdown_cell("### Run preprocessing"),
-        nbf.v4.new_code_cell("sas.submit('preprocessing_main.sas')"),
-        nbf.v4.new_markdown_cell("### Run modeling"),
-        nbf.v4.new_code_cell("sas.submit('modeling_main.sas')"),
-        nbf.v4.new_markdown_cell("### Run visualization"),
-        nbf.v4.new_code_cell("sas.submit('visualization_main.sas')")
+        nbf.v4.new_code_cell("%%SAS\n* Ensure SAS kernel is working and paths are correctly set;"),
+
+        nbf.v4.new_markdown_cell("### Load and Run Data Collection"),
+        nbf.v4.new_code_cell("%%SAS\n%include 'data_collection.sas';\n%data_collection_main;"),
+
+        nbf.v4.new_markdown_cell("### Load and Run Preprocessing"),
+        nbf.v4.new_code_cell("%%SAS\n%include 'preprocessing.sas';\n%preprocessing_main;"),
+
+        nbf.v4.new_markdown_cell("### Load and Run Modeling"),
+        nbf.v4.new_code_cell("%%SAS\n%include 'modeling.sas';\n%modeling_main;"),
+
+        nbf.v4.new_markdown_cell("### Load and Run Visualization"),
+        nbf.v4.new_code_cell("%%SAS\n%include 'visualization.sas';\n%visualization_main;")
     ]
+
     content.cells.extend(cells)
-    
     write_script(folder_path, script_name, extension, content)
 
 
@@ -1478,7 +1517,7 @@ def main():
   
     # Create scripts and notebook
     create_scripts(programming_language, "./src")
-    create_notebooks(programming_language, "./notebooks")
+    create_notebooks(programming_language, "./src")
 
     
 if __name__ == "__main__":

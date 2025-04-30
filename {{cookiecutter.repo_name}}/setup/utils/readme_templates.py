@@ -66,7 +66,7 @@ def create_content(programming_language):
             )
         return usage
 
-    def set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo):            
+    def set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo):            
         setup = ""
 
         if repo_name and repo_user:
@@ -100,7 +100,7 @@ def create_content(programming_language):
         setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
         
         setup += "#### Install with Conda:\n"
-        setup += "Install the required dependencies using Conda and the provided `environment.yml` file:\n"
+        setup += f"Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:\n"
         setup += "```\n"
         setup += "conda env create -f environment.yml\n"
         setup += "```\n\n"
@@ -109,7 +109,7 @@ def create_content(programming_language):
             setup += f"> ⚡ Note: The `environment.yml` file will also install **{software_version}** alongside Python packages.\n\n"
 
         setup += "#### Install using Pip:\n"
-        setup += "Alternatively, you can install the Python dependencies using `requirements.txt`:\n"
+        setup += f"Alternatively, you can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`:\n"
         setup += "```\n"
         setup += "pip install -r requirements.txt\n"
         setup += "```\n\n"
@@ -190,11 +190,14 @@ Each script is structured to:
 
 The typical workflow includes the following steps:
 
-1. **Data Collection** — Import or generate datasets.
-2. **Preprocessing** — Clean and transform data.
-3. **Modeling** — Train and evaluate machine learning models.
-4. **Visualization** — Generate plots and graphs.
-5. **Utilities** — Provide helper functions.
+0. **Install Dependencies** — Ensures all required packages/libraries are installed.
+1. **Load Utilities** — Loads helper functions used by other scripts (not a pipeline step).
+2. **Data Collection** — Imports or generates datasets, stored in `data/raw/`.
+3. **Preprocessing** — Cleans and transforms the raw data, outputting to `data/interim/`.
+4. **Modeling** — Trains and evaluates machine learning models using processed data. Results saved to `data/processed/`.
+5. **Visualization** — Produces plots and visual summaries, saved to `results/figures/`.
+
+> 🛠️ **Note:** `utils` does not define a `main()` function and should not be executed directly.
 
 ### Execution Order
 
@@ -216,7 +219,6 @@ data_collection{main_syntax}
 preprocessing{main_syntax}
 modeling{main_syntax}
 visualization{main_syntax}
-utils{main_syntax}
 ```
 
 ### Output Paths
@@ -242,8 +244,10 @@ All scripts use relative paths based on their location, ensuring portability and
 
     py_version = get_version("python")
     software_version = get_version(programming_language)
+    conda_version = get_version("conda")
+    pip_version = get_version("pip")
 
-    setup = set_setup(programming_language,py_version,software_version,repo_name, repo_user, code_repo)
+    setup = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
 

@@ -44,7 +44,7 @@ def main():
     files_to_remove = ["./setup/project_setup.py","./run_setup.sh","./run_setup.ps1","./setup/intro.py","./setup/outro.py",activate_to_delete,deactivate_to_delete]
 
     if programming_language.lower() != 'r':
-        files_to_remove.append("./setup/renv_setup.R")
+        files_to_remove.append("./src/renv_setup.R")
 
     # Deleting Setup scripts
     delete_files(files_to_remove)

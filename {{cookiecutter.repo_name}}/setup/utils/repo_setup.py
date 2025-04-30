@@ -101,7 +101,7 @@ def main():
 
     if programming_language.lower() == "r":
         # Call the setup script using the function
-        r_script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/renv_setup.R")))
+        r_script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/renv_setup.R")))
         project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
         cmd = ["--file=" + r_script_path, "--args", project_root] 
         #cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root]  

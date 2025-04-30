@@ -583,7 +583,7 @@ def set_programming_language(programming_language):
 
 def get_version(programming_language):
     
-    if programming_language != "python":
+    if programming_language not in ["python","pip"]:
         exe_path = load_from_env(programming_language)
         exe_path  = check_path_format(exe_path)
         if not exe_path:
@@ -592,12 +592,18 @@ def get_version(programming_language):
     if programming_language.lower() == "python":
         version  = f"{subprocess.check_output([sys.executable, '--version']).decode().strip()}"
     elif programming_language.lower() == "r":
+        if not exe_path:
+            return "R"
         version = subprocess.run([exe_path, '-e', 'cat(paste(R.version$version))'], capture_output=True, text=True)
         version = version.stdout[0:17].strip()
     elif programming_language.lower() == "matlab":
+        if not exe_path:
+            return "Matlab"
         version = subprocess.run([exe_path, "-batch", "disp(version)"], capture_output=True, text=True)
         version = f"Matlab {version.stdout.strip()}"
     elif programming_language.lower() == "stata":
+        if not exe_path:
+            return "Stata"
         # Extract edition based on executable name
         edition = "SE" if "SE" in exe_path else ("MP" if "MP" in exe_path else "IC")
         # Extract version from the folder name (e.g., Stata18 -> 18)
@@ -605,8 +611,18 @@ def get_version(programming_language):
         # Format the output as Stata version and edition
         version = f"Stata {version} {edition}"
     elif programming_language.lower() == "sas": # FIX ME
+        if not exe_path:
+            return "Sas"
         version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
         version =version.stdout.strip()  # Returns version info
+    elif programming_language.lower() == "pip":
+        version = subprocess.check_output(["pip", "--version"], text=True)
+        version = " ".join(version.split()[:2])
+    elif programming_language.lower() == "conda":
+        if not exe_path:
+            return "conda"   
+        version = subprocess.check_output(["conda", "--version"], text=True)
+        version = version.strip()  # e.g., "conda 24.3.0"    
     return version
 
 def run_script(programming_language, script_command=None):
