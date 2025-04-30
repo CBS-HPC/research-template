@@ -12,7 +12,6 @@ def main():
     versioning_setup.main()
     repo_setup.main()
 
-
 if __name__ == "__main__":
     
     # Ensure the working directory is the project root
