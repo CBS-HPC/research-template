@@ -342,6 +342,23 @@ To configure the project's environment—including project paths, environment va
 
 {activate}
 
+### Functions
+
+## Configuration Files (Root-Level)
+
+The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, packaging, syncing, and reproducibility:
+
+| File               | Purpose                                                                 |
+|--------------------|-------------------------------------------------------------------------|
+| `.gitignore`       | Excludes unnecessary files from Git version control                     |
+| `.rcloneignore`    | Excludes files from syncing when using Rclone                           |
+| `.treeignore`      | Filters out files/folders from project tree utilities                   |
+| `.cookiecutter`    | Contains metadata for cookiecutter project templates                    |
+| `.env`             | environment-specific variables (e.g., absolute paths, API tokens, secrets) used by scripts            |
+| `environment.yml`  | Conda environment definition for Python/R, including packages and R base |
+| `requirements.txt` | Pip-based Python dependencies for lightweight environments              |
+
+
 ## Installation
 
 Follow these steps to set up the project on your local machine:
