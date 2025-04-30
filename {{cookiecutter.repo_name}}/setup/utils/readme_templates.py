@@ -154,31 +154,36 @@ def create_content(programming_language):
             raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
 
         # Language-specific syntax settings
-        if programming_language == "r":
-            main_syntax = "::main()"
-            comment_prefix = "#"
-            source_cmd = "source('"
-            source_ext = ".R')"
-        elif programming_language == "python":
-            main_syntax = ".main()"
-            comment_prefix = "#"
-            source_cmd = "import "
-            source_ext = ""  # Python uses import without extension
-        elif programming_language == "stata":
-            main_syntax = "_main"
-            comment_prefix = "*"
-            source_cmd = "do "
-            source_ext = ".do"
-        elif programming_language == "matlab":
-            main_syntax = "_main()"
-            comment_prefix = "%"
-            source_cmd = "run('"
-            source_ext = ".m')"
-        elif programming_language == "sas":
-            main_syntax = "_main"
-            comment_prefix = "*"
-            source_cmd = "%include \""
-            source_ext = ".sas\";"
+    if programming_language == "r":
+        main_syntax = "::main()"
+        comment_prefix = "#"
+        source_cmd = "source('"
+        source_ext = ".R')"
+        notebook_ext = "Rmd"
+    elif programming_language == "python":
+        main_syntax = ".main()"
+        comment_prefix = "#"
+        source_cmd = "import "
+        source_ext = ""
+        notebook_ext = "ipynb"
+    elif programming_language == "stata":
+        main_syntax = "_main"
+        comment_prefix = "*"
+        source_cmd = "do "
+        source_ext = ".do"
+        notebook_ext = "ipynb"
+    elif programming_language == "matlab":
+        main_syntax = "_main()"
+        comment_prefix = "%"
+        source_cmd = "run('"
+        source_ext = ".m')"
+        notebook_ext = "ipynb / mlx"
+    elif programming_language == "sas":
+        main_syntax = "_main"
+        comment_prefix = "*"
+        source_cmd = "%include \""
+        source_ext = ".sas\";"
+        notebook_ext = "ipynb"
 
         # Build the README text
         structure_usage = f"""The project is written in **{software_version}** and includes modular scripts for standardized data science workflows, organized under `src/`.
@@ -199,9 +204,11 @@ The typical workflow includes the following steps:
 
 > 🛠️ **Note:** `utils` does not define a `main()` function and should not be executed directly.
 
-### Execution Order
+### Execution Options
 
-The `src/main.{programming_language if programming_language != 'python' else 'py'}` file orchestrates the workflow by:
+You can execute the entire pipeline either by:
+
+**A. Running the `src/main.{source_ext}` orchestration script:**
 
 ```
 {comment_prefix} Install dependencies
@@ -220,6 +227,16 @@ preprocessing{main_syntax}
 modeling{main_syntax}
 visualization{main_syntax}
 ```
+
+**B. Opening the notebook interface:**  
+A pre-built notebook `workflow.{notebook_ext}` is available in the project root.  
+This notebook provides the same logic as the main script, but interactively via Jupyter or RMarkdown (depending on the language).
+
+Use this notebook for:
+
+- Exploratory analysis  
+- Teaching/demonstration  
+- Step-by-step debugging
 
 ### Output Paths
 
