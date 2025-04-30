@@ -7,7 +7,7 @@ setup(
     package_dir={'': '.'},
     entry_points={
         'console_scripts': [
-            'run-backup=utils.run_backup:main',
+            'run-backup=utils.backup_tools:main',
             'set-dataset=utils.set_dataset:main',
             'update-requirements=utils.update_requirements:main',
             'update-dependencies=utils.get_dependencies:main',

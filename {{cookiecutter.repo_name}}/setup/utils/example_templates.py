@@ -4,7 +4,7 @@ from textwrap import dedent
 
 from .general_tools import *
 from .code_templates import write_script
-from .update_readme import main as update_readme_main
+from .readme_templates import main as update_readme_main
 from .get_dependencies import main as get_setup_dependencies_main
 
 pip_installer(required_libraries=['rpds-py==0.21.0', 'nbformat'])
@@ -596,10 +596,9 @@ def main():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
   
     # Create scripts and notebook
+    print(f"loading {programming_language} code example")
     create_example(programming_language, "./src")
-    
     get_setup_dependencies_main()
-    
     update_readme_main()
 
     

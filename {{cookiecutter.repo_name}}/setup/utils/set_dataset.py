@@ -7,9 +7,11 @@ from datetime import datetime
 import pathlib
 
 # Ensure the project root is in sys.path
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from utils import *
+#from utils import *
+
+from .readme_templates import *
 
 def get_file_info(file_paths):
     """
@@ -247,7 +249,6 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
             print("No datasets were detected")
     except Exception as e:
         print(e)
-
 
 def main():
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")

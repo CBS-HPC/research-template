@@ -80,7 +80,7 @@ def main():
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-    python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+    #python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
 
     # Create Remote Repository

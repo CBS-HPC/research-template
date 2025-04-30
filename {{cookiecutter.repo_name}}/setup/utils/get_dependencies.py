@@ -5,8 +5,6 @@ import sys
 import sysconfig
 from datetime import datetime
 import importlib
-
-import yaml
 from typing import Dict, List
 import pathlib
 
@@ -15,8 +13,10 @@ import pathlib
 
 #from utils import *
 
-from .general_tools import *
+#from .general_tools import *
+
 from .virenv_tools import *
+
 # Determine file extension based on programming language
 ext_map = {
     "r": "R",
@@ -197,6 +197,8 @@ def main():
     requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
 
     # Update install files
+
+    print("Updating 'requirements.txt','environment.yml'")
     create_requirements_txt("requirements.txt")
     if requirements_file == "requirements.txt":
         create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
@@ -204,17 +206,20 @@ def main():
         export_conda_env(repo_name)
 
     # Run dependencies search
+    print("Screening './setup' for dependencies")
     setup_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
     setup_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
     get_setup_dependencies(folder_path=setup_folder,file_name =setup_file)
 
+    print("Screening './src' for dependencies")
     src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
     if programming_language.lower() == "python":
         src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
         src_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
         get_setup_dependencies(folder_path=src_folder,file_name=src_file)
     else:
-        run_get_dependencies(programming_language, folder_path=src_folder)
+        print("not implemented yet")
+    #    run_get_dependencies(programming_language, folder_path=src_folder)
 
 if __name__ == "__main__":
     # Ensure the working directory is the project root

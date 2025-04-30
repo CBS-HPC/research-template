@@ -6,7 +6,6 @@ import os
 import json
 import pathlib
 import platform
-import pathspec
 
 from .general_tools import *
 
@@ -644,10 +643,10 @@ After installing the setup package, the following commands become available from
 |--------------------------|---------------------------------------------------------------------------------------------|
 | `run-backup`             | Executes a full project backup using preconfigured rules and paths.                         |
 | `set-dataset`            | Initializes or registers datasets for use in the project (e.g., adds metadata or links).    |
-| `update-dependencies`    | Retrieves current dependencies required by the project `./setup` and `./src`.        |
+| `update-dependencies`    | Retrieves current dependencies required by the project `./setup` and `./src`.               |
 | `run-setup` (in progress)| Main entry point to initialize or reconfigure the project environment.                      |
 | `update-readme`          | Automatically updates the main `README.md` file with current metadata and structure.        |
-| `reset-templates`        | Resets or regenerates the code templates for `./src`.            |
+| `reset-templates`        | Resets or regenerates the code templates for `./src`.                                       |
 | `code-examples`          | Generates example code and notebooks for supported languages (Python, R, SAS, etc.).        |
 | `dcas-migrate`(in progress)| Migrates and validates the project structure for DCAS (Data and Code Availability Standard) compliance.|
 
@@ -659,7 +658,6 @@ After activating your environment, run commands like:
 run-setup
 set-dataset
 update-requirements
-deic-storage-download
 ```
 """
         return cli_tools
@@ -972,47 +970,51 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
 
         file_descriptions = {
-            
+
             # Directories
             "data": "Directory containing scripts to download or generate data.",
-            "external":"Data from third party sources.",
+            "external": "Directory for externally sourced data from third-party providers.",
             "interim": "Intermediate data transformed during the workflow.",
             "processed": "The final, clean data used for analysis or modeling.",
             "raw": "Original, immutable raw data.",
             "src": "Directory containing source code for use in this project.",
-            "docs": "Directory for documentation files.",
+            "docs": "Directory for documentation files, reports, or rendered markdown.",
             "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",
-            "results": "Directory for generated results from the project.",
-            "setup": "Directory containing local python package containing setup files, scripts and functions to configure the project environment.",
-            "DCAS template": "Directory containing 'replication package' template for the DCAS (Data and Code Sharing) standard",
-            "utils": "Python module containing the relevant scripts and function of the 'setup' package",
+            "results": "Directory for generated results from the project, such as models, logs, or summaries.",
+            "setup": "Directory containing the local Python package used for configuring and initializing the project environment.",
+            "DCAS template": "Directory containing a 'replication package' template for the DCAS (Data and Code Sharing) standard.",
+            "utils": "Python module within the setup package containing utility scripts and functions used by CLI tools.",
 
-            # Setup files
+            # Setup and configuration files
             ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
             ".gitignore": "Specifies files and directories that should be ignored by Git.",
-            "CITATION.cff": "File containing citation information for the project, typically used for academic purposes.",
-            "file_descriptions.json": "JSON file containing descriptions of the project files for reference.",
+            ".rcloneignore": "Specifies files and directories that should be excluded from remote sync via Rclone.",
+            ".treeignore": "Defines files or folders to exclude from file tree utilities or visualizations.",
+            ".gitlog": "Git log output file for tracking changes to the repository over time.",
+            ".env": "Environment-specific variables such as paths, tokens, or secrets. Typically excluded from version control.",
+            "CITATION.cff": "Citation metadata file for academic attribution and scholarly reference.",
+            "file_descriptions.json": "Structured JSON file used to describe and annotate the project directory tree.",
             "LICENSE.txt": "The project's license file, outlining terms and conditions for usage and distribution.",
-            "README.md": "The top-level README for developers using this project.",
-            "README.MD": "Current The top-level README for developers using this project.",
-            "README_DCAS.md": "A template README for social science replication packages: https://social-science-data-editors.github.io/template_README/",
-            "requirements.txt": "The requirements file for reproducing the analysis environment.",
-            ".gitlog": "git log file (created using git log --all --pretty=fuller --stat > data.txt) tracking changes to the git repository",
-       
-             # Setup files
+            "README.md": "The project README for this project.",
+            #"README.md": "Template README file aligned with DCAS guidelines for social science replication packages.",
+            "requirements.txt": "The requirements file for installing Python dependencies via pip.",
+            "environment.yml": "Conda environment definition file for installing R and Python dependencies.",
+            "renv.lock": "Lockfile used by the R `renv` package to capture the exact state of the R environment for reproducibility.",
+
+            # Setup package scripts
             "deic_storage_download.py": "Script to download data from DEIC storage for the project.",
-            "dependencies.txt": "List of external dependencies required for the project, typically installed with pip.",
-            "get_dependencies.py": "Checks and retrieves necessary dependencies for the project setup.",
-            "install_dependencies.py": "Installs any missing dependencies listed in `dependencies.txt` or other sources.",
-            "readme_templates.py": "Script that provides templates for README files for different setups or environments.",
-            "set_raw_data.py": "Script to set up raw data for use in the project, including preprocessing steps.",
-            "setup.ps1": "PowerShell script for setting up the environment, configuring necessary settings.",
-            "setup.py": "Makes project pip installable (pip install -e .) so `src` can be imported.",
-            "setup.sh": "Bash script for setting up the environment, configuring necessary settings.",
-            "update_requirements.py": "Script to update the `requirements.txt` file with the latest dependencies.",
-            "utils.py": "Contains utility functions for common tasks throughout the setup process."
-            
+            "dependencies.txt": "Plain text list of external Python dependencies for installation.",
+            "get_dependencies.py": "Retrieves and checks required dependencies for the project environment.",
+            "install_dependencies.py": "Installs any missing dependencies listed in `dependencies.txt` or detected dynamically.",
+            "readme_templates.py": "Generates README templates for various environments or publication formats.",
+            "set_raw_data.py": "Script to prepare and stage raw data for initial project use.",
+            "setup.ps1": "PowerShell script to initialize environment setup on Windows systems.",
+            "setup.py": "Defines the setup package and registers CLI tools; enables pip installation (`pip install -e .`).",
+            "setup.sh": "Bash script to initialize environment setup on Linux/macOS systems.",
+            "update_requirements.py": "Updates the `requirements.txt` file based on currently installed packages.",
+            "utils.py": "Contains shared utility functions used throughout the `setup` package and CLI tools."
         }
+
 
         if programming_language:
             # Update the existing dictionary with the new descriptions
@@ -1290,3 +1292,14 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
             file.write(response.content)
     else:
         print(f"Failed to download {readme_file} from {url}")
+
+def main():
+    creating_readme(programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
+
+if __name__ == "__main__":
+    
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
+    main()
