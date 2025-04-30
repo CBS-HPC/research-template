@@ -9,7 +9,6 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from utils.repo_tools import *
 from utils.virenv_tools import *
 from utils.get_dependencies import get_setup_dependencies
-from utils.update_requirements import update_requirements
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -106,10 +105,6 @@ def main():
         cmd = ["--file=" + r_script_path, "--args", project_root] 
         #cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root]  
         output = run_script("r", cmd)
-
-   
-
-    update_requirements(dependencies_files = [file], sections= ["setup"])
 
     # Pushing to Git
     push_msg = f" `requirements.txt`, `environment.yml` and '{file}' created and 'Requirements' section in README.md updated" 

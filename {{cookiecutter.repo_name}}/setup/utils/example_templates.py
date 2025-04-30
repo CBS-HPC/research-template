@@ -4,8 +4,8 @@ from textwrap import dedent
 
 from .general_tools import *
 from .code_templates import write_script
-from .update_requirements import main as update_requirements_main
 from .update_readme import main as update_readme_main
+from .get_dependencies import main as get_setup_dependencies_main
 
 pip_installer(required_libraries=['rpds-py==0.21.0', 'nbformat'])
 
@@ -597,8 +597,8 @@ def main():
   
     # Create scripts and notebook
     create_example(programming_language, "./src")
-
-    update_requirements_main()
+    
+    get_setup_dependencies_main()
     
     update_readme_main()
 

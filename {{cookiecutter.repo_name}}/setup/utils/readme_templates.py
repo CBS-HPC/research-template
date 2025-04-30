@@ -113,10 +113,19 @@ def create_content(programming_language):
         setup += "```\n"
         setup += "pip install -r requirements.txt\n"
         setup += "```\n\n"
-        
         if programming_language.lower() == "r":
-            setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
-            
+            setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n
+        
+        setup += "#### Install the `setup` package:\n"
+        setup += "If you installed dependencies manually using Conda or Pip, you must also install the local `setup` package used for configuration and automation scripts:\n"
+        setup += "```\n"
+        setup += "cd setup\n"
+        setup += "pip install -e .\n"
+        setup += "cd ..\n"
+        setup += "```\n"
+        setup += "This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` available in your environment.\n\n"
+
+        if programming_language.lower() == "r":
             setup += "#### Install R dependencies using renv:\n\n"
             setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
             setup += "```\n"
@@ -154,36 +163,36 @@ def create_content(programming_language):
             raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
 
         # Language-specific syntax settings
-    if programming_language == "r":
-        main_syntax = "::main()"
-        comment_prefix = "#"
-        source_cmd = "source('"
-        source_ext = ".R')"
-        notebook_ext = "Rmd"
-    elif programming_language == "python":
-        main_syntax = ".main()"
-        comment_prefix = "#"
-        source_cmd = "import "
-        source_ext = ""
-        notebook_ext = "ipynb"
-    elif programming_language == "stata":
-        main_syntax = "_main"
-        comment_prefix = "*"
-        source_cmd = "do "
-        source_ext = ".do"
-        notebook_ext = "ipynb"
-    elif programming_language == "matlab":
-        main_syntax = "_main()"
-        comment_prefix = "%"
-        source_cmd = "run('"
-        source_ext = ".m')"
-        notebook_ext = "ipynb / mlx"
-    elif programming_language == "sas":
-        main_syntax = "_main"
-        comment_prefix = "*"
-        source_cmd = "%include \""
-        source_ext = ".sas\";"
-        notebook_ext = "ipynb"
+        if programming_language == "r":
+            main_syntax = "::main()"
+            comment_prefix = "#"
+            source_cmd = "source('"
+            source_ext = ".R')"
+            notebook_ext = "Rmd"
+        elif programming_language == "python":
+            main_syntax = ".main()"
+            comment_prefix = "#"
+            source_cmd = "import "
+            source_ext = ""
+            notebook_ext = "ipynb"
+        elif programming_language == "stata":
+            main_syntax = "_main"
+            comment_prefix = "*"
+            source_cmd = "do "
+            source_ext = ".do"
+            notebook_ext = "ipynb"
+        elif programming_language == "matlab":
+            main_syntax = "_main()"
+            comment_prefix = "%"
+            source_cmd = "run('"
+            source_ext = ".m')"
+            notebook_ext = "ipynb / mlx"
+        elif programming_language == "sas":
+            main_syntax = "_main"
+            comment_prefix = "*"
+            source_cmd = "%include \""
+            source_ext = ".sas\";"
+            notebook_ext = "ipynb"
 
         # Build the README text
         structure_usage = f"""The project is written in **{software_version}** and includes modular scripts for standardized data science workflows, organized under `src/`.
@@ -252,6 +261,74 @@ All scripts use relative paths based on their location, ensuring portability and
 
         return structure_usage
 
+    def set_config_table(programming_language):
+
+        if programming_language.lower() != "r":
+            config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
+| File                    | Purpose                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------|
+| `.gitignore`            | Excludes unnecessary files from Git version control                                             |
+| `.rcloneignore`         | Excludes files from syncing when using Rclone                                                   |
+| `.treeignore`           | Filters out files/folders from project tree utilities                                           |
+| `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
+| `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
+| `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
+| `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
+| `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
+""" 
+        else:
+            config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
+
+| File                    | Purpose                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------|
+| `.gitignore`            | Excludes unnecessary files from Git version control                                             |
+| `.rcloneignore`         | Excludes files from syncing when using Rclone                                                   |
+| `.treeignore`           | Filters out files/folders from project tree utilities                                           |
+| `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
+| `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
+| `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
+| `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
+| `renv.lock`             | Records the exact versions of R packages used in the project                                    |
+| `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
+""" 
+        return config
+
+    def set_cli_tools():
+        set_cli_tools = """
+The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
+
+> ℹ️ **Note**: To use these commands, you must first install the local `setup` package.  
+> Refer to the [Installation](#installation) section for details on how to install it using `pip install -e .` from the `setup/` directory.
+
+After installing the setup package, the following commands become available from the terminal:
+
+
+| Command                  | Description                                                                                 |
+|--------------------------|---------------------------------------------------------------------------------------------|
+| `run-backup`             | Executes a full project backup using preconfigured rules and paths.                         |
+| `set-dataset`            | Initializes or registers datasets for use in the project (e.g., adds metadata or links).    |
+| `update-requirements`    | Scans Python dependencies and updates the `requirements.txt` file.                         |
+| `get-dependencies`(in progress)       | Retrieves external dependencies required by the project, including R/Python tools.          |
+| `install-dependencies`(in progress)   | Installs any missing dependencies based on setup configuration.                             |
+| `run-setup` (in progress)| Main entry point to initialize or reconfigure the project environment.                      |
+| `update-readme`          | Automatically updates the main `README.md` file with current metadata and structure.        |
+| `reset-templates`        | Resets or regenerates project structure templates using the code templating system.         |
+| `code-examples`          | Generates example code and notebooks for supported languages (Python, R, SAS, etc.).        |
+| `dcas-migrate`(in progress)| Migrates and validates the project structure for DCAS (Data and Code Availability Standard) compliance. |
+
+### 🛠️ Usage
+
+After activating your environment, run commands like:
+
+```
+run-setup
+set-dataset
+update-requirements
+deic-storage-download
+```
+"""
+        return set_cli_tools
+    
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
     authors = load_from_env("AUTHORS",".cookiecutter")
@@ -264,19 +341,21 @@ All scripts use relative paths based on their location, ensuring portability and
     conda_version = get_version("conda")
     pip_version = get_version("pip")
 
-    setup = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo)
+    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
-
     usage = set_script_structure(programming_language,software_version)
+    config = set_config_table(programming_language)
+    cli_tools = set_cli_tools()
         
-    return setup,activate,contact,usage
+        
+    return install,activate,contact,usage,config,cli_tools
 
 # README.md
 def creating_readme(programming_language = "None"):
 
     # Create and update README and Project Tree:
-    file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/FILE_DESCRIPTIONS.json"))
+    file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./file_descriptions.json"))
     update_file_descriptions(programming_language,"./README.md", json_file=file_descriptions)
 
     generate_readme(programming_language,"./README.md")
@@ -295,23 +374,341 @@ def generate_readme(programming_language,readme_file = None):
     - project_name (str): The name of the project.
     - project_description (str): A short description of the project.
     """
+    
+    def set_project():
+
+        os_type = platform.system().lower()
+        if os_type == "windows":
+            usage = (
+                "\n**Activate on Windows (PowerShell)**\n\n"
+                "```powershell\n"
+                "./activate.ps1\n"
+                "```\n"
+                "\n**Deactivate on Windows (PowerShell)**\n\n"
+                "```powershell\n"
+                "./deactivate.ps1\n"
+                "```\n"
+            )
+
+        elif os_type in ("darwin", "linux"):
+            usage = (
+                "\n**Activate on Linux/macOS (bash)** \n\n"
+                "```bash\n"
+                "source activate.sh\n"
+                "```\n"
+                "\n**Deactivate on Linux/macOS (bash)** \n\n"
+                "```bash\n"
+                "source deactivate.sh\n"
+                "```\n"
+            )
+        return usage
+
+    def set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo):            
+        setup = ""
+
+        if repo_name and repo_user:
+            setup += "### Clone the Project Repository\n"
+            "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
+            "Clone the repository using the following command:\n"
+            setup += "```\n"
+            if code_repo.lower() in ["github","gitlab"]:
+                web_repo = code_repo.lower()
+                setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
+                        "```\n")
+        setup += ("### Navigate to the Project Directory\n"
+                "Change into the project directory:\n"  
+                "```\n"
+                f"cd {repo_name}\n"
+                "```\n")
+
+        setup += "### Software Installation\n"
+        setup += "The primary method for setting up this project's environment is by using the provided setup script:\n\n"
+        setup += "#### Recommended: Using the Custom Setup Script *(currently under development)*\n"
+
+        if programming_language.lower() == "r":
+            setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies:\n\n"
+        else: 
+            setup += f"Run the following command to automatically install all {py_version} dependencies:\n\n"
+        setup += ("```\n"
+                "python setup/run_setup.pyn\n"
+                "```\n")    
+        if programming_language.lower() in ["matlab","stata","sas"]:
+            setup +=f"These methods do **not** install external the proprietary software **{software_version}**."
+        setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
+        
+        setup += "#### Install with Conda:\n"
+        setup += f"Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:\n"
+        setup += "```\n"
+        setup += "conda env create -f environment.yml\n"
+        setup += "```\n\n"
+
+        if programming_language.lower() == "r":
+            setup += f"> ⚡ Note: The `environment.yml` file will also install **{software_version}** alongside Python packages.\n\n"
+
+        setup += "#### Install using Pip:\n"
+        setup += f"Alternatively, you can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`:\n"
+        setup += "```\n"
+        setup += "pip install -r requirements.txt\n"
+        setup += "```\n\n"
+        if programming_language.lower() == "r":
+            setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n
+        
+        setup += "#### Install the `setup` package:\n"
+        setup += "If you installed dependencies manually using Conda or Pip, you must also install the local `setup` package used for configuration and automation scripts:\n"
+        setup += "```\n"
+        setup += "cd setup\n"
+        setup += "pip install -e .\n"
+        setup += "cd ..\n"
+        setup += "```\n"
+        setup += "This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` available in your environment.\n\n"
+
+        if programming_language.lower() == "r":
+            setup += "#### Install R dependencies using renv:\n\n"
+            setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
+            setup += "```\n"
+            setup += "Rscript -e \"renv::restore()\"\n"
+            setup += "```\n\n"
+            setup += f"> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.\n\n"
+
+        return setup
+
+    def set_contact(authors, orcids, emails):
+        contact = ""
+        if authors:
+            contact += f"**Name:** {authors}\n\n"
+        if orcids:
+            contact += f"**ORCID:** {orcids}\n\n"
+        if emails:
+            contact += f"**Email:** {emails}\n\n"
+        
+        return contact
+
+    def set_script_structure(programming_language,software_version):
+        """
+        Generate the README section for Script Structure and Usage based on the programming language.
+
+        Args:
+            programming_language (str): One of ['r', 'python', 'stata', 'matlab', 'sas']
+
+        Returns:
+            str: Formatted README section
+        """
+
+        programming_language = programming_language.lower()
+
+        if programming_language not in ["r", "python", "stata", "matlab", "sas"]:
+            raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
+
+        # Language-specific syntax settings
+        if programming_language == "r":
+            main_syntax = "::main()"
+            comment_prefix = "#"
+            source_cmd = "source('"
+            source_ext = ".R')"
+            notebook_ext = "Rmd"
+        elif programming_language == "python":
+            main_syntax = ".main()"
+            comment_prefix = "#"
+            source_cmd = "import "
+            source_ext = ""
+            notebook_ext = "ipynb"
+        elif programming_language == "stata":
+            main_syntax = "_main"
+            comment_prefix = "*"
+            source_cmd = "do "
+            source_ext = ".do"
+            notebook_ext = "ipynb"
+        elif programming_language == "matlab":
+            main_syntax = "_main()"
+            comment_prefix = "%"
+            source_cmd = "run('"
+            source_ext = ".m')"
+            notebook_ext = "ipynb / mlx"
+        elif programming_language == "sas":
+            main_syntax = "_main"
+            comment_prefix = "*"
+            source_cmd = "%include \""
+            source_ext = ".sas\";"
+            notebook_ext = "ipynb"
+
+        # Build the README text
+        structure_usage = f"""The project is written in **{software_version}** and includes modular scripts for standardized data science workflows, organized under `src/`.
+
+Each script is structured to:
+- Define a `main()` function for execution
+- Set up project paths automatically (raw, interim, processed, results)
+- Remain passive unless the `main()` is explicitly called
+
+The typical workflow includes the following steps:
+
+0. **Install Dependencies** — Ensures all required packages/libraries are installed.
+1. **Load Utilities** — Loads helper functions used by other scripts (not a pipeline step).
+2. **Data Collection** — Imports or generates datasets, stored in `data/raw/`.
+3. **Preprocessing** — Cleans and transforms the raw data, outputting to `data/interim/`.
+4. **Modeling** — Trains and evaluates machine learning models using processed data. Results saved to `data/processed/`.
+5. **Visualization** — Produces plots and visual summaries, saved to `results/figures/`.
+
+> 🛠️ **Note:** `utils` does not define a `main()` function and should not be executed directly.
+
+### Execution Options
+
+You can execute the entire pipeline either by:
+
+**A. Running the `src/main.{source_ext}` orchestration script:**
+
+```
+{comment_prefix} Install dependencies
+{source_cmd}install_dependencies{source_ext}
+    
+{comment_prefix} Load scripts
+{source_cmd}data_collection{source_ext}
+{source_cmd}preprocessing{source_ext}
+{source_cmd}modeling{source_ext}
+{source_cmd}visualization{source_ext}
+{source_cmd}utils{source_ext}
+
+{comment_prefix} Run main functions
+data_collection{main_syntax}
+preprocessing{main_syntax}
+modeling{main_syntax}
+visualization{main_syntax}
+```
+
+**B. Opening the notebook interface:**  
+A pre-built notebook `workflow.{notebook_ext}` is available in the project root.  
+This notebook provides the same logic as the main script, but interactively via Jupyter or RMarkdown (depending on the language).
+
+Use this notebook for:
+
+- Exploratory analysis  
+- Teaching/demonstration  
+- Step-by-step debugging
+
+### Output Paths
+
+| Step             | Output Directory          |
+|------------------|----------------------------|
+| Data Collection  | `data/raw/`                 |
+| Preprocessing    | `data/interim/`             |
+| Modeling         | `data/processed/`           |
+| Visualization    | `results/figures/`          |
+
+All scripts use relative paths based on their location, ensuring portability and reproducibility across systems.
+"""
+
+        return structure_usage
+
+    def set_config_table(programming_language):
+
+        if programming_language.lower() != "r":
+            config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
+| File                    | Purpose                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------|
+| `.gitignore`            | Excludes unnecessary files from Git version control                                             |
+| `.rcloneignore`         | Excludes files from syncing when using Rclone                                                   |
+| `.treeignore`           | Filters out files/folders from project tree utilities                                           |
+| `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
+| `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
+| `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
+| `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
+| `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
+""" 
+        else:
+            config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
+
+| File                    | Purpose                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------|
+| `.gitignore`            | Excludes unnecessary files from Git version control                                             |
+| `.rcloneignore`         | Excludes files from syncing when using Rclone                                                   |
+| `.treeignore`           | Filters out files/folders from project tree utilities                                           |
+| `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
+| `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
+| `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
+| `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
+| `renv.lock`             | Records the exact versions of R packages used in the project                                    |
+| `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
+""" 
+        return config
+
+    def set_cli_tools():
+        cli_tools = """
+The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
+
+> ℹ️ **Note**: To use these commands, you must first install the local `setup` package.  
+> Refer to the [Installation](#installation) section for details on how to install it using `pip install -e .` from the `setup/` directory.
+
+After installing the setup package, the following commands become available from the terminal:
+
+
+| Command                  | Description                                                                                 |
+|--------------------------|---------------------------------------------------------------------------------------------|
+| `run-backup`             | Executes a full project backup using preconfigured rules and paths.                         |
+| `set-dataset`            | Initializes or registers datasets for use in the project (e.g., adds metadata or links).    |
+| `get-dependencies`(in progress) | Retrieves current dependencies required by the project `./setup` and `./src`.        |
+| `run-setup` (in progress)| Main entry point to initialize or reconfigure the project environment.                      |
+| `update-readme`          | Automatically updates the main `README.md` file with current metadata and structure.        |
+| `reset-templates`        | Resets or regenerates the code templates for `./src`.            |
+| `code-examples`          | Generates example code and notebooks for supported languages (Python, R, SAS, etc.).        |
+| `dcas-migrate`(in progress)| Migrates and validates the project structure for DCAS (Data and Code Availability Standard) compliance.|
+
+### 🛠️ Usage
+
+After activating your environment, run commands like:
+
+```
+run-setup
+set-dataset
+update-requirements
+deic-storage-download
+```
+"""
+        return cli_tools
+    
+    def set_dcas():
+        dcas = """To create a replication package that adheres to the [DCAS (Data and Code Sharing) standard](https://datacodestandard.org/), follow the guidelines ([AEA Data Editor's guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)) provided by the Social Science Data Editors. This ensures your research code and data are shared in a clear, reproducible format.
+
+The following are examples of journals that endorse the Data and Code Availability Standard:
+
+- [American Economic Journal: Applied Economics](https://www.aeaweb.org/journals/applied-economics)
+- [Econometrica](https://www.econometricsociety.org/publications/econometrica)
+- [Economic Inquiry](https://onlinelibrary.wiley.com/journal/14680299)
+- [Journal of Economic Perspectives](https://www.aeaweb.org/journals/jep)
+
+For a full list of journals, visit [here](https://datacodestandard.org/journals/).
+
+Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal."""
+        return dcas
+    
     if readme_file is None:
         readme_file = "./README.md"
-
 
     readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
 
     if os.path.exists(readme_file):
         return
     
-    install, activate, contact,usage = create_content(programming_language)
-    
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    authors = load_from_env("AUTHORS",".cookiecutter")
+    orcids = load_from_env("ORCIDS",".cookiecutter")
+    emails = load_from_env("EMAIL",".cookiecutter")
+    repo_user = load_from_env(f"{code_repo}_USER")
     project_name = load_from_env("PROJECT_NAME",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
 
     py_version = get_version("python")
     software_version = get_version(programming_language)
-    
+    conda_version = get_version("conda")
+    pip_version = get_version("pip")
+
+    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo)
+    activate = set_project()
+    contact = set_contact(authors, orcids, emails)
+    usage = set_script_structure(programming_language,software_version)
+    config = set_config_table(programming_language)
+    cli_tools = set_cli_tools()
+    dcas = set_dcas()
+
     # Project header
     header = f"""# {project_name}
 
@@ -331,40 +728,27 @@ The environments were set up using:
 - **Project setup scripts** (`./setup`) installed with **{py_version}**
 - **Project code** (`./src`) installed with **{software_version}**
 
-## Environment Setup
-
-### Project Configuration
+## Project Activation
 
 To configure the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file.
 
 > ⚠️ The `.env` file is excluded from this repository for security reasons. To replicate the environment, please follow the instructions in the [Installation](#installation) section.
 
-
 {activate}
 
-### Functions
+## CLI Tools
+
+{cli_tools}
 
 ## Configuration Files (Root-Level)
 
-The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, packaging, syncing, and reproducibility:
-
-| File               | Purpose                                                                 |
-|--------------------|-------------------------------------------------------------------------|
-| `.gitignore`       | Excludes unnecessary files from Git version control                     |
-| `.rcloneignore`    | Excludes files from syncing when using Rclone                           |
-| `.treeignore`      | Filters out files/folders from project tree utilities                   |
-| `.cookiecutter`    | Contains metadata for cookiecutter project templates                    |
-| `.env`             | environment-specific variables (e.g., absolute paths, API tokens, secrets) used by scripts            |
-| `environment.yml`  | Conda environment definition for Python/R, including packages and R base |
-| `requirements.txt` | Pip-based Python dependencies for lightweight environments              |
-
+{config} 
 
 ## Installation
 
 Follow these steps to set up the project on your local machine:
 
 {install}
-
 
 ## Script Structure and Usage
 
@@ -386,25 +770,14 @@ set-dataset
 
 ## Project Directory Structure
 
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./setup/FILE_DESCRIPTIONS.json` file.
+The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file.
 ```
 
 ```
 
 ## Creating a Replication Package Based on DCAS
 
-To create a replication package that adheres to the [DCAS (Data and Code Sharing) standard](https://datacodestandard.org/), follow the guidelines ([AEA Data Editor's guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)) provided by the Social Science Data Editors. This ensures your research code and data are shared in a clear, reproducible format.
-
-The following are examples of journals that endorse the Data and Code Availability Standard:
-
-- [American Economic Journal: Applied Economics](https://www.aeaweb.org/journals/applied-economics)
-- [Econometrica](https://www.econometricsociety.org/publications/econometrica)
-- [Economic Inquiry](https://onlinelibrary.wiley.com/journal/14680299)
-- [Journal of Economic Perspectives](https://www.aeaweb.org/journals/jep)
-
-For a full list of journals, visit [here](https://datacodestandard.org/journals/).
-
-Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal.
+{dcas}
 
 ## Computational Requirements
 
@@ -452,7 +825,7 @@ def read_treeignore_old(file_path=".treeignore"):
     
     return ignore_list
 
-def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESCRIPTIONS.json", root_folder=None):
+def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptions.json", root_folder=None):
     """
     Updates the "Project Tree" section in a README.md file with the project structure.
 
@@ -499,31 +872,6 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
 
         return tree
 
-
-    def generate_tree_old(folder_path,file_descriptions,prefix=""):
-        """
-        Recursively generates a tree structure of the folder.
-
-        Parameters:
-        - folder_path (str): The root folder path.
-        - prefix (str): The prefix for the current level of the tree.
-        """
-        tree = []
-        items = sorted(os.listdir(folder_path))  # Sort items for consistent structure
-        for index, item in enumerate(items):
-            if item in ignore_list:
-                continue
-            item_path = os.path.join(folder_path, item)
-            is_last = index == len(items) - 1
-            tree_symbol = "└── " if is_last else "├── "
-            description = f" <- {file_descriptions.get(item, '')}" if file_descriptions and item in file_descriptions else ""
-            tree.append(f"{prefix}{tree_symbol}{item}{description}") # Add spaces for a line break
-            if os.path.isdir(item_path):
-                child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path,file_descriptions, prefix=child_prefix))
-
-        return tree
-
     json_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
 
     if not readme_file:
@@ -557,7 +905,7 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
     # Check for "Project Tree" section
     start_index = None
     for i, line in enumerate(readme_content):
-        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./setup/FILE_DESCRIPTIONS.json` file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
+        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
             start_index = i + 2 
             break
 
@@ -590,9 +938,9 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./setup/FILE_DESC
 
     print(f"'Project Directory Structure' section updated in '{readme_file}'.")
 
-def update_file_descriptions(programming_language, readme_file = "README.md", json_file="./setup/FILE_DESCRIPTIONS.json"):
+def update_file_descriptions(programming_language, readme_file = "README.md", json_file="./file_descriptions.json"):
     """
-    Reads the project tree from an existing README.md and updates a FILE_DESCRIPTIONS.json file.
+    Reads the project tree from an existing README.md and updates a file_descriptions.json file.
 
     Parameters:
     - readme_file (str): Path to the README.md file.
@@ -649,7 +997,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
             ".gitignore": "Specifies files and directories that should be ignored by Git.",
             "CITATION.cff": "File containing citation information for the project, typically used for academic purposes.",
-            "FILE_DESCRIPTIONS.json": "JSON file containing descriptions of the project files for reference.",
+            "file_descriptions.json": "JSON file containing descriptions of the project files for reference.",
             "LICENSE.txt": "The project's license file, outlining terms and conditions for usage and distribution.",
             "README.md": "The top-level README for developers using this project.",
             "README.MD": "Current The top-level README for developers using this project.",

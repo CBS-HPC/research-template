@@ -15,7 +15,6 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils import *
 
-
 # Determine file extension based on programming language
 ext_map = {
     "r": "R",
@@ -72,7 +71,6 @@ def run_get_dependencies(programming_language, folder_path="./src"):
 
     except Exception as e:
         return f"Failed to run dependency script: {str(e)}"
-
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
@@ -191,9 +189,19 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
 @ensure_correct_kernel
 def main():
-
+    
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
 
+    # Update install files
+    create_requirements_txt("requirements.txt")
+    if requirements_file == "requirements.txt":
+        create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
+    elif requirements_file == "environment.yml": 
+        export_conda_env(repo_name)
+
+    # Run dependencies search
     setup_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
     setup_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
     get_setup_dependencies(folder_path=setup_folder,file_name =setup_file)

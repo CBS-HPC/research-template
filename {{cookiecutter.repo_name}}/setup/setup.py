@@ -10,7 +10,7 @@ setup(
             'run-backup=utils.run_backup:main',
             'set-dataset=utils.set_dataset:main',
             'update-requirements=utils.update_requirements:main',
-            'get-dependencies=utils.get_dependencies:main',
+            'update-dependencies=utils.get_dependencies:main',
             'install-dependencies=utils.install_dependencies:main',
             'deic-storage-download=utils.deic_storage_download:main',
             'run-setup=utils.run_setup:main',
