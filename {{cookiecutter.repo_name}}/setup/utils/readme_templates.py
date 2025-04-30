@@ -114,7 +114,7 @@ def create_content(programming_language):
         setup += "pip install -r requirements.txt\n"
         setup += "```\n\n"
         if programming_language.lower() == "r":
-            setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n
+            setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
         
         setup += "#### Install the `setup` package:\n"
         setup += "If you installed dependencies manually using Conda or Pip, you must also install the local `setup` package used for configuration and automation scripts:\n"
