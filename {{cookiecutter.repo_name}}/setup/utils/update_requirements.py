@@ -1,12 +1,8 @@
 import os
-import sys
 import pathlib
 import platform  # Add platform module
 
-# Ensure the project root is in sys.path
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-from utils import *
+from .readme_templates import *
 
 def read_dependencies(dependencies_files,sections):
      

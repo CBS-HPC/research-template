@@ -3,13 +3,9 @@ import re
 import os
 import multiprocessing
 import argparse
-import sys
 import pathlib
 
-# Ensure the project root is in sys.path
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-from utils import *
+from .general_tools import *
 
 pip_installer(required_libraries = ['beautifulsoup4'] )
 from bs4 import BeautifulSoup

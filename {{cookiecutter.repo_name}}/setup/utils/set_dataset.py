@@ -1,17 +1,12 @@
 import os
-import sys
 import json
 import argparse
 import subprocess
 from datetime import datetime
 import pathlib
 
-# Ensure the project root is in sys.path
-#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-#from utils import *
-
 from .readme_templates import *
+from .versioning_tools import *
 
 def get_file_info(file_paths):
     """
@@ -264,7 +259,6 @@ def main():
 
     # Call the function to handle the dataset setup
     set_datasets(args.name, args.source, args.command, args.destination, args.doi, args.citation, args.license)
-
 
 if __name__ == "__main__":
     

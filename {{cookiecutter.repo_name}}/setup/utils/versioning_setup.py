@@ -4,9 +4,11 @@ import pathlib
 
 
 # Ensure project root is in sys.path when run directly
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from utils.versioning_tools import *
+#from utils.versioning_tools import *
+
+from .versioning_tools import *
 
 @ensure_correct_kernel
 def main():

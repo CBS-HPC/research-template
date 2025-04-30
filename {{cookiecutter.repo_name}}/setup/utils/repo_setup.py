@@ -1,14 +1,18 @@
 import os
-import sys
+#import sys
 import subprocess
 import pathlib
 
 # Ensure project root is in sys.path when run directly
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+#sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from utils.repo_tools import *
-from utils.virenv_tools import *
-from utils.get_dependencies import get_setup_dependencies
+#from utils.repo_tools import *
+#from utils.virenv_tools import *
+#from utils.get_dependencies import get_setup_dependencies
+
+from .repo_tools import *
+from .virenv_tools import *
+from .get_dependencies import get_setup_dependencies
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
