@@ -15,28 +15,52 @@ A fully automated [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/)
 - ☁️ Backup to DeIC, Dropbox, Onedrive, or local with `rclone`
 - 📡 Remote repo creation on GitHub, GitLab, or Codeberg
 - 🔧 Custom setup scripts and reusable templates for code and documentation
+- 💡 Auto-installation of required software and tools (e.g., Git, Rclone, DVC, Datalad) if missing
 
 ---
 
 ## 🛠️ Requirements
 
 - Python 3.9+
-- `cookiecutter`
-- `git`
-- Optionally: `conda`, `rclone`, `datalad`, `dvc`, and GitHub CLI (`gh`)
+- [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/installation.html)
 
 Install Cookiecutter:
 
-```
+```bash
 pip install cookiecutter
 ```
+
+> ❗️ Git is optional for template usage but required if pushing to a remote repository. The template can download and install Git, Rclone, and other tools automatically if not found.
+
+---
+
 ## 🚀 Usage
 
-Generate a new project using this template:
+### 📦 Online (with Git)
 
-```
+```bash
 cookiecutter gh:CBS-HPC/replication_package
 ```
+
+### 📁 Offline (Local Installation)
+
+If Git is not installed, you can still use the template by manually downloading it:
+
+1. Go to [https://github.com/CBS-HPC/replication_package](https://github.com/CBS-HPC/replication_package)
+2. Click the green **“Code”** button, then choose **“Download ZIP”**
+3. Extract the ZIP file to a location of your choice
+4. Then run Cookiecutter with the local path:
+
+```bash
+cookiecutter path/to/replication_package
+```
+
+> ⚠️ Do **not** use `git clone` if Git is not installed. Manual download is required in this case.
+
+---
+
+## 🧾 Setup Options
+
 You will be prompted to configure the following options:
 
 | Prompt                    | Description                                     |
@@ -62,6 +86,7 @@ The template automatically performs the following:
 - Backs up project using `rclone` to selected remote
 - Pushes repo to selected remote platform (if configured)
 - Creates reusable scripts and module templates for chosen language
+- Downloads and installs missing tools (Git, Rclone, etc.)
 
 ---
 
@@ -92,6 +117,10 @@ The template automatically performs the following:
 ├── environment.yml       # Conda environment file (if selected)
 ├── requirements.txt      # Python package list
 └── run_setup.sh / .ps1   # One-click project setup
+```
+
+---
+
 ## 🌐 Remote Setup Support
 
 This template supports automatic configuration of:
@@ -146,8 +175,6 @@ The selected license will be placed in the root of your generated project as `LI
 This project was inspired by:
 
 - [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/)
-- [FOSTER Open Science](https://www.fosteropenscience.eu/)
-- [CBS-HPC Guidelines](https://github.com/CBS-HPC)
 
 Maintained by the **CBS High-Performance Computing (HPC)** team.
 
@@ -161,5 +188,3 @@ For questions, suggestions, or bug reports:
 - Or contact: [kgp.lib@cbs.dk](mailto:kgp.lib@cbs.dk)
 
 ---
-
-*Let us know if you’d like to add badges (e.g., GitHub Actions, license info), screenshots, or links to a demo repository.*
