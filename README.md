@@ -8,7 +8,7 @@ A fully automated [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/)
 
 ✅ Automatically sets up:
 
-- 📁 Standardized project directory with folders for data, code, figures, and documentation  
+- 📁 Standardized project directory with folders for data, code, figures, and documentation
 - 🐍 Python virtual environment (`venv`, `conda`, or system)
 - 🧬 Programming language scaffolding (Python, R, Stata, Matlab, SAS)
 - 🗃️ Version control via Git, Datalad, or DVC
@@ -63,33 +63,110 @@ cookiecutter path/to/replication_package
 
 You will be prompted to configure the following options:
 
-| Prompt                    | Description                                     |
-|--------------------------|-------------------------------------------------|
-| `project_name`           | Title of your research project                  |
-| `repo_name`              | Name of the folder and Git repo                 |
-| `description`            | Short project summary                           |
-| `author_name`, `email`   | Your name and CBS email                         |
-| `orcid`                  | Your ORCID ID                                   |
-| `version`                | Initial version number (e.g., `0.0.1`)          |
-| `open_source_license`    | MIT, BSD-3-Clause, or None                      |
-| `programming_language`   | Python, R, Stata, Matlab, SAS, or None          |
-| `version_control`        | Git, Datalad, DVC, or None                      |
-| `remote_backup`          | DeIC, Dropbox, Onedrive, Local, or Multiple     |
-| `env_manager`            | Conda, Venv, or Base installation               |
-| `remote_repo`            | GitHub, GitLab, Codeberg, or None               |
+| Prompt                     | Description                                 |
+| -------------------------- | ------------------------------------------- |
+| `project_name`           | Title of your research project              |
+| `repo_name`              | Name of the folder and Git repo             |
+| `description`            | Short project summary                       |
+| `author_name`, `email` | Your name and CBS email                     |
+| `orcid`                  | Your ORCID ID                               |
+| `version`                | Initial version number (e.g.,`0.0.1`)     |
+| `open_source_license`    | MIT, BSD-3-Clause, or None                  |
+| `programming_language`   | Python, R, Stata, Matlab, SAS, or None      |
+| `version_control`        | Git, Datalad, DVC, or None                  |
+| `remote_backup`          | DeIC, Dropbox, Onedrive, Local, or Multiple |
+| `env_manager`            | Conda, Venv, or Base installation           |
+| `remote_repo`            | GitHub, GitLab, Codeberg, or None           |
 
 The template automatically performs the following:
 
-- Initializes version control and makes an initial commit
+- Creates the project folder structure
+- Generates reusable scripts and module templates in `src/`
 - Creates and configures a `.env` file
-- Sets up virtual environments and installs dependencies
-- Backs up project using `rclone` to selected remote
-- Pushes repo to selected remote platform (if configured)
-- Creates reusable scripts and module templates for chosen language
-- Downloads and installs missing tools (Git, Rclone, etc.)
+- Sets up the virtual environment and installs dependencies  
+  - If using **Conda**, specific versions of **Python** and **R** can be installed
+- Initializes version control and makes an initial commit
+- Sets up a Git repository on GitHub, GitLab, or Codeberg (if selected)
+- Backs up the project using `rclone` to the selected remote
+- Downloads and installs missing open-source tools (e.g., **Git**, **Rclone**, **DVC**, **Datalad**, **Conda**, **GitHub CLI (`gh`)**, **GitLab CLI (`glab`)**) if not already available
+
+> ⚠️ Note: The template **does not install proprietary software** such as **Stata**, **Matlab**, or **SAS**. You must install these separately if selected.
+
 
 ---
+## 🌐 Remote Setup Support
 
+This template supports automatic configuration of remote versioning, backup, and repository platforms. Click below to expand each section.
+
+<details>
+<summary>🗃️ Version Control</summary>
+
+This template supports several version control systems to suit different workflows:
+
+- [**Git**](https://git-scm.com/) (default) – general-purpose version control for code and text files  
+- [**Datalad**](https://www.datalad.org/) – for data-heavy, file-based versioning; designed to support **FAIR** principles and **Open Science** workflows  
+- [**DVC**](https://dvc.org/) – for machine learning pipelines, dataset tracking, and model versioning
+
+**How it works:**
+
+- For **Git**, the project root is initialized as a Git repository.  
+  - The `data/` folder is created as a **separate Git repository**, allowing you to track data independently of source code.  
+- For **Datalad**, the `data/` folder is initialized as a **Datalad dataset**, enabling advanced data provenance and modular data management.  
+- For **DVC**, the `data/` folder is configured for **DVC tracking**, which uses `.dvc` files and external storage to version large data files.
+
+**Auto-generated `.gitignore` includes:**
+
+- `data/` – raw and processed data folders  
+- `bin/` – local binaries  
+- Python artifacts – `env/`, `__pycache__/`, `.mypy_cache/`  
+- IDE/config files – `.vscode/`, `.idea/`, `.spyproject/`  
+- System files – `.DS_Store`, `*.swp`  
+- Jupyter checkpoints – `.ipynb_checkpoints/`  
+- Logs and test outputs – `.coverage`, `htmlcov/`, `*.log`  
+
+> 🧹 These defaults help keep your repository clean and focused.
+
+</details>
+
+<details>
+<summary>☁️ Cloud Backup with Rclone</summary>
+
+You will be prompted for **email** and **password** to set up automatic project backup using `rclone`.
+
+Supported remote systems:
+
+- **DeIC Storage** (via SFTP)  
+- **Dropbox**  
+- **OneDrive**  
+- **Local** storage  
+- **Multiple** targets
+
+> 🔐 Your **email** is securely stored in your `.env` file. Passwords are encrypted and not stored in plain text.
+
+</details>
+
+<details>
+<summary>📡 Remote Repository Platforms</summary>
+
+If you choose to publish your project remotely, you will be prompted for your:
+
+- **GitHub/GitLab username**
+- **Repository visibility** (private/public)
+- **Personal access token**
+
+Repositories are pushed using the **HTTPS protocol** and authenticated via tokens.
+
+Supported platforms:
+
+- **GitHub** (via GitHub CLI)  
+- **GitLab** (via GitLab CLI)  
+- **Codeberg**
+
+> 🔐 Your credentials and tokens are securely saved in the `.env` file for authenticated Git operations.
+
+</details>
+
+---
 ## 🗂️ Project Layout
 
 ```plaintext
@@ -118,55 +195,6 @@ The template automatically performs the following:
 ├── requirements.txt      # Python package list
 └── run_setup.sh / .ps1   # One-click project setup
 ```
-
----
-
-## 🌐 Remote Setup Support
-
-This template supports automatic configuration of:
-
-### 🗃️ Version Control
-
-- **Git** (default)
-- **Datalad** – for data-heavy, file-based versioning
-- **DVC** – for ML pipelines and data tracking
-
-### ☁️ Cloud Backup with Rclone
-
-- **DeIC Storage** (via SFTP)
-- **Dropbox**
-- **OneDrive**
-- **Local** or **Multiple** targets
-
-### 📡 Remote Repository Platforms
-
-- **GitHub** (via GitHub CLI)
-- **GitLab**
-- **Codeberg**
-
-> You will be asked for credentials (e.g., GitHub token or DeIC login) during setup. These are securely stored in your `.env` file and encrypted where applicable.
-
----
-
-## 🔄 Script Templates
-
-Depending on your selected programming language, the following code templates may be automatically generated in the `src/` directory:
-
-- `main.py`, `preprocessing.py`, `modeling.py`, `visualization.py`
-- `workflow.ipynb` – a ready-to-use Jupyter notebook pipeline
-- `renv_setup.r` and additional placeholders for R, Stata, Matlab, or SAS
-
----
-
-## 📄 License
-
-You can choose from:
-
-- **MIT** – Simple, permissive license
-- **BSD-3-Clause** – Permissive with an endorsement clause
-- **None** – No license will be included
-
-The selected license will be placed in the root of your generated project as `LICENSE.txt`.
 
 ---
 
