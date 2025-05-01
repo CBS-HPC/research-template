@@ -36,26 +36,36 @@ pip install cookiecutter
 
 ## 🚀 Usage
 
-### 📦 Online (with Git)
+This template can be used either online (via GitHub) or offline (manually downloaded).
+
+<details>
+<summary>📦 Online (with Git)</summary>
+
+Use this option if Git is installed and you want to fetch the template directly from GitHub:
 
 ```bash
 cookiecutter gh:CBS-HPC/replication_package
 ```
 
-### 📁 Offline (Local Installation)
+</details>
 
-If Git is not installed, you can still use the template by manually downloading it:
+<details>
+<summary>📁 Offline (Local Installation)</summary>
 
-1. Go to [https://github.com/CBS-HPC/replication_package](https://github.com/CBS-HPC/replication_package)
-2. Click the green **“Code”** button, then choose **“Download ZIP”**
-3. Extract the ZIP file to a location of your choice
-4. Then run Cookiecutter with the local path:
+If Git is **not installed**, you can still use the template by downloading it manually:
+
+1. Go to [https://github.com/CBS-HPC/replication_package](https://github.com/CBS-HPC/replication_package)  
+2. Click the green **“Code”** button, then choose **“Download ZIP”**  
+3. Extract the ZIP file to a folder of your choice  
+4. Run Cookiecutter locally:
 
 ```bash
 cookiecutter path/to/replication_package
 ```
 
 > ⚠️ Do **not** use `git clone` if Git is not installed. Manual download is required in this case.
+
+</details>
 
 ---
 

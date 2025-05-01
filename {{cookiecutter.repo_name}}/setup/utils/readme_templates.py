@@ -397,11 +397,12 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
 
 {project_description}
 
-## Contact Information
+## 📇 Contact Information
 
 {contact}
 
-## System and Environment Information
+<details>
+<summary>📋 System and Environment Information</summary>
 
 The project was developed and tested on the following operating system:
 
@@ -412,7 +413,11 @@ The environments were set up using:
 - **Project setup scripts** (`./setup`) installed with **{py_version}**
 - **Project code** (`./src`) installed with **{software_version}**
 
-## Project Activation
+</details>
+
+<details>
+<summary>🚀 Project Activation</summary>
+
 
 To configure the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file.
 
@@ -420,25 +425,45 @@ To configure the project's environment—including project paths, environment va
 
 {activate}
 
-## CLI Tools
+</details>
+
+<details>
+<summary>🔧 CLI Tools</summary>
+
 
 {cli_tools}
 
-## Configuration Files (Root-Level)
+</details>
 
-{config} 
+<details>
+<summary>🗂️ Configuration Files (Root-Level)</summary>
 
-## Installation
+
+{config}
+
+</details>
+
+<details>
+<summary>💻 Installation</summary>
+
 
 Follow these steps to set up the project on your local machine:
 
 {install}
 
-## Script Structure and Usage
+</details>
+
+<details>
+<summary>📜 Script Structure and Usage</summary>
+
 
 {usage}
 
-## Dataset List
+</details>
+
+<details>
+<summary>📦 Dataset List</summary>
+
 
 To set up or configure a dataset, run the following command:
 
@@ -451,15 +476,27 @@ set-dataset
 | Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |
 |------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
 
-## Project Directory Structure
+</details>
+
+<details>
+<summary>📁 Project Directory Structure</summary>
+
 
 The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file.
-```
 
 ```
-## Creating a Replication Package Based on DCAS
+<tree here>
+```
+
+</details>
+
+<details>
+<summary>📚 Creating a Replication Package Based on DCAS</summary>
+
 
 {dcas}
+
+</details>
 
 """
 
