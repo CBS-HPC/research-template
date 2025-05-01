@@ -378,12 +378,12 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     repo_user = load_from_env(f"{code_repo}_USER")
     project_name = load_from_env("PROJECT_NAME",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
+    py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
     py_version = get_version("python")
     software_version = get_version(programming_language)
-    conda_version = get_version("conda")
+    conda_version = get_version("conda") if py_manager.lower() == "conda" else "conda"
     pip_version = get_version("pip")
-
     install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
@@ -398,6 +398,7 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
 {project_description}
 
 ## Contact Information
+
 {contact}
 
 ## System and Environment Information
