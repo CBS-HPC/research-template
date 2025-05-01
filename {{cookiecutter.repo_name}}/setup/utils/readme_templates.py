@@ -23,18 +23,6 @@ ext_map = {
     "sas": "sas"
 }
 
-#programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-#version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
-#repo_name = load_from_env("REPO_NAME",".cookiecutter")
-#code_repo = load_from_env("CODE_REPO",".cookiecutter")
-#project_name = load_from_env("PROJECT_NAME",".cookiecutter")
-#version = load_from_env("VERSION",".cookiecutter")
-#authors = load_from_env("AUTHORS",".cookiecutter")
-#orcids = load_from_env("ORCIDS",".cookiecutter")
-#project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-#email = load_from_env("EMAIL",".cookiecutter")
-
-
 # README.md
 def creating_readme(programming_language = "None"):
 
@@ -485,7 +473,7 @@ set-dataset
 The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file.
 
 ```
-<tree here>
+
 ```
 
 </details>
@@ -587,6 +575,59 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
 
         return tree
 
+    def update_readme_tree_section(readme_file, root_folder, file_descriptions, ignore_list):
+        # Read the entire README content into lines
+        with open(readme_file, "r", encoding="utf-8") as file:
+            readme_content = file.readlines()
+
+        start_index = None
+        end_index = None
+
+        # Step 1: Find the <summary> line for Project Directory Structure
+        for i, line in enumerate(readme_content):
+            if "<summary>" in line and "Project Directory Structure" in line:
+                # Step 2: From there, find the next line with just ```
+                for j in range(i + 1, len(readme_content)):
+                    if readme_content[j].strip() == "```":
+                        start_index = j + 1  # Start *after* opening ```
+                        break
+                break  # Stop after the first <summary> match
+
+        if start_index is None:
+            print("❌ Could not find project directory summary section with code block. No changes made.")
+            return
+
+        # Step 3: Find the closing ```
+        for k in range(start_index, len(readme_content)):
+            if readme_content[k].strip() == "```":
+                end_index = k
+                break
+
+        if end_index is None:
+            print("❌ No closing ``` found for the project tree block. No changes made.")
+            return
+
+        # Step 4: Generate the updated tree structure
+        tree_structure = generate_tree(
+            folder_path=root_folder,
+            file_descriptions=file_descriptions,
+            ignore_spec=ignore_list,
+            root_path=root_folder
+        )
+
+        # Step 5: Replace old tree block with the new one
+        updated_content = (
+            readme_content[:start_index] +                        # Before tree block
+            [line + "\n" for line in tree_structure] +            # New tree lines
+            readme_content[end_index:]                            # After closing ```
+        )
+
+        # Step 6: Write the updated README
+        with open(readme_file, "w", encoding="utf-8") as file:
+            file.writelines(updated_content)
+
+        print("✅ README updated with new project directory tree.")
+
     json_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
 
     if not readme_file:
@@ -612,47 +653,9 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
             file_descriptions = json.load(json_file)
     else:
         file_descriptions = None
-
-    # Read the existing README.md content
-    with open(readme_file, "r", encoding="utf-8") as file:
-        readme_content = file.readlines()
-
-    # Check for "Project Tree" section
-    start_index = None
-    for i, line in enumerate(readme_content):
-        if "The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file." in line.strip() and i + 1 < len(readme_content) and readme_content[i + 1].strip() == "```":
-            start_index = i + 2 
-            break
-
-    if start_index is None:
-        print("No 'Project Directory Structure' section found in the README. No changes made.")
-        return
-
-    # Find the end of the "Project Tree" section
-    end_index = start_index
-    while end_index < len(readme_content) and readme_content[end_index].strip() != "```":
-        end_index += 1
-
-    if end_index >= len(readme_content):
-        print("No closing line ('```') found for 'Project Directory Structure'. No changes made.")
-        return
-
-    # Generate the folder tree structure
-    tree_structure = generate_tree(folder_path = root_folder,file_descriptions = file_descriptions,ignore_spec=ignore_list,root_path=root_folder)
-
-    # Replace the old tree structure in the README
-    updated_content = (
-        readme_content[:start_index] +  # Everything before the tree
-        [line + "\n" for line in tree_structure] +  # The new tree structure
-        readme_content[end_index:]  # Everything after the closing line
-    )
-
-    # Write the updated README.md content
-    with open(readme_file, "w", encoding="utf-8") as file:
-        file.writelines(updated_content)
-
-    print(f"'Project Directory Structure' section updated in '{readme_file}'.")
-
+    
+    update_readme_tree_section(readme_file, root_folder, file_descriptions, ignore_list)
+    
 def update_file_descriptions(programming_language, readme_file = "README.md", json_file="./file_descriptions.json"):
     """
     Reads the project tree from an existing README.md and updates a file_descriptions.json file.
@@ -757,11 +760,12 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
         with open(readme_file, "r", encoding="utf-8") as f:
             readme_content = f.read()
 
+
         # Extract the project tree section using regex
-        tree_match = re.search(r"##\s*Project Directory Structure\s*\n+([\s\S]+?)```", readme_content)
-        #tree_match = re.search(r"Project Directory Structure\s*[-=]+\s*\n([\s\S]+)", readme_content)
+        #tree_match = re.search(r"##\s*Project Directory Structure\s*\n+([\s\S]+?)```", readme_content)
+        tree_match = re.search(r"<summary>\s*📁\s*Project Directory Structure\s*</summary>\s*([\s\S]+?)```", readme_content)
         if not tree_match:
-            print("'Project Directory Structure' section not found in README.md")
+            print("'📁 Project Directory Structure' section not found in README.md")
             return
 
         project_tree = tree_match.group(1)
