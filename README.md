@@ -75,12 +75,17 @@ cookiecutter path/to/research-template
 
 ## 🧾 Setup Options
 
-The template guides you through a series of prompts to configure your project. Below is a visual overview of all setup steps:
+This template guides you through a series of interactive prompts to configure your project—including version control, environment setup, backup destinations, and remote repository platforms. Click below to expand each section for a visual breakdown of all setup steps.
 
 <details>
 <summary>📦 Project Metadata</summary>
 
-This section collects basic project information such as name, author, and description.
+This section collects basic project information such as the project name, author, and license.  
+The values you provide here are used not only to name your repository and configure metadata, but also to **auto-generate key project files** such as:
+
+- `README.md` – populated with project title, description, and author info  
+- `LICENSE.txt` – based on your selected open-source license  
+- `CITATION.cff` – used for research citation formatting and indexing
 
 ```
 ├── project_name              → Human-readable name
@@ -92,13 +97,14 @@ This section collects basic project information such as name, author, and descri
 ├── version                   → Initial version tag (e.g., 0.0.1)
 ├── open_source_license       → [MIT | BSD-3-Clause | None]
 ```
-
 </details>
 
 <details>
-<summary>🧬 Programming Language</summary>
+<summary>🧬 Programming Language & Script Templates</summary>
 
-Choose your primary analysis language; for non-Python languages, the path to the software may be required.
+Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
+
+If you select **R**, **Stata**, **Matlab**, or **SAS**, the template will prompt for the path to the installed software if it is not auto-detected.
 
 ```
 ├── programming_language      → [Python | R | Stata | Matlab | SAS | None]
@@ -106,12 +112,44 @@ Choose your primary analysis language; for non-Python languages, the path to the
 │       └── Prompt for executable path if not auto-detected
 ```
 
+### 🛠️ Script Generation
+
+Script generation is **language-agnostic**: based on your selected language, the template will create files with the appropriate extensions:
+
+- `.py` for Python  
+- `.R` for R  
+- `.m` for Matlab  
+- `.do` for Stata  
+- `.sas` for SAS  
+
+These starter scripts are placed in the `src/` directory and include:
+
+```
+├── main.*              → orchestrates the full pipeline
+├── data_collection.*   → imports or generates raw data
+├── preprocessing.*     → cleans and transforms data
+├── modeling.*          → fits models and generates outputs
+├── visualization.*     → creates plots and summaries
+├── utils.*             → shared helper functions (not directly executable)
+├── workflow.ipynb      → Jupyter notebook (Python, Stata, Matlab, SAS)
+├── workflow.Rmd        → RMarkdown notebook (R only)
+```
+
+Each script is structured to:
+
+- Define a `main()` function or logical entry point (where applicable)  
+- Automatically resolve project folder paths (`data/raw/`, `results/figures/`, etc.)  
+- Remain passive unless directly called or imported  
+- Support reproducible workflows by default
+
+> 🧩 Scripts are designed to be flexible and modular: you can run them individually, chain them in `main.*`, or explore them interactively using Jupyter or RMarkdown.
+
 </details>
 
 <details>
 <summary>🧪 Environment Configuration</summary>
 
-Set up virtual environments for Python and/or R using Conda, venv, or your base installation.
+Configure virtual environments for Python and/or R using **Conda**, **venv**, or your system’s **base installation**.
 
 ```
 ├── R environment (if R used)
@@ -125,178 +163,129 @@ Set up virtual environments for Python and/or R using Conda, venv, or your base 
 │       └── If Base:          → Uses system-installed Python
 ```
 
+Environment manager options:
+
+- [**Conda**](https://docs.conda.io/en/latest/) – A popular environment and package manager that supports both Python and R. Conda allows explicit version control and cross-platform reproducibility.
+- [**venv**](https://docs.python.org/3/library/venv.html) – Python’s built-in tool for creating lightweight, isolated environments. Simple and fast, ideal for Python-only projects.
+
+Regardless of your choice, the following environment files are generated automatically:
+
+- `environment.yml` – Conda-compatible list of dependencies  
+- `requirements.txt` – pip-compatible Python package list  
+- `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package  
+
+> 💡 Conda will be downloaded and installed automatically if it's not already available.  
+> ⚠️ The template does **not install proprietary software** (e.g., Stata, Matlab, SAS). You must install these manually and provide the path when prompted.
+
 </details>
 
 <details>
 <summary>🗃️ Version Control</summary>
 
-Select a version control system to track code and data in a reproducible way. All systems initialize a Git repository as the base.
+Choose a system to version your code (and optionally your data). A Git repository is always initialized first.
 
 ```
 ├── version_control           → [Git | Datalad | DVC | None]
-│   ├── If Git:
+│   ├── Git:
 │   │   ├── Prompt for Git user.name and user.email
 │   │   ├── Initializes Git repo in project root
-│   │   └── Initializes separate Git repo in `data/` folder
-│   ├── If Datalad:
-│   │   ├── Initializes Git repo in project root (if not already)
-│   │   └── Creates a Datalad dataset in `data/` (nested repo)
-│   └── If DVC:
-│       ├── Initializes Git repo in project root (if not already)
-│       ├── Runs `dvc init` to initialize a DVC project
+│   │   └── Initializes separate Git repo in `data/`
+│   ├── Datalad:
+│   │   ├── Initializes Git repo (if not already)
+│   │   └── Initializes a Datalad dataset in `data/` (nested Git repo)
+│   └── DVC:
+│       ├── Initializes Git repo (if not already)
+│       ├── Runs `dvc init` to create a DVC project
 │       └── Configures `data/` as a DVC-tracked directory
 ```
 
+This template supports several version control systems to suit different workflows:
+
+- [**Git**](https://git-scm.com/) – general-purpose version control for code and text files  
+- [**Datalad**](https://www.datalad.org/) – for data-heavy, file-based versioning; designed to support **FAIR** principles and **Open Science** workflows  
+- [**DVC**](https://dvc.org/) – for machine learning pipelines, dataset tracking, and model versioning
+
+### 🔧 How it works:
+
+- **Git**: initializes the project root as a Git repository  
+  - Also creates a separate Git repo in `data/` to track datasets independently  
+- **Datalad**: builds on Git by creating a [Datalad dataset](https://handbook.datalad.org/en/latest/basics/101-137-datasets.html) in `data/`  
+- **DVC**: runs `dvc init` and sets up `data/` as a [DVC-tracked directory](https://dvc.org/doc/start/data-management) using external storage and `.dvc` files
+
+### 📝 Auto-generated `.gitignore` includes:
+
+```
+├── data/                  → raw and processed data folders
+├── bin/                   → local binaries (e.g., rclone)
+├── env/, __pycache__/     → Python virtual environments and caches
+├── .vscode/, .idea/       → IDE and editor configs
+├── .DS_Store, *.swp       → OS/system-generated files
+├── .ipynb_checkpoints/    → Jupyter notebook checkpoints
+├── .coverage, *.log       → logs, test coverage reports
+```
+
+> 🧹 These defaults help keep your repository clean, portable, and reproducible.
+
+> ⚙️ If **Git**, **Datalad**, or **DVC** (or their dependencies) are not detected, the template will automatically download and install them during setup.
+> This ensures you can use advanced version control tools without manual pre-installation.
 </details>
 
 <details>
-<summary>☁️ Remote Backup</summary>
+<summary>☁️ Backup with Rclone</summary>
 
-Choose where to back up your data: cloud (DeIC, Dropbox, OneDrive), local folders, or multiple options.
+This template supports automated backup to **CBS-approved storage solutions** using [`rclone`](https://rclone.org). You will be prompted for your **email** and **password** during setup, and all credentials are securely stored and encrypted.
+
+Supported backup targets include:
+
+- [**DeIC Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA** (see instructions under “Setup → SFTP” on the [DeIC Access Guide](https://kb.deic.dk/en/storage/how-to-access))  
+- [**Dropbox**](https://www.dropbox.com/)  
+- [**OneDrive**](https://onedrive.live.com/)  
+- **Local** storage – backup to a folder on your own system  
+- **Multiple** – select any combination of the above
 
 ```
 ├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
 │   ├── DeIC:
 │   │   ├── Prompt for CBS email
-│   │   └── Prompt for password (stored securely)
+│   │   └── Prompt for password (encrypted)
 │   ├── Dropbox / OneDrive:
 │   │   ├── Prompt for email
-│   │   └── Prompt for password (stored securely)
+│   │   └── Prompt for password (encrypted)
 │   ├── Local:
-│   │   └── Prompt to select a destination path on your machine
+│   │   └── Prompt to choose a local destination path
 │   └── Multiple:
-│       └── Allows selection of any combination of the above services
+│       └── Allows choosing several of the above
 ```
+
+> 🔐 All credentials are securely encrypted in `rclone.conf` or stored in the `.env` file where appropriate.  
+> ☁️ `rclone` is automatically downloaded and installed if not already available on your system.
 
 </details>
 
 <details>
 <summary>📡 Remote Repository Setup</summary>
 
-If you choose to publish the code, the template can automatically create and push to GitHub, GitLab, or Codeberg.
+Automatically create and push to a Git repository on a remote hosting platform.
 
 ```
 ├── remote_repo               → [GitHub | GitLab | Codeberg | None]
 │   └── If selected:
-│       ├── Prompt for platform username
+│       ├── Prompt for username
 │       ├── Choose visibility: [private | public]
-│       └── Enter personal access token (stored in `.env`)
+│       └── Provide personal access token (stored in `.env`)
 ```
 
-</details>
+Supported platforms include:
 
-> ⚠️ Proprietary software (e.g., Stata, Matlab, SAS) is **not installed** by the template. You must provide the executable path manually if selected.
+- [**GitHub**](https://github.com) (via [GitHub CLI](https://cli.github.com)) – the most widely used platform for open source and academic collaboration. Supports seamless repo creation, authentication, and automation.
+- [**GitLab**](https://gitlab.com) (via [GitLab CLI](https://gitlab.com/gitlab-org/cli)) – a DevOps platform that supports both self-hosted and cloud-hosted repositories. Ideal for collaborative development with built-in CI/CD pipelines.
+- [**Codeberg**](https://codeberg.org) – a privacy-focused Git hosting service powered by [Gitea](https://about.gitea.com). Community-driven and compliant with European data governance standards.
 
----
-## 🌐 Remote Setup Support
+Repositories are created using the **HTTPS protocol** and authenticated with **personal access tokens**.
 
-This template supports automatic configuration of remote versioning, backup, and repository platforms. Click below to expand each section.
-
-<details>
-<summary>🗃️ Version Control</summary>
-
-This template supports several version control systems to suit different workflows:
-
-- [**Git**](https://git-scm.com/) (default) – general-purpose version control for code and text files  
-- [**Datalad**](https://www.datalad.org/) – for data-heavy, file-based versioning; designed to support **FAIR** principles and **Open Science** workflows  
-- [**DVC**](https://dvc.org/) – for machine learning pipelines, dataset tracking, and model versioning
-
-**How it works:**
-
-- For **Git**, the project root is initialized as a Git repository.  
-  - The `data/` folder is created as a **separate Git repository**, allowing you to track data independently of source code.  
-- For **Datalad**, the `data/` folder is initialized as a **Datalad dataset**, enabling advanced data provenance and modular data management.  
-- For **DVC**, the `data/` folder is configured for **DVC tracking**, which uses `.dvc` files and external storage to version large data files.
-
-**Auto-generated `.gitignore` includes:**
-
-- `data/` – raw and processed data folders  
-- `bin/` – local binaries  
-- Python artifacts – `env/`, `__pycache__/`, `.mypy_cache/`  
-- IDE/config files – `.vscode/`, `.idea/`, `.spyproject/`  
-- System files – `.DS_Store`, `*.swp`  
-- Jupyter checkpoints – `.ipynb_checkpoints/`  
-- Logs and test outputs – `.coverage`, `htmlcov/`, `*.log`  
-
-> 🧹 These defaults help keep your repository clean and focused.
+> 🛡️ Your credentials and tokens are securely stored in the `.env` file and never exposed in plain text.
 
 </details>
-
-<details>
-<summary>☁️ Cloud Backup with Rclone</summary>
-
-You will be prompted for **email** and **password** to set up automatic project backup using `rclone`.
-
-Supported remote systems:
-
-- **DeIC Storage** (via SFTP)  
-- **Dropbox**  
-- **OneDrive**  
-- **Local** storage  
-- **Multiple** targets
-
-> 🔐 Your **email** is securely stored in your `.env` file. Passwords are encrypted and not stored in plain text.
-
-</details>
-
-<details>
-<summary>📡 Remote Repository Platforms</summary>
-
-If you choose to publish your project remotely, you will be prompted for your:
-
-- **GitHub/GitLab username**
-- **Repository visibility** (private/public)
-- **Personal access token**
-
-Repositories are pushed using the **HTTPS protocol** and authenticated via tokens.
-
-Supported platforms:
-
-- **GitHub** (via GitHub CLI)  
-- **GitLab** (via GitLab CLI)  
-- **Codeberg**
-
-> 🔐 Your credentials and tokens are securely saved in the `.env` file for authenticated Git operations.
-
-</details>
-
-
-<details>
-<summary>🔄 Script Templates</summary>
-
-The template automatically generates modular starter scripts in the `src/` directory to support a standardized and reproducible analysis workflow.
-
-Script generation is **language-agnostic**: based on your selected programming language, script files are created with the appropriate extension:
-
-- `.py` for Python  
-- `.R` for R  
-- `.m` for Matlab  
-- `.do` for Stata  
-- `.sas` for SAS  
-
-Typical script files include:
-
-```
-├── main.*              → orchestrates the full pipeline
-├── data_collection.*   → imports or generates raw data
-├── preprocessing.*     → cleans and transforms data
-├── modeling.*          → fits models and generates outputs
-├── visualization.*     → creates plots and summaries
-├── utils.*             → shared helper functions (not directly executable)
-├── workflow.ipynb      → Jupyter notebook (Python, Stata, Matlab, SAS)
-├── workflow.Rmd        → RMarkdown notebook (R only)
-```
-
-Each script:
-
-- Defines a `main()` function or logical entry point (where applicable)  
-- Automatically resolves project paths (e.g., `data/raw/`, `results/figures/`)  
-- Remains passive unless intentionally executed  
-
-> 🧩 Scripts are designed for flexibility: run them individually, orchestrate them via `main.*`, or explore them interactively using Jupyter or RMarkdown.
-
-</details>
-
 
 ---
 ## 🗂️ Project Layout
