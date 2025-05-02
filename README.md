@@ -1,4 +1,4 @@
-# 🧪 Reproducible Research Template for CBS: Structured Workflows and Replication Packages
+# 🧪 Reproducible Research Template: Structured Workflows and Replication Packages
 
 This project template is designed to help **CBS researchers** create structured, automated, and publication-ready workflows aligned with the principles of **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
@@ -38,7 +38,7 @@ pip install cookiecutter
 
 ---
 
-## 🚀 Usage
+## 🏗️ Generate a New Project
 
 This template can be used either online (via GitHub) or offline (manually downloaded).
 
@@ -48,7 +48,7 @@ This template can be used either online (via GitHub) or offline (manually downlo
 Use this option if Git is installed and you want to fetch the template directly from GitHub:
 
 ```bash
-cookiecutter gh:CBS-HPC/replication_package
+cookiecutter gh:CBS-HPC/research-template
 ```
 
 </details>
@@ -58,13 +58,13 @@ cookiecutter gh:CBS-HPC/replication_package
 
 If Git is **not installed**, you can still use the template by downloading it manually:
 
-1. Go to [https://github.com/CBS-HPC/replication_package](https://github.com/CBS-HPC/replication_package)  
+1. Go to [https://github.com/CBS-HPC/research-template](https://github.com/CBS-HPC/research-template)  
 2. Click the green **“Code”** button, then choose **“Download ZIP”**  
 3. Extract the ZIP file to a folder of your choice  
 4. Run Cookiecutter locally:
 
 ```bash
-cookiecutter path/to/replication_package
+cookiecutter path/to/research-template
 ```
 
 > ⚠️ Do **not** use `git clone` if Git is not installed. Manual download is required in this case.
