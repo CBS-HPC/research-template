@@ -75,98 +75,37 @@ cookiecutter path/to/research-template
 
 ## 🧾 Setup Options
 
-The template guides you through a series of prompts to configure your project. Below is a visual overview of all setup steps:
+You will be prompted to configure the following options:
 
-<details>
-<summary>📦 Project Metadata</summary>
+| Prompt                     | Description                                 |
+| -------------------------- | ------------------------------------------- |
+| `project_name`           | Title of your research project              |
+| `repo_name`              | Name of the folder and Git repo             |
+| `description`            | Short project summary                       |
+| `author_name`, `email` | Your name and CBS email                     |
+| `orcid`                  | Your ORCID ID                               |
+| `version`                | Initial version number (e.g.,`0.0.1`)     |
+| `open_source_license`    | MIT, BSD-3-Clause, or None                  |
+| `programming_language`   | Python, R, Stata, Matlab, SAS, or None      |
+| `version_control`        | Git, Datalad, DVC, or None                  |
+| `remote_backup`          | DeIC, Dropbox, Onedrive, Local, or Multiple |
+| `env_manager`            | Conda, Venv, or Base installation           |
+| `remote_repo`            | GitHub, GitLab, Codeberg, or None           |
 
-```
-├── project_name              → Human-readable name
-├── repo_name                 → Folder and repo name
-├── description               → Short project summary
-├── author_name               → Your full name
-├── email                     → Your CBS email
-├── orcid                     → Your ORCID researcher ID
-├── version                   → Initial version tag (e.g., 0.0.1)
-├── open_source_license       → [MIT | BSD-3-Clause | None]
-```
+The template automatically performs the following:
 
-</details>
+- Creates the project folder structure
+- Generates reusable scripts and module templates in `src/`
+- Creates and configures a `.env` file
+- Sets up the virtual environment and installs dependencies  
+  - If using **Conda**, specific versions of **Python** and **R** can be installed
+- Initializes version control and makes an initial commit
+- Sets up a Git repository on GitHub, GitLab, or Codeberg (if selected)
+- Backs up the project using `rclone` to the selected remote
+- Downloads and installs missing open-source tools (e.g., **Git**, **Rclone**, **DVC**, **Datalad**, **Conda**, **GitHub CLI (`gh`)**, **GitLab CLI (`glab`)**) if not already available
 
-<details>
-<summary>🧬 Programming Language</summary>
+> ⚠️ Note: The template **does not install proprietary software** such as **Stata**, **Matlab**, or **SAS**. You must install these separately if selected.
 
-```
-├── programming_language      → [Python | R | Stata | Matlab | SAS | None]
-│   └── If R/Stata/Matlab/SAS selected:
-│       └── Prompt for executable path if not auto-detected
-```
-
-</details>
-
-<details>
-<summary>🧪 Environment Configuration</summary>
-
-```
-├── R environment (if R used)
-│   └── env_manager_r         → [Conda | Base Installation]
-│       ├── If Conda:         → Prompt for R version (e.g., 4.3.2)
-│       └── If Base:          → Uses system-installed R
-├── Python environment
-│   └── env_manager_python    → [Conda | Venv | Base Installation]
-│       ├── If Conda:         → Prompt for Python version (e.g., 3.10.12)
-│       ├── If Venv:          → Uses current Python kernel version
-│       └── If Base:          → Uses system-installed Python
-```
-
-</details>
-
-<details>
-<summary>🗃️ Version Control</summary>
-
-```
-├── version_control           → [Git | Datalad | DVC | None]
-│   └── If Git:
-│       ├── Prompt for Git user.name and user.email
-│       ├── Initializes Git repo in project root
-│       └── Initializes separate Git repo in `data/` folder
-```
-
-</details>
-
-<details>
-<summary>☁️ Remote Backup</summary>
-
-```
-├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
-│   ├── DeIC:
-│   │   ├── Prompt for CBS email
-│   │   └── Prompt for password (stored securely)
-│   ├── Dropbox / OneDrive:
-│   │   ├── Prompt for email
-│   │   └── Prompt for password (stored securely)
-│   ├── Local:
-│   │   └── Prompt to select a destination path on your machine
-│   └── Multiple:
-│       └── Allows selection of any combination of the above services
-```
-
-</details>
-
-<details>
-<summary>📡 Remote Repository Setup</summary>
-
-```
-├── remote_repo               → [GitHub | GitLab | Codeberg | None]
-│   └── If selected:
-│       ├── Prompt for platform username
-│       ├── Choose visibility: [private | public]
-│       └── Enter personal access token (stored in `.env`)
-```
-
-</details>
-
-> ⚠️ Proprietary software (e.g., Stata, Matlab, SAS) is **not installed** by the template. You must provide the executable path manually if selected.
 
 ---
 ## 🌐 Remote Setup Support
