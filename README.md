@@ -31,10 +31,12 @@ Whether you're preparing a replication package for publication, submitting data 
 - 🔐 Environment management via Conda or venv  
 - ☁️ Backup integration with DeiC Storage, Dropbox, and OneDrive  
 - 🚀 Remote repository setup with GitHub, GitLab, or Codeberg  
-- 📄 Support for DCAS-aligned replication packages
+- 📄 Support for DCAS-aligned replication packages  
+- 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`  
+- 🧰 Installation guides and activation scripts for both Windows and Bash  
+- 📑 Structured descriptions of all files, code, and datasets (`file_descriptions.json`)
 
 This template is developed and maintained by the **CBS High-Performance Computing (HPC)** team to promote reproducibility, collaboration, and compliance in computational research at Copenhagen Business School.
-
 
 ---
 
@@ -117,7 +119,6 @@ This information is used to auto-generate:
 - `LICENSE.txt` – includes license sections for code, documentation, and data  
 - `CITATION.cff` – for machine-readable academic citation
 
----
 
 ### 🔑 License Descriptions
 
