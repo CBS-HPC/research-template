@@ -96,24 +96,48 @@ This template guides you through a series of interactive prompts to configure yo
 <details>
 <summary>📦 Project Metadata</summary>
 
-Provide core metadata for your project—used for naming, documentation, and citation.
+Provide core metadata for your project—used for naming, documentation, citation, and licensing.
 
 ```
 ├── project_name              → Human-readable name
-├── repo_name                 → Folder and repo name
-├── description               → Short project summary
+├── repo_name                 → Folder and repository name
+├── description               → Short summary of the project
 ├── author_name               → Your full name
 ├── email                     → Your CBS email
 ├── orcid                     → Your ORCID researcher ID
-├── version                   → Initial version tag (e.g., 0.0.1)
-├── open_source_license       → [MIT | BSD-3-Clause | None]
+├── version                   → Initial version number (e.g., 0.0.1)
+├── code_license              → [MIT | BSD-3-Clause | Apache-2.0 | None]
+├── documentation_license     → [CC-BY-4.0 | CC0-1.0 | None]
+├── data_license              → [CC-BY-4.0 | CC0-1.0 | None]
 ```
 
 This information is used to auto-generate:
 
-- `README.md` – includes your title, author, and description  
-- `LICENSE.txt` – based on selected license  
-- `CITATION.cff` – for machine-readable citation metadata
+- `README.md` – populated with title, description, and author info  
+- `LICENSE.txt` – includes license sections for code, documentation, and data  
+- `CITATION.cff` – for machine-readable academic citation
+
+---
+
+### 🔑 License Descriptions
+
+**Code Licenses:**
+
+- [**MIT**](https://opensource.org/licenses/MIT) – Very permissive, short license. Allows reuse with attribution.  
+- [**BSD-3-Clause**](https://opensource.org/license/bsd-3-clause/) – Permissive, but includes a non-endorsement clause.  
+- [**Apache-2.0**](https://www.apache.org/licenses/LICENSE-2.0) – Like MIT, but includes explicit patent protection.  
+
+**Documentation Licenses:**
+
+- [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Requires attribution, allows commercial and derivative use.  
+- [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Places documentation in the public domain (no attribution required).
+
+**Data Licenses:**
+
+- [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Allows reuse and redistribution with attribution.  
+- [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Public domain dedication for unrestricted reuse.
+
+> ℹ️ If “None” is selected, the corresponding section will be omitted from the LICENSE file.
 
 </details>
 
