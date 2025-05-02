@@ -40,16 +40,17 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 ## 🛠️ Requirements
 
-- Python 3.9+
-- [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/installation.html)
+- [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts  
+- [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure  
+- [**Git**](https://git-scm.com/downloads) *(optional)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
 
 Install Cookiecutter:
 
-```
+```bash
 pip install cookiecutter
 ```
 
-> ❗️ Git is optional for template usage but required if pushing to a remote repository. The template can download and install Git, Rclone, and other tools automatically if not found.
+> If Git or other tools are missing, the template will offer to download and configure them for you.
 
 ---
 
