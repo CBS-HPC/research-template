@@ -230,7 +230,9 @@ authors = "{{cookiecutter.author_name}}"
 orcids = "{{cookiecutter.orcid}}"
 email = "{{cookiecutter.email}}"
 version = "{{cookiecutter.version}}"
-license = "{{cookiecutter.open_source_license}}"
+code_license = "{{cookiecutter.code_license}}"
+doc_license = "{{cookiecutter.documentation_license}}"
+data_license = "{{cookiecutter.data_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
@@ -248,7 +250,9 @@ save_to_env(version,"VERSION",".cookiecutter")
 save_to_env(authors,"AUTHORS",".cookiecutter")
 save_to_env(orcids,"ORCIDS",".cookiecutter")
 save_to_env(email,"EMAIL",".cookiecutter")
-save_to_env(license,"LICENSE",".cookiecutter")
+save_to_env(code_license,"CODE_LICENSE",".cookiecutter")
+save_to_env(doc_license,"DOC_LICENSE",".cookiecutter")
+save_to_env(data_license,"DATA_LICENSE",".cookiecutter")
 save_to_env(programming_language,"PROGRAMMING_LANGUAGE",".cookiecutter")
 save_to_env(python_env_manager,"PYTHON_ENV_MANAGER",".cookiecutter")
 save_to_env(version_control,"VERSION_CONTROL",".cookiecutter")
