@@ -361,6 +361,7 @@ You can find or update human-readable file descriptions in `file_descriptions.js
 ```
 
 > 🔁 `activate.*` and `deactivate.*` are either PowerShell (`.ps1`) or Bash (`.sh`) scripts, depending on your platform (Windows or macOS/Linux).
+
 > ✳️ Script file extensions (`.py`, `.R`, `.do`, `.m`, `.sas`) are determined by the programming language selected during project setup.
 
 </details>
@@ -370,11 +371,7 @@ You can find or update human-readable file descriptions in `file_descriptions.js
 
 To configure the project's environment—including project paths, environment variables, and virtual environments—run the activation script for your operating system. These scripts read settings from the `.env` file.
 
-> ⚠️ The `.env` file is excluded from this repository for security reasons.  
-> To replicate the environment, follow the instructions in the [Installation](#installation) section.
-
-<details>
-<summary>🪟 Windows (PowerShell)</summary>
+### 🪟 Windows (PowerShell)
 
 **Activate:**
 
@@ -388,10 +385,7 @@ To configure the project's environment—including project paths, environment va
 ./deactivate.ps1
 ```
 
-</details>
-
-<details>
-<summary>🐧 macOS / Linux (bash)</summary>
+### 🐧 macOS / Linux (bash)
 
 **Activate:**
 
@@ -404,8 +398,6 @@ source activate.sh
 ```bash
 source deactivate.sh
 ```
-
-</details>
 
 </details>
 
