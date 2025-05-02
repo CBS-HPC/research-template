@@ -130,14 +130,21 @@ Set up virtual environments for Python and/or R using Conda, venv, or your base 
 <details>
 <summary>🗃️ Version Control</summary>
 
-Select a version control system and configure Git-based tracking for code and optionally for the `data/` directory.
+Select a version control system to track code and data in a reproducible way. All systems initialize a Git repository as the base.
 
 ```
 ├── version_control           → [Git | Datalad | DVC | None]
-│   └── If Git:
-│       ├── Prompt for Git user.name and user.email
-│       ├── Initializes Git repo in project root
-│       └── Initializes separate Git repo in `data/` folder
+│   ├── If Git:
+│   │   ├── Prompt for Git user.name and user.email
+│   │   ├── Initializes Git repo in project root
+│   │   └── Initializes separate Git repo in `data/` folder
+│   ├── If Datalad:
+│   │   ├── Initializes Git repo in project root (if not already)
+│   │   └── Creates a Datalad dataset in `data/` (nested repo)
+│   └── If DVC:
+│       ├── Initializes Git repo in project root (if not already)
+│       ├── Runs `dvc init` to initialize a DVC project
+│       └── Configures `data/` as a DVC-tracked directory
 ```
 
 </details>
@@ -252,6 +259,44 @@ Supported platforms:
 > 🔐 Your credentials and tokens are securely saved in the `.env` file for authenticated Git operations.
 
 </details>
+
+
+<details>
+<summary>🔄 Script Templates</summary>
+
+The template automatically generates modular starter scripts in the `src/` directory to support a standardized and reproducible analysis workflow.
+
+Script generation is **language-agnostic**: based on your selected programming language, script files are created with the appropriate extension:
+
+- `.py` for Python  
+- `.R` for R  
+- `.m` for Matlab  
+- `.do` for Stata  
+- `.sas` for SAS  
+
+Typical script files include:
+
+```
+├── main.*              → orchestrates the full pipeline
+├── data_collection.*   → imports or generates raw data
+├── preprocessing.*     → cleans and transforms data
+├── modeling.*          → fits models and generates outputs
+├── visualization.*     → creates plots and summaries
+├── utils.*             → shared helper functions (not directly executable)
+├── workflow.ipynb      → Jupyter notebook (Python, Stata, Matlab, SAS)
+├── workflow.Rmd        → RMarkdown notebook (R only)
+```
+
+Each script:
+
+- Defines a `main()` function or logical entry point (where applicable)  
+- Automatically resolves project paths (e.g., `data/raw/`, `results/figures/`)  
+- Remains passive unless intentionally executed  
+
+> 🧩 Scripts are designed for flexibility: run them individually, orchestrate them via `main.*`, or explore them interactively using Jupyter or RMarkdown.
+
+</details>
+
 
 ---
 ## 🗂️ Project Layout
