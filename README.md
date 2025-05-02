@@ -1,10 +1,22 @@
 # 🧪 Reproducible Research Template: Structured Workflows and Replication Packages
 
+![Repo size](https://img.shields.io/github/repo-size/CBS-HPC/research-template)
+![Last commit](https://img.shields.io/github/last-commit/CBS-HPC/research-template)
+![License](https://img.shields.io/github/license/CBS-HPC/research-template)
+![Open issues](https://img.shields.io/github/issues/CBS-HPC/research-template)
+![Pull requests](https://img.shields.io/github/issues-pr/CBS-HPC/research-template)
+![Windows](https://img.shields.io/badge/tested%20on-Windows-blue?logo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-blue?logo=linux&logoColor=white)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/10.5281/zenodo.1234567)
+
+
 This project template is designed to help **CBS researchers** create structured, automated, and publication-ready workflows aligned with the principles of **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
 Built with [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), the template supports **Python**, **R**, **Stata**, **Matlab**, and **SAS**, and provides an integrated framework for organizing code, managing datasets, tracking dependencies, enabling version control, and backing up research securely.
 
 Whether you're preparing a replication package for publication, submitting data and code for peer review, or organizing internal research, this tool helps you streamline reproducible research workflows tailored to the needs of the **CBS research community**.
+
+> ✅ This template has been tested on **Windows (PowerShell)** and **Ubuntu (bash)** environments.
 
 ---
 
@@ -21,6 +33,7 @@ Whether you're preparing a replication package for publication, submitting data 
 
 This template is developed and maintained by the **CBS High-Performance Computing (HPC)** team to promote reproducibility, collaboration, and compliance in computational research at Copenhagen Business School.
 
+
 ---
 
 ## 🛠️ Requirements
@@ -30,7 +43,7 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 Install Cookiecutter:
 
-```bash
+```
 pip install cookiecutter
 ```
 
@@ -292,34 +305,158 @@ Repositories are created using the **HTTPS protocol** and authenticated with **p
 </details>
 
 ---
-## 🗂️ Project Layout
+## 🧾 Project Structure and Usage
 
-```plaintext
-{{cookiecutter.repo_name}}/
-├── bin/                  # Tools (e.g., rclone)
-├── data/
-│   ├── external/         # 3rd-party data
-│   ├── interim/          # Intermediate data
-│   ├── processed/        # Final, cleaned data
-│   └── raw/              # Immutable raw datasets
-├── DCAS template/        # Templates for DCAS replication
-├── docs/                 # Project documentation
-├── results/
-│   └── figures/          # Generated figures
-├── setup/                # Setup scripts
-│   └── utils/            # Utility modules for setup and tools
-├── src/                  # Main source code (Python, R, etc.)
-├── .env                  # Environment variables
-├── .gitignore            # Git ignore rules
-├── .rcloneignore         # Ignore rules for backup
-├── .treeignore           # Optional for visualization tools
-├── CITATION.cff          # Citation metadata
-├── LICENSE.txt           # License info
-├── README.md             # Project documentation
-├── environment.yml       # Conda environment file (if selected)
-├── requirements.txt      # Python package list
-└── run_setup.sh / .ps1   # One-click project setup
+This template generates a standardized, reproducible project layout. It separates raw data, code, documentation, setup scripts, and outputs to support collaboration, transparency, and automation.
+
+You can find or update human-readable file descriptions in `file_descriptions.json`.
+
+<details>
+<summary>📁 Directory Structure</summary>
+
 ```
+├── .cookiecutter             # Cookiecutter configuration used to generate this project
+├── .git                      # Git repository metadata
+├── .gitignore                # Files/directories excluded from Git version control
+├── .rcloneignore             # Files/directories excluded from Rclone backup
+├── .treeignore               # Files excluded from file tree utilities or visualizations
+├── CITATION.cff              # Machine-readable citation metadata for scholarly reference
+├── DCAS template/            # Template for DCAS-compliant replication packages
+│   └── README.md             # README for the DCAS template
+├── LICENSE.txt               # Project license file
+├── README.md                 # Main README with usage and documentation
+├── activate.ps1              # PowerShell script to activate the environment
+├── deactivate.ps1            # PowerShell script to deactivate the environment
+├── bin/                      # Local tools (e.g., rclone binaries, installers)
+├── data/                     # Structured project data directory
+│   ├── .git/                 # Standalone Git repo for tracking datasets
+│   ├── .gitlog               # Git log for the data repository
+│   ├── raw/                  # Original, immutable input data
+│   ├── interim/              # Intermediate data created during processing
+│   └── processed/            # Final, clean data ready for analysis
+├── docs/                     # Project documentation, reports, or rendered outputs
+├── environment.yml           # Conda-compatible environment definition (Python/R)
+├── file_descriptions.json    # JSON file with editable descriptions for all project files
+├── requirements.txt          # pip-compatible list of Python dependencies
+├── results/                  # Results generated by the project
+│   └── figures/              # Charts, plots, and other visual outputs
+├── setup/                    # Internal setup module for environment config and CLI tools
+│   ├── dependencies.txt      # List of Python dependencies for installation
+│   ├── setup.py              # Setup script to register the project as a Python package
+│   └── utils/                # Utility functions and scripts for environment setup
+└── src/                      # Source code for data processing, analysis, and reporting
+    ├── main.*                # Orchestrates the full workflow pipeline
+    ├── data_collection.*     # Imports or generates raw data from external sources
+    ├── get_dependencies.*    # Checks or retrieves required dependencies
+    ├── install_dependencies.*# Installs any missing packages for the environment
+    ├── preprocessing.*       # Cleans and transforms raw input data
+    ├── modeling.*            # Performs modeling, estimation, or machine learning
+    ├── visualization.*       # Creates plots, charts, and visual summaries
+    ├── utils.*               # Shared helper functions for reuse across scripts
+    ├── environment_setup.*   # (Optional) Initializes the environment (e.g., renv, virtualenv)
+    └── workflow.*            # Interactive workflow (e.g., Jupyter notebook or RMarkdown)
+```
+
+</details>
+
+> ✳️ Script file extensions (`.py`, `.R`, `.do`, `.m`, `.sas`) are determined by the programming language selected during project setup.
+
+<details>
+<summary>🚀 Project Activation</summary>
+
+To configure the project's environment—including project paths, environment variables, and virtual environments—run the activation script for your operating system. These scripts read settings from the `.env` file.
+
+> ⚠️ The `.env` file is excluded from this repository for security reasons.  
+> To replicate the environment, follow the instructions in the [Installation](#installation) section.
+
+<details>
+<summary>🪟 Windows (PowerShell)</summary>
+
+**Activate:**
+
+```powershell
+./activate.ps1
+```
+
+**Deactivate:**
+
+```powershell
+./deactivate.ps1
+```
+
+</details>
+
+<details>
+<summary>🐧 macOS / Linux (bash)</summary>
+
+**Activate:**
+
+```bash
+source activate.sh
+```
+
+**Deactivate:**
+
+```bash
+source deactivate.sh
+```
+
+</details>
+
+</details>
+
+<details>
+<summary>🔧 CLI Tools</summary>
+
+The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
+
+> ℹ️ **Note**: The `setup` package is **automatically installed** during project setup.  
+> You can also manually install or reinstall it using:  
+> `pip install -e ./setup`
+
+Once installed, the following CLI commands become available from the terminal:
+
+| Command                     | Description                                                                                       |
+|-----------------------------|---------------------------------------------------------------------------------------------------|
+| `run-backup`                | Executes a full project backup using preconfigured rules and paths.                               |
+| `set-dataset`               | Initializes or registers datasets (e.g., add metadata, sync folders).                            |
+| `update-dependencies`       | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`.                   |
+| `run-setup` *(in progress)* | Main entry point to initialize or reconfigure the project environment.                           |
+| `update-readme`             | Regenerates the `README.md` with updated metadata and file structure.                            |
+| `reset-templates`           | Resets or regenerates script templates in `src/` based on project language.                      |
+| `code-examples`             | Generates language-specific example code and notebooks (Python, R, SAS, etc.).                   |
+| `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
+
+### 🛠️ Usage
+
+After activating your environment, run commands like:
+
+```bash
+run-setup
+set-dataset
+update-requirements
+```
+
+</details>
+
+<details>
+<summary>🗂️ Configuration Files (Root-Level)</summary>
+
+The following configuration files are placed in the root directory and used by tools for managing environments, templates, backups, and project metadata.
+
+| File                      | Purpose                                                                                             |
+|---------------------------|-----------------------------------------------------------------------------------------------------|
+| `.gitignore`              | Excludes unnecessary files from Git version control                                                 |
+| `.rcloneignore`           | Excludes files and folders from Rclone-based backups                                                |
+| `.treeignore`             | Filters out directories from project tree visualizations                                            |
+| `.cookiecutter`           | Cookiecutter metadata for project initialization                                                    |
+| `.env`                    | Defines environment-specific variables (e.g., paths, tokens, settings); typically excluded from Git |
+| `environment.yml`         | Conda environment definition for installing Python and R dependencies                               |
+| `requirements.txt`        | pip-compatible Python dependencies                                                                  |
+| `renv.lock`               | Captures exact versions of R packages used (if R is selected)                                       |
+| `file_descriptions.json`  | JSON file containing editable metadata for the directory structure; used by setup and documentation tools |
+
+</details>
 
 ---
 
