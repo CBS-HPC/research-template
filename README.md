@@ -80,6 +80,8 @@ The template guides you through a series of prompts to configure your project. B
 <details>
 <summary>📦 Project Metadata</summary>
 
+This section collects basic project information such as name, author, and description.
+
 ```
 ├── project_name              → Human-readable name
 ├── repo_name                 → Folder and repo name
@@ -96,6 +98,8 @@ The template guides you through a series of prompts to configure your project. B
 <details>
 <summary>🧬 Programming Language</summary>
 
+Choose your primary analysis language; for non-Python languages, the path to the software may be required.
+
 ```
 ├── programming_language      → [Python | R | Stata | Matlab | SAS | None]
 │   └── If R/Stata/Matlab/SAS selected:
@@ -106,6 +110,8 @@ The template guides you through a series of prompts to configure your project. B
 
 <details>
 <summary>🧪 Environment Configuration</summary>
+
+Set up virtual environments for Python and/or R using Conda, venv, or your base installation.
 
 ```
 ├── R environment (if R used)
@@ -124,6 +130,8 @@ The template guides you through a series of prompts to configure your project. B
 <details>
 <summary>🗃️ Version Control</summary>
 
+Select a version control system and configure Git-based tracking for code and optionally for the `data/` directory.
+
 ```
 ├── version_control           → [Git | Datalad | DVC | None]
 │   └── If Git:
@@ -136,6 +144,8 @@ The template guides you through a series of prompts to configure your project. B
 
 <details>
 <summary>☁️ Remote Backup</summary>
+
+Choose where to back up your data: cloud (DeIC, Dropbox, OneDrive), local folders, or multiple options.
 
 ```
 ├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
@@ -155,6 +165,8 @@ The template guides you through a series of prompts to configure your project. B
 
 <details>
 <summary>📡 Remote Repository Setup</summary>
+
+If you choose to publish the code, the template can automatically create and push to GitHub, GitLab, or Codeberg.
 
 ```
 ├── remote_repo               → [GitHub | GitLab | Codeberg | None]
