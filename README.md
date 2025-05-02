@@ -483,7 +483,7 @@ The following configuration files are placed in the root directory and used by t
 
 ## 📚 DCAS Compatibility
 
-This template is designed to support the creation of replication packages that are fully compatible with the [DCAS (Data and Code Sharing) standard](https://datacodestandard.org/), a widely endorsed initiative to promote transparency and reproducibility in social science research.
+This template is designed to support the creation of replication packages that are fully compatible with the [Data and Code Availability Standard (DCAS)](https://datacodestandard.org/), a widely endorsed initiative to promote transparency and reproducibility in social science research.
 
 By structuring code, data, metadata, and documentation into clear, well-separated folders—with standard naming conventions, licensing, and README scaffolds—the template helps you align with the expectations of journals that require or recommend DCAS compliance.
 
