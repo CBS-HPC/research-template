@@ -7,8 +7,6 @@
 ![Pull requests](https://img.shields.io/github/issues-pr/CBS-HPC/research-template)
 ![Windows](https://img.shields.io/badge/tested%20on-Windows-blue?logo=windows&logoColor=white)
 ![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-blue?logo=linux&logoColor=white)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/10.5281/zenodo.1234567)
-
 
 This project template is designed to help **CBS researchers** create structured, automated, and publication-ready workflows aligned with the principles of **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
