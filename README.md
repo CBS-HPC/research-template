@@ -9,6 +9,9 @@
 ![Windows](https://img.shields.io/badge/tested%20on-Windows-blue?logo=windows&logoColor=white)
 ![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-blue?logo=linux&logoColor=white)
 
+
+> ⚠️ **This repository is under active development. Features, structure, and documentation may change.**
+
 This project template is designed to help **CBS researchers** create structured, automated, and publication-ready workflows aligned with the principles of **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
 Built with [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), the template supports **Python**, **R**, **Stata**, **Matlab**, and **SAS**, and provides an integrated framework for organizing code, managing datasets, tracking dependencies, enabling version control, and backing up research securely.
