@@ -151,31 +151,33 @@ Each script is structured to:
 <details>
 <summary>🧪 Environment Configuration</summary>
 
-Configure virtual environments for Python and/or R using **Conda**, **venv**, or your system’s **base installation**.
+Set up isolated virtual environments using **Conda**, **venv**, or your system’s **base installation**.
 
 ```
 ├── R environment (if R used)
 │   └── env_manager_r         → [Conda | Base Installation]
-│       ├── If Conda:         → Prompt for R version (e.g., 4.3.2)
+│       ├── If Conda:         → Prompt for R version
 │       └── If Base:          → Uses system-installed R
 ├── Python environment
 │   └── env_manager_python    → [Conda | Venv | Base Installation]
-│       ├── If Conda:         → Prompt for Python version (e.g., 3.10.12)
+│       ├── If Conda:         → Prompt for Python version
 │       ├── If Venv:          → Uses current Python kernel version
 │       └── If Base:          → Uses system-installed Python
 ```
 
-Environment manager options:
+**Environment manager options:**
 
-- [**Conda**](https://docs.conda.io/en/latest/) – A popular environment and package manager that supports both Python and R. Conda allows explicit version control and cross-platform reproducibility.
-- [**venv**](https://docs.python.org/3/library/venv.html) – Python’s built-in tool for creating lightweight, isolated environments. Simple and fast, ideal for Python-only projects.
+- [**Conda**](https://docs.conda.io/en/latest/) – A popular environment and package manager that supports both Python and R. Enables exact version control and cross-platform reproducibility.  
+- [**venv**](https://docs.python.org/3/library/venv.html) – Python’s built-in tool for creating lightweight, isolated environments. Ideal for Python-only projects.  
+- **Base Installation** – No environment is created. Dependencies are installed directly into your system-wide Python or R installation.
 
-Regardless of your choice, the following environment files are generated automatically:
+Regardless of your choice, the following files are generated to document your environment:
 
 - `environment.yml` – Conda-compatible list of dependencies  
 - `requirements.txt` – pip-compatible Python package list  
 - `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package  
 
+> ⚠️ When using **venv** or **base installation**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
 > 💡 Conda will be downloaded and installed automatically if it's not already available.  
 > ⚠️ The template does **not install proprietary software** (e.g., Stata, Matlab, SAS). You must install these manually and provide the path when prompted.
 
@@ -184,7 +186,7 @@ Regardless of your choice, the following environment files are generated automat
 <details>
 <summary>🗃️ Version Control</summary>
 
-Choose a system to version your code (and optionally your data). A Git repository is always initialized first.
+Choose a system to version your code (and optionally your data).
 
 ```
 ├── version_control           → [Git | Datalad | DVC | None]
