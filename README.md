@@ -80,12 +80,7 @@ This template guides you through a series of interactive prompts to configure yo
 <details>
 <summary>📦 Project Metadata</summary>
 
-This section collects basic project information such as the project name, author, and license.  
-The values you provide here are used not only to name your repository and configure metadata, but also to **auto-generate key project files** such as:
-
-- `README.md` – populated with project title, description, and author info  
-- `LICENSE.txt` – based on your selected open-source license  
-- `CITATION.cff` – used for research citation formatting and indexing
+Provide core metadata for your project—used for naming, documentation, and citation.
 
 ```
 ├── project_name              → Human-readable name
@@ -97,6 +92,13 @@ The values you provide here are used not only to name your repository and config
 ├── version                   → Initial version tag (e.g., 0.0.1)
 ├── open_source_license       → [MIT | BSD-3-Clause | None]
 ```
+
+This information is used to auto-generate:
+
+- `README.md` – includes your title, author, and description  
+- `LICENSE.txt` – based on selected license  
+- `CITATION.cff` – for machine-readable citation metadata
+
 </details>
 
 <details>
@@ -104,13 +106,13 @@ The values you provide here are used not only to name your repository and config
 
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
-If you select **R**, **Stata**, **Matlab**, or **SAS**, the template will prompt for the path to the installed software if it is not auto-detected.
-
 ```
 ├── programming_language      → [Python | R | Stata | Matlab | SAS | None]
 │   └── If R/Stata/Matlab/SAS selected:
 │       └── Prompt for executable path if not auto-detected
 ```
+
+If you select **R**, **Stata**, **Matlab**, or **SAS**, the template will prompt for the path to the installed software if it is not auto-detected.
 
 ### 🛠️ Script Generation
 
@@ -233,15 +235,7 @@ This template supports several version control systems to suit different workflo
 <details>
 <summary>☁️ Backup with Rclone</summary>
 
-This template supports automated backup to **CBS-approved storage solutions** using [`rclone`](https://rclone.org). You will be prompted for your **email** and **password** during setup, and all credentials are securely stored and encrypted.
-
-Supported backup targets include:
-
-- [**DeIC Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA** (see instructions under “Setup → SFTP” on the [DeIC Access Guide](https://kb.deic.dk/en/storage/how-to-access))  
-- [**Dropbox**](https://www.dropbox.com/)  
-- [**OneDrive**](https://onedrive.live.com/)  
-- **Local** storage – backup to a folder on your own system  
-- **Multiple** – select any combination of the above
+This template supports automated backup to **CBS-approved storage solutions** using [`rclone`](https://rclone.org).
 
 ```
 ├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
@@ -257,7 +251,15 @@ Supported backup targets include:
 │       └── Allows choosing several of the above
 ```
 
-> 🔐 All credentials are securely encrypted in `rclone.conf` or stored in the `.env` file where appropriate.  
+Supported backup targets include:
+
+- [**DeIC Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA** (see instructions under “Setup → SFTP”)  
+- [**Dropbox**](https://www.dropbox.com/)  
+- [**OneDrive**](https://onedrive.live.com/)  
+- **Local** storage – backup to a folder on your own system  
+- **Multiple** – select any combination of the above
+
+> 🔐 All credentials are stored in `rclone.conf`.  
 > ☁️ `rclone` is automatically downloaded and installed if not already available on your system.
 
 </details>
