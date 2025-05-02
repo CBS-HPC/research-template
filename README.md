@@ -2,7 +2,8 @@
 
 ![Repo size](https://img.shields.io/github/repo-size/CBS-HPC/research-template)
 ![Last commit](https://img.shields.io/github/last-commit/CBS-HPC/research-template)
-![License](https://img.shields.io/github/license/CBS-HPC/research-template)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: CC BY 4.0](https://img.shields.io/badge/license-CC--BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 ![Open issues](https://img.shields.io/github/issues/CBS-HPC/research-template)
 ![Pull requests](https://img.shields.io/github/issues-pr/CBS-HPC/research-template)
 ![Windows](https://img.shields.io/badge/tested%20on-Windows-blue?logo=windows&logoColor=white)
@@ -307,10 +308,10 @@ Repositories are created using the **HTTPS protocol** and authenticated with **p
 
 This template generates a standardized, reproducible project layout. It separates raw data, code, documentation, setup scripts, and outputs to support collaboration, transparency, and automation.
 
-You can find or update human-readable file descriptions in `file_descriptions.json`.
-
 <details>
 <summary>📁 Directory Structure</summary>
+
+You can find or update human-readable file descriptions in `file_descriptions.json`.
 
 ```
 ├── .cookiecutter             # Cookiecutter configuration used to generate this project
@@ -323,8 +324,8 @@ You can find or update human-readable file descriptions in `file_descriptions.js
 │   └── README.md             # README for the DCAS template
 ├── LICENSE.txt               # Project license file
 ├── README.md                 # Main README with usage and documentation
-├── activate.ps1              # PowerShell script to activate the environment
-├── deactivate.ps1            # PowerShell script to deactivate the environment
+├── activate.*                # Script to activate the environment (either `.ps1` or `.sh`)
+├── deactivate.*              # Script to deactivate the environment (either `.ps1` or `.sh`)
 ├── bin/                      # Local tools (e.g., rclone binaries, installers)
 ├── data/                     # Structured project data directory
 │   ├── .git/                 # Standalone Git repo for tracking datasets
@@ -355,9 +356,10 @@ You can find or update human-readable file descriptions in `file_descriptions.js
     └── workflow.*            # Interactive workflow (e.g., Jupyter notebook or RMarkdown)
 ```
 
-</details>
-
+> 🔁 `activate.*` and `deactivate.*` are either PowerShell (`.ps1`) or Bash (`.sh`) scripts, depending on your platform (Windows or macOS/Linux).
 > ✳️ Script file extensions (`.py`, `.R`, `.do`, `.m`, `.sas`) are determined by the programming language selected during project setup.
+
+</details>
 
 <details>
 <summary>🚀 Project Activation</summary>
