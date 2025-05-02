@@ -1,21 +1,25 @@
-# 🧪 Cookiecutter Research Replication Template
+# 🧪 Reproducible Research Template for CBS: Structured Workflows and Replication Packages
 
-A fully automated [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/) template for research replication packages. This template sets up a reproducible project structure with support for Python, R, Stata, Matlab, or SAS—along with virtual environments, backup systems, version control, and remote repository setup.
+This project template is designed to help **CBS researchers** create structured, automated, and publication-ready workflows aligned with the principles of **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
+
+Built with [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), the template supports **Python**, **R**, **Stata**, **Matlab**, and **SAS**, and provides an integrated framework for organizing code, managing datasets, tracking dependencies, enabling version control, and backing up research securely.
+
+Whether you're preparing a replication package for publication, submitting data and code for peer review, or organizing internal research, this tool helps you streamline reproducible research workflows tailored to the needs of the **CBS research community**.
 
 ---
 
-## 🧰 Features
+🔍 **Key features:**
 
-✅ Automatically sets up:
+- 📁 Effective project structure for transparent and consistent workflows  
+- 🧬 Multi-language support: Python, R, Stata, Matlab, and SAS  
+- 🗃️ Version control via Git, Datalad, or DVC  
+- 📦 Automated script scaffolding for analysis, modeling, and visualization  
+- 🔐 Environment management via Conda or venv  
+- ☁️ Backup integration with DeiC Storage, Dropbox, and OneDrive  
+- 🚀 Remote repository setup with GitHub, GitLab, or Codeberg  
+- 📄 Support for DCAS-aligned replication packages
 
-- 📁 Standardized project directory with folders for data, code, figures, and documentation
-- 🐍 Python virtual environment (`venv`, `conda`, or system)
-- 🧬 Programming language scaffolding (Python, R, Stata, Matlab, SAS)
-- 🗃️ Version control via Git, Datalad, or DVC
-- ☁️ Backup to DeIC, Dropbox, Onedrive, or local with `rclone`
-- 📡 Remote repo creation on GitHub, GitLab, or Codeberg
-- 🔧 Custom setup scripts and reusable templates for code and documentation
-- 💡 Auto-installation of required software and tools (e.g., Git, Rclone, DVC, Datalad) if missing
+This template is developed and maintained by the **CBS High-Performance Computing (HPC)** team to promote reproducibility, collaboration, and compliance in computational research at Copenhagen Business School.
 
 ---
 
