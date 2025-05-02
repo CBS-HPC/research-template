@@ -31,10 +31,10 @@ Whether you're preparing a replication package for publication, submitting data 
 - 🔐 Environment management via Conda or venv  
 - ☁️ Backup integration with DeiC Storage, Dropbox, and OneDrive  
 - 🚀 Remote repository setup with GitHub, GitLab, or Codeberg  
-- 📄 Support for DCAS-aligned replication packages  
 - 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`  
 - 🧰 Installation guides and activation scripts for both Windows and Bash  
-- 📑 Structured descriptions of all files, code, and datasets (`file_descriptions.json`)
+- 📑 Structured documentation of all files, code, and datasets
+- 📄 Support for DCAS-aligned replication packages  
 
 This template is developed and maintained by the **CBS High-Performance Computing (HPC)** team to promote reproducibility, collaboration, and compliance in computational research at Copenhagen Business School.
 
@@ -478,6 +478,36 @@ The following configuration files are placed in the root directory and used by t
 | `file_descriptions.json`  | JSON file containing editable metadata for the directory structure; used by setup and documentation tools |
 
 </details>
+
+---
+
+## 📚 DCAS Compatibility
+
+This template is designed to support the creation of replication packages that are fully compatible with the [DCAS (Data and Code Sharing) standard](https://datacodestandard.org/), a widely endorsed initiative to promote transparency and reproducibility in social science research.
+
+By structuring code, data, metadata, and documentation into clear, well-separated folders—with standard naming conventions, licensing, and README scaffolds—the template helps you align with the expectations of journals that require or recommend DCAS compliance.
+
+Key features that support DCAS alignment:
+
+- 📂 Separation of raw, interim, and processed data
+- 📜 Auto-generated licensing and citation metadata (`LICENSE.txt`, `CITATION.cff`)
+- 📑 Structured file annotations via `file_descriptions.json`
+- 🧪 Scripted environment setup and reproducibility utilities
+- 📄 Optional DCAS template folder with journal-ready content
+
+This format is consistent with the [AEA Data Editor’s guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html) and the broader Social Science Data Editors' best practices.
+
+**Examples of journals endorsing the DCAS standard:**
+
+- [American Economic Journal: Applied Economics](https://www.aeaweb.org/journals/applied-economics)
+- [Econometrica](https://www.econometricsociety.org/publications/econometrica)
+- [Economic Inquiry](https://onlinelibrary.wiley.com/journal/14680299)
+- [Journal of Economic Perspectives](https://www.aeaweb.org/journals/jep)
+
+For a full list of supporting journals, visit the [DCAS website](https://datacodestandard.org/journals/).
+
+> 📝 Journal-specific requirements may vary—always consult their latest submission guidelines to ensure full compliance.
+
 
 ---
 
