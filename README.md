@@ -204,13 +204,17 @@ Set up isolated virtual environments using **Conda**, **venv**, or your system�
 │       ├── If Conda:         → Prompt for Python version
 │       ├── If Venv:          → Uses current Python kernel version
 │       └── If Base:          → Uses system-installed Python
+├── Proprietary software (if selected)
+│   └── [Stata | Matlab | SAS | R]
+│       ├── Searches system PATH for installed application
+│       └── Prompts user for executable path if not found
 ```
 
 **Environment manager options:**
 
 - [**Conda**](https://docs.conda.io/en/latest/) – A popular environment and package manager that supports both Python and R. Enables exact version control and cross-platform reproducibility.  
 - [**venv**](https://docs.python.org/3/library/venv.html) – Python’s built-in tool for creating lightweight, isolated environments. Ideal for Python-only projects.  
-- **Base Installation** – No environment is created. Dependencies are installed directly into your system-wide Python or R installation.
+- **Base Installation** – No virtual environment is created. Dependencies are installed directly into your system-wide Python or R installation.
 
 Regardless of your choice, the following files are generated to document your environment:
 
@@ -219,10 +223,11 @@ Regardless of your choice, the following files are generated to document your en
 - `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package  
 
 > ⚠️ When using **venv** or **base installation**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
-> 💡 Conda will be downloaded and installed automatically if it's not already available.  
-> ⚠️ The template does **not install proprietary software** (e.g., Stata, Matlab, SAS). You must install these manually and provide the path when prompted.
+> ⚠️ If proprietary software (e.g., Stata, Matlab, SAS, R) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
+> 💡 Conda will be downloaded and installed automatically if it's not already available.
 
 </details>
+
 
 <details>
 <summary>🗃️ Version Control</summary>
