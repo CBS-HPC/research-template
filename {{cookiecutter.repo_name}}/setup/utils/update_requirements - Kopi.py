@@ -41,20 +41,15 @@ def read_dependencies(dependencies_files,sections):
                 package, version = line.split("==")
                 software_dependencies[current_software]["dependencies"].append((package, version))
         
-        return software_dependencies, package, version,current_software 
+        return software_dependencies, package, version
 
     # Ensure the lengths of dependencies_files and sections match
     if len(dependencies_files) != len(sections):
         raise ValueError("The number of dependencies files must match the number of sections.")
 
-    software_requirements_section = f"""<summary>📋 System and Environment Information</summary>
-
-    The project was developed and tested on the following operating system:
-
-    - **Operating System**: {platform.platform()}
-
-    The environments were set up using:"""
-
+    # Initialize the Software Requirements section with the header
+    software_requirements_section = "### Software Requirements\n\n"
+    software_requirements_section += f"**The software below were installed on the follow operation system: {platform.platform() }**\n\n"
 
     # Iterate through all dependency files and corresponding sections
     for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
@@ -67,17 +62,11 @@ def read_dependencies(dependencies_files,sections):
         with open(dependencies_file, "r") as f:
             content = f.readlines()
 
-        software_dependencies, package, version,software_version = collect_dependencies(content)
+        software_dependencies, package, version = collect_dependencies(content)
 
         # Add the subheading section if it exists
         if section:
-            if section == "/setup":
-                software_requirements_section +=f"- **Project setup scripts** (`./setup`) installed with **{software_version}**\n"
-            elif  section == "/src":
-   
-                software_requirements_section +=f"- **Project code** (`./src`) installed with **{software_version}**\n"
-            else: 
-                software_requirements_section += f"\n#### **{section}**\n"
+            software_requirements_section += f"\n#### **{section}**\n"
         
         # Correctly loop through the dictionary
         for software, details in software_dependencies.items():
@@ -85,7 +74,7 @@ def read_dependencies(dependencies_files,sections):
             if install_cmd is not None:
                 software_requirements_section += install_cmd
                 
-            #software_requirements_section += f"\n**{software}**\n"
+            software_requirements_section += f"\n**{software}**\n"
             for package, version in details["dependencies"]:
                 software_requirements_section += f"  - {package}: {version}\n"
 
@@ -103,10 +92,10 @@ def write_to_readme(readme_file,software_requirements_section):
             readme_content = file.read()
 
         # Check if the "### Software Requirements" section exists
-        if "<summary>📋 System and Environment Information</summary>" in readme_content:
+        if "### Software Requirements" in readme_content:
             # Find the "### Software Requirements" section and replace it
-            start = readme_content.find("<summary>📋 System and Environment Information</summary>")
-            end = readme_content.find("<details>", start + 1)
+            start = readme_content.find("### Software Requirements")
+            end = readme_content.find("\n## ", start + 1)
             if end == -1:
                 end = len(readme_content)  # No further sections, overwrite until the end
             updated_content = readme_content[:start] + software_requirements_section.strip() + readme_content[end:]
@@ -140,7 +129,7 @@ def main():
 
     readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
 
-    update_requirements(dependencies_files=files,readme_file = readme_file ,sections=["/setup","/src"])
+    update_requirements(dependencies_files=files,readme_file = readme_file ,sections=["src", "/setup"])
 
 if __name__ == "__main__":
     # Change to project root directory
