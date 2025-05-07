@@ -62,9 +62,9 @@ def read_dependencies(dependencies_files,sections):
     for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
 
         if section == "/setup":
-            software_requirements_section +=f"\n- **Project setup scripts** (`./setup`) installed with **{py_version}**.\n"
+            software_requirements_section +=f"\n- **Project setup scripts** (`./setup`) installed with **{py_version}** with its main dependencies listed below:\n"
         elif  section == "/src":
-            software_requirements_section +=f"\n- **Project code** (`./src`) installed with **{software_version }**\n"
+            software_requirements_section +=f"\n- **Project code** (`./src`) installed with **{software_version }** with its main dependencies listed below:\n"
         else: 
             software_requirements_section += f"\n#### **{section}**\n"
 
@@ -90,6 +90,7 @@ def read_dependencies(dependencies_files,sections):
 
         software_requirements_section += "\n\n"
     
+    software_requirements_section +="For further details can be found in the [Installation](#installation) section\n"
     software_requirements_section +="<details>"
 
     return software_requirements_section

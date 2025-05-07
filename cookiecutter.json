@@ -1,7 +1,6 @@
 {
   "project_name": "Data_science_template Project",
   "repo_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
-  "description": "A short description of the data_science_template project.",
   "author_name": "Your Name",
   "orcid": "Provide your ORCID",
   "email": "Provide your CBS email",
