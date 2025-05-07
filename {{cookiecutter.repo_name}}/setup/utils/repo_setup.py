@@ -73,7 +73,7 @@ def make_r_safe_path(path: str) -> str:
     path_fixed = path.replace("\\", "/")  # 1. Fix slashes
     return f"\"{path_fixed}\""             # 2. Wrap in quotes
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
     
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")

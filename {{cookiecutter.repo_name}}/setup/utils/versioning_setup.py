@@ -7,7 +7,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils.versioning_tools import *
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")

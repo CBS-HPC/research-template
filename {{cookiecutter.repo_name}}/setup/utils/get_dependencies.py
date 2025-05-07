@@ -182,7 +182,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     print(f"{file_name} successfully generated at {output_file}")
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
     
     repo_name = load_from_env("REPO_NAME",".cookiecutter")

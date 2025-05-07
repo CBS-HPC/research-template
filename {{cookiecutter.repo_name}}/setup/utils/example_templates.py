@@ -586,7 +586,7 @@ def create_sas_example(folder_path):
     write_script(folder_path, "main", ".sas", main_content)
 
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
 
     # Ensure the working directory is the project root

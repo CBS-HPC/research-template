@@ -195,7 +195,7 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
 
     return json_file_path
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def set_datasets(data_name:str= None, source:str=None, run_command:str=None, destination:str=None, doi:str = None,citation:str = None,license:str=None):
     
     def sanitize_folder_name(name):

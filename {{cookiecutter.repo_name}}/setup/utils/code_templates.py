@@ -1506,7 +1506,7 @@ def create_sas_notebook(folder_path):
     write_script(folder_path, script_name, extension, content)
 
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
 
     # Ensure the working directory is the project root

@@ -75,7 +75,7 @@ def install_dependencies(required_libraries):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main(dependencies_file="dependencies.txt"):
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)

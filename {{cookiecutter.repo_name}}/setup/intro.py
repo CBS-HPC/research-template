@@ -6,7 +6,7 @@ from utils import *
 
 
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
 
     # Ensure the working directory is the project root

@@ -120,7 +120,7 @@ def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], r
 
     write_to_readme(readme_file,software_requirements_section)
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
 
     files = [str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt")),
