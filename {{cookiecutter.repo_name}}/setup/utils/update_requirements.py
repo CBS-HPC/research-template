@@ -41,7 +41,7 @@ def read_dependencies(dependencies_files,sections):
                 package, version = line.split("==")
                 software_dependencies[current_software]["dependencies"].append((package, version))
         
-        return software_dependencies, package, version,current_software 
+        return software_dependencies, package, version
 
     # Ensure the lengths of dependencies_files and sections match
     if len(dependencies_files) != len(sections):
@@ -54,31 +54,30 @@ def read_dependencies(dependencies_files,sections):
     - **Operating System**: {platform.platform()}
 
     The environments were set up using:"""
-
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    py_version = get_version("python")
+    software_version = get_version(programming_language)
 
     # Iterate through all dependency files and corresponding sections
     for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
+
+        if section == "/setup":
+            software_requirements_section +=f"- **Project setup scripts** (`./setup`) installed with **{py_version}**\n"
+        elif  section == "/src":
+            software_requirements_section +=f"- **Project code** (`./src`) installed with **{software_version }**\n"
+        else: 
+            software_requirements_section += f"\n#### **{section}**\n"
+
         # Check if the dependencies file exists
         if not os.path.exists(dependencies_file):
-            print(f"Dependencies file '{dependencies_file}' not found. Skipping.")
             continue
 
         # Read the content from the dependencies file
         with open(dependencies_file, "r") as f:
             content = f.readlines()
 
-        software_dependencies, package, version,software_version = collect_dependencies(content)
+        software_dependencies, package, version = collect_dependencies(content)
 
-        # Add the subheading section if it exists
-        if section:
-            if section == "/setup":
-                software_requirements_section +=f"- **Project setup scripts** (`./setup`) installed with **{software_version}**\n"
-            elif  section == "/src":
-   
-                software_requirements_section +=f"- **Project code** (`./src`) installed with **{software_version}**\n"
-            else: 
-                software_requirements_section += f"\n#### **{section}**\n"
-        
         # Correctly loop through the dictionary
         for software, details in software_dependencies.items():
             install_cmd = details.get("install_cmd")
@@ -89,7 +88,9 @@ def read_dependencies(dependencies_files,sections):
             for package, version in details["dependencies"]:
                 software_requirements_section += f"  - {package}: {version}\n"
 
-        software_requirements_section += "\n---\n"
+        software_requirements_section += "\n\n"
+    
+    software_requirements_section +="<details>"
 
     return software_requirements_section
 
