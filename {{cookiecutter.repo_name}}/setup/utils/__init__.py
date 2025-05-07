@@ -19,4 +19,3 @@ from .get_dependencies import *
 from .install_dependencies import *
 from .run_setup import *
 from .set_dataset import *
-from .update_requirements import *

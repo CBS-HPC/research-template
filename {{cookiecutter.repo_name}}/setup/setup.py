@@ -9,7 +9,6 @@ setup(
         'console_scripts': [
             'run-backup=utils.backup_tools:main',
             'set-dataset=utils.set_dataset:main',
-            'update-requirements=utils.update_requirements:main',
             'update-dependencies=utils.get_dependencies:main',
             'install-dependencies=utils.install_dependencies:main',
             'deic-storage-download=utils.deic_storage_download:main',
