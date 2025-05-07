@@ -225,7 +225,7 @@ setup_powershell = "./run_setup.ps1"
 miniconda_path =  "./bin/miniconda3"
 
 project_name = "{{cookiecutter.project_name}}"
-project_description = input("Provide a description of the project (used in README.md).").strip()
+project_description = "Insert project description here"
 authors = "{{cookiecutter.author_name}}"
 orcids = "{{cookiecutter.orcid}}"
 email = "{{cookiecutter.email}}"
