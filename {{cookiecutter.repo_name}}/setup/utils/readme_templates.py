@@ -1068,11 +1068,11 @@ def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], r
 
         software_requirements_section = f"""<summary>📋 System and Environment Information</summary>
 
-        The project was developed and tested on the following operating system:
+The project was developed and tested on the following operating system:
 
-        - **Operating System**: {platform.platform()}
+- **Operating System**: {platform.platform()}
 
-        The environments were set up using:"""
+The environments were set up using:"""
         programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
         py_version = get_version("python")
         software_version = get_version(programming_language)
@@ -1081,9 +1081,9 @@ def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], r
         for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
 
             if section == "/setup":
-                software_requirements_section +=f"\n- **Project setup scripts** (`./setup`) installed with **{py_version}** with its main dependencies listed below:\n"
+                software_requirements_section +=f"\n- **Project setup scripts** (`./setup`) installed with **{py_version}** with its **main** dependencies listed below:\n"
             elif  section == "/src":
-                software_requirements_section +=f"\n- **Project code** (`./src`) installed with **{software_version }** with its main dependencies listed below:\n"
+                software_requirements_section +=f"\n- **Project code** (`./src`) installed with **{software_version }** with its **main** dependencies listed below:\n"
             else: 
                 software_requirements_section += f"\n#### **{section}**\n"
 
@@ -1111,8 +1111,9 @@ def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], r
         
         software_requirements_section +="For further details can be found in the [Installation](#installation) section\n\n"
 
-        software_requirements_section +="<details>\n"
-        software_requirements_section +="<details>\n"
+  
+        software_requirements_section +="</details>\n"
+  
 
         return software_requirements_section
 
@@ -1129,7 +1130,7 @@ def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], r
             if "<summary>📋 System and Environment Information</summary>" in readme_content:
                 # Find the "### Software Requirements" section and replace it
                 start = readme_content.find("<summary>📋 System and Environment Information</summary>")
-                end = readme_content.find("<details>", start + 1)
+                end = readme_content.find("</details>", start + 1)
                 if end == -1:
                     end = len(readme_content)  # No further sections, overwrite until the end
                 updated_content = readme_content[:start] + software_requirements_section.strip() + readme_content[end:]

@@ -150,16 +150,17 @@ def create_r_example(folder_path):
     main_content = dedent("""
         # Main runner
         
-        source('install_dependencies.R')
+        #source('install_dependencies.R')
         source('data_collection.R')
         source('preprocessing.R')
         source('modeling.R')
         source('visualization.R')
 
-        data_collection::main()
-        preprocessing::main()
-        modeling::main()
-        visualization::main()
+        data_collection$main()
+        preprocessing$main()
+        modeling$main()
+        visualization$main()
+        print("done")
     """)
     write_script(folder_path, "main", ".R", main_content)
 
