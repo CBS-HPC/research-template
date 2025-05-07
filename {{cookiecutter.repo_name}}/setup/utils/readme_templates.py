@@ -401,6 +401,8 @@ The environments were set up using:
 - **Project setup scripts** (`./setup`) installed with **{py_version}**
 - **Project code** (`./src`) installed with **{software_version}**
 
+For further details can be found in the [Installation](#installation) section"
+
 </details>
 
 <details>

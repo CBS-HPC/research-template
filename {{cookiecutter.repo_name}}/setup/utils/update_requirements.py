@@ -62,9 +62,9 @@ def read_dependencies(dependencies_files,sections):
     for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
 
         if section == "/setup":
-            software_requirements_section +=f"- **Project setup scripts** (`./setup`) installed with **{py_version}**\n"
+            software_requirements_section +=f"\n- **Project setup scripts** (`./setup`) installed with **{py_version}**.\n"
         elif  section == "/src":
-            software_requirements_section +=f"- **Project code** (`./src`) installed with **{software_version }**\n"
+            software_requirements_section +=f"\n- **Project code** (`./src`) installed with **{software_version }**\n"
         else: 
             software_requirements_section += f"\n#### **{section}**\n"
 
@@ -135,8 +135,8 @@ def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], r
 #@ensure_correct_kernel
 def main():
 
-    files = [str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt")),
-            str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
+    files = [str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt")),
+            str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
             ]
 
     readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
