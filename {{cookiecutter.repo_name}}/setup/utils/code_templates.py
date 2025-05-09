@@ -48,12 +48,12 @@ def create_scripts(programming_language, folder_path):
         return
     
     # Script details based on purpose
-    scripts = {"01_install_dependencies": "Helper to intall dependencies",
-        "02_utils": "Helper functions or utilities",
-        "03_data_collection": "Data extraction/scraping",
-        "04_preprocessing": "Data cleaning, transformation, feature engineering",
-        "05_modeling": "Training and evaluation of models",
-        "06_visualization": "Functions for plots and visualizations"
+    scripts = {"s01_install_dependencies": "Helper to intall dependencies",
+        "s02_utils": "Helper functions or utilities",
+        "s03_data_collection": "Data extraction/scraping",
+        "s04_preprocessing": "Data cleaning, transformation, feature engineering",
+        "s05_modeling": "Training and evaluation of models",
+        "s06_visualization": "Functions for plots and visualizations"
     }
 
 
@@ -62,7 +62,7 @@ def create_scripts(programming_language, folder_path):
         create_step_script(programming_language, folder_path, script_name, purpose)
 
     # Create the workflow script that runs all steps
-    create_main(programming_language, folder_path,file_name = "00_main")
+    create_main(programming_language, folder_path,file_name = "s00_main")
 
     # Create Notebooks
     create_notebooks(programming_language, folder_path,file_name = "workflow")
@@ -71,7 +71,7 @@ def create_scripts(programming_language, folder_path):
     create_get_dependencies(programming_language, folder_path,file_name = "get_dependencies")
 
     # Create Install_dependencies
-    create_install_dependencies(programming_language, folder_path,file_name = "01_install_dependencies")
+    create_install_dependencies(programming_language, folder_path,file_name = "s01_install_dependencies")
 
 # Orchstration scripts 
 def create_step_script(programming_language, folder_path, script_name, purpose):
@@ -81,7 +81,7 @@ def create_step_script(programming_language, folder_path, script_name, purpose):
     Parameters:
     programming_language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
     folder_path (str): The directory where the script will be saved.
-    script_name (str): The name of the script (e.g., '03_data_collection', '04_preprocessing').
+    script_name (str): The name of the script (e.g., 's03_data_collection', 's04_preprocessing').
     purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
     """
 
@@ -99,7 +99,7 @@ def create_step_script(programming_language, folder_path, script_name, purpose):
     else:
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
-def create_main(programming_language, folder_path,file_name = "00_main"):
+def create_main(programming_language, folder_path,file_name = "s00_main"):
     """
     Main function to create a workflow script that runs all steps in order for the specified programming_language.
     
@@ -122,7 +122,7 @@ def create_main(programming_language, folder_path,file_name = "00_main"):
     else:
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
-def create_install_dependencies(programming_language, folder_path,file_name = "01_install_dependencies"):
+def create_install_dependencies(programming_language, folder_path,file_name = "s01_install_dependencies"):
     """
     Create the install_dependencies script for the specified programming_language.
     
@@ -231,7 +231,7 @@ interim_data = os.path.join(base_path, "data", "interrim")
 processed_data = os.path.join(base_path, "data", "processed")
 setup_path = os.path.join(base_path, "setup") 
 sys.path.append(setup_path)
-from 02_utils import *
+from s02_utils import *
 
 @ensure_correct_kernel
 def main():
@@ -310,25 +310,25 @@ def create_r_main(folder_path,file_name):
 source('install_dependencies.R')
 
 # Load utilities
-source("02_utils.R")  # <- shared functions, not a step
+source("s02_utils.R")  # <- shared functions, not a step
 
 # Load Scripts
-source('03_data_collection.R')
-source('04_preprocessing.R')
-source('05_modeling.R')
-source('06_visualization.R')
+source('s03_data_collection.R')
+source('s04_preprocessing.R')
+source('s05_modeling.R')
+source('s06_visualization.R')
 
 ## Run data collection
-03_data_collection::main()
+s03_data_collection::main()
 
 ## Run preprocessing
-04_preprocessing::main()
+s04_preprocessing::main()
 
 ## Run modeling
-05_modeling::main()
+s05_modeling::main()
 
 ## Run visualization
-06_visualization::main()
+s06_visualization::main()
 {% endraw %}
 """
     write_script(folder_path, file_name, extension, content)
@@ -352,25 +352,25 @@ def main():
     install_dependencies.main()
 
     # Load utility functions (not executed directly)
-    import 02_utils  # <- provides helper functions
+    import s02_utils  # <- provides helper functions
 
     # Load main workflow scripts
-    import 03_data_collection
-    import 04_preprocessing
-    import 05_modeling
-    import 06_visualization
+    import s03_data_collection
+    import s04_preprocessing
+    import s05_modeling
+    import s06_visualization
 
     # Run data collection
-    03_data_collection.main()
+    s03_data_collection.main()
 
     # Run preprocessing
-    04_preprocessing.main()
+    s04_preprocessing.main()
 
     # Run modeling
-    05_modeling.main()
+    s05_modeling.main()
 
     # Run visualization
-    06_visualization.main()
+    s06_visualization.main()
 
 if __name__ == "__main__":
     main()
@@ -387,25 +387,25 @@ def create_stata_main(folder_path,file_name):
 do "install_dependencies.do"
 
 * Load utility functions (not executed directly)
-do "02_utils.do"
+do "s02_utils.do"
 
 * Load Scripts
-do "03_data_collection.do"
-do "04_preprocessing.do"
-do "05_modeling.do"
-do "06_visualization.do"
+do "s03_data_collection.do"
+do "s04_preprocessing.do"
+do "s05_modeling.do"
+do "s06_visualization.do"
 
 * Run data collection
-03_data_collection_main
+s03_data_collection_main
 
 * Run preprocessing
-04_preprocessing_main
+s04_preprocessing_main
 
 * Run modeling
-05_modeling_main
+s05_modeling_main
 
 * Run visualization
-06_visualization_main
+s06_visualization_main
 {% endraw %}
 """
     write_script(folder_path, file_name, extension, content)
@@ -419,19 +419,19 @@ def create_matlab_main(folder_path,file_name):
 run('install_dependencies.m');
 
 % Load utility functions (not executed)
-run('02_utils.m');
+run('s02_utils.m');
 
 % Run data collection
-03_data_collection_main();
+s03_data_collection_main();
 
 % Run preprocessing
-04_preprocessing_main();
+s04_preprocessing_main();
 
 % Run modeling
-05_modeling_main();
+s05_modeling_main();
 
 % Run visualization
-06_visualization_main();
+s06_visualization_main();
 {% endraw %}
 """
     write_script(folder_path, file_name, extension, content)
@@ -445,25 +445,25 @@ def create_sas_main(folder_path,file_name):
 %include "install_dependencies.sas";
 
 * Load utilities
-%include "02_utils.sas";
+%include "s02_utils.sas";
 
 * Load Scripts;
-%include "03_data_collection.sas";
-%include "04_preprocessing.sas";
-%include "05_modeling.sas";
-%include "06_visualization.sas";
+%include "s03_data_collection.sas";
+%include "s04_preprocessing.sas";
+%include "s05_modeling.sas";
+%include "s06_visualization.sas";
 
 * Run data collection;
-%03_data_collection_main;
+%s03_data_collection_main;
 
 * Run preprocessing;
-%04_preprocessing_main;
+%s04_preprocessing_main;
 
 * Run modeling;
-%05_modeling_main;
+%s05_modeling_main;
 
 * Run visualization;
-%06_visualization_main;
+%s06_visualization_main;
 {% endraw %}
 """
     write_script(folder_path, file_name, extension, content)
@@ -488,7 +488,7 @@ import pathlib
 # Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from 02_utils import *
+from s02_utils import *
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
@@ -1314,24 +1314,24 @@ def create_python_notebook(folder_path,file_name = "workflow"):
 
         nbf.v4.new_markdown_cell("### Load Scripts"),
         nbf.v4.new_code_cell(
-            "import 02_utils  # helper functions only, not executed directly\n"
-            "import 03_data_collection\n"
-            "import 04_preprocessing\n"
-            "import 05_modeling\n"
-            "import 06_visualization"
+            "import s02_utils  # helper functions only, not executed directly\n"
+            "import s03_data_collection\n"
+            "import s04_preprocessing\n"
+            "import s05_modeling\n"
+            "import s06_visualization"
         ),
 
         nbf.v4.new_markdown_cell("### Run Data Collection"),
-        nbf.v4.new_code_cell("data_collection.main()"),
+        nbf.v4.new_code_cell("s03_data_collection.main()"),
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
-        nbf.v4.new_code_cell("04_preprocessing.main()"),
+        nbf.v4.new_code_cell("s04_preprocessing.main()"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
-        nbf.v4.new_code_cell("05_modeling.main()"),
+        nbf.v4.new_code_cell("s05_modeling.main()"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
-        nbf.v4.new_code_cell("06_visualization.main()")
+        nbf.v4.new_code_cell("s06_visualization.main()")
     ]
 
     content.cells.extend(cells)
@@ -1356,31 +1356,31 @@ def create_r_notebook(folder_path,file_name = "workflow"):
 
     ## Load Utility and Workflow Scripts
     ```{r}
-    source("02_utils.R")  # shared helper functions, not executed directly
-    source("data_collection.R")
-    source("04_preprocessing.R")
-    source("05_modeling.R")
-    source("06_visualization.R")
+    source("s02_utils.R")  # shared helper functions, not executed directly
+    source("s03_data_collection.R")
+    source("s04_preprocessing.R")
+    source("s05_modeling.R")
+    source("s06_visualization.R")
     ```
 
     ## Run Data Collection
     ```{r}
-    data_collection::main()
+    s03_data_collection::main()
     ```
 
     ## Run Preprocessing
     ```{r}
-    04_preprocessing::main()
+    s04_preprocessing::main()
     ```
 
     ## Run Modeling
     ```{r}
-    05_modeling::main()
+    s05_modeling::main()
     ```
 
     ## Run Visualization
     ```{r}
-    06_visualization::main()
+    s06_visualization::main()
     ```
     {% endraw %}""")
 
@@ -1403,23 +1403,23 @@ def create_stata_notebook(folder_path,file_name = "workflow"):
 
         nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do data_collection.do\n"
-                             "data_collection_main"),
+                             "do s03_data_collection.do\n"
+                             "s03_data_collection_main"),
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do 04_preprocessing.do\n"
-                             "04_preprocessing_main"),
+                             "do s04_preprocessing.do\n"
+                             "s04_preprocessing_main"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do 05_modeling.do\n"
-                             "05_modeling_main"),
+                             "do s05_modeling.do\n"
+                             "s05_modeling_main"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do 06_visualization.do\n"
-                             "06_visualization_main")
+                             "do s06_visualization.do\n"
+                             "s06_visualization_main")
     ]
 
     content.cells.extend(cells)
@@ -1444,19 +1444,19 @@ def create_matlab_notebook(folder_path,file_name = "workflow"):
 
         nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "data_collection_main();"),
+                             "s03_data_collection_main();"),
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "04_preprocessing_main();"),
+                             "s04_preprocessing_main();"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "05_modeling_main();"),
+                             "s05_modeling_main();"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "06_visualization_main();")
+                             "s06_visualization_main();")
     ]
 
     content.cells.extend(cells)
@@ -1471,16 +1471,16 @@ def create_matlab_notebook(folder_path,file_name = "workflow"):
     run('install_dependencies.m');
 
     %% Run Data Collection
-    data_collection_main();
+    s03_data_collection_main();
 
     %% Run Preprocessing
-    04_preprocessing_main();
+    s04_preprocessing_main();
 
     %% Run Modeling
-    05_modeling_main();
+    s05_modeling_main();
 
     %% Run Visualization
-    06_visualization_main();
+    s06_visualization_main();
     """)
     write_script(folder_path, file_name, extension, content)
 
@@ -1496,16 +1496,16 @@ def create_sas_notebook(folder_path,file_name = "workflow"):
         nbf.v4.new_code_cell("%%SAS\n* Ensure SAS kernel is working and paths are correctly set;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Data Collection"),
-        nbf.v4.new_code_cell("%%SAS\n%include 'data_collection.sas';\n%data_collection_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 's03_data_collection.sas';\n%s03_data_collection_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Preprocessing"),
-        nbf.v4.new_code_cell("%%SAS\n%include '04_preprocessing.sas';\n%04_preprocessing_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 's04_preprocessing.sas';\n%s04_preprocessing_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Modeling"),
-        nbf.v4.new_code_cell("%%SAS\n%include '05_modeling.sas';\n%05_modeling_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 's05_modeling.sas';\n%s05_modeling_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Visualization"),
-        nbf.v4.new_code_cell("%%SAS\n%include '06_visualization.sas';\n%06_visualization_main;")
+        nbf.v4.new_code_cell("%%SAS\n%include 's06_visualization.sas';\n%s06_visualization_main;")
     ]
 
     content.cells.extend(cells)

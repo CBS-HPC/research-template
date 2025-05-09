@@ -675,14 +675,14 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
         def src_file_descriptions(programming_language):
 
             src_template = {
-                "data_collection": "Script to collect and import raw data from external sources.",
-                "get_dependencies": "Checks and retrieves necessary {language} package dependencies.",
-                "install_dependencies": "Installs any missing {language} packages required for the project.",
-                "main": "The entry point script that orchestrates the workflow of the project.",
-                "modeling": "Defines the process for building and training models using the data.",
-                "preprocessing": "Handles data cleaning and transformation tasks.",
-                "utils": "Contains helper functions for common tasks throughout the project.",
-                "visualization": "Generates visual outputs such as charts, graphs, and plots."
+                "s00_main": "The entry point script that orchestrates the workflow of the project.",
+                "s01_install_dependencies": "Installs any missing {language} packages required for the project.",
+                "s02_utils": "Contains helper functions for common tasks throughout the project.",
+                "s03_data_collection": "Script to collect and import raw data from external sources.",
+                "s04_preprocessing": "Handles data cleaning and transformation tasks.",
+                "s05_modeling": "Defines the process for building and training models using the data.",
+                "s07_visualization": "Generates visual outputs such as charts, graphs, and plots.",
+                "get_dependencies": "Checks and retrieves necessary {language} package dependencies."            
             }
             
 
