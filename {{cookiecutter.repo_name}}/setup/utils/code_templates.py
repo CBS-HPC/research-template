@@ -168,7 +168,7 @@ def create_get_dependencies(programming_language, folder_path,file_name = "get_d
     else:
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
-def create_notebooks(programming_language, folder_path,file_name = "workflow"):
+def create_notebooks(programming_language, folder_path,file_name = "s00_workflow"):
     """
     Main function to create a notebook for the specified programming_language.
     
@@ -307,7 +307,7 @@ def create_r_main(folder_path,file_name):
 # Main: Running all steps in order
 
 # Install dependencies
-source('install_dependencies.R')
+source('s01_install_dependencies.R')
 
 # Load utilities
 source("s02_utils.R")  # <- shared functions, not a step
@@ -348,8 +348,8 @@ sys.path.append(src_path)
 @ensure_correct_kernel
 def main():
     # Install dependencies
-    import install_dependencies
-    install_dependencies.main()
+    import s01_install_dependencies
+    s01_install_dependencies.main()
 
     # Load utility functions (not executed directly)
     import s02_utils  # <- provides helper functions
@@ -384,7 +384,7 @@ def create_stata_main(folder_path,file_name):
 * Main: Running all steps in order
 
 * Install dependencies
-do "install_dependencies.do"
+do "s01_install_dependencies.do"
 
 * Load utility functions (not executed directly)
 do "s02_utils.do"
@@ -416,7 +416,7 @@ def create_matlab_main(folder_path,file_name):
 % Main: Running all steps in order
 
 % Install dependencies
-run('install_dependencies.m');
+run('s01_install_dependencies.m');
 
 % Load utility functions (not executed)
 run('s02_utils.m');
@@ -442,7 +442,7 @@ def create_sas_main(folder_path,file_name):
 * Main: Running all steps in order;
 
 * Install dependencies
-%include "install_dependencies.sas";
+%include "s01_install_dependencies.sas";
 
 * Load utilities
 %include "s02_utils.sas";
@@ -1308,8 +1308,8 @@ def create_python_notebook(folder_path,file_name = "workflow"):
             "src_path = os.path.join(base_path, 'src')\n"
             "if src_path not in sys.path:\n"
             "    sys.path.append(src_path)\n"
-            "import install_dependencies\n"
-            "install_dependencies.main()"
+            "import s01_install_dependencies\n"
+            "s01_install_dependencies.main()"
         ),
 
         nbf.v4.new_markdown_cell("### Load Scripts"),
@@ -1351,7 +1351,7 @@ def create_r_notebook(folder_path,file_name = "workflow"):
 
     ## Install Dependencies
     ```{r}
-    source("install_dependencies.R")
+    source("s01_install_dependencies.R")
     ```
 
     ## Load Utility and Workflow Scripts
@@ -1439,7 +1439,7 @@ def create_matlab_notebook(folder_path,file_name = "workflow"):
             "%%matlab\n"
             "% Add project source path to MATLAB\n"
             "addpath(fullfile(pwd, 'src'));\n"
-            "run('install_dependencies.m');"
+            "run('s01_install_dependencies.m');"
         ),
 
         nbf.v4.new_markdown_cell("### Run Data Collection"),
@@ -1468,7 +1468,7 @@ def create_matlab_notebook(folder_path,file_name = "workflow"):
     %% Workflow: Running All Steps in Order
     % MATLAB Setup
     addpath(fullfile(pwd, 'src'));
-    run('install_dependencies.m');
+    run('s01_install_dependencies.m');
 
     %% Run Data Collection
     s03_data_collection_main();

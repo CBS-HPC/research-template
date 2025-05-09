@@ -28,16 +28,19 @@ def creating_readme(programming_language = "None"):
 
     # Create and update README and Project Tree:
     file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./file_descriptions.json"))
-    update_file_descriptions(programming_language,"./README.md", json_file=file_descriptions)
+    readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
+    src_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
+    
+    update_file_descriptions(programming_language,readme_file, file_descriptions)
 
-    generate_readme(programming_language,"./README.md")
+    generate_readme(programming_language,readme_file,src_path,file_descriptions)
 
     ignore_list = read_treeignore()
     #ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
    
-    create_tree("./README.md",ignore_list ,file_descriptions)
+    create_tree(readme_file,ignore_list ,file_descriptions)
     
-def generate_readme(programming_language,readme_file = None):
+def generate_readme(programming_language,readme_file = "./README.md",src_path = "./src",json_file="./file_descriptions.json"):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -155,7 +158,7 @@ def generate_readme(programming_language,readme_file = None):
         
         return contact
 
-    def set_script_structure(programming_language,software_version):
+    def set_script_structure_old(programming_language,software_version):
         """
         Generate the README section for Script Structure and Usage based on the programming language.
 
@@ -270,6 +273,129 @@ All scripts use relative paths based on their location, ensuring portability and
 
         return structure_usage
 
+    def set_script_structure(programming_language, software_version, folder_path="./src",json_file = "./file_description.json"):
+        """
+        Generate the README section for Script Structure and Usage based on the programming language.
+
+        Args:
+            programming_language (str): One of ['r', 'python', 'stata', 'matlab', 'sas']
+            software_version (str): Version string for the language/runtime (e.g. "Python 3.11")
+            folder_path (str): Path to search for numbered scripts
+
+        Returns:
+            str: Formatted markdown for inclusion in your README
+        """
+
+    
+        def find_scripts(folder_path, source_ext, notebook_ext):
+            """
+            Recursively find and return ordered scripts in folder_path matching the given
+            source and notebook extensions. Scripts are sorted by their two-digit numeric prefix.
+            
+            Returns a list of tuples: (kind, full_path), where kind is 'source' or 'notebook'.
+            """
+            # Ensure notebook_exts is a list
+            if isinstance(notebook_ext, str):
+                notebook_exts = [notebook_ext.lower()]
+            else:
+                notebook_exts = [ext.lower() for ext in notebook_ext]
+
+            prefix_pattern = re.compile(r'^(\d{2})_')
+            found = []
+
+            for root, _, files in os.walk(folder_path):
+                for fn in files:
+                    ext = os.path.splitext(fn)[1].lower()
+                    if ext == source_ext.lower():
+                        kind = "source"
+                    elif ext in notebook_exts:
+                        kind = "notebook"
+                    else:
+                        continue
+
+                    m = prefix_pattern.match(fn)
+                    if not m:
+                        continue
+                    prefix = int(m.group(1))
+                    found.append((prefix, kind, os.path.join(root, fn)))
+
+            # sort by prefix then drop prefix
+            found.sort(key=lambda x: x[0])
+            return [(kind, path) for _, kind, path in found]
+
+                # Load descriptions JSON
+        
+        if os.path.exists(json_file):
+            with open(json_file, "r", encoding="utf-8") as jf:
+                file_descriptions = json.load(jf)
+        else:
+            file_descriptions = {}
+
+        programming_language = programming_language.lower()
+        if programming_language not in ["r", "python", "stata", "matlab", "sas"]:
+            raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
+
+        # set extensions
+        if programming_language == "r":
+            source_ext, notebook_ext = ".R", ".Rmd"
+        elif programming_language == "python":
+            source_ext, notebook_ext = ".py", ".ipynb"
+        elif programming_language == "stata":
+            source_ext, notebook_ext = ".do", ".ipynb"
+        elif programming_language == "matlab":
+            source_ext, notebook_ext = ".m", [".ipynb", ".mlx"]
+        else:  # sas
+            source_ext, notebook_ext = ".sas", ".ipynb"
+
+        scripts = find_scripts(folder_path, source_ext, notebook_ext)
+
+        # find orchestrator and notebook
+        orchestrator = next(
+            (p for kind, p in scripts
+            if kind == "source" and os.path.basename(p).startswith("00_")),
+            None
+        )
+        notebook = next(
+            (p for kind, p in scripts
+            if kind == "notebook" and os.path.basename(p).startswith("00_")),
+            None
+        )
+
+        md = []
+        md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{folder_path}/`.\n")
+        md.append("### Scripts Detected in Workflow:\n")
+        for kind, path in scripts:
+            name = os.path.splitext(os.path.basename(path))[0]
+            display = name.replace("_", " ").title()
+            filename = os.path.basename(path)
+            desc = file_descriptions.get(filename)
+            if desc:
+                md.append(f"- **{display}** (`{name}`) — {desc}")
+            else:
+                md.append(f"- **{display}** (`{name}`) — `{path}`")
+        md.append("")
+
+        if any("utils" in os.path.basename(p).lower() for _, p in scripts):
+            md.append("🛠️ **Note**: `utils` does not define a `main()` function and should not be executed directly.\n")
+
+        md.append("### Execution Options:\n")
+        if orchestrator:
+            md.append(f"**A. Run the full pipeline via the orchestration script:**\n```\n{orchestrator}\n```")
+            try:
+                code = open(orchestrator, encoding="utf-8").read().rstrip()
+                md.append(f"```{programming_language.lower()}\n{code}\n```")
+            except Exception as e:
+                md.append(f"_Failed to read orchestrator script: {e}_")
+        else:
+            md.append("_No orchestration script (`00_…`) found._")
+
+        if notebook:
+            md.append(f"**B. Step-through execution using the notebook:** `{notebook}`")
+        else:
+            md.append("_No notebook (`00_…`) found._")
+
+        return "\n".join(md)
+
     def set_config_table(programming_language):
 
         if programming_language.lower() != "r":
@@ -349,11 +475,10 @@ For a full list of journals, visit [here](https://datacodestandard.org/journals/
 
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal."""
         return dcas
-    
-    if readme_file is None:
-        readme_file = "./README.md"
+        
+    #readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
 
-    readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
+    #src_path= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(src_path))
 
     if os.path.exists(readme_file):
         return
@@ -375,7 +500,7 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
-    usage = set_script_structure(programming_language,software_version)
+    usage = set_script_structure(programming_language,software_version,src_path,json_file)
     config = set_config_table(programming_language)
     cli_tools = set_cli_tools()
     dcas = set_dcas()
@@ -496,7 +621,7 @@ The current repository structure is shown in the tree below, and descriptions fo
     print(f"README.md created at: {readme_file}")
 
 # Project Tree
-def read_treeignore(file_path=".treeignore"):
+def read_treeignore(file_path="./.treeignore"):
     """Load ignore rules from a .gitignore-style file."""
     file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
 
@@ -505,7 +630,7 @@ def read_treeignore(file_path=".treeignore"):
     spec = pathspec.PathSpec.from_lines('gitwildmatch', patterns)
     return spec
 
-def read_treeignore_old(file_path=".treeignore"):
+def read_treeignore_old(file_path="./.treeignore"):
     """
     Reads the .treeignore file and returns a list of ignored paths.
     
@@ -630,12 +755,12 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
 
         print("✅ README updated with new project directory tree.")
 
-    json_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
+    #json_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
 
     if not readme_file:
         readme_file = "README.md"
     
-    readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
+    #readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
 
     if not os.path.exists(readme_file):
         print(f"README file '{readme_file}' does not exist. Exiting.")
@@ -753,7 +878,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
         return file_descriptions
 
-    def update_file_descriptions(json_file,readme_file):
+    def update_descriptions(json_file,readme_file):
         
         if not os.path.exists(readme_file):
             return
@@ -791,8 +916,8 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
         print(f"File descriptions updated in {json_file}")
 
-    json_file   = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
-    readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
+    #json_file   = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
+    #readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
 
     if os.path.exists(json_file):
         with open(json_file, "r", encoding="utf-8") as f:
@@ -800,7 +925,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
     else:
         file_descriptions = create_file_descriptions(programming_language,json_file)
 
-    update_file_descriptions(json_file,readme_file)
+    update_descriptions(json_file,readme_file)
 
 # Dataset Table
 def generate_dataset_table(json_file_path):
