@@ -65,7 +65,7 @@ def create_scripts(programming_language, folder_path):
     create_main(programming_language, folder_path,file_name = "s00_main")
 
     # Create Notebooks
-    create_notebooks(programming_language, folder_path,file_name = "workflow")
+    create_notebooks(programming_language, folder_path,file_name = "s00_workflow")
 
     # Create get_dependencies
     create_get_dependencies(programming_language, folder_path,file_name = "get_dependencies")
@@ -1292,7 +1292,7 @@ def create_install_sas_dependencies(folder_path,file_name):
     write_script(folder_path, file_name, extension, content)
 
 # Create Notebooks
-def create_python_notebook(folder_path,file_name = "workflow"):
+def create_python_notebook(folder_path,file_name = "s00_workflow"):
     extension = ".ipynb"
    
     content = nbf.v4.new_notebook()
@@ -1338,7 +1338,7 @@ def create_python_notebook(folder_path,file_name = "workflow"):
 
     write_script(folder_path, file_name, extension, content)
 
-def create_r_notebook(folder_path,file_name = "workflow"):
+def create_r_notebook(folder_path,file_name = "s00_workflow"):
     extension = ".Rmd"
     # Create RMarkdown content with the requested structure
     content = dedent(r"""{% raw %}
@@ -1386,9 +1386,8 @@ def create_r_notebook(folder_path,file_name = "workflow"):
 
     write_script(folder_path, file_name, extension, content)
 
-def create_stata_notebook(folder_path,file_name = "workflow"):
+def create_stata_notebook(folder_path,file_name = "s00_workflow"):
     extension = ".ipynb"
-    file_name = "workflow"
 
     content = nbf.v4.new_notebook()
 
@@ -1426,7 +1425,7 @@ def create_stata_notebook(folder_path,file_name = "workflow"):
 
     write_script(folder_path, file_name, extension, content)
 
-def create_matlab_notebook(folder_path,file_name = "workflow"):
+def create_matlab_notebook(folder_path,file_name = "s00_workflow"):
     # --- 1. Create Jupyter Notebook (.ipynb) with MATLAB kernel ---
     extension = ".ipynb"
     content = nbf.v4.new_notebook()
@@ -1484,7 +1483,7 @@ def create_matlab_notebook(folder_path,file_name = "workflow"):
     """)
     write_script(folder_path, file_name, extension, content)
 
-def create_sas_notebook(folder_path,file_name = "workflow"):
+def create_sas_notebook(folder_path,file_name = "s00_workflow"):
     extension = ".ipynb"
 
     content = nbf.v4.new_notebook()

@@ -300,7 +300,7 @@ All scripts use relative paths based on their location, ensuring portability and
             else:
                 notebook_exts = [ext.lower() for ext in notebook_ext]
 
-            prefix_pattern = re.compile(r'^(\d{2})_')
+            prefix_pattern = re.compile(r'^s(\d{2})_', re.IGNORECASE)
             found = []
 
             for root, _, files in os.walk(folder_path):
@@ -349,20 +349,22 @@ All scripts use relative paths based on their location, ensuring portability and
 
         scripts = find_scripts(folder_path, source_ext, notebook_ext)
 
-        # find orchestrator and notebook
-        orchestrator = next(
-            (p for kind, p in scripts
-            if kind == "source" and os.path.basename(p).startswith("00_")),
-            None
-        )
-        notebook = next(
-            (p for kind, p in scripts
-            if kind == "notebook" and os.path.basename(p).startswith("00_")),
-            None
-        )
+        # collect all orchestration candidates, then pick the first
+        orch_candidates = [
+            path for kind, path in scripts
+            if kind == "source" and os.path.basename(path).lower().startswith("s00_")
+        ]
+        orchestrator = orch_candidates[0] if orch_candidates else None
+
+        # collect all notebook candidates, then pick the first
+        nb_candidates = [
+            path for kind, path in scripts
+            if kind == "notebook" and os.path.basename(path).lower().startswith("s00_")
+        ]
+        notebook = nb_candidates[0] if nb_candidates else None
 
         md = []
-        md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{folder_path}/`.\n")
+        md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `./src`.\n")
         md.append("### Scripts Detected in Workflow:\n")
         for kind, path in scripts:
             name = os.path.splitext(os.path.basename(path))[0]
@@ -380,7 +382,8 @@ All scripts use relative paths based on their location, ensuring portability and
 
         md.append("### Execution Options:\n")
         if orchestrator:
-            md.append(f"**A. Run the full pipeline via the orchestration script:**\n```\n{orchestrator}\n```")
+            md.append(f"**A. Run the full pipeline via the orchestration script:**\n")
+            md.append(f"```\n {os.path.basename(orchestrator)}\n```")
             try:
                 code = open(orchestrator, encoding="utf-8").read().rstrip()
                 md.append(f"```{programming_language.lower()}\n{code}\n```")
@@ -390,7 +393,7 @@ All scripts use relative paths based on their location, ensuring portability and
             md.append("_No orchestration script (`00_…`) found._")
 
         if notebook:
-            md.append(f"**B. Step-through execution using the notebook:** `{notebook}`")
+            md.append(f"**B. Step-through execution using the notebook:** `{os.path.basename(notebook)}`")
         else:
             md.append("_No notebook (`00_…`) found._")
 
@@ -476,10 +479,6 @@ For a full list of journals, visit [here](https://datacodestandard.org/journals/
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal."""
         return dcas
         
-    #readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
-
-    #src_path= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(src_path))
-
     if os.path.exists(readme_file):
         return
     
@@ -806,7 +805,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
                 "s03_data_collection": "Script to collect and import raw data from external sources.",
                 "s04_preprocessing": "Handles data cleaning and transformation tasks.",
                 "s05_modeling": "Defines the process for building and training models using the data.",
-                "s07_visualization": "Generates visual outputs such as charts, graphs, and plots.",
+                "s06_visualization": "Generates visual outputs such as charts, graphs, and plots.",
                 "get_dependencies": "Checks and retrieves necessary {language} package dependencies."            
             }
             
@@ -1034,7 +1033,6 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
         f.write(updated_content.strip())
 
     print(f"{readme_file} successfully updated with dataset section.")
-
 
 # CITATION.cff
 def create_citation_file(project_name, version, authors, orcids, code_repo, doi=None, release_date=None):
