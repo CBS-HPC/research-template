@@ -6,7 +6,7 @@ from utils import *
 
 
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def main():
 
     # Ensure the working directory is the project root
@@ -25,7 +25,6 @@ def main():
 
     # Create scripts and notebook
     create_scripts(programming_language, "./src")
-    create_notebooks(programming_language, "./src")
     
     # Create a citation file
     create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)

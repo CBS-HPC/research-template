@@ -7,7 +7,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils import *
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def main():
     versioning_setup.main()
     repo_setup.main()

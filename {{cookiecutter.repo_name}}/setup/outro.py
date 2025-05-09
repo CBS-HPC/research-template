@@ -29,7 +29,7 @@ def delete_files(file_paths:list=[]):
 
     return results
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def main():
     os_type = platform.system().lower()
     if os_type == "windows":

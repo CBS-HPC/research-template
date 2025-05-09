@@ -72,7 +72,7 @@ def get_all_files(destination):
             all_files.add(full_path)
     return all_files
 
-def add_to_json(json_file_path:str = ".data/datasets.json", entry=None):
+def add_to_json(json_file_path:str = "./datasets.json", entry=None):
     """
     Adds or updates an entry in the JSON file.
 
@@ -112,7 +112,7 @@ def add_to_json(json_file_path:str = ".data/datasets.json", entry=None):
 
     return json_file_path
 
-def set_dataset(data_name, destination, source:str = None, run_command:str = None,json_file_path:str = ".data/datasets.json" , doi:str = None,citation:str = None,license:str=None):
+def set_dataset(data_name, destination, source:str = None, run_command:str = None,json_file_path:str = "./datasets.json" , doi:str = None,citation:str = None,license:str=None):
     """
     Executes a data download process and tracks created files in the specified path.
 
@@ -195,7 +195,7 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
 
     return json_file_path
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def set_datasets(data_name:str= None, source:str=None, run_command:str=None, destination:str=None, doi:str = None,citation:str = None,license:str=None):
     
     def sanitize_folder_name(name):
@@ -227,11 +227,11 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
     if all(param is None for param in [data_name, source, run_command, destination, doi, citation, license]):
         data_files = get_data_files()
         for file in data_files:
-            json_file_path = set_dataset(data_name=os.path.basename(file), destination=file, source=None, run_command=None, json_file_path="./data/datasets.json", doi=None, citation=None, license=None) 
+            json_file_path = set_dataset(data_name=os.path.basename(file), destination=file, source=None, run_command=None, json_file_path="./datasets.json", doi=None, citation=None, license=None) 
     else:
         if destination is None:
             destination = f"./data/raw/{sanitize_folder_name(data_name)}"
-        json_file_path = set_dataset(data_name = data_name, destination = destination, source=source, run_command=run_command, json_file_path="./data/datasets.json", doi=doi, citation=citation, license=license)
+        json_file_path = set_dataset(data_name = data_name, destination = destination, source=source, run_command=run_command, json_file_path="./datasets.json", doi=doi, citation=citation, license=license)
 
     try:
         if json_file_path:

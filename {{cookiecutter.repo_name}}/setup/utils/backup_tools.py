@@ -178,7 +178,7 @@ def check_rclone_remote(remote_name):
         print(f"An unexpected error occurred: {e}")
         return False
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def run_backup(remote_backups,repo_name):
     
     # Change to project root directory

@@ -34,6 +34,7 @@ def write_script(folder_path, script_name, extension, content):
         else:
             nbf.write(content, file)
 
+
 def create_scripts(programming_language, folder_path):
     """
     Creates a project structure with specific scripts for data science tasks
@@ -48,32 +49,28 @@ def create_scripts(programming_language, folder_path):
         return
     
     # Script details based on purpose
-    scripts = {"01_install_dependencies": "Helper to intall dependencies",
-        "02_utils": "Helper functions or utilities",
-        "03_data_collection": "Data extraction/scraping",
-        "04_preprocessing": "Data cleaning, transformation, feature engineering",
-        "05_modeling": "Training and evaluation of models",
-        "06_visualization": "Functions for plots and visualizations"
+    scripts = {
+        "utils": "Helper functions or utilities",
+        "data_collection": "Data extraction/scraping",
+        "preprocessing": "Data cleaning, transformation, feature engineering",
+        "modeling": "Training and evaluation of models",
+        "visualization": "Functions for plots and visualizations"
     }
-
 
     # Create the individual step scripts
     for script_name, purpose in scripts.items():
         create_step_script(programming_language, folder_path, script_name, purpose)
 
     # Create the workflow script that runs all steps
-    create_main(programming_language, folder_path,file_name = "00_main")
-
-    # Create Notebooks
-    create_notebooks(programming_language, folder_path,file_name = "workflow")
+    create_main(programming_language, folder_path)
 
     # Create get_dependencies
-    create_get_dependencies(programming_language, folder_path,file_name = "get_dependencies")
+    create_get_dependencies(programming_language, folder_path)
 
     # Create Install_dependencies
-    create_install_dependencies(programming_language, folder_path,file_name = "01_install_dependencies")
+    create_install_dependencies(programming_language, folder_path)
 
-# Orchstration scripts 
+# Create Step Scripts
 def create_step_script(programming_language, folder_path, script_name, purpose):
     """
     Main function to create a step script (R, Python, Stata, Matlab, or SAS) with the necessary structure.
@@ -81,7 +78,7 @@ def create_step_script(programming_language, folder_path, script_name, purpose):
     Parameters:
     programming_language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
     folder_path (str): The directory where the script will be saved.
-    script_name (str): The name of the script (e.g., '03_data_collection', '04_preprocessing').
+    script_name (str): The name of the script (e.g., 'data_collection', 'preprocessing').
     purpose (str): The purpose of the script (e.g., 'Data extraction', 'Data cleaning').
     """
 
@@ -99,102 +96,6 @@ def create_step_script(programming_language, folder_path, script_name, purpose):
     else:
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
-def create_main(programming_language, folder_path,file_name = "00_main"):
-    """
-    Main function to create a workflow script that runs all steps in order for the specified programming_language.
-    
-    Parameters:
-    programming_language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
-    folder_path (str): The directory where the workflow script will be saved.
-    """
- 
-    # Call the appropriate function based on the language
-    if programming_language.lower() == "r":
-        create_r_main(folder_path,file_name)
-    elif programming_language.lower() == "python":
-        create_python_main(folder_path,file_name)
-    elif programming_language.lower() == "stata":
-        create_stata_main(folder_path,file_name)
-    elif programming_language.lower() == "matlab":
-        create_matlab_main(folder_path,file_name)
-    elif programming_language.lower() == "sas":
-        create_sas_main(folder_path,file_name)
-    else:
-        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
-
-def create_install_dependencies(programming_language, folder_path,file_name = "01_install_dependencies"):
-    """
-    Create the install_dependencies script for the specified programming_language.
-    
-    Parameters:
-    programming_language (str): The programming language (e.g., "r", "python", "stata", "matlab", "sas").
-    folder_path (str): The directory where the install_dependencies script will be saved.
-    """
-
-    # Call the appropriate function based on the language
-    if programming_language.lower() == "r":
-        create_install_r_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "python":
-        create_install_python_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "stata":
-        create_install_stata_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "matlab":
-        create_install_matlab_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "sas":
-        create_install_sas_dependencies(folder_path,file_name)
-    else:
-        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
-
-def create_get_dependencies(programming_language, folder_path,file_name = "get_dependencies"):
-    """
-    Create the install_dependencies script for the specified programming_language.
-    
-    Parameters:
-    programming_language (str): The programming language (e.g., "r", "python", "stata", "matlab", "sas").
-    folder_path (str): The directory where the install_dependencies script will be saved.
-    """
-  
-    # Call the appropriate function based on the language
-    if programming_language.lower() == "r":
-        create_get_r_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "python":
-        create_get_python_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "stata":
-        create_get_stata_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "matlab":
-        create_get_matlab_dependencies(folder_path,file_name)
-    elif programming_language.lower() == "sas":
-        create_get_sas_dependencies(folder_path,file_name)
-    else:
-        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
-
-def create_notebooks(programming_language, folder_path,file_name = "workflow"):
-    """
-    Main function to create a notebook for the specified programming_language.
-    
-    Parameters:
-    programming_language (str): The language for which to create the notebook.
-    folder_path (str): The directory where the notebook will be saved.
-    """
-    if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
-        return
-    
-    # Call the appropriate function based on the language
-    if programming_language.lower() == "python":
-        create_python_notebook(folder_path,file_name)
-    elif programming_language.lower() == "r":
-        create_r_notebook(folder_path,file_name)
-    elif programming_language.lower() == "stata":
-        create_stata_notebook(folder_path,file_name)
-    elif programming_language.lower() == "matlab":
-        create_matlab_notebook(folder_path,file_name)
-    elif programming_language.lower() == "sas":
-        create_sas_notebook(folder_path,file_name)
-    else:
-        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
-
-
-# Create Step Scripts
 def create_r_script(folder_path, script_name, purpose):
     extension = ".R"
     content = f"""{% raw %}
@@ -231,7 +132,7 @@ interim_data = os.path.join(base_path, "data", "interrim")
 processed_data = os.path.join(base_path, "data", "processed")
 setup_path = os.path.join(base_path, "setup") 
 sys.path.append(setup_path)
-from 02_utils import *
+from utils import *
 
 @ensure_correct_kernel
 def main():
@@ -301,41 +202,63 @@ def create_sas_script(folder_path, script_name, purpose):
     write_script(folder_path, script_name, extension, content)
 
 # Create Main()
-def create_r_main(folder_path,file_name):
+def create_main(programming_language, folder_path):
+    """
+    Main function to create a workflow script that runs all steps in order for the specified programming_language.
+    
+    Parameters:
+    programming_language (str): Programming language (e.g., "r", "python", "stata", "matlab", "sas").
+    folder_path (str): The directory where the workflow script will be saved.
+    """
+ 
+    # Call the appropriate function based on the language
+    if programming_language.lower() == "r":
+        create_r_main(folder_path)
+    elif programming_language.lower() == "python":
+        create_python_main(folder_path)
+    elif programming_language.lower() == "stata":
+        create_stata_main(folder_path)
+    elif programming_language.lower() == "matlab":
+        create_matlab_main(folder_path)
+    elif programming_language.lower() == "sas":
+        create_sas_main(folder_path)
+    else:
+        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+
+def create_r_main(folder_path):
     extension = ".R"
-    content = f"""{% raw %}
+    content = r"""
 # Main: Running all steps in order
 
 # Install dependencies
 source('install_dependencies.R')
 
 # Load utilities
-source("02_utils.R")  # <- shared functions, not a step
+source("utils.R")  # <- shared functions, not a step
 
 # Load Scripts
-source('03_data_collection.R')
-source('04_preprocessing.R')
-source('05_modeling.R')
-source('06_visualization.R')
+source('data_collection.R')
+source('preprocessing.R')
+source('modeling.R')
+source('visualization.R')
 
 ## Run data collection
-03_data_collection::main()
+data_collection::main()
 
 ## Run preprocessing
-04_preprocessing::main()
+preprocessing::main()
 
 ## Run modeling
-05_modeling::main()
+modeling::main()
 
 ## Run visualization
-06_visualization::main()
-{% endraw %}
+visualization::main()
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "main", extension, content)
 
-def create_python_main(folder_path,file_name):
+def create_python_main(folder_path):
     extension = ".py"
-    content = f"""{% raw %}
+    content = r"""
 # Main: Running all steps in order
 
 import os
@@ -352,125 +275,144 @@ def main():
     install_dependencies.main()
 
     # Load utility functions (not executed directly)
-    import 02_utils  # <- provides helper functions
+    import utils  # <- provides helper functions
 
     # Load main workflow scripts
-    import 03_data_collection
-    import 04_preprocessing
-    import 05_modeling
-    import 06_visualization
+    import data_collection
+    import preprocessing
+    import modeling
+    import visualization
 
     # Run data collection
-    03_data_collection.main()
+    data_collection.main()
 
     # Run preprocessing
-    04_preprocessing.main()
+    preprocessing.main()
 
     # Run modeling
-    05_modeling.main()
+    modeling.main()
 
     # Run visualization
-    06_visualization.main()
+    visualization.main()
 
 if __name__ == "__main__":
     main()
-{% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "main", extension, content)
 
-def create_stata_main(folder_path,file_name):
+def create_stata_main(folder_path):
     extension = ".do"
-    content = f"""{% raw %}
+    content = r"""
 * Main: Running all steps in order
 
 * Install dependencies
 do "install_dependencies.do"
 
 * Load utility functions (not executed directly)
-do "02_utils.do"
+do "utils.do"
 
 * Load Scripts
-do "03_data_collection.do"
-do "04_preprocessing.do"
-do "05_modeling.do"
-do "06_visualization.do"
+do "data_collection.do"
+do "preprocessing.do"
+do "modeling.do"
+do "visualization.do"
 
 * Run data collection
-03_data_collection_main
+data_collection_main
 
 * Run preprocessing
-04_preprocessing_main
+preprocessing_main
 
 * Run modeling
-05_modeling_main
+modeling_main
 
 * Run visualization
-06_visualization_main
-{% endraw %}
+visualization_main
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "main", extension, content)
 
-def create_matlab_main(folder_path,file_name):
+def create_matlab_main(folder_path):
     extension = ".m"
-    content = f"""{% raw %}
+    content = r"""
 % Main: Running all steps in order
 
 % Install dependencies
 run('install_dependencies.m');
 
 % Load utility functions (not executed)
-run('02_utils.m');
+run('utils.m');
 
 % Run data collection
-03_data_collection_main();
+data_collection_main();
 
 % Run preprocessing
-04_preprocessing_main();
+preprocessing_main();
 
 % Run modeling
-05_modeling_main();
+modeling_main();
 
 % Run visualization
-06_visualization_main();
-{% endraw %}
+visualization_main();
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "main", extension, content)
 
-def create_sas_main(folder_path,file_name):
+def create_sas_main(folder_path):
     extension = ".sas"
-    content =f"""{% raw %}
+    content =r"""
 * Main: Running all steps in order;
 
 * Install dependencies
 %include "install_dependencies.sas";
 
 * Load utilities
-%include "02_utils.sas";
+%include "utils.sas";
 
 * Load Scripts;
-%include "03_data_collection.sas";
-%include "04_preprocessing.sas";
-%include "05_modeling.sas";
-%include "06_visualization.sas";
+%include "data_collection.sas";
+%include "preprocessing.sas";
+%include "modeling.sas";
+%include "visualization.sas";
 
 * Run data collection;
-%03_data_collection_main;
+%data_collection_main;
 
 * Run preprocessing;
-%04_preprocessing_main;
+%preprocessing_main;
 
 * Run modeling;
-%05_modeling_main;
+%modeling_main;
 
 * Run visualization;
-%06_visualization_main;
-{% endraw %}
+%visualization_main;
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "main", extension, content)
 
 
 # Create get_dependencies()
-def create_get_python_dependencies(folder_path,file_name):
+def create_get_dependencies(programming_language, folder_path):
+    """
+    Create the install_dependencies script for the specified programming_language.
+    
+    Parameters:
+    programming_language (str): The programming language (e.g., "r", "python", "stata", "matlab", "sas").
+    folder_path (str): The directory where the install_dependencies script will be saved.
+    """
+  
+    # Call the appropriate function based on the language
+    if programming_language.lower() == "r":
+        create_get_r_dependencies(folder_path)
+    elif programming_language.lower() == "python":
+        create_get_python_dependencies(folder_path)
+    elif programming_language.lower() == "stata":
+        create_get_stata_dependencies(folder_path)
+    elif programming_language.lower() == "matlab":
+        create_get_matlab_dependencies(folder_path)
+    elif programming_language.lower() == "sas":
+        create_get_sas_dependencies(folder_path)
+    else:
+        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+
+def create_get_python_dependencies(folder_path):
     extension = ".py"
     content = r"""{% raw %}
 import os
@@ -488,7 +430,7 @@ import pathlib
 # Ensure the project root is in sys.path
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from 02_utils import *
+from utils import *
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
@@ -616,9 +558,9 @@ if __name__ == "__main__":
     main()
 {% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "get_dependencies", extension, content)
 
-def create_get_r_dependencies(folder_path,file_name):
+def create_get_r_dependencies(folder_path):
     extension = ".R"
     content = r"""{% raw %}    
 get_dependencies <- function(folder_path = NULL, file_name = "dependencies.txt",install_cmd=NULL) {
@@ -738,9 +680,9 @@ if (interactive()) {
 {% endraw %}
 """
     
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "get_dependencies", extension, content)
 
-def create_get_matlab_dependencies(folder_path,file_name):
+def create_get_matlab_dependencies(folder_path):
     extension = ".m"
     content = r"""{% raw %}      
 function get_dependencies(folder_path,file_name,install_cmd)
@@ -837,10 +779,10 @@ function get_dependencies(folder_path,file_name,install_cmd)
 end
 {% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "get_dependencies", extension, content)
 
 # FIX ME 
-def create_get_sas_dependencies(folder_path,file_name):
+def create_get_sas_dependencies(folder_path):
     extension = ".m"
     content = r"""{% raw %}     
 %macro get_dependencies(folder_path);
@@ -909,10 +851,10 @@ def create_get_sas_dependencies(folder_path,file_name):
 %get_dependencies(C:\\path\\to\\your\\folder);
 {% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "get_sas_dependencies", extension, content)
 
 # FIX ME 
-def create_get_stata_dependencies(folder_path,file_name):
+def create_get_stata_dependencies(folder_path):
 
     extension = ".do"
     content = r"""{% raw %}
@@ -991,11 +933,34 @@ program define get_dependencies
 end
 {% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)    
+    write_script(folder_path, "get_dependencies", extension, content)    
 
 
-# Create install_dependencies()  
-def create_install_python_dependencies(folder_path,file_name):
+# Create install_dependencies()  # FIX ME - NOT IN USE!!!
+def create_install_dependencies(programming_language, folder_path):
+    """
+    Create the install_dependencies script for the specified programming_language.
+    
+    Parameters:
+    programming_language (str): The programming language (e.g., "r", "python", "stata", "matlab", "sas").
+    folder_path (str): The directory where the install_dependencies script will be saved.
+    """
+
+    # Call the appropriate function based on the language
+    if programming_language.lower() == "r":
+        create_install_r_dependencies(folder_path)
+    elif programming_language.lower() == "python":
+        create_install_python_dependencies(folder_path)
+    elif programming_language.lower() == "stata":
+        create_install_stata_dependencies(folder_path)
+    elif programming_language.lower() == "matlab":
+        create_install_matlab_dependencies(folder_path)
+    elif programming_language.lower() == "sas":
+        create_install_sas_dependencies(folder_path)
+    else:
+        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+
+def create_install_python_dependencies(folder_path):
     """
     Creates a script to install required Python dependencies.
     
@@ -1089,9 +1054,9 @@ if __name__ == "__main__":
     main('dependencies.txt')  # Specify the dependencies file here
 {% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "install_dependencies", extension, content)
 
-def create_install_r_dependencies(folder_path,file_name):
+def create_install_r_dependencies(folder_path):
     """
     Create the install_dependencies script for R to install required dependencies.
     
@@ -1156,9 +1121,9 @@ install_dependencies <- function(file_path = NULL) {
 }
 {% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "install_dependencies", extension, content)
 
-def create_install_matlab_dependencies(folder_path,file_name):
+def create_install_matlab_dependencies(folder_path):
     """
     Create the install_dependencies script for Matlab to install required dependencies.
     
@@ -1243,10 +1208,10 @@ function install_dependencies(dependency_file)
 end
 {% endraw %}
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "install_dependencies", extension, content)
 
 # FIX ME 
-def create_install_stata_dependencies(folder_path,file_name):
+def create_install_stata_dependencies(folder_path):
     """
     Create the install_dependencies script for Stata to install required dependencies.
     
@@ -1262,10 +1227,10 @@ ssc install outreg2, replace
 ssc install estout, replace
 net install rdrobust, from("https://www.example.com/rdrobust"), replace
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "install_dependencies", extension, content)
 
 # FIX ME 
-def create_install_sas_dependencies(folder_path,file_name):
+def create_install_sas_dependencies(folder_path):
     """
     Create the install_dependencies script for SAS to install required dependencies.
     
@@ -1289,12 +1254,38 @@ def create_install_sas_dependencies(folder_path,file_name):
 * Call the install_dependencies macro;
 %install_dependencies;
 """
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, "install_dependencies", extension, content)
 
 # Create Notebooks
-def create_python_notebook(folder_path,file_name = "workflow"):
+def create_notebooks(programming_language, folder_path):
+    """
+    Main function to create a notebook for the specified programming_language.
+    
+    Parameters:
+    programming_language (str): The language for which to create the notebook.
+    folder_path (str): The directory where the notebook will be saved.
+    """
+    if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
+        return
+    
+    # Call the appropriate function based on the language
+    if programming_language.lower() == "python":
+        create_python_notebook(folder_path)
+    elif programming_language.lower() == "r":
+        create_r_notebook(folder_path)
+    elif programming_language.lower() == "stata":
+        create_stata_notebook(folder_path)
+    elif programming_language.lower() == "matlab":
+        create_matlab_notebooks(folder_path)
+    elif programming_language.lower() == "sas":
+        create_sas_notebook(folder_path)
+    else:
+        raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+
+def create_python_notebook(folder_path):
     extension = ".ipynb"
-   
+    script_name = "workflow"
+
     content = nbf.v4.new_notebook()
 
     cells = [
@@ -1314,32 +1305,33 @@ def create_python_notebook(folder_path,file_name = "workflow"):
 
         nbf.v4.new_markdown_cell("### Load Scripts"),
         nbf.v4.new_code_cell(
-            "import 02_utils  # helper functions only, not executed directly\n"
-            "import 03_data_collection\n"
-            "import 04_preprocessing\n"
-            "import 05_modeling\n"
-            "import 06_visualization"
+            "import utils  # helper functions only, not executed directly\n"
+            "import data_collection\n"
+            "import preprocessing\n"
+            "import modeling\n"
+            "import visualization"
         ),
 
         nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("data_collection.main()"),
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
-        nbf.v4.new_code_cell("04_preprocessing.main()"),
+        nbf.v4.new_code_cell("preprocessing.main()"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
-        nbf.v4.new_code_cell("05_modeling.main()"),
+        nbf.v4.new_code_cell("modeling.main()"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
-        nbf.v4.new_code_cell("06_visualization.main()")
+        nbf.v4.new_code_cell("visualization.main()")
     ]
 
     content.cells.extend(cells)
 
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, script_name, extension, content)
 
-def create_r_notebook(folder_path,file_name = "workflow"):
+def create_r_notebook(folder_path):
     extension = ".Rmd"
+    script_name = "workflow"
     # Create RMarkdown content with the requested structure
     content = dedent(r"""{% raw %}
     ---
@@ -1356,11 +1348,11 @@ def create_r_notebook(folder_path,file_name = "workflow"):
 
     ## Load Utility and Workflow Scripts
     ```{r}
-    source("02_utils.R")  # shared helper functions, not executed directly
+    source("utils.R")  # shared helper functions, not executed directly
     source("data_collection.R")
-    source("04_preprocessing.R")
-    source("05_modeling.R")
-    source("06_visualization.R")
+    source("preprocessing.R")
+    source("modeling.R")
+    source("visualization.R")
     ```
 
     ## Run Data Collection
@@ -1370,25 +1362,25 @@ def create_r_notebook(folder_path,file_name = "workflow"):
 
     ## Run Preprocessing
     ```{r}
-    04_preprocessing::main()
+    preprocessing::main()
     ```
 
     ## Run Modeling
     ```{r}
-    05_modeling::main()
+    modeling::main()
     ```
 
     ## Run Visualization
     ```{r}
-    06_visualization::main()
+    visualization::main()
     ```
     {% endraw %}""")
 
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, script_name, extension, content)
 
-def create_stata_notebook(folder_path,file_name = "workflow"):
+def create_stata_notebook(folder_path):
     extension = ".ipynb"
-    file_name = "workflow"
+    script_name = "workflow"
 
     content = nbf.v4.new_notebook()
 
@@ -1408,27 +1400,28 @@ def create_stata_notebook(folder_path,file_name = "workflow"):
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do 04_preprocessing.do\n"
-                             "04_preprocessing_main"),
+                             "do preprocessing.do\n"
+                             "preprocessing_main"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do 05_modeling.do\n"
-                             "05_modeling_main"),
+                             "do modeling.do\n"
+                             "modeling_main"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%stata\n"
-                             "do 06_visualization.do\n"
-                             "06_visualization_main")
+                             "do visualization.do\n"
+                             "visualization_main")
     ]
 
     content.cells.extend(cells)
 
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, script_name, extension, content)
 
-def create_matlab_notebook(folder_path,file_name = "workflow"):
+def create_matlab_notebook(folder_path):
     # --- 1. Create Jupyter Notebook (.ipynb) with MATLAB kernel ---
     extension = ".ipynb"
+    script_name = "workflow"
     content = nbf.v4.new_notebook()
 
     cells = [
@@ -1448,19 +1441,19 @@ def create_matlab_notebook(folder_path,file_name = "workflow"):
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "04_preprocessing_main();"),
+                             "preprocessing_main();"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "05_modeling_main();"),
+                             "modeling_main();"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "06_visualization_main();")
+                             "visualization_main();")
     ]
 
     content.cells.extend(cells)
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, script_name, extension, content)
 
     # --- 2. Create MATLAB Live Script (.mlx) version ---
     extension = ".mlx"
@@ -1474,18 +1467,19 @@ def create_matlab_notebook(folder_path,file_name = "workflow"):
     data_collection_main();
 
     %% Run Preprocessing
-    04_preprocessing_main();
+    preprocessing_main();
 
     %% Run Modeling
-    05_modeling_main();
+    modeling_main();
 
     %% Run Visualization
-    06_visualization_main();
+    visualization_main();
     """)
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, script_name, extension, content)
 
-def create_sas_notebook(folder_path,file_name = "workflow"):
+def create_sas_notebook(folder_path):
     extension = ".ipynb"
+    script_name = "workflow"
 
     content = nbf.v4.new_notebook()
 
@@ -1499,17 +1493,18 @@ def create_sas_notebook(folder_path,file_name = "workflow"):
         nbf.v4.new_code_cell("%%SAS\n%include 'data_collection.sas';\n%data_collection_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Preprocessing"),
-        nbf.v4.new_code_cell("%%SAS\n%include '04_preprocessing.sas';\n%04_preprocessing_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 'preprocessing.sas';\n%preprocessing_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Modeling"),
-        nbf.v4.new_code_cell("%%SAS\n%include '05_modeling.sas';\n%05_modeling_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 'modeling.sas';\n%modeling_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Visualization"),
-        nbf.v4.new_code_cell("%%SAS\n%include '06_visualization.sas';\n%06_visualization_main;")
+        nbf.v4.new_code_cell("%%SAS\n%include 'visualization.sas';\n%visualization_main;")
     ]
 
     content.cells.extend(cells)
-    write_script(folder_path, file_name, extension, content)
+    write_script(folder_path, script_name, extension, content)
+
 
 @ensure_correct_kernel
 def main():
@@ -1522,6 +1517,7 @@ def main():
   
     # Create scripts and notebook
     create_scripts(programming_language, "./src")
+    create_notebooks(programming_language, "./src")
 
     
 if __name__ == "__main__":
