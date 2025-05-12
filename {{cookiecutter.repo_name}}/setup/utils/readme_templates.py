@@ -211,16 +211,16 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
 
 Each script is structured to:
 - Define a `main()` function for execution
-- Set up project paths automatically (raw, interim, processed, results)
+- Set up project paths automatically (00_raw, 01_interim, 02_processed, results)
 - Remain passive unless the `main()` is explicitly called
 
 The typical workflow includes the following steps:
 
 0. **Install Dependencies** — Ensures all required packages/libraries are installed.
 1. **Load Utilities** — Loads helper functions used by other scripts (not a pipeline step).
-2. **Data Collection** — Imports or generates datasets, stored in `data/raw/`.
-3. **Preprocessing** — Cleans and transforms the raw data, outputting to `data/interim/`.
-4. **Modeling** — Trains and evaluates machine learning models using processed data. Results saved to `data/processed/`.
+2. **Data Collection** — Imports or generates datasets, stored in `data/00_raw/`.
+3. **Preprocessing** — Cleans and transforms the raw data, outputting to `data/01_interim/`.
+4. **Modeling** — Trains and evaluates machine learning models using processed data. Results saved to `data/02_processed/`.
 5. **Visualization** — Produces plots and visual summaries, saved to `results/figures/`.
 
 > 🛠️ **Note:** `utils` does not define a `main()` function and should not be executed directly.
@@ -263,9 +263,9 @@ Use this notebook for:
 
 | Step             | Output Directory          |
 |------------------|----------------------------|
-| Data Collection  | `data/raw/`                 |
-| Preprocessing    | `data/interim/`             |
-| Modeling         | `data/processed/`           |
+| Data Collection  | `data/00_raw/`                 |
+| Preprocessing    | `data/01_interim/`             |
+| Modeling         | `data/02_processed/`           |
 | Visualization    | `results/figures/`          |
 
 All scripts use relative paths based on their location, ensuring portability and reproducibility across systems.
@@ -825,10 +825,9 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
             # Directories
             "data": "Directory containing scripts to download or generate data.",
-            "external": "Directory for externally sourced data from third-party providers.",
-            "interim": "Intermediate data transformed during the workflow.",
-            "processed": "The final, clean data used for analysis or modeling.",
-            "raw": "Original, immutable raw data.",
+            "01_interim": "Intermediate data transformed during the workflow.",
+            "02_processed": "The final, clean data used for analysis or modeling.",
+            "00_raw": "Original, immutable raw data.",
             "src": "Directory containing source code for use in this project.",
             "docs": "Directory for documentation files, reports, or rendered markdown.",
             "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",

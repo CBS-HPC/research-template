@@ -201,9 +201,9 @@ def create_r_script(folder_path, script_name, purpose):
 # {purpose} code
 
 base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-raw_data <- file.path(base_path, "data", "raw")
-interim_data <- file.path(base_path, "data", "interrim")
-processed_data <- file.path(base_path, "data", "processed")
+raw_data <- file.path(base_path, "data", "00_raw")
+interim_data <- file.path(base_path, "data", "01_interim")
+processed_data <- file.path(base_path, "data", "02_processed")
 
 main <- function() {{
     # {purpose} code
@@ -226,9 +226,9 @@ def create_python_script(folder_path, script_name, purpose):
 import os
 import sys
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-raw_data = os.path.join(base_path, "data", "raw")
-interim_data = os.path.join(base_path, "data", "interrim")
-processed_data = os.path.join(base_path, "data", "processed")
+raw_data = os.path.join(base_path, "data", "00_raw")
+interim_data = os.path.join(base_path, "data", "01_interim")
+processed_data = os.path.join(base_path, "data", "02_processed")
 setup_path = os.path.join(base_path, "setup") 
 sys.path.append(setup_path)
 from s02_utils import *
@@ -249,9 +249,9 @@ def create_stata_script(folder_path, script_name, purpose):
 * {purpose} code
 
 global base_path ".."
-global raw_data "$base_path/data/raw"
-global interim_data "$base_path/data/interrim"
-global processed_data "$base_path/data/processed"
+global raw_data "$base_path/data/00_raw"
+global interim_data "$base_path/data/01_interim"
+global processed_data "$base_path/data/02_processed"
 
 program define {script_name}_main
     display "Running {script_name}..."
@@ -267,9 +267,9 @@ def create_matlab_script(folder_path, script_name, purpose):
 % {purpose} code
 
 base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-raw_data = fullfile(base_path, 'data', 'raw');
-interim_data = fullfile(base_path, 'data', 'interrim');
-processed_data = fullfile(base_path, 'data', 'processed');
+raw_data = fullfile(base_path, 'data', '00_raw');
+interim_data = fullfile(base_path, 'data', '01_interim');
+processed_data = fullfile(base_path, 'data', '02_processed');
 
 function {script_name}_main()
     % {purpose} code
@@ -288,9 +288,9 @@ def create_sas_script(folder_path, script_name, purpose):
 * {purpose} code;
 
 %let base_path = ..;
-%let raw_data = &base_path./data/raw;
-%let interim_data = &base_path./data/interrim;
-%let processed_data = &base_path./data/processed;
+%let raw_data = &base_path./data/00_raw;
+%let interim_data = &base_path./data/01_interim;
+%let processed_data = &base_path./data/02_processed;
 
 %macro {script_name}_main();
     %put Running {script_name}...;

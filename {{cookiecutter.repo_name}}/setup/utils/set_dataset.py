@@ -121,7 +121,7 @@ def set_dataset(data_name, destination, source:str = None, run_command:str = Non
         source (str): The remote URL or path to the dataset.
         run_command (str): A command for executing the download function/script.
                            The script will ensure {source} and {destination} are appended.
-        destination (str): The path where the data will be stored. Defaults to './data/raw/data_name' if None.
+        destination (str): The path where the data will be stored. Defaults to './data/00_raw/data_name' if None.
     """
     destination = check_path_format(destination)
 
@@ -203,7 +203,7 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
     
     def get_data_files():
         # Subdirectories to look into
-        subdirs = ['raw', 'interim', 'processed', 'external']
+        subdirs = ['00_raw', '01_interim', '02_processed']
         base_dir = './data'
 
         # Gather all files and folders with full paths, excluding Git-related files
@@ -223,14 +223,14 @@ def set_datasets(data_name:str= None, source:str=None, run_command:str=None, des
         return all_files
 
     json_file_path = None
-    # If all input parameters are None, gather all files and folders from './data/raw/'
+    # If all input parameters are None, gather all files and folders from './data/00_raw/'
     if all(param is None for param in [data_name, source, run_command, destination, doi, citation, license]):
         data_files = get_data_files()
         for file in data_files:
             json_file_path = set_dataset(data_name=os.path.basename(file), destination=file, source=None, run_command=None, json_file_path="./datasets.json", doi=None, citation=None, license=None) 
     else:
         if destination is None:
-            destination = f"./data/raw/{sanitize_folder_name(data_name)}"
+            destination = f"./data/00_raw/{sanitize_folder_name(data_name)}"
         json_file_path = set_dataset(data_name = data_name, destination = destination, source=source, run_command=run_command, json_file_path="./datasets.json", doi=doi, citation=citation, license=license)
 
     try:

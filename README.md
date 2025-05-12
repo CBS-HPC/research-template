@@ -181,7 +181,7 @@ These starter scripts are placed in the `src/` directory and include:
 Each script is structured to:
 
 - Define a `main()` function or logical entry point (where applicable)  
-- Automatically resolve project folder paths (`data/raw/`, `results/figures/`, etc.)  
+- Automatically resolve project folder paths (`data/00_raw/`, `results/figures/`, etc.)  
 - Remain passive unless directly called or imported  
 - Support reproducible workflows by default
 
@@ -265,7 +265,7 @@ This template supports several version control systems to suit different workflo
 ### 📝 Auto-generated `.gitignore` includes:
 
 ```
-├── data/                  → raw and processed data folders
+├── data/                  → 00_raw, 01_interim and 02_processed data folders
 ├── bin/                   → local binaries (e.g., rclone)
 ├── env/, __pycache__/     → Python virtual environments and caches
 ├── .vscode/, .idea/       → IDE and editor configs
@@ -364,9 +364,9 @@ You can find or update human-readable file descriptions in `file_descriptions.js
 ├── data/                     # Structured project data directory
 │   ├── .git/                 # Standalone Git repo for tracking datasets
 │   ├── .gitlog               # Git log for the data repository
-│   ├── raw/                  # Original, immutable input data
-│   ├── interim/              # Intermediate data created during processing
-│   └── processed/            # Final, clean data ready for analysis
+│   ├── 00_raw/                  # Original, immutable input data
+│   ├── 01_interim/              # Intermediate data created during processing
+│   └── 02_processed/            # Final, clean data ready for analysis
 ├── docs/                     # Project documentation, reports, or rendered outputs
 ├── environment.yml           # Conda-compatible environment definition (Python/R)
 ├── file_descriptions.json    # JSON file with editable descriptions for all project files

@@ -39,9 +39,9 @@ def create_r_example(folder_path):
         "s03_data_collection": dedent("""
             s03_data_collection <- local({
               base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-              raw_data <- file.path(base_path, "data", "raw")
-              interim_data <- file.path(base_path, "data", "interim")
-              processed_data <- file.path(base_path, "data", "processed")
+              raw_data <- file.path(base_path, "data", "00_raw")
+              interim_data <- file.path(base_path, "data", "01_interim")
+              processed_data <- file.path(base_path, "data", "02_processed")
               
               collect_data <- function() {
                 data <- mtcars
@@ -63,9 +63,9 @@ def create_r_example(folder_path):
         "s04_preprocessing_": dedent("""
             s04_preprocessing <- local({
               base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-              raw_data <- file.path(base_path, "data", "raw")
-              interim_data <- file.path(base_path, "data", "interim")
-              processed_data <- file.path(base_path, "data", "processed")
+              raw_data <- file.path(base_path, "data", "00_raw")
+              interim_data <- file.path(base_path, "data", "01_interim")
+              processed_data <- file.path(base_path, "data", "02_processed")
               
               library(dplyr)
               
@@ -90,8 +90,8 @@ def create_r_example(folder_path):
         "s05_modeling": dedent("""
             s05_modeling <- local({
               base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-              interim_data <- file.path(base_path, "data", "interim")
-              processed_data <- file.path(base_path, "data", "processed")
+              interim_data <- file.path(base_path, "data", "01_interim")
+              processed_data <- file.path(base_path, "data", "02_processed")
               
               build_model <- function(data) {
                 model <- lm(mpg ~ wt + hp, data = data)
@@ -114,8 +114,8 @@ def create_r_example(folder_path):
         "s06_visualization": dedent("""
             s06_visualization <- local({
               base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-              interim_data <- file.path(base_path, "data", "interim")
-              processed_data <- file.path(base_path, "data", "processed")
+              interim_data <- file.path(base_path, "data", "01_interim")
+              processed_data <- file.path(base_path, "data", "02_processed")
               figures_path <- file.path(base_path, "results", "figures")
               
               library(ggplot2)
@@ -170,7 +170,7 @@ def create_python_example(folder_path):
             import os, pickle
 
             base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            raw_data = os.path.join(base_path, "data", "raw")
+            raw_data = os.path.join(base_path, "data", "00_raw")
 
             def collect_data():
                 if not os.path.exists(raw_data):
@@ -191,8 +191,8 @@ def create_python_example(folder_path):
             import os, pickle
 
             base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            raw_data = os.path.join(base_path, "data", "raw")
-            interim_data = os.path.join(base_path, "data", "interim")
+            raw_data = os.path.join(base_path, "data", "00_raw")
+            interim_data = os.path.join(base_path, "data", "01_interim")
 
             def preprocess_data(data):
                 data['mpg_z'] = [(x - sum(data['mpg'])/len(data['mpg'])) for x in data['mpg']]
@@ -217,8 +217,8 @@ def create_python_example(folder_path):
             import numpy as np
 
             base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            interim_data = os.path.join(base_path, "data", "interim")
-            processed_data = os.path.join(base_path, "data", "processed")
+            interim_data = os.path.join(base_path, "data", "01_interim")
+            processed_data = os.path.join(base_path, "data", "02_processed")
 
             def build_model(data):
                 model = LinearRegression().fit(np.array(data['wt']).reshape(-1,1), data['mpg'])
@@ -242,8 +242,8 @@ def create_python_example(folder_path):
             import matplotlib.pyplot as plt
 
             base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            interim_data = os.path.join(base_path, "data", "interim")
-            processed_data = os.path.join(base_path, "data", "processed")
+            interim_data = os.path.join(base_path, "data", "01_interim")
+            processed_data = os.path.join(base_path, "data", "02_processed")
             figures_path = os.path.join(base_path, "results", "figures")
 
             def visualize(data, model):
@@ -314,8 +314,8 @@ def create_stata_example(folder_path):
         "s04_preprocessing": dedent("""
             * Preprocessing code
             global base_path ".."
-            global raw_data "$base_path/data/raw"
-            global interim_data "$base_path/data/interim"
+            global raw_data "$base_path/data/00_raw"
+            global interim_data "$base_path/data/01_interim"
 
             program define s04_preprocessing_main
                 mkdir "$interim_data"
@@ -332,8 +332,8 @@ def create_stata_example(folder_path):
         "s05_modeling": dedent("""
             * Modeling code
             global base_path ".."
-            global interim_data "$base_path/data/interim"
-            global processed_data "$base_path/data/processed"
+            global interim_data "$base_path/data/01_interim"
+            global processed_data "$base_path/data/02_processed"
 
             program define s05_modeling_main
                 mkdir "$processed_data"
@@ -350,8 +350,8 @@ def create_stata_example(folder_path):
         "s06_visualization": dedent("""
             * Visualization code
             global base_path ".."
-            global interim_data "$base_path/data/interim"
-            global processed_data "$base_path/data/processed"
+            global interim_data "$base_path/data/01_interim"
+            global processed_data "$base_path/data/02_processed"
             global figures "$base_path/results/figures"
 
             program define s06_visualization_main
@@ -393,7 +393,7 @@ def create_matlab_example(folder_path):
         "s03_data_collection": dedent("""
             % Data collection code
             base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-            raw_data = fullfile(base_path, 'data', 'raw');
+            raw_data = fullfile(base_path, 'data', '00_raw');
 
             function s03_data_collection_main()
                 if ~exist(raw_data, 'dir')
@@ -413,8 +413,8 @@ def create_matlab_example(folder_path):
         "s04_preprocessing": dedent("""
             % Preprocessing code
             base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-            raw_data = fullfile(base_path, 'data', 'raw');
-            interim_data = fullfile(base_path, 'data', 'interim');
+            raw_data = fullfile(base_path, 'data', '00_raw');
+            interim_data = fullfile(base_path, 'data', '01_interim');
 
             function s04_preprocessing_main()
                 if ~exist(interim_data, 'dir')
@@ -433,8 +433,8 @@ def create_matlab_example(folder_path):
         "s05_modeling": dedent("""
             % Modeling code
             base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-            interim_data = fullfile(base_path, 'data', 'interim');
-            processed_data = fullfile(base_path, 'data', 'processed');
+            interim_data = fullfile(base_path, 'data', '01_interim');
+            processed_data = fullfile(base_path, 'data', '02_processed');
 
             function s05_modeling_main()
                 if ~exist(processed_data, 'dir')
@@ -453,8 +453,8 @@ def create_matlab_example(folder_path):
         "s06_visualization": dedent("""
             % Visualization code
             base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-            interim_data = fullfile(base_path, 'data', 'interim');
-            processed_data = fullfile(base_path, 'data', 'processed');
+            interim_data = fullfile(base_path, 'data', '01_interim');
+            processed_data = fullfile(base_path, 'data', '02_processed');
             figures_path = fullfile(base_path, 'results', 'figures');
 
             function s06_visualization_main()
@@ -500,7 +500,7 @@ def create_sas_example(folder_path):
         "s03_data_collection": dedent("""
             * Data collection code;
             %let base_path = ..;
-            %let raw_data = &base_path./data/raw;
+            %let raw_data = &base_path./data/00_raw;
 
             %macro s03_data_collection_main();
                 libname raw "&raw_data.";
@@ -520,8 +520,8 @@ def create_sas_example(folder_path):
         "s04_preprocessing": dedent("""
             * Preprocessing code;
             %let base_path = ..;
-            %let raw_data = &base_path./data/raw;
-            %let interim_data = &base_path./data/interim;
+            %let raw_data = &base_path./data/00_raw;
+            %let interim_data = &base_path./data/01_interim;
 
             %macro s04_preprocessing_main();
                 libname raw "&raw_data.";
@@ -538,8 +538,8 @@ def create_sas_example(folder_path):
         "s05_modeling": dedent("""
             * Modeling code;
             %let base_path = ..;
-            %let interim_data = &base_path./data/interim;
-            %let processed_data = &base_path./data/processed;
+            %let interim_data = &base_path./data/01_interim;
+            %let processed_data = &base_path./data/02_processed;
 
             %macro s05_modeling_main();
                 libname interim "&interim_data.";
@@ -555,7 +555,7 @@ def create_sas_example(folder_path):
         "s06_visualization": dedent("""
             * Visualization code;
             %let base_path = ..;
-            %let interim_data = &base_path./data/interim;
+            %let interim_data = &base_path./data/01_interim;
             %let figures = &base_path./results/figures;
 
             %macro s06_visualization_main();
