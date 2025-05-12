@@ -593,6 +593,13 @@ set-dataset
 </details>
 
 <details>
+<summary>Code & Dataset Network Analysis</summary>
+
+
+</details>
+
+
+<details>
 <summary>📁 Project Directory Structure</summary>
 
 
@@ -924,114 +931,6 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
         file_descriptions = create_file_descriptions(programming_language,json_file)
 
     update_descriptions(json_file,readme_file)
-
-# Dataset Table
-def generate_dataset_table(json_file_path):
-    """
-    Generates a markdown table based on the data in a JSON file.
-
-    Parameters:
-        json_file_path (str): Path to the JSON file containing dataset metadata.
-
-    Returns:
-        str: A markdown formatted table as a string.
-    """
-    
-    # Check if the JSON file exists
-    if not os.path.exists(json_file_path):
-        raise FileNotFoundError(f"The file {json_file_path} does not exist.")
-    
-    # Read the JSON file
-    with open(json_file_path, 'r') as json_file:
-        data = json.load(json_file)
-
-    # If the data is a list, loop through each dataset entry
-    if isinstance(data, list):
-        markdown_table = (
-            f"| Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |\n"
-            f"|------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|\n"
-        )
-
-        full_table = (
-            f"| Name             | Files                             |Hash                       | Location        | Provided        | File Size (MB) | Run Command               | Source           | DOI             | Citation               | License               | Notes                |\n"
-            f"|------------------|-----------------------------------|---------------------------|-----------------|-----------------|----------------|---------------------------|------------------|-----------------|------------------------|-----------------------|----------------------|\n"
-        )
-
-        for entry in data:
-            if isinstance(entry, dict):  # Only process dictionary entries
-                # Extract required information from the JSON data
-                data_name = entry.get("data_name", "N/A")
-                data_files = " ; ".join(entry.get("data_files", ["Not available"]))  # Newline separated
-                data_sizes = " ; ".join(str(size) for size in entry.get("data_size", ["Not available"]))
-                location = entry.get("destination", "N/A")
-                hash = entry.get("hash", "N/A")
-                provided = "Provided" if entry.get("data_files") else "Can be re-created"
-                run_command = entry.get("run_command", "N/A")
-                number_of_files = entry.get("number_of_files", 0)
-                total_size_mb = entry.get("total_size_mb", 0)
-                file_formats = "; ".join(entry.get("file_formats", ["Not available"]))
-                source = entry.get("source", "N/A")
-                doi = entry.get("DOI", "Not provided")
-                citation = entry.get("citation", "Not provided")
-                license = entry.get("license", "Not provided")
-                notes = entry.get("notes", "No additional notes")
-
-
-                 # Format pdf table
-                data_files = entry.get("data_files", ["Not available"])
-                for file, size in zip(data_files, data_sizes):
-                    full_table += (f"|{data_name}|{file}|{hash}|{location}|{provided}|{size}|{run_command}|{source}|{doi}|{citation}|{license}|{notes}|\n")
-
-                # Format the markdown table for this entry
-                markdown_table += (f"|{data_name}|{location}|{hash}|{provided}|{run_command}|{number_of_files}|{total_size_mb}|{file_formats}|{source}|{doi}|{citation}|{license}|{notes}|\n")
-       
-        return markdown_table,full_table
-    else:
-        # If the data is not a list, raise an error
-        raise TypeError(f"Expected a list of datasets but got {type(data)}.")
-
-def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
-    """
-    Updates or appends the '## Dataset List' section in the README file.
-
-    Parameters:
-        markdown_table (str): The markdown table to insert.
-        readme_file (str): Path to the README file.
-    """
-    section_title = "**The following datasets are included in the project:**"
-
-    new_dataset_section = f"{section_title}\n\n{markdown_table.strip()}\n"
-
-
-    if not readme_file:
-        readme_file = "README.md"
-    
-    readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
-
-    try:
-        with open(readme_file, "r", encoding="utf-8") as f:
-            readme_content = f.read()
-
-        if section_title in readme_content:
-            # Find the start and end of the existing section
-            start = readme_content.find(section_title)
-            end = readme_content.find("\n## ", start + len(section_title))
-            if end == -1:
-                end = len(readme_content)
-            updated_content = readme_content[:start] + new_dataset_section + readme_content[end:]
-        else:
-            # Append the new section at the end
-            updated_content = readme_content.strip() + "\n\n" + new_dataset_section
-
-    except FileNotFoundError:
-        # If the README doesn't exist, create it with the new section
-        updated_content = new_dataset_section
-
-    # Write the updated content to the README file
-    with open(readme_file, "w", encoding="utf-8") as f:
-        f.write(updated_content.strip())
-
-    print(f"{readme_file} successfully updated with dataset section.")
 
 # CITATION.cff
 def create_citation_file(project_name, version, authors, orcids, code_repo, doi=None, release_date=None):
