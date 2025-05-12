@@ -5,6 +5,20 @@ import pathlib
 from utils import *
 
 
+def create_folders():
+    # Adjust or extend the list as needed
+    folders = [
+        "data/00_raw",
+        "data/01_interim",
+        "data/02_processed",
+        "data/03_external",
+    ]
+    for f in folders:
+        pathlib(f).mkdir(parents=True, exist_ok=True)
+        # Optional: keep the dirs under version control
+        (pathlib(f) / ".gitkeep").touch(exist_ok=True)
+
+
 
 @ensure_correct_kernel
 def main():
@@ -24,6 +38,7 @@ def main():
     set_program_path(programming_language)
 
     # Create scripts and notebook
+    create_folders()
     create_scripts(programming_language, "./src")
     
     # Create a citation file
