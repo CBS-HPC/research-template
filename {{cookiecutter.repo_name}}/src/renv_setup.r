@@ -1,106 +1,68 @@
-# setup/renv_setup.R
+# src/renv_setup.R -------------------------------------------------------------
 
-# ----------- Helper Functions ------------
-
-# Safe null operator
 `%||%` <- function(x, y) if (!is.null(x)) x else y
 
-# Install and load renv
 install_renv <- function() {
-  if (!requireNamespace("renv", quietly = TRUE)) {
+  if (!requireNamespace("renv", quietly = TRUE))
     install.packages("renv")
-  }
   library(renv)
   message("renv installed and loaded.")
 }
 
-# Detect project root based on script file path
-get_project_root <- function(file_path = NULL) {
-  if (!is.null(file_path)) {
-    script_path <- normalizePath(dirname(file_path))
-  } else if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
-    script_path <- normalizePath(dirname(rstudioapi::getActiveDocumentContext()$path))
+get_project_root <- function(path = NULL) {
+  if (!is.null(path)) {
+    root <- normalizePath(dirname(path))
   } else {
-    args <- commandArgs(trailingOnly = FALSE)
-    file_arg <- grep("--file=", args, value = TRUE)
-    if (length(file_arg) > 0) {
-      script_path <- normalizePath(dirname(sub("--file=", "", file_arg)))
-    } else {
-      script_path <- normalizePath(getwd())
-    }
+    root <-  getwd()
   }
-  
-  project_root <- normalizePath(file.path(script_path, ".."))
-  message(sprintf("Detected project root: %s", project_root))
-  return(project_root)
+  message("Detected project root: ", root)
+  root
 }
 
-# Initialize renv environment
-renv_init <- function(file_path = NULL) {
-  root <- get_project_root(file_path)
-  lockfile_path <- file.path(root, "renv.lock")
-  
-  if (!file.exists(lockfile_path)) {
-    renv::init(bare = TRUE)
-    renv::snapshot(lockfile = lockfile_path)
-    message("renv initialized and lockfile created at project root.")
+ensure_project_loaded <- function(root_path) {
+  if (!identical(renv::project(), normalizePath(root_path))) {
+    renv::load(root_path, quiet = TRUE)
+    message("renv project loaded.")
+  }
+}
+
+renv_init <- function(root_path) {
+  lockfile <- file.path(root_path, "renv.lock")
+  if (!file.exists(lockfile)) {
+    renv::init(project = root_path, bare = TRUE, force = TRUE)
+    message("renv infrastructure created.")
   } else {
-    message("renv.lock already exists at project root. Initialization skipped.")
+    message("renv infrastructure already exists.")
   }
 }
 
-# Snapshot environment
-renv_snapshot <- function(file_path = NULL) {
-  root <- get_project_root(file_path)
-  lockfile_path <- file.path(root, "renv.lock")
-  
-  renv::snapshot(lockfile = lockfile_path)
-  message("Environment snapshot updated.")
+renv_snapshot <- function(root_path) {
+  ensure_project_loaded(root_path)
+  renv::snapshot(project = root_path, prompt = FALSE)
+  message("renv.lock written / updated.")
 }
 
-# Restore environment
-renv_restore <- function(file_path = NULL, check_r_version = TRUE) {
-  root <- get_project_root(file_path)
-  lockfile_path <- file.path(root, "renv.lock")
-  
-  if (!file.exists(lockfile_path)) {
-    stop("No renv.lock file found at project root. Cannot restore environment.")
-  }
+renv_restore <- function(root_path, check_r_version = TRUE) {
+  ensure_project_loaded(root_path)
   
   if (check_r_version) {
-    lockfile <- jsonlite::fromJSON(lockfile_path)
-    lock_r_version <- lockfile$R$Version
-    current_r_version <- paste(R.version$major, R.version$minor, sep = ".")
-    
-    if (lock_r_version != current_r_version) {
-      warning(sprintf(
-        "R version mismatch! Current: %s | Expected: %s",
-        current_r_version, lock_r_version
-      ))
-    } else {
-      message("R version matches the lockfile.")
-    }
+    lock <- jsonlite::read_json(file.path(root_path, "renv.lock"))
+    expect <- lock$R$Version
+    have   <- paste(R.version$major, R.version$minor, sep = ".")
+    if (expect != have)
+      warning("R version mismatch: current ", have, " – lockfile ", expect)
   }
   
-  renv::restore(lockfile = lockfile_path)
-  message("Environment restored from project root lockfile.")
+  renv::restore(project = root_path, prompt = FALSE)
+  message("Packages restored from lockfile.")
 }
 
-# ----------- Main Script ------------
+# ------------------------------ main -----------------------------------------
 
-# Parse file_path argument
-args <- commandArgs(trailingOnly = TRUE)
-file_path <- NULL
+args       <- commandArgs(trailingOnly = TRUE)
+root_path  <- if (length(args)) args[1] else get_project_root()
 
-if (length(args) > 0) {
-  file_path <- args[1]
-  message(sprintf("Input script path received: %s", file_path))
-} else {
-  message("No file_path argument provided. Falling back to auto-detection.")
-}
-
-# Install renv and perform actions
 install_renv()
-renv_init(file_path)
-renv_snapshot(file_path)
-# renv_restore(file_path)
+renv_init(root_path)      # create renv/ if missing
+renv_snapshot(root_path)  # write renv.lock (non-interactive)
+# renv_restore(root_path) # uncomment when you actually want to restore
