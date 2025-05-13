@@ -11,17 +11,16 @@ install_renv <- function() {
 
 get_project_root <- function(path = NULL) {
   # ------------------------------------------------------------------
-  # 1) If a path was supplied, trust it. It can be either a file or dir
+  # 1) Explicit path (file or directory) supplied by the caller
   # ------------------------------------------------------------------
   if (!is.null(path)) {
     path <- normalizePath(path, winslash = "/")
-    root <- if (file.exists(path) && !dir.exists(path))
-      dirname(path) else path       # file  -> its directory
+    root <- if (file.exists(path) && !dir.exists(path)) dirname(path) else path
     return(root)
   }
   
   # ------------------------------------------------------------------
-  # 2) Try RStudio active document
+  # 2) RStudio active document
   # ------------------------------------------------------------------
   if (requireNamespace("rstudioapi", quietly = TRUE) &&
       rstudioapi::isAvailable()) {
@@ -34,18 +33,32 @@ get_project_root <- function(path = NULL) {
   }
   
   # ------------------------------------------------------------------
-  # 3) Try command-line invocations  (--file=  or  -f <file>)
+  # 3) Command-line runs ( R, Rscript, etc. )
   # ------------------------------------------------------------------
   args <- commandArgs(trailingOnly = FALSE)
   
-  # --file=/path/to/script.R
+  ## 3a) --file=/path/to/script.R  (R --file=…, R CMD BATCH, etc.)
   file_arg <- sub("^--file=", "", grep("^--file=", args, value = TRUE))
   
-  # -f /path/to/script.R
+  ## 3b) -f /path/to/script.R      (R -f …)
   if (!length(file_arg)) {
     idx <- which(args == "-f")
     if (length(idx) && idx < length(args))
       file_arg <- args[idx + 1]
+  }
+  
+  ## 3c) Rscript my_script.R …      (plain positional argument)
+  if (!length(file_arg)) {
+    poss <- args[grepl("\\.(r|R)$", args)]      # things ending in .R
+    poss <- poss[file.exists(poss)]             # must exist
+    if (length(poss))
+      file_arg <- poss[1]                       # take the first match
+    else {
+      # fall-back: first existing file among args (covers .Rmd, .qmd, …)
+      poss2 <- args[file.exists(args)]
+      if (length(poss2))
+        file_arg <- poss2[1]
+    }
   }
   
   if (length(file_arg) && nzchar(file_arg)) {
@@ -55,7 +68,7 @@ get_project_root <- function(path = NULL) {
   }
   
   # ------------------------------------------------------------------
-  # 4) Fallback – use the working directory
+  # 4) Fallback – working directory
   # ------------------------------------------------------------------
   root <- normalizePath(getwd(), winslash = "/")
   message("Fallback project root: ", root)

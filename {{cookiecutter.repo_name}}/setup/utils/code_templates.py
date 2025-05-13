@@ -759,9 +759,7 @@ writeLines(
   message("'dependencies.txt' successfully generated.")
 }
 
-if (interactive()) {
-  get_dependencies(NULL)
-}
+get_dependencies(NULL)
 
 {% endraw %}
 """
