@@ -688,7 +688,7 @@ def run_script(programming_language, script_command=None):
             return result.stdout.strip() if result.stdout else "Stata version information not captured."
 
         elif programming_language == "sas":
-            cmd = exe_path  " -SYSIN " + script_command
+            cmd = exe_path  + " -SYSIN " + script_command
             #cmd = [exe_path, "-SYSIN"]
             #cmd.extend(script_command)
             result = subprocess.run(
