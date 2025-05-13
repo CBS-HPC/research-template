@@ -78,11 +78,9 @@ def main():
         # Call the setup script using the function
         r_script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/renv_setup.R")))
         project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
-        cmd = ["-f " + r_script_path] 
-        #cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root] 
-
-        print("HELLO!!")
+        cmd = " -f " + r_script_path + " --args " + project_root
         output = run_script("r", cmd)
+        print(output)
 
     # Pushing to Git
     push_msg = f" `requirements.txt`, `environment.yml` and '{file}' created and 'Requirements' section in README.md updated" 

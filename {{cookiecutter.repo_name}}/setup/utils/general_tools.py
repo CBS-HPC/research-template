@@ -646,16 +646,20 @@ def run_script(programming_language, script_command=None):
 
     try:
         if programming_language == "python":
+            cmd = sys.executable + " -c " + script_command
+            #cmd = [sys.executable, "-c"]
+            #cmd.extend(script_command)
+            
             result = subprocess.run(
-                [sys.executable, "-c", script_command],
+                cmd,
                 capture_output=True, text=True, check=True
             )
             return result.stdout.strip()
 
         elif programming_language == "r":
-             # Here script_command is a list
-            cmd = [exe_path,"--vanilla"] + script_command
-
+            cmd = exe_path + " --vanilla" + script_command
+            #cmd = [exe_path,"--vanilla"]
+            #cmd.extend(script_command)
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True, check=True
@@ -663,23 +667,32 @@ def run_script(programming_language, script_command=None):
             return result.stdout.strip()
         
         elif programming_language == "matlab":
+            cmd = exe_path + " -batch " + script_command 
+            #cmd = [exe_path, "-batch"]    
+           # cmd.extend(script_command)
             result = subprocess.run(
-                [exe_path, "-batch", script_command],
+                cmd,
                 capture_output=True, text=True, check=True
             )
             return result.stdout.strip()
 
         elif programming_language == "stata":
             # For Stata, run the executable with --version (or equivalent) to print version
+            cmd = exe_path +  " /q " + "about"
+            #cmd = [exe_path, "/q", "about"]   # /q quiet start, "about" prints version
+
             result = subprocess.run(
-                [exe_path, "/q", "about"],  # /q quiet start, "about" prints version
+                cmd,
                 capture_output=True, text=True
             )
             return result.stdout.strip() if result.stdout else "Stata version information not captured."
 
         elif programming_language == "sas":
+            cmd = exe_path  " -SYSIN " + script_command
+            #cmd = [exe_path, "-SYSIN"]
+            #cmd.extend(script_command)
             result = subprocess.run(
-                [exe_path, "-SYSIN", script_command],
+                cmd,
                 capture_output=True, text=True, check=True
             )
             return result.stdout.strip()

@@ -11,7 +11,7 @@ install_renv <- function() {
 
 get_project_root <- function(path = NULL) {
   if (!is.null(path)) {
-    root <- normalizePath(dirname(path))
+    root <- normalizePath(path)
   } else {
     root <-  getwd()
   }
