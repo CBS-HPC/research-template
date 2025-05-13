@@ -3,6 +3,20 @@ import pathlib
 
 from utils import *
 
+def create_folders():
+    PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
+
+    folders = [
+        PROJECT_DIR/"data" / "00_raw",
+        PROJECT_DIR/"data" / "01_interim",
+        PROJECT_DIR/"data" / "02_processed",
+        PROJECT_DIR/"data" / "03_external",
+    ]
+
+    for folder in folders:
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / ".gitkeep").touch(exist_ok=True)
+
 
 @ensure_correct_kernel
 def main():
@@ -21,6 +35,8 @@ def main():
     # Set to .env
     set_program_path(programming_language)
 
+    # Create Data folders
+    create_folders()
     # Create scripts and notebook
     create_scripts(programming_language, "./src")
     
