@@ -8,7 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils.repo_tools import *
 from utils.virenv_tools import *
-from utils.get_dependencies import get_setup_dependencies
+from utils.get_dependencies import get_setup_dependencies, setup_renv
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -43,11 +43,6 @@ def install_py_package():
     else:
         print(f"Error during installation: {result.stderr}")
 
-def make_r_safe_path(path: str) -> str:
-    """Convert a file path to R-safe format (slashes + quotes)."""
-    path = os.path.abspath(path)
-    path_fixed = path.replace("\\", "/")  # 1. Fix slashes
-    return f"\"{path_fixed}\""             # 2. Wrap in quotes
 
 @ensure_correct_kernel
 def main():
@@ -71,19 +66,13 @@ def main():
 
     folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
     file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
+    
     get_setup_dependencies(folder_path = folder, file_name = file)
-
-
-    if programming_language.lower() == "r":
-        # Call the setup script using the function
-        r_script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/renv_setup.R")))
-        project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
-        cmd = " -f " + r_script_path + " --args " + project_root
-        output = run_script("r", cmd)
-        print(output)
+    
+    setup_renv(programming_language,"renv project has been setup and a renv.lock file has been created")
 
     # Pushing to Git
-    push_msg = f" `requirements.txt`, `environment.yml` and '{file}' created and 'Requirements' section in README.md updated" 
+    push_msg = f" `requirements.txt`, `environment.yml`, '' and '{file}' created and 'Requirements' section in README.md updated" 
     git_push(flag,push_msg)
 
     # Installing package:

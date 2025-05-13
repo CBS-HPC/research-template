@@ -10,13 +10,68 @@ install_renv <- function() {
 }
 
 get_project_root <- function(path = NULL) {
+  # ------------------------------------------------------------------
+  # 1) If a path was supplied, trust it. It can be either a file or dir
+  # ------------------------------------------------------------------
   if (!is.null(path)) {
-    root <- normalizePath(path)
-  } else {
-    root <-  getwd()
+    path <- normalizePath(path, winslash = "/")
+    root <- if (file.exists(path) && !dir.exists(path))
+      dirname(path) else path       # file  -> its directory
+    return(root)
   }
+  
+  # ------------------------------------------------------------------
+  # 2) Try RStudio active document
+  # ------------------------------------------------------------------
+  if (requireNamespace("rstudioapi", quietly = TRUE) &&
+      rstudioapi::isAvailable()) {
+    doc <- rstudioapi::getActiveDocumentContext()$path
+    if (nzchar(doc)) {
+      root <- dirname(normalizePath(doc, winslash = "/"))
+      message("Detected project root (RStudio): ", root)
+      return(root)
+    }
+  }
+  
+  # ------------------------------------------------------------------
+  # 3) Try command-line invocations  (--file=  or  -f <file>)
+  # ------------------------------------------------------------------
+  args <- commandArgs(trailingOnly = FALSE)
+  
+  # --file=/path/to/script.R
+  file_arg <- sub("^--file=", "", grep("^--file=", args, value = TRUE))
+  
+  # -f /path/to/script.R
+  if (!length(file_arg)) {
+    idx <- which(args == "-f")
+    if (length(idx) && idx < length(args))
+      file_arg <- args[idx + 1]
+  }
+  
+  if (length(file_arg) && nzchar(file_arg)) {
+    root <- dirname(normalizePath(file_arg, winslash = "/"))
+    message("Detected project root (CLI): ", root)
+    return(root)
+  }
+  
+  # ------------------------------------------------------------------
+  # 4) Fallback – use the working directory
+  # ------------------------------------------------------------------
+  root <- normalizePath(getwd(), winslash = "/")
+  message("Fallback project root: ", root)
+  root
+}
+
+get_project_root_backup <- function(path = NULL) {
+    if (!is.null(path)) {
+      root <- normalizePath(path)
+    } else {
+      root <-  getwd()
+   }
+
   message("Detected project root: ", root)
   root
+  
 }
 
 ensure_project_loaded <- function(root_path) {

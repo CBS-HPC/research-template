@@ -703,6 +703,12 @@ def run_script(programming_language, script_command=None):
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip()}"
 
+def make_r_safe_path(path: str) -> str:
+    """Convert a file path to R-safe format (slashes + quotes)."""
+    path = os.path.abspath(path)
+    path_fixed = path.replace("\\", "/")  # 1. Fix slashes
+    return f"\"{path_fixed}\""             # 2. Wrap in quotes
+
 def set_program_path(programming_language):
 
     if programming_language.lower() not in ["python","none"]:

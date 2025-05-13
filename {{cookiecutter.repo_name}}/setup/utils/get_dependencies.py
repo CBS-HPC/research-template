@@ -45,11 +45,13 @@ def run_get_dependencies(programming_language, folder_path="./src"):
     try:
         if programming_language == "python":
             with open(script_path, "r") as f:
-                script_content = f.read()
+                script_content = f.read()  
             return run_script(programming_language, script_command=script_content)
 
         elif programming_language == "r":
-            return run_script(programming_language, script_command=[script_path])
+            script_path = make_r_safe_path( script_path)
+            cmd = " -f " + script_path
+            return run_script(programming_language, script_command=cmd)
 
         elif programming_language == "matlab":
             return run_script(programming_language, script_command=script_path)
@@ -182,6 +184,15 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     print(f"{file_name} successfully generated at {output_file}")
 
+def setup_renv(programming_language,msg:str):
+    if programming_language.lower() == "r":
+        # Call the setup script using the function
+        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/renv_setup.R")))
+        project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
+        cmd = " -f " + script_path + " --args " + project_root
+        run_script("r", cmd)
+        print(msg)
+
 @ensure_correct_kernel
 def main():
     
@@ -207,12 +218,14 @@ def main():
     print("Screening './src' for dependencies")
     src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
     if programming_language.lower() == "python":
-        src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
         src_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
         get_setup_dependencies(folder_path=src_folder,file_name=src_file)
+    elif programming_language.lower() == "r":
+        _ = run_get_dependencies(programming_language, folder_path=src_folder)
+        setup_renv(programming_language,"renv and .lock file has been updated")
     else:
         print("not implemented yet")
-    #    run_get_dependencies(programming_language, folder_path=src_folder)
+     
 
 if __name__ == "__main__":
     # Ensure the working directory is the project root

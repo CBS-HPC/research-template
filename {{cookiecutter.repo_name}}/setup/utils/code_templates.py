@@ -621,15 +621,44 @@ if __name__ == "__main__":
 def create_get_r_dependencies(folder_path,file_name):
     extension = ".R"
     content = r"""{% raw %}    
-get_dependencies <- function(folder_path = NULL, file_name = "dependencies.txt",install_cmd=NULL) {
+get_dependencies <- function(folder_path = NULL, file_name = "dependencies.txt") {
   
   # If folder_path is not provided, use the folder of the current script
   if (is.null(folder_path)) {
-    folder_path <- dirname(rstudioapi::getSourceEditorContext()$path)
+    # A. RStudio
+    if (requireNamespace("rstudioapi", quietly = TRUE) &&
+        rstudioapi::isAvailable()) {
+      
+      folder_path <- dirname(rstudioapi::getSourceEditorContext()$path)
+      
+    } else {
+      ## B. Command-line:  --file=...   or  -f <file>
+      args <- commandArgs(trailingOnly = FALSE)
+      
+      ## --file=/path/to/script.R  (Rscript, R --file=)
+      file_arg <- grep("^--file=", args, value = TRUE)
+      
+      ## -f /path/to/script.R      (R -f)
+      if (!length(file_arg)) {
+        idx <- which(args == "-f")
+        if (length(idx) && idx < length(args))
+          file_arg <- args[idx + 1]               # take the element after -f
+      } else {
+        file_arg <- sub("^--file=", "", file_arg) # strip prefix
+      }
+      
+      if (length(file_arg)) {
+        folder_path <- dirname(normalizePath(file_arg))
+      } else {
+        ## C. fallback to working directory
+        folder_path <- getwd()
+      }
+    }
   }
   
+  folder_path <- normalizePath(folder_path, winslash = "/")
   print(folder_path)
-  
+ 
   # Ensure renv is installed
   if (!requireNamespace("renv", quietly = TRUE)) {
     install.packages("renv")
@@ -716,7 +745,6 @@ writeLines(
     "Files checked:",
     checked_files,
     "",
-    if (!is.null(install_cmd)) c("Install Command:", install_cmd, ""),
     "Dependencies:"
   ),
   con = output_file
@@ -743,7 +771,7 @@ if (interactive()) {
 def create_get_matlab_dependencies(folder_path,file_name):
     extension = ".m"
     content = r"""{% raw %}      
-function get_dependencies(folder_path,file_name,install_cmd)
+function get_dependencies(folder_path,file_name)
     % If folder_path is not provided, use the folder of the current script
     if nargin < 1
         folder_path = fileparts(mfilename('fullpath'));
@@ -752,10 +780,6 @@ function get_dependencies(folder_path,file_name,install_cmd)
     % Default dependency file
     if nargin < 2
         file_name = 'dependencies.txt';
-    end
-
-    if nargin < 3
-        install_cmd = "";
     end
 
     % Ensure the specified folder exists
@@ -811,12 +835,6 @@ function get_dependencies(folder_path,file_name,install_cmd)
         fprintf(fid, "%s\n", file_paths(i));
     end
     fprintf(fid, "\n");
-
-    % Write Install Command if available
-    if ~isempty(install_cmd)
-        fprintf(fid, "Install Command:\n");
-        fprintf(fid, "%s\n\n", install_cmd);
-    end
 
     % Write dependencies
     fprintf(fid, "Dependencies:\n");
