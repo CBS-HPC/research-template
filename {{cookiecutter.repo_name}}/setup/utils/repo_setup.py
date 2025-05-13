@@ -43,30 +43,6 @@ def install_py_package():
     else:
         print(f"Error during installation: {result.stderr}")
 
-def delete_files(file_paths:list=[]):
-    """
-    Deletes a list of files specified by their paths.
-
-    Args:
-        file_paths (list): A list of file paths to be deleted.
-
-    Returns:
-        dict: A dictionary with file paths as keys and their status as values.
-              The status can be "Deleted", "Not Found", or an error message.
-    """
-    results = {}
-    for file_path in file_paths:
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                results[file_path] = "Deleted"
-            else:
-                results[file_path] = "Not Found"
-        except Exception as e:
-            results[file_path] = f"Error: {e}"
-
-    return results
-
 def make_r_safe_path(path: str) -> str:
     """Convert a file path to R-safe format (slashes + quotes)."""
     path = os.path.abspath(path)
@@ -103,7 +79,9 @@ def main():
         r_script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/renv_setup.R")))
         project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
         cmd = ["--file=" + r_script_path, "--args", project_root] 
-        #cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root]  
+        #cmd = ["--vanilla", "--file=" + r_script_path, "--args", project_root] 
+
+        print("HELLO!!")
         output = run_script("r", cmd)
 
     # Pushing to Git
