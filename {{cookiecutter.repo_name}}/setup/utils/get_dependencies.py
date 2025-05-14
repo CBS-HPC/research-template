@@ -190,7 +190,8 @@ def setup_renv(programming_language,msg:str):
         script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/renv_setup.R")))
         project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent))
         cmd = " -f " + script_path + " --args " + project_root
-        run_script("r", cmd)
+        output = run_script("r", cmd)
+        print(output)
         print(msg)
 
 def update_env_files():
