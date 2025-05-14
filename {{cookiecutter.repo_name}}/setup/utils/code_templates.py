@@ -210,9 +210,9 @@ main <- function() {{
     print('Running {script_name}...')
 }}
 
-if (interactive()) {{
-    main()
-}}
+
+main()
+
 {% endraw %}
 """
     

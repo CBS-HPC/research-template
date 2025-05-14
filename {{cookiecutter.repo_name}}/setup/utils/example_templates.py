@@ -55,9 +55,7 @@ def create_r_example(folder_path):
                 collect_data()
               }
               
-              if (interactive()) { main() }
-              
-              environment()
+              main()
             })
         """),
         "s04_preprocessing_": dedent("""
@@ -82,9 +80,7 @@ def create_r_example(folder_path):
                 preprocess_data(data)
               }
               
-              if (interactive()) { main() }
-              
-              environment()
+              main()
             })
         """),
         "s05_modeling": dedent("""
@@ -105,10 +101,8 @@ def create_r_example(folder_path):
                 data <- readRDS(file.path(interim_data, "mtcars_interim.rds"))
                 build_model(data)
               }
-              
-              if (interactive()) { main() }
-              
-              environment()
+   
+              main()
             })
         """),
         "s06_visualization": dedent("""
@@ -137,9 +131,7 @@ def create_r_example(folder_path):
                 visualize_model(data, model)
               }
               
-              if (interactive()) { main() }
-              
-              environment()
+              main()  
             })
         """)
     }
@@ -295,7 +287,7 @@ def create_stata_example(folder_path):
             global base_path ".."
             global raw_data "$base_path/data/raw"
 
-            program define s03_data_collection_main
+            program define data_collection_main
                 mkdir "$raw_data"
                 tempfile temp
                 input mpg wt hp
@@ -306,10 +298,8 @@ def create_stata_example(folder_path):
                 save "$raw_data/mtcars_raw.dta", replace
                 display "Data collection done"
             end
-
-            if ("${interactive}" != "") {
-                s03_data_collection_main
-            }
+                                      
+            data_collection_main
         """),
         "s04_preprocessing": dedent("""
             * Preprocessing code
@@ -317,7 +307,7 @@ def create_stata_example(folder_path):
             global raw_data "$base_path/data/00_raw"
             global interim_data "$base_path/data/01_interim"
 
-            program define s04_preprocessing_main
+            program define preprocessing_main
                 mkdir "$interim_data"
                 use "$raw_data/mtcars_raw.dta", clear
                 gen mpg_z = (mpg - mean(mpg))
@@ -325,9 +315,7 @@ def create_stata_example(folder_path):
                 display "s04_Preprocessing done"
             end
 
-            if ("${interactive}" != "") {
-                s04_preprocessing_main
-            }
+            preprocessing_main
         """),
         "s05_modeling": dedent("""
             * Modeling code
@@ -335,7 +323,7 @@ def create_stata_example(folder_path):
             global interim_data "$base_path/data/01_interim"
             global processed_data "$base_path/data/02_processed"
 
-            program define s05_modeling_main
+            program define modeling_main
                 mkdir "$processed_data"
                 use "$interim_data/mtcars_interim.dta", clear
                 regress mpg wt hp
@@ -343,9 +331,7 @@ def create_stata_example(folder_path):
                 display "Modeling done"
             end
 
-            if ("${interactive}" != "") {
-                s05_modeling_main
-            }
+            modeling_main
         """),
         "s06_visualization": dedent("""
             * Visualization code
@@ -354,7 +340,7 @@ def create_stata_example(folder_path):
             global processed_data "$base_path/data/02_processed"
             global figures "$base_path/results/figures"
 
-            program define s06_visualization_main
+            program define visualization_main
                 mkdir "$figures"
                 use "$interim_data/mtcars_interim.dta", clear
                 scatter mpg wt
@@ -362,9 +348,7 @@ def create_stata_example(folder_path):
                 display "Visualization done"
             end
 
-            if ("${interactive}" != "") {
-                s06_visualization_main
-            }
+            visualization_main
         """)
     }
 
@@ -381,10 +365,10 @@ def create_stata_example(folder_path):
         do s05_modeling.do
         do s06_visualization.do
 
-        s03_data_collection_main
-        s04_preprocessing_main
-        s05_modeling_main
-        s06_visualization_main
+        data_collection_main
+        preprocessing_main
+        modeling_main
+        visualization_main
     """)
     write_script(folder_path, "s00_main", ".do", main_content)
 
@@ -395,7 +379,7 @@ def create_matlab_example(folder_path):
             base_path = fullfile(fileparts(mfilename('fullpath')), '..');
             raw_data = fullfile(base_path, 'data', '00_raw');
 
-            function s03_data_collection_main()
+            function data_collection_main()
                 if ~exist(raw_data, 'dir')
                     mkdir(raw_data);
                 end
@@ -405,10 +389,9 @@ def create_matlab_example(folder_path):
                 save(fullfile(raw_data, 'mtcars_raw.mat'), 'mpg', 'wt', 'hp');
                 disp('Data collection done');
             end
-
-            if ~isdeployed
-                s03_data_collection_main();
-            end
+                                    
+            data_collection_main();
+                                      
         """),
         "s04_preprocessing": dedent("""
             % Preprocessing code
@@ -416,7 +399,7 @@ def create_matlab_example(folder_path):
             raw_data = fullfile(base_path, 'data', '00_raw');
             interim_data = fullfile(base_path, 'data', '01_interim');
 
-            function s04_preprocessing_main()
+            function preprocessing_main()
                 if ~exist(interim_data, 'dir')
                     mkdir(interim_data);
                 end
@@ -426,9 +409,8 @@ def create_matlab_example(folder_path):
                 disp('Preprocessing done');
             end
 
-            if ~isdeployed
-                s04_preprocessing_main();
-            end
+            preprocessing_main();
+                                    
         """),
         "s05_modeling": dedent("""
             % Modeling code
@@ -436,7 +418,7 @@ def create_matlab_example(folder_path):
             interim_data = fullfile(base_path, 'data', '01_interim');
             processed_data = fullfile(base_path, 'data', '02_processed');
 
-            function s05_modeling_main()
+            function modeling_main()
                 if ~exist(processed_data, 'dir')
                     mkdir(processed_data);
                 end
@@ -446,9 +428,8 @@ def create_matlab_example(folder_path):
                 disp('Modeling done');
             end
 
-            if ~isdeployed
-                s05_modeling_main();
-            end
+            modeling_main();
+                               
         """),
         "s06_visualization": dedent("""
             % Visualization code
@@ -457,7 +438,7 @@ def create_matlab_example(folder_path):
             processed_data = fullfile(base_path, 'data', '02_processed');
             figures_path = fullfile(base_path, 'results', 'figures');
 
-            function s06_visualization_main()
+            function visualization_main()
                 if ~exist(figures_path, 'dir')
                     mkdir(figures_path);
                 end
@@ -474,9 +455,8 @@ def create_matlab_example(folder_path):
                 disp('Visualization done');
             end
 
-            if ~isdeployed
-                s06_visualization_main();
-            end
+            s06_visualization_main();
+                                    
         """)
     }
 
@@ -488,10 +468,10 @@ def create_matlab_example(folder_path):
 
         run('s01_install_dependencies.m')
 
-        s03_data_collection_main();
-        s04_preprocessing_main();
-        s05_modeling_main();
-        s06_visualization_main();
+        data_collection_main();
+        preprocessing_main();
+        modeling_main();
+        visualization_main();
     """)
     write_script(folder_path, "s00_main", ".m", main_content)
 
@@ -502,7 +482,7 @@ def create_sas_example(folder_path):
             %let base_path = ..;
             %let raw_data = &base_path./data/00_raw;
 
-            %macro s03_data_collection_main();
+            %macro data_collection_main();
                 libname raw "&raw_data.";
                 data raw.mtcars_raw;
                     input mpg wt hp;
@@ -515,7 +495,7 @@ def create_sas_example(folder_path):
                 %put Data collection done;
             %mend;
 
-            %s03_data_collection_main;
+            %data_collection_main;
         """),
         "s04_preprocessing": dedent("""
             * Preprocessing code;
@@ -523,7 +503,7 @@ def create_sas_example(folder_path):
             %let raw_data = &base_path./data/00_raw;
             %let interim_data = &base_path./data/01_interim;
 
-            %macro s04_preprocessing_main();
+            %macro preprocessing_main();
                 libname raw "&raw_data.";
                 libname interim "&interim_data.";
                 data interim.mtcars_interim;
@@ -533,7 +513,7 @@ def create_sas_example(folder_path):
                 %put Preprocessing done;
             %mend;
 
-            %s04_preprocessing_main;
+            %preprocessing_main;
         """),
         "s05_modeling": dedent("""
             * Modeling code;
@@ -541,7 +521,7 @@ def create_sas_example(folder_path):
             %let interim_data = &base_path./data/01_interim;
             %let processed_data = &base_path./data/02_processed;
 
-            %macro s05_modeling_main();
+            %macro modeling_main();
                 libname interim "&interim_data.";
                 libname processed "&processed_data.";
                 proc reg data=interim.mtcars_interim outest=processed.model;
@@ -550,7 +530,7 @@ def create_sas_example(folder_path):
                 %put Modeling done;
             %mend;
 
-            %s05_modeling_main;
+            %modeling_main;
         """),
         "s06_visualization": dedent("""
             * Visualization code;
@@ -558,7 +538,7 @@ def create_sas_example(folder_path):
             %let interim_data = &base_path./data/01_interim;
             %let figures = &base_path./results/figures;
 
-            %macro s06_visualization_main();
+            %macro visualization_main();
                 libname interim "&interim_data.";
                 proc sgscatter data=interim.mtcars_interim;
                     plot mpg*wt;
@@ -567,7 +547,7 @@ def create_sas_example(folder_path):
                 %put Visualization done;
             %mend;
 
-            %s06_visualization_main;
+            %visualization_main;
         """)
     }
 
@@ -579,10 +559,10 @@ def create_sas_example(folder_path):
 
         %include "s01_install_dependencies.sas";
 
-        %s03_data_collection_main;
-        %s04_preprocessing_main;
-        %s05_modeling_main;
-        %s06_visualization_main;
+        %data_collection_main;
+        %preprocessing_main;
+        %modeling_main;
+        %visualization_main;
     """)
     write_script(folder_path, "s00_main", ".sas", main_content)
 
