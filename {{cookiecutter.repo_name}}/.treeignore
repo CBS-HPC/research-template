@@ -1,5 +1,6 @@
 bin/
 utils/
+renv/
 setup.egg-info
 .git/
 .datalad/

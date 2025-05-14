@@ -319,16 +319,16 @@ source('s05_modeling.R')
 source('s06_visualization.R')
 
 ## Run data collection
-s03_data_collection::main()
+s03_data_collection$main()
 
 ## Run preprocessing
-s04_preprocessing::main()
+s04_preprocessing$main()
 
 ## Run modeling
-s05_modeling::main()
+s05_modeling$main()
 
 ## Run visualization
-s06_visualization::main()
+s06_visualization$main()
 {% endraw %}
 """
     write_script(folder_path, file_name, extension, content)
@@ -1381,22 +1381,22 @@ def create_r_notebook(folder_path,file_name = "s00_workflow"):
 
     ## Run Data Collection
     ```{r}
-    s03_data_collection::main()
+    data_collection$main()
     ```
 
     ## Run Preprocessing
     ```{r}
-    s04_preprocessing::main()
+    preprocessing$main()
     ```
 
     ## Run Modeling
     ```{r}
-    s05_modeling::main()
+    modeling$main()
     ```
 
     ## Run Visualization
     ```{r}
-    s06_visualization::main()
+    visualization$main()
     ```
     {% endraw %}""")
 
@@ -1419,22 +1419,22 @@ def create_stata_notebook(folder_path,file_name = "s00_workflow"):
         nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("%%stata\n"
                              "do s03_data_collection.do\n"
-                             "s03_data_collection_main"),
+                             "data_collection_main"),
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%stata\n"
                              "do s04_preprocessing.do\n"
-                             "s04_preprocessing_main"),
+                             "preprocessing_main"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%stata\n"
                              "do s05_modeling.do\n"
-                             "s05_modeling_main"),
+                             "modeling_main"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%stata\n"
                              "do s06_visualization.do\n"
-                             "s06_visualization_main")
+                             "visualization_main")
     ]
 
     content.cells.extend(cells)
@@ -1459,19 +1459,19 @@ def create_matlab_notebook(folder_path,file_name = "s00_workflow"):
 
         nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "s03_data_collection_main();"),
+                             "data_collection_main();"),
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "s04_preprocessing_main();"),
+                             "preprocessing_main();"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "s05_modeling_main();"),
+                             "modeling_main();"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "s06_visualization_main();")
+                             "visualization_main();")
     ]
 
     content.cells.extend(cells)
@@ -1486,16 +1486,16 @@ def create_matlab_notebook(folder_path,file_name = "s00_workflow"):
     run('s01_install_dependencies.m');
 
     %% Run Data Collection
-    s03_data_collection_main();
+    data_collection_main();
 
     %% Run Preprocessing
-    s04_preprocessing_main();
+    preprocessing_main();
 
     %% Run Modeling
-    s05_modeling_main();
+    modeling_main();
 
     %% Run Visualization
-    s06_visualization_main();
+    visualization_main();
     """)
     write_script(folder_path, file_name, extension, content)
 
@@ -1511,16 +1511,16 @@ def create_sas_notebook(folder_path,file_name = "s00_workflow"):
         nbf.v4.new_code_cell("%%SAS\n* Ensure SAS kernel is working and paths are correctly set;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Data Collection"),
-        nbf.v4.new_code_cell("%%SAS\n%include 's03_data_collection.sas';\n%s03_data_collection_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 's03_data_collection.sas';\n%data_collection_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Preprocessing"),
-        nbf.v4.new_code_cell("%%SAS\n%include 's04_preprocessing.sas';\n%s04_preprocessing_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 's04_preprocessing.sas';\n%preprocessing_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Modeling"),
-        nbf.v4.new_code_cell("%%SAS\n%include 's05_modeling.sas';\n%s05_modeling_main;"),
+        nbf.v4.new_code_cell("%%SAS\n%include 's05_modeling.sas';\n%modeling_main;"),
 
         nbf.v4.new_markdown_cell("### Load and Run Visualization"),
-        nbf.v4.new_code_cell("%%SAS\n%include 's06_visualization.sas';\n%s06_visualization_main;")
+        nbf.v4.new_code_cell("%%SAS\n%include 's06_visualization.sas';\n%visualization_main;")
     ]
 
     content.cells.extend(cells)

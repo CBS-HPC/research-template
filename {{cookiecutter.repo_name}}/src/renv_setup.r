@@ -10,81 +10,47 @@ install_renv <- function() {
 }
 
 get_project_root <- function(path = NULL) {
-  # ------------------------------------------------------------------
-  # 1) Explicit path (file or directory) supplied by the caller
-  # ------------------------------------------------------------------
+  # 1) Explicit path supplied by the caller
   if (!is.null(path)) {
     path <- normalizePath(path, winslash = "/")
     root <- if (file.exists(path) && !dir.exists(path)) dirname(path) else path
     return(root)
   }
   
-  # ------------------------------------------------------------------
   # 2) RStudio active document
-  # ------------------------------------------------------------------
-  if (requireNamespace("rstudioapi", quietly = TRUE) &&
-      rstudioapi::isAvailable()) {
+  if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
     doc <- rstudioapi::getActiveDocumentContext()$path
     if (nzchar(doc)) {
       root <- dirname(normalizePath(doc, winslash = "/"))
+      
+      # Check if the root is inside 'src' and adjust accordingly
+      if (grepl("/src$", root)) {
+        root <- dirname(root)  # Move one level up from 'src'
+      }
+      
       message("Detected project root (RStudio): ", root)
       return(root)
     }
   }
   
-  # ------------------------------------------------------------------
-  # 3) Command-line runs ( R, Rscript, etc. )
-  # ------------------------------------------------------------------
+  # 3) Command-line runs (R, Rscript, etc.)
   args <- commandArgs(trailingOnly = FALSE)
-  
-  ## 3a) --file=/path/to/script.R  (R --file=…, R CMD BATCH, etc.)
   file_arg <- sub("^--file=", "", grep("^--file=", args, value = TRUE))
   
-  ## 3b) -f /path/to/script.R      (R -f …)
-  if (!length(file_arg)) {
-    idx <- which(args == "-f")
-    if (length(idx) && idx < length(args))
-      file_arg <- args[idx + 1]
-  }
-  
-  ## 3c) Rscript my_script.R …      (plain positional argument)
-  if (!length(file_arg)) {
-    poss <- args[grepl("\\.(r|R)$", args)]      # things ending in .R
-    poss <- poss[file.exists(poss)]             # must exist
-    if (length(poss))
-      file_arg <- poss[1]                       # take the first match
-    else {
-      # fall-back: first existing file among args (covers .Rmd, .qmd, …)
-      poss2 <- args[file.exists(args)]
-      if (length(poss2))
-        file_arg <- poss2[1]
-    }
-  }
-  
-  if (length(file_arg) && nzchar(file_arg)) {
+  # 4) Fallback - working directory
+  if (length(file_arg)) {
     root <- dirname(normalizePath(file_arg, winslash = "/"))
-    message("Detected project root (CLI): ", root)
-    return(root)
+  } else {
+    root <- normalizePath(getwd(), winslash = "/")
   }
   
-  # ------------------------------------------------------------------
-  # 4) Fallback – working directory
-  # ------------------------------------------------------------------
-  root <- normalizePath(getwd(), winslash = "/")
-  message("Fallback project root: ", root)
-  root
-}
-
-get_project_root_backup <- function(path = NULL) {
-    if (!is.null(path)) {
-      root <- normalizePath(path)
-    } else {
-      root <-  getwd()
-   }
-
-  message("Detected project root: ", root)
-  root
+  # Adjust if the root is inside 'src'
+  if (grepl("/src$", root)) {
+    root <- dirname(root)  # Move one level up from 'src'
+  }
   
+  message("Detected project root: ", root)
+  return(root)
 }
 
 ensure_project_loaded <- function(root_path) {

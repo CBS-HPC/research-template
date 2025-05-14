@@ -193,28 +193,24 @@ def setup_renv(programming_language,msg:str):
         run_script("r", cmd)
         print(msg)
 
-@ensure_correct_kernel
-def main():
-    
-    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+def update_env_files():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
-
-    # Update install files
-
-    print("Updating 'requirements.txt','environment.yml'")
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
     create_requirements_txt("requirements.txt")
     if requirements_file == "requirements.txt":
         create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
     elif requirements_file == "environment.yml": 
         export_conda_env(repo_name)
 
-    # Run dependencies search
+def update_setup_dependency():
     print("Screening './setup' for dependencies")
     setup_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
     setup_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
-    get_setup_dependencies(folder_path=setup_folder,file_name =setup_file)
+    get_setup_dependencies(folder_path=setup_folder,file_name =setup_file) 
 
+def update_src_dependency():
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     print("Screening './src' for dependencies")
     src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
     if programming_language.lower() == "python":
@@ -222,10 +218,21 @@ def main():
         get_setup_dependencies(folder_path=src_folder,file_name=src_file)
     elif programming_language.lower() == "r":
         _ = run_get_dependencies(programming_language, folder_path=src_folder)
-        setup_renv(programming_language,"renv and .lock file has been updated")
+        setup_renv(programming_language,"/renv and .lock file has been updated")
     else:
         print("not implemented yet")
-     
+
+@ensure_correct_kernel
+def main():
+    
+    print("Updating 'requirements.txt','environment.yml'")
+    update_env_files()
+
+    # Run dependencies search
+    update_setup_dependency()
+    update_src_dependency()
+
+
 
 if __name__ == "__main__":
     # Ensure the working directory is the project root

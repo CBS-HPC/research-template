@@ -8,7 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from utils.repo_tools import *
 from utils.virenv_tools import *
-from utils.get_dependencies import get_setup_dependencies, setup_renv
+from utils.get_dependencies import update_setup_dependency, update_src_dependency, update_env_files
 
 def setup_remote_repository(version_control,code_repo,repo_name,description):
     """Handle repository creation and log-in based on selected platform."""
@@ -51,32 +51,24 @@ def main():
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-    #python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+ 
 
     # Create Remote Repository
     flag = setup_remote_repository(version_control,code_repo,repo_name,project_description)
 
-    requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
-    create_requirements_txt("requirements.txt")
-    if requirements_file == "requirements.txt":
-        create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
-    elif requirements_file == "environment.yml": 
-        export_conda_env(repo_name)
-
-    folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
-    file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
-    
-    get_setup_dependencies(folder_path = folder, file_name = file)
-    
-    setup_renv(programming_language,"renv project has been setup and a renv.lock file has been created")
-
-    # Pushing to Git
-    push_msg = f" `requirements.txt`, `environment.yml`, '' and '{file}' created and 'Requirements' section in README.md updated" 
-    git_push(flag,push_msg)
+    print("Creating 'requirements.txt','environment.yml'")
+    update_env_files()
+    update_setup_dependency()
+    update_src_dependency()
 
     # Installing package:
     install_py_package()
+
+    # Pushing to Git
+    push_msg = " Created `requirements.txt`, `environment.yml`, and `dependencies.txt` in `setup` and `src`, installed Setup package and updated in README.md" 
+    git_push(flag,push_msg)
+
+    
     
 if __name__ == "__main__":
     
