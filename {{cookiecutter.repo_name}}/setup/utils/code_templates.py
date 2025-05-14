@@ -1182,8 +1182,8 @@ def create_install_matlab_dependencies(folder_path,file_name):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".m"
-    content = r"""{% raw %}  
-function install_dependencies(dependency_file)
+    content = f"""{% raw %}  
+function s01_install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
         dependency_file = 'dependencies.txt';
@@ -1459,19 +1459,19 @@ def create_matlab_notebook(folder_path,file_name = "s00_workflow"):
 
         nbf.v4.new_markdown_cell("### Run Data Collection"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "data_collection_main();"),
+                             "s03_data_collection_main();"),
 
         nbf.v4.new_markdown_cell("### Run Preprocessing"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "preprocessing_main();"),
+                             "s04_preprocessing_main();"),
 
         nbf.v4.new_markdown_cell("### Run Modeling"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "modeling_main();"),
+                             "s05_modeling_main();"),
 
         nbf.v4.new_markdown_cell("### Run Visualization"),
         nbf.v4.new_code_cell("%%matlab\n"
-                             "visualization_main();")
+                             "s06_visualization_main();")
     ]
 
     content.cells.extend(cells)

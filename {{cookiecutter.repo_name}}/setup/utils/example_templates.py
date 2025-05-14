@@ -379,7 +379,7 @@ def create_matlab_example(folder_path):
             base_path = fullfile(fileparts(mfilename('fullpath')), '..');
             raw_data = fullfile(base_path, 'data', '00_raw');
 
-            function data_collection_main()
+            function s03_data_collection_main()
                 if ~exist(raw_data, 'dir')
                     mkdir(raw_data);
                 end
@@ -390,7 +390,7 @@ def create_matlab_example(folder_path):
                 disp('Data collection done');
             end
                                     
-            data_collection_main();
+            s03_data_collection_main();
                                       
         """),
         "s04_preprocessing": dedent("""
@@ -399,7 +399,7 @@ def create_matlab_example(folder_path):
             raw_data = fullfile(base_path, 'data', '00_raw');
             interim_data = fullfile(base_path, 'data', '01_interim');
 
-            function preprocessing_main()
+            function s04_preprocessing_main()
                 if ~exist(interim_data, 'dir')
                     mkdir(interim_data);
                 end
@@ -409,7 +409,7 @@ def create_matlab_example(folder_path):
                 disp('Preprocessing done');
             end
 
-            preprocessing_main();
+            s04_preprocessing_main();
                                     
         """),
         "s05_modeling": dedent("""
@@ -418,7 +418,7 @@ def create_matlab_example(folder_path):
             interim_data = fullfile(base_path, 'data', '01_interim');
             processed_data = fullfile(base_path, 'data', '02_processed');
 
-            function modeling_main()
+            function s05_modeling_main()
                 if ~exist(processed_data, 'dir')
                     mkdir(processed_data);
                 end
@@ -428,7 +428,7 @@ def create_matlab_example(folder_path):
                 disp('Modeling done');
             end
 
-            modeling_main();
+            s05_modeling_main();
                                
         """),
         "s06_visualization": dedent("""
@@ -438,7 +438,7 @@ def create_matlab_example(folder_path):
             processed_data = fullfile(base_path, 'data', '02_processed');
             figures_path = fullfile(base_path, 'results', 'figures');
 
-            function visualization_main()
+            function s06_vvisualization_main()
                 if ~exist(figures_path, 'dir')
                     mkdir(figures_path);
                 end
@@ -468,10 +468,10 @@ def create_matlab_example(folder_path):
 
         run('s01_install_dependencies.m')
 
-        data_collection_main();
-        preprocessing_main();
-        modeling_main();
-        visualization_main();
+        s03_vdata_collection_main();
+        s04_vpreprocessing_main();
+        s05_vmodeling_main();
+        s06_vvisualization_main();
     """)
     write_script(folder_path, "s00_main", ".m", main_content)
 

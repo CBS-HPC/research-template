@@ -194,6 +194,14 @@ def setup_renv(programming_language,msg:str):
         print(output)
         print(msg)
 
+def setup_matlab(programming_language,msg:str):
+    if programming_language.lower() == "matlab":
+        # Call the setup script using the function
+        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/matlab_setup.m")))
+        output = run_script("matlab", script_path)
+        print(output)
+        print(msg)
+
 def update_env_files():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
@@ -220,6 +228,8 @@ def update_src_dependency():
     elif programming_language.lower() == "r":
         _ = run_get_dependencies(programming_language, folder_path=src_folder)
         setup_renv(programming_language,"/renv and .lock file has been updated")
+    elif programming_language.lower() == "matlab":
+        setup_matlab(programming_language,"Setup up matlab project")
     else:
         print("not implemented yet")
 
