@@ -58,7 +58,7 @@ def create_r_example(folder_path):
               main()
             })
         """),
-        "s04_preprocessing_": dedent("""
+        "s04_preprocessing": dedent("""
             s04_preprocessing <- local({
               base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
               raw_data <- file.path(base_path, "data", "00_raw")
