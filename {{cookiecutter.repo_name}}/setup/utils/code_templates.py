@@ -823,7 +823,7 @@ function get_dependencies(folder_path,file_name)
     end
 
     % Write header information
-    fprintf(fid, "Software version:"\n");
+    fprintf(fid, "Software version:\n");
     fprintf(fid, "MATLAB version: %s\n\n", version);
     fprintf(fid, "Timestamp: %s\n\n", datestr(now, 'yyyy-mm-dd HH:MM:SS'));
 
@@ -1182,7 +1182,7 @@ def create_install_matlab_dependencies(folder_path,file_name):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".m"
-    content = f"""{% raw %}  
+    content = r"""{% raw %}  
 function s01_install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
