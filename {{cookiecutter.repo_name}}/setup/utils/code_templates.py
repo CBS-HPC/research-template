@@ -895,7 +895,7 @@ get_dependencies(folder_path, file_name = "dependencies.txt")
 
 def create_get_matlab_dependencies(folder_path,file_name):
     extension = ".m"
-    content = """{% raw %}      
+    content = r"""{% raw %}      
 function get_dependencies(folder_path, file_name)
     % Initializes a MATLAB project and tracks dependencies for all .m and .mlx files in the src/ folder and its subfolders.
     %
@@ -990,6 +990,88 @@ end
 {% endraw %}
 """
     write_script(folder_path, file_name, extension, content)
+
+def create_get_stata_dependencies(folder_path,file_name):
+
+    extension = ".do"
+    content = r"""{% raw %}
+capture program drop get_dependencies
+
+program define get_dependencies
+    * If no folder path is provided, use the folder containing the .do file
+    if "`1'" == "" {
+        local folder_path = "`c(pwd)'"
+    }
+    else {
+        local folder_path "`1'"
+    }
+
+    * Check if folder exists
+    if (fileexists("`folder_path'") == 0) {
+        di "The specified folder does not exist."
+        exit
+    }
+    
+    * Get all .do files in the folder
+    local do_files : dir `folder_path' files "*.do"
+    
+    * Initialize variables to store dependencies
+    local datasets ""
+    local includes ""
+    local packages ""
+    
+    * Loop through all .do files
+    foreach do_file of local do_files {
+        * Read the content of the .do file
+        file open myfile using "`folder_path'/`do_file'", read
+        file read myfile line
+        
+        * Parse the .do file for dependencies
+        while (r(eof) == 0) {
+            * Check for dataset dependencies (use command)
+            if strpos(line, "use") > 0 {
+                local datasets `datasets' `line'
+            }
+            * Check for included .do files
+            if strpos(line, "include") > 0 {
+                local includes `includes' `line'
+            }
+            * Check for package installations
+            if strpos(line, "ssc install") > 0 | strpos(line, "net install") > 0 {
+                local packages `packages' `line'
+            }
+            
+            * Read next line
+            file read myfile line
+        }
+        file close myfile
+    }
+    
+    * Output detected dependencies
+    di "Detected Datasets:"
+    di "`datasets'"
+    
+    di "Detected Included Files:"
+    di "`includes'"
+    
+    di "Detected Package Installations:"
+    di "`packages'"
+    
+    * Optionally, save the results to a text file
+    capture file delete "`folder_path'/dependencies.txt"
+    file open out using "`folder_path'/dependencies.txt", write
+    file write out "Detected Datasets:" _n
+    file write out "`datasets'" _n
+    file write out "Detected Included Files:" _n
+    file write out "`includes'" _n
+    file write out "Detected Package Installations:" _n
+    file write out "`packages'" _n
+    file close out
+end
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)    
+
 
 # FIX ME 
 def create_get_sas_dependencies(folder_path,file_name):
