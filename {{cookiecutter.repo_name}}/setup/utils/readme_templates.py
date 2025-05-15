@@ -139,8 +139,9 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
 
         if programming_language.lower() == "r":
             setup += "#### Install R dependencies using renv:\n\n"
-            setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed using the `renv` package and the provided lock file (`renv.lock`):\n\n"
+            setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/src` directory using the `renv` package and the provided lock file (`renv.lock`):\n\n"
             setup += "```\n"
+            setup += "cd src\n\n"
             setup += "Rscript -e \"renv::restore()\"\n"
             setup += "```\n\n"
             setup += f"> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.\n\n"

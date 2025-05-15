@@ -931,14 +931,14 @@ function get_dependencies(folder_path, file_name)
     for i = 1:length(allCodeFiles)
         filePath = fullfile(allCodeFiles(i).folder, allCodeFiles(i).name);
         try
-            fprintf("📦 Analyzing dependencies for: %s\n", filePath);
+            fprintf("Analyzing dependencies for: %s\n", filePath);
             [files, products] = matlab.codetools.requiredFilesAndProducts(filePath);
 
             allFiles = [allFiles, files];
             allProducts = [allProducts, products];
             fileReports{i} = struct('path', filePath, 'status', 'OK', 'message', '');
         catch ME
-            fprintf("⚠️ Skipping due to syntax error: %s\n", filePath);
+            fprintf("Skipping due to syntax error: %s\n", filePath);
             fprintf("   ↳ %s\n", ME.message);
             fileReports{i} = struct('path', filePath, 'status', 'ERROR', 'message', ME.message);
         end
@@ -985,7 +985,7 @@ function get_dependencies(folder_path, file_name)
     end
 
     fclose(fid);
-    fprintf("📄 %s successfully written in %s\n", file_name, depFile);
+    fprintf("%s successfully written in %s\n", file_name, depFile);
 end
 {% endraw %}
 """
