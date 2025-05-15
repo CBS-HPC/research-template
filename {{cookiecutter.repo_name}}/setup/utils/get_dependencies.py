@@ -242,7 +242,7 @@ def update_src_dependency():
         #print(run_get_dependencies(programming_language, folder_path=src_folder))
         setup_matlab(programming_language,"Tracking Matlab dependencies")
     elif programming_language.lower() == "stata":
-        setup_stat(programming_language,"Tracking Stata dependencies")
+        setup_stata(programming_language,"Tracking Stata dependencies")
     else:
         print("not implemented yet")
 
