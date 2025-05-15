@@ -43,7 +43,24 @@ get_project_root <- function(path = NULL) {
   
   # 3) Command-line runs (R, Rscript, etc.)
   args <- commandArgs(trailingOnly = FALSE)
-  file_arg <- sub("^--file=", "", grep("^--file=", args, value = TRUE))
+  
+  # Match both --file=script.R and -f script.R
+  file_arg <- NULL
+  
+  # Handle --file=script.R
+  long_file <- sub("^--file=", "", grep("^--file=", args, value = TRUE))
+  
+  # Handle -f script.R
+  short_idx <- which(args == "-f")
+  if (length(short_idx) > 0 && short_idx < length(args)) {
+    short_file <- args[short_idx + 1]
+  } else {
+    short_file <- character(0)
+  }
+  
+  file_arg <- c(long_file, short_file)
+  file_arg <- file_arg[nzchar(file_arg)][1]  # Use the first non-empty match
+  
   
   # 4) Fallback - working directory
   if (length(file_arg)) {
@@ -60,7 +77,6 @@ get_project_root <- function(path = NULL) {
   message("Detected project root: ", root)
   return(root)
 }
-
 
 ensure_project_loaded <- function(root_path) {
   if (!identical(renv::project(), normalizePath(root_path))) {
