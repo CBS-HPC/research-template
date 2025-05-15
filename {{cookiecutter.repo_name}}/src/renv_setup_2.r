@@ -74,7 +74,6 @@ renv_init <- function(root_path) {
   if (!file.exists(lockfile)) {
     renv::init(project = root_path, bare = TRUE, force = TRUE)
     message("renv infrastructure created.")
-    renv::install(c("jsonlite", "rmarkdown", "rstudioapi"))
   } else {
     message("renv infrastructure already exists.")
   }
@@ -94,36 +93,34 @@ auto_snapshot <- function(root_path, do_restore = FALSE) {
   
   lockfile_path <- file.path(root_path, "renv.lock")
   
-  if (file.exists(lockfile_path)) {
-    message("???? Checking for missing packages ...")
-    
-    deps <- renv::dependencies(path = root_path)
-    used_packages <- unique(deps$Package)
-    installed <- rownames(installed.packages(lib.loc = renv::paths$library()))
-    #installed <- rownames(installed.packages())
-    missing <- setdiff(used_packages, installed)
-    
-    if (length(missing) > 0) {
-      message("???? Installing missing packages: ", paste(missing, collapse = ", "))
-      renv::install(missing)
-      #install.packages(missing, quiet = TRUE)
-    } else {
-      message("??? All required packages are already installed.")
-    }
-    
-    if (do_restore) {
-      message("???? Restoring lockfile packages ...")
-      #renv::restore(project = root_path, prompt = FALSE)
-      renv_restore(root_path = root_path,check_r_version = TRUE )
-    }
-    
+  # Step 1: Find all declared dependencies
+  message("📦 Checking for missing packages ...")
+  deps <- renv::dependencies(path = root_path, quiet = TRUE)
+  used_packages <- unique(deps$Package)
+  installed <- rownames(installed.packages())
+  missing <- setdiff(used_packages, installed)
+  
+  # Step 2: Preemptively install missing packages (suppress prompts)
+  if (length(missing) > 0) {
+    message("📦 Installing missing packages: ", paste(missing, collapse = ", "))
+    renv::install(missing)
   } else {
-    message("???? No renv.lock found. Skipping restore.")
+    message("✅ All required packages are already installed.")
   }
   
-  message("???? Creating snapshot...")
+  # Step 3: Optional restore
+  if (do_restore && file.exists(lockfile_path)) {
+    message("🕰 Restoring packages from lockfile ...")
+    renv_restore(root_path = root_path, check_r_version = TRUE)
+  } else if (!file.exists(lockfile_path)) {
+    message("⚠️ No renv.lock found. Skipping restore.")
+  }
+  
+  # Step 4: Snapshot without prompt
+  message("💾 Creating snapshot ...")
   safely_snapshot(root_path)
 }
+
 
 renv_restore <- function(root_path, check_r_version = TRUE) {
   ensure_project_loaded(root_path)

@@ -197,7 +197,7 @@ def setup_renv(programming_language,msg:str):
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
         # Call the setup script using the function
-        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/matlab_setup.m")))
+        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.m")))
         output = run_script("matlab", script_path)
         print(output)
         print(msg)
