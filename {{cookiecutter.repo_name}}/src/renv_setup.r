@@ -75,17 +75,17 @@ get_project_root <- function(path = NULL) {
   return(root)
 }
 
-ensure_project_loaded <- function(root_path) {
-  if (!identical(renv::project(), normalizePath(root_path))) {
-    renv::load(root_path, quiet = TRUE)
+ensure_project_loaded <- function(folder_path) {
+  if (!identical(renv::project(), normalizePath(folder_path))) {
+    renv::load(folder_path, quiet = TRUE)
     message("renv project loaded.")
   }
 }
 
-renv_init <- function(root_path) {
-  lockfile <- file.path(root_path, "renv.lock")
+renv_init <- function(folder_path) {
+  lockfile <- file.path(folder_path, "renv.lock")
   if (!file.exists(lockfile)) {
-    renv::init(project = root_path, bare = TRUE, force = TRUE)
+    renv::init(project = folder_path, bare = TRUE, force = TRUE)
     message("renv infrastructure created.")
     renv::install(c("jsonlite", "rmarkdown", "rstudioapi"))
   } else {
@@ -93,55 +93,58 @@ renv_init <- function(root_path) {
   }
 }
 
-safely_snapshot <- function(root_path) {
+safely_snapshot <- function(folder_path) {
   tryCatch({
-    renv::snapshot(project = root_path, prompt = FALSE)
+    renv::snapshot(project = folder_path, prompt = FALSE)
     message("??? renv.lock written / updated.")
   }, error = function(e) {
     message("?????? Snapshot failed: ", e$message)
   })
 }
 
-auto_snapshot <- function(root_path, do_restore = FALSE) {
-  ensure_project_loaded(root_path)
+auto_snapshot <- function(folder_path, do_restore = FALSE) {
+  ensure_project_loaded(folder_path)
   
-  lockfile_path <- file.path(root_path, "renv.lock")
+  lockfile_path <- file.path(folder_path, "renv.lock")
   
   if (file.exists(lockfile_path)) {
-    message("???? Checking for missing packages ...")
-    
-    deps <- renv::dependencies(path = root_path)
+    # Step 1: Find all declared dependencies
+    message("📦 Checking for missing packages ...")
+  
+    deps <- renv::dependencies(path = folder_path)
     used_packages <- unique(deps$Package)
     installed <- rownames(installed.packages(lib.loc = renv::paths$library()))
     #installed <- rownames(installed.packages())
     missing <- setdiff(used_packages, installed)
     
+    # Step 2: Preemptively install missing packages (suppress prompts)
     if (length(missing) > 0) {
-      message("???? Installing missing packages: ", paste(missing, collapse = ", "))
+      message("📦 Installing missing packages: ", paste(missing, collapse = ", "))
       renv::install(missing)
       #install.packages(missing, quiet = TRUE)
     } else {
-      message("??? All required packages are already installed.")
+      message("✅ All required packages are already installed.")
     }
     
     if (do_restore) {
-      message("???? Restoring lockfile packages ...")
-      #renv::restore(project = root_path, prompt = FALSE)
-      renv_restore(root_path = root_path,check_r_version = TRUE )
+      message("🕰 Restoring packages from lockfile ...")
+      #renv::restore(project = folder_path, prompt = FALSE)
+      renv_restore(folder_path = folder_path,check_r_version = TRUE )
     }
     
   } else {
     message("???? No renv.lock found. Skipping restore.")
   }
   
-  message("???? Creating snapshot...")
-  safely_snapshot(root_path)
+  # Step 4: Snapshot without prompt
+  message("💾 Creating snapshot ...")
+  safely_snapshot(folder_path)
 }
 
-renv_restore <- function(root_path, check_r_version = TRUE) {
-  ensure_project_loaded(root_path)
+renv_restore <- function(folder_path, check_r_version = TRUE) {
+  ensure_project_loaded(folder_path)
   
-  lockfile_path <- file.path(root_path, "renv.lock")
+  lockfile_path <- file.path(folder_path, "renv.lock")
   
   if (!file.exists(lockfile_path)) {
     stop("??? Cannot restore: renv.lock file not found at ", lockfile_path)
@@ -167,17 +170,89 @@ renv_restore <- function(root_path, check_r_version = TRUE) {
     }
   }
   
-  renv::restore(project = root_path, prompt = FALSE)
+  renv::restore(project = folder_path, prompt = FALSE)
   message("??? Packages restored from lockfile.")
 }
+
+generate_dependencies_file <- function(folder_path, file_name = "dependencies.txt") {
+  # List all .R files in the folder and subfolders (use relative paths)
+  r_files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+  
+  if (length(r_files) == 0) {
+    stop("No .R files found in the specified folder or its subfolders.")
+  }
+  
+  # Detect dependencies using renv
+  message("Analyzing dependencies in R scripts...")
+  dependencies <- renv::dependencies(path = folder_path)
+  
+  # Extract relevant columns (Package and Version)
+  dependency_list <- unique(dependencies[, c("Package", "Version")])
+  
+  # Fill in missing versions using packageVersion()
+  missing_version_idx <- is.na(dependency_list$Version) | dependency_list$Version == ""
+  dependency_list$Version[missing_version_idx] <- sapply(
+    dependency_list$Package[missing_version_idx],
+    function(pkg) {
+      if (requireNamespace(pkg, quietly = TRUE)) {
+        tryCatch(as.character(packageVersion(pkg)), error = function(e) "Not available")
+      } else {
+        "Not available"
+      }
+    }
+  )
+  
+  # Remove unused "Not available" dependencies
+  not_available <- dependency_list$Package[dependency_list$Version == "Not available"]
+  for (pkg in not_available) {
+    pkg_script <- file.path(folder_path, paste0(pkg, ".R"))
+    if (!file.exists(pkg_script) || !any(grepl(pkg, basename(r_files)))) {
+      message("Removing unused or unreferenced dependency: '", pkg, "'")
+      dependency_list <- dependency_list[dependency_list$Package != pkg, ]
+    }
+  }
+  
+  # Prepare output path
+  output_file <- file.path(folder_path, file_name)
+  
+  # Metadata
+  r_version <- paste(R.version$version.string)
+  timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+  relative_r_files <- file.path(".", gsub(paste0(normalizePath(folder_path, winslash = "/"), "/?"), "", normalizePath(r_files, winslash = "/")))
+  checked_files <- paste(relative_r_files, collapse = "\n")
+  
+  # Write header and metadata
+  writeLines(
+    c(
+      "Software version:",
+      r_version,
+      "",
+      paste("Timestamp:", timestamp),
+      "",
+      "Files checked:",
+      checked_files,
+      "",
+      "Dependencies:"
+    ),
+    con = output_file
+  )
+  
+  # Append dependency list
+  dep_lines <- paste0(dependency_list$Package, ifelse(!is.na(dependency_list$Version) & dependency_list$Version != "", paste0("==", dependency_list$Version), ""))
+  write(dep_lines, file = output_file, append = TRUE)
+  
+  message("'", file_name, "' successfully generated at ", output_file)
+}
+
 
 # ------------------------------ main -----------------------------------------
 
 args       <- commandArgs(trailingOnly = TRUE)
-root_path  <- if (length(args)) args[1] else get_project_root()
+folder_path  <- if (length(args)) args[1] else get_project_root()
 
 install_renv()
-renv_init(root_path)      # create renv/ if missing
-#renv_snapshot(root_path)  # write renv.lock (non-interactive)
-auto_snapshot(root_path, do_restore = FALSE)
-
+renv_init(folder_path)      # create renv/ if missing
+#renv_snapshot(folder_path)  # write renv.lock (non-interactive)
+auto_snapshot(folder_path, do_restore = FALSE)
+generate_dependencies_file(folder_path)
+#renv_restore(folder_path, check_r_version = TRUE)
