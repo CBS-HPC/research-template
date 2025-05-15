@@ -14,7 +14,7 @@
 
 This project template is designed to help **CBS researchers** create structured, automated, and publication-ready workflows aligned with the principles of **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
-Built with [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), the template supports **Python**, **R**, **Stata**, **Matlab**, and **SAS**, and provides an integrated framework for organizing code, managing datasets, tracking dependencies, enabling version control, and backing up research securely.
+Built with [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), the template supports **Python**, **R**, **Stata** and **Matlab**, and provides an integrated framework for organizing code, managing datasets, tracking dependencies, enabling version control, and backing up research securely.
 
 Whether you're preparing a replication package for publication, submitting data and code for peer review, or organizing internal research, this tool helps you streamline reproducible research workflows tailored to the needs of the **CBS research community**.
 
@@ -25,7 +25,7 @@ Whether you're preparing a replication package for publication, submitting data 
 🔍 **Key features:**
 
 - 📁 Effective project structure for transparent and consistent workflows  
-- 🧬 Multi-language support: Python, R, Stata, Matlab, and SAS  
+- 🧬 Multi-language support: Python, R, Stata and Matlab 
 - 🗃️ Version control via Git, Datalad, or DVC  
 - 📦 Automated script scaffolding for analysis, modeling, and visualization  
 - 🔐 Environment management via Conda or venv  
@@ -148,12 +148,12 @@ This information is used to auto-generate:
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
 ```
-├── programming_language      → [Python | R | Stata | Matlab | SAS | None]
-│   └── If R/Stata/Matlab/SAS selected:
+├── programming_language      → [Python | R | Stata | Matlab | None]
+│   └── If R/Stata/Matlab selected:
 │       └── Prompt for executable path if not auto-detected
 ```
 
-If you select **R**, **Stata**, **Matlab**, or **SAS**, the template will prompt for the path to the installed software if it is not auto-detected.
+If you select **R**, **Stata** or **Matlab** the template will prompt for the path to the installed software if it is not auto-detected.
 
 ### 🛠️ Script Generation
 
@@ -163,7 +163,6 @@ Script generation is **language-agnostic**: based on your selected language, the
 - `.R` for R  
 - `.m` for Matlab  
 - `.do` for Stata  
-- `.sas` for SAS  
 
 These starter scripts are placed in the `src/` directory and include:
 
@@ -174,7 +173,7 @@ These starter scripts are placed in the `src/` directory and include:
 ├── modeling.*          → fits models and generates outputs
 ├── visualization.*     → creates plots and summaries
 ├── utils.*             → shared helper functions (not directly executable)
-├── workflow.ipynb      → Jupyter notebook (Python, Stata, Matlab, SAS)
+├── workflow.ipynb      → Jupyter notebook (Python, Stata, Matlab)
 ├── workflow.Rmd        → RMarkdown notebook (R only)
 ```
 
@@ -205,7 +204,7 @@ Set up isolated virtual environments using **Conda**, **venv**, or your system�
 │       ├── If Venv:          → Uses current Python kernel version
 │       └── If Base:          → Uses system-installed Python
 ├── Proprietary software (if selected)
-│   └── [Stata | Matlab | SAS | R]
+│   └── [Stata | Matlab | R]
 │       ├── Searches system PATH for installed application
 │       └── Prompts user for executable path if not found
 ```
@@ -223,7 +222,7 @@ Regardless of your choice, the following files are generated to document your en
 - `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package  
 
 > ⚠️ When using **venv** or **base installation**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
-> ⚠️ If proprietary software (e.g., Stata, Matlab, SAS, R) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
+> ⚠️ If proprietary software (e.g., Stata, Matlab, R) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
 > 💡 Conda will be downloaded and installed automatically if it's not already available.
 
 </details>
@@ -392,7 +391,7 @@ You can find or update human-readable file descriptions in `file_descriptions.js
 
 > 🔁 `activate.*` and `deactivate.*` are either PowerShell (`.ps1`) or Bash (`.sh`) scripts, depending on your platform (Windows or macOS/Linux).
 
-> ✳️ Script file extensions (`.py`, `.R`, `.do`, `.m`, `.sas`) are determined by the programming language selected during project setup.
+> ✳️ Script file extensions (`.py`, `.R`, `.do`, `.m`) are determined by the programming language selected during project setup.
 
 </details>
 
@@ -450,7 +449,7 @@ Once installed, the following CLI commands become available from the terminal:
 | `run-setup` *(in progress)* | Main entry point to initialize or reconfigure the project environment.                           |
 | `update-readme`             | Regenerates the `README.md` with updated metadata and file structure.                            |
 | `reset-templates`           | Resets or regenerates script templates in `src/` based on project language.                      |
-| `code-examples`             | Generates language-specific example code and notebooks (Python, R, SAS, etc.).                   |
+| `code-examples`             | Generates language-specific example code and notebooks (Python, R, etc.).                   |
 | `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
 
 ### 🛠️ Usage

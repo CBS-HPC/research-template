@@ -49,7 +49,7 @@ def run_get_dependencies(programming_language, folder_path="./src"):
             return run_script(programming_language, script_command=script_content)
 
         elif programming_language == "r":
-            script_path = make_r_safe_path( script_path)
+            script_path = make_safe_path( script_path)
             cmd = " -f " + script_path
             return run_script(programming_language, script_command=cmd)
 
@@ -187,8 +187,8 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 def setup_renv(programming_language,msg:str):
     if programming_language.lower() == "r":
         # Call the setup script using the function
-        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.R")))
-        project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")))
+        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.R")))
+        project_root = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")))
         cmd = " -f " + script_path + " --args " + project_root
         output = run_script("r", cmd)
         print(output)
@@ -196,8 +196,10 @@ def setup_renv(programming_language,msg:str):
 
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
-        src_folder = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")))
-        cmd = f"addpath({src_folder}); get_dependencies"
+        src_folder = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")))
+        cmd = f"""
+        "addpath('{src_folder}'); get_dependencies"
+        """
         output = run_script("matlab", cmd)
         print(output)
         print(msg)
@@ -205,7 +207,7 @@ def setup_matlab(programming_language,msg:str):
 def setup_stata(programming_language,msg:str):
     if programming_language.lower() == "stata":
         # Call the setup script using the function
-        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.do")))
+        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.do")))
         cmd = f"do {script_path}"
         output = run_script("stata", cmd)
         print(output)
@@ -253,8 +255,6 @@ def main():
     # Run dependencies search
     update_setup_dependency()
     update_src_dependency()
-
-
 
 if __name__ == "__main__":
     # Ensure the working directory is the project root
