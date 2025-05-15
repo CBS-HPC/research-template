@@ -1,7 +1,5 @@
 # src/renv_setup.R -------------------------------------------------------------
 
-`%||%` <- function(x, y) if (!is.null(x)) x else y
-
 install_renv <- function() {
   if (!requireNamespace("renv", quietly = TRUE))
     install.packages("renv")
@@ -60,7 +58,6 @@ get_project_root <- function(path = NULL) {
   
   file_arg <- c(long_file, short_file)
   file_arg <- file_arg[nzchar(file_arg)][1]  # Use the first non-empty match
-  
   
   # 4) Fallback - working directory
   if (length(file_arg)) {
