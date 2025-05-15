@@ -1,9 +1,11 @@
-# src/renv_setup.R -------------------------------------------------------------
 
 install_renv <- function() {
   if (!requireNamespace("renv", quietly = TRUE))
     install.packages("renv")
   library(renv)
+  if (!requireNamespace("jsonlite", quietly = TRUE))
+    install.packages("jsonlite")
+  library("jsonlite")
   message("renv installed and loaded.")
 }
 
@@ -19,7 +21,8 @@ get_project_root <- function(path = NULL) {
   
   # 1) Explicit path supplied by the caller
   if (!is.null(path)) {
-    path <- normalizePath(path, winslash = "/")
+    #path <- normalizePath(path, winslash = "/")
+    path <- normalizePath(path, winslash = .Platform$file.sep)
     root <- if (file.exists(path) && !dir.exists(path)) dirname(path) else path
     root <- append_src_if_exists(root)
     return(root)
@@ -78,7 +81,7 @@ get_project_root <- function(path = NULL) {
 ensure_project_loaded <- function(folder_path) {
   if (!identical(renv::project(), normalizePath(folder_path))) {
     renv::load(folder_path, quiet = TRUE)
-    message("renv project loaded.")
+    message("✅ renv project loaded.")
   }
 }
 
@@ -96,9 +99,9 @@ renv_init <- function(folder_path) {
 safely_snapshot <- function(folder_path) {
   tryCatch({
     renv::snapshot(project = folder_path, prompt = FALSE)
-    message("??? renv.lock written / updated.")
+    message("✅ renv.lock written / updated.")
   }, error = function(e) {
-    message("?????? Snapshot failed: ", e$message)
+    message("❌ Snapshot failed: ", e$message)
   })
 }
 
@@ -113,8 +116,8 @@ auto_snapshot <- function(folder_path, do_restore = FALSE) {
   
     deps <- renv::dependencies(path = folder_path)
     used_packages <- unique(deps$Package)
-    installed <- rownames(installed.packages(lib.loc = renv::paths$library()))
-    #installed <- rownames(installed.packages())
+    #installed <- rownames(installed.packages(lib.loc = renv::paths$library(project = folder_path)))
+    installed <- rownames(installed.packages())
     missing <- setdiff(used_packages, installed)
     
     # Step 2: Preemptively install missing packages (suppress prompts)
@@ -133,7 +136,7 @@ auto_snapshot <- function(folder_path, do_restore = FALSE) {
     }
     
   } else {
-    message("???? No renv.lock found. Skipping restore.")
+    message("❌ No renv.lock found. Skipping restore.")
   }
   
   # Step 4: Snapshot without prompt
@@ -171,12 +174,14 @@ renv_restore <- function(folder_path, check_r_version = TRUE) {
   }
   
   renv::restore(project = folder_path, prompt = FALSE)
-  message("??? Packages restored from lockfile.")
+  message("✅ Packages restored from lockfile.")
 }
 
 generate_dependencies_file <- function(folder_path, file_name = "dependencies.txt") {
   # List all .R files in the folder and subfolders (use relative paths)
-  r_files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+  all_files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+  
+  r_files <- all_files[!grepl("/renv/", all_files)]
   
   if (length(r_files) == 0) {
     stop("No .R files found in the specified folder or its subfolders.")
@@ -244,15 +249,19 @@ generate_dependencies_file <- function(folder_path, file_name = "dependencies.tx
   message("'", file_name, "' successfully generated at ", output_file)
 }
 
+get_dependencies <- function(folder_path, file_name = "dependencies.txt"){
+  install_renv()
+  renv_init(folder_path)      # create renv/ if missing
+  #renv_snapshot(folder_path)  # write renv.lock (non-interactive)
+  auto_snapshot(folder_path, do_restore = FALSE)
+  generate_dependencies_file(folder_path,file_name )
+  #renv_restore(folder_path, check_r_version = TRUE)  
+  
+}
 
 # ------------------------------ main -----------------------------------------
 
 args       <- commandArgs(trailingOnly = TRUE)
 folder_path  <- if (length(args)) args[1] else get_project_root()
 
-install_renv()
-renv_init(folder_path)      # create renv/ if missing
-#renv_snapshot(folder_path)  # write renv.lock (non-interactive)
-auto_snapshot(folder_path, do_restore = FALSE)
-generate_dependencies_file(folder_path)
-#renv_restore(folder_path, check_r_version = TRUE)
+get_dependencies(folder_path, file_name = "dependencies.txt")

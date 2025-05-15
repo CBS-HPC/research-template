@@ -187,7 +187,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 def setup_renv(programming_language,msg:str):
     if programming_language.lower() == "r":
         # Call the setup script using the function
-        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/renv_setup.R")))
+        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.R")))
         project_root = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")))
         cmd = " -f " + script_path + " --args " + project_root
         output = run_script("r", cmd)
