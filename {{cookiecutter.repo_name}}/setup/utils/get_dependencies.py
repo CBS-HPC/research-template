@@ -197,8 +197,11 @@ def setup_renv(programming_language,msg:str):
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
         # Call the setup script using the function
-        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.m")))
-        output = run_script("matlab", script_path)
+        #script_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.m")))
+        src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
+
+        cmd = f"addpath({src_folder}); get_dependencies"
+        output = run_script("matlab", cmd)
         print(output)
         print(msg)
 
@@ -231,6 +234,8 @@ def update_src_dependency():
     elif programming_language.lower() == "matlab":
         #print(run_get_dependencies(programming_language, folder_path=src_folder))
         setup_matlab(programming_language,"Setup up matlab project")
+    elif programming_language.lower() == "stata":
+        print("hello")
     else:
         print("not implemented yet")
 

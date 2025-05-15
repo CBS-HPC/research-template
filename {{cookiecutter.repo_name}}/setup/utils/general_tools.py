@@ -668,8 +668,6 @@ def run_script(programming_language, script_command=None):
         
         elif programming_language == "matlab":
             cmd = exe_path + " -batch " + script_command 
-            #cmd = [exe_path, "-batch"]    
-           # cmd.extend(script_command)
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True, check=True
@@ -678,9 +676,8 @@ def run_script(programming_language, script_command=None):
 
         elif programming_language == "stata":
             # For Stata, run the executable with --version (or equivalent) to print version
-            cmd = exe_path +  " /q " + "about"
-            #cmd = [exe_path, "/q", "about"]   # /q quiet start, "about" prints version
-
+            cmd = exe_path +  " -b " + script_command
+   
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True
