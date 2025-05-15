@@ -752,7 +752,7 @@ auto_snapshot <- function(folder_path, do_restore = FALSE) {
     }
     
     if (do_restore) {
-      message("🕰 Restoring packages from lockfile ...")
+      message("Restoring packages from lockfile ...")
       #renv::restore(project = folder_path, prompt = FALSE)
       renv_restore(folder_path = folder_path,check_r_version = TRUE )
     }
