@@ -895,7 +895,7 @@ get_dependencies(folder_path, file_name = "dependencies.txt")
 
 def create_get_matlab_dependencies(folder_path,file_name):
     extension = ".m"
-    content = r"""{% raw %}      
+    content = """{% raw %}      
 function get_dependencies(folder_path, file_name)
     % Initializes a MATLAB project and tracks dependencies for all .m and .mlx files in the src/ folder and its subfolders.
     %
@@ -1318,7 +1318,7 @@ def create_install_matlab_dependencies(folder_path,file_name):
     folder_path (str): The directory where the install_dependencies script will be saved.
     """
     extension = ".m"
-    content = r"""{% raw %}  
+    content = """{% raw %}  
 function s01_install_dependencies(dependency_file)
     % Default dependency file
     if nargin < 1
