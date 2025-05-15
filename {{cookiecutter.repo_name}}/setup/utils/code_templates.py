@@ -939,7 +939,7 @@ function get_dependencies(folder_path, file_name)
             fileReports{i} = struct('path', filePath, 'status', 'OK', 'message', '');
         catch ME
             fprintf("Skipping due to syntax error: %s\n", filePath);
-            fprintf("   ↳ %s\n", ME.message);
+            fprintf("%s\n", ME.message);
             fileReports{i} = struct('path', filePath, 'status', 'ERROR', 'message', ME.message);
         end
     end
