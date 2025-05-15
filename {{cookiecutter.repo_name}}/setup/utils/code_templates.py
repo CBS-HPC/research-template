@@ -620,8 +620,7 @@ if __name__ == "__main__":
 
 def create_get_r_dependencies(folder_path,file_name):
     extension = ".R"
-    content = r"""{% raw %}    
-
+    content = r"""{% raw %}
 install_renv <- function() {
   if (!requireNamespace("renv", quietly = TRUE))
     install.packages("renv")
@@ -704,7 +703,7 @@ get_project_root <- function(path = NULL) {
 ensure_project_loaded <- function(folder_path) {
   if (!identical(renv::project(), normalizePath(folder_path))) {
     renv::load(folder_path, quiet = TRUE)
-    message("✅ renv project loaded.")
+    message("renv project loaded.")
   }
 }
 
@@ -722,9 +721,9 @@ renv_init <- function(folder_path) {
 safely_snapshot <- function(folder_path) {
   tryCatch({
     renv::snapshot(project = folder_path, prompt = FALSE)
-    message("✅ renv.lock written / updated.")
+    message("renv.lock written / updated.")
   }, error = function(e) {
-    message("❌ Snapshot failed: ", e$message)
+    message("Snapshot failed: ", e$message)
   })
 }
 
@@ -735,7 +734,7 @@ auto_snapshot <- function(folder_path, do_restore = FALSE) {
   
   if (file.exists(lockfile_path)) {
     # Step 1: Find all declared dependencies
-    message("📦 Checking for missing packages ...")
+    message("Checking for missing packages ...")
   
     deps <- renv::dependencies(path = folder_path)
     used_packages <- unique(deps$Package)
@@ -745,11 +744,11 @@ auto_snapshot <- function(folder_path, do_restore = FALSE) {
     
     # Step 2: Preemptively install missing packages (suppress prompts)
     if (length(missing) > 0) {
-      message("📦 Installing missing packages: ", paste(missing, collapse = ", "))
+      message("Installing missing packages: ", paste(missing, collapse = ", "))
       renv::install(missing)
       #install.packages(missing, quiet = TRUE)
     } else {
-      message("✅ All required packages are already installed.")
+      message("All required packages are already installed.")
     }
     
     if (do_restore) {
@@ -759,11 +758,11 @@ auto_snapshot <- function(folder_path, do_restore = FALSE) {
     }
     
   } else {
-    message("❌ No renv.lock found. Skipping restore.")
+    message("No renv.lock found. Skipping restore.")
   }
   
   # Step 4: Snapshot without prompt
-  message("💾 Creating snapshot ...")
+  message("Creating snapshot ...")
   safely_snapshot(folder_path)
 }
 
@@ -773,14 +772,14 @@ renv_restore <- function(folder_path, check_r_version = TRUE) {
   lockfile_path <- file.path(folder_path, "renv.lock")
   
   if (!file.exists(lockfile_path)) {
-    stop("??? Cannot restore: renv.lock file not found at ", lockfile_path)
+    stop("Cannot restore: renv.lock file not found at ", lockfile_path)
   }
   
   if (check_r_version) {
     lock <- tryCatch(
       jsonlite::read_json(lockfile_path),
       error = function(e) {
-        stop("??? Failed to parse renv.lock: ", e$message)
+        stop("Failed to parse renv.lock: ", e$message)
       }
     )
     
@@ -789,7 +788,7 @@ renv_restore <- function(folder_path, check_r_version = TRUE) {
     
     if (!identical(expect, have)) {
       warning(sprintf(
-        "?????? R version mismatch:\n  - Current:  %s\n  - Expected: %s (from lockfile)", 
+        "R version mismatch:\n  - Current:  %s\n  - Expected: %s (from lockfile)", 
         have, expect
       ))
       # If you want to abort instead, replace `warning(...)` with `stop(...)`
@@ -797,7 +796,7 @@ renv_restore <- function(folder_path, check_r_version = TRUE) {
   }
   
   renv::restore(project = folder_path, prompt = FALSE)
-  message("✅ Packages restored from lockfile.")
+  message("Packages restored from lockfile.")
 }
 
 generate_dependencies_file <- function(folder_path, file_name = "dependencies.txt") {
