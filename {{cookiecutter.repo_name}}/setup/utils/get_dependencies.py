@@ -196,12 +196,18 @@ def setup_renv(programming_language,msg:str):
 
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
-        # Call the setup script using the function
-        #script_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.m")))
-        src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
-
+        src_folder = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")))
         cmd = f"addpath({src_folder}); get_dependencies"
         output = run_script("matlab", cmd)
+        print(output)
+        print(msg)
+
+def setup_stata(programming_language,msg:str):
+    if programming_language.lower() == "stata":
+        # Call the setup script using the function
+        script_path = make_r_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.do")))
+        cmd = f"do {script_path}"
+        output = run_script("stata", cmd)
         print(output)
         print(msg)
 
@@ -229,13 +235,12 @@ def update_src_dependency():
         src_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
         get_setup_dependencies(folder_path=src_folder,file_name=src_file)
     elif programming_language.lower() == "r":
-        print(run_get_dependencies(programming_language, folder_path=src_folder))
-        #setup_renv(programming_language,"/renv and .lock file has been updated")
+        setup_renv(programming_language,"/renv and .lock file has been updated")
     elif programming_language.lower() == "matlab":
         #print(run_get_dependencies(programming_language, folder_path=src_folder))
-        setup_matlab(programming_language,"Setup up matlab project")
+        setup_matlab(programming_language,"Tracking Matlab dependencies")
     elif programming_language.lower() == "stata":
-        print("hello")
+        setup_stat(programming_language,"Tracking Stata dependencies")
     else:
         print("not implemented yet")
 
