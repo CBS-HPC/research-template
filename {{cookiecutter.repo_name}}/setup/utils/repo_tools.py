@@ -156,7 +156,7 @@ def repo_create(code_repo, username, privacy_setting, repo_name, description):
             subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
 
         # Configure credentials and push
-        subprocess.run(["git", "config", "--local", "credential.helper", "store"], check=True)
+        subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
         subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
         print(f"Repository pushed to {code_repo} on branch '{default_branch}'.")
 
@@ -186,7 +186,7 @@ def repo_create_old(code_repo,username, privacy_setting, repo_name, description)
                 subprocess.run(['glab', "repo", "create",f"--{privacy_setting}", "--description", description], check=True)
                 print(f"Repository {repo_name} created and pushed successfully.")
              
-        subprocess.run(["git", "config", "--local", "credential.helper", "store"],check=True)
+        subprocess.run(["git", "config", "--global", "credential.helper", "store"],check=True)
         subprocess.run(["git", "push", f"https://{username}:{token}@{code_repo.lower()}.com/{username}/{repo_name}.git"],check=True)
         
             
