@@ -159,9 +159,11 @@ def repo_create(code_repo, username, privacy_setting, repo_name, description):
         subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
         subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
         print(f"Repository pushed to {code_repo} on branch '{default_branch}'.")
-
+        return True, username,repo_name   # Return True if everything is successful
     except Exception as e:
         print(f"An error occurred: {e}")
+        print(f"Failed to create '{username}/{repo_name}' on Github")
+        return False, None, None 
 
 
 
