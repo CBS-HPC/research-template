@@ -130,7 +130,7 @@ def repo_create(code_repo, repo_name, project_description):
         if code_repo == "github":
             try:
                 subprocess.run(
-                    ['gh', 'repo', 'view', f'{user}/{repo_name}', '--hostname', hostname],
+                    ['gh', 'repo', 'view', f'{user}/{repo_name}'],
                     check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 print(f"Repository '{user}/{repo_name}' already exists on GitHub.")
@@ -146,14 +146,14 @@ def repo_create(code_repo, repo_name, project_description):
         elif code_repo == "gitlab":
             try:
                 subprocess.run(
-                    ['glab', 'repo', 'view', f'{user}/{repo_name}', '--hostname', hostname],
+                    ['glab', 'repo', 'view', f'{user}/{repo_name}'],
                     check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 print(f"Repository '{user}/{repo_name}' already exists on GitLab.")
             except subprocess.CalledProcessError:
                 subprocess.run(
                     ['glab', 'repo', 'create', f'--{privacy_setting}', "--description", project_description,
-                     "--name", repo_name, '--hostname', hostname],
+                     "--name", repo_name],
                     check=True
                 )
                 print(f"Repository '{repo_name}' created on GitLab.")
