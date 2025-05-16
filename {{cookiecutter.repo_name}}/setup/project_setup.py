@@ -265,7 +265,7 @@ save_to_env(code_repo,"CODE_REPO",".cookiecutter")
 git_user_info(version_control)
 
 # Set git repo info
-repo_user,_,_ = repo_user_info(version_control,repo_name,code_repo)
+repo_user,_,_,_= repo_user_info(version_control,repo_name,code_repo)
 
 # Setup RClone backup remote
 from utils.backup_tools import *
