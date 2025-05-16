@@ -506,7 +506,125 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     dcas = set_dcas()
 
     # Project header
+
+
     header = f"""# {project_name}
+
+{project_description}
+
+## 📇 Contact Information
+
+{contact}
+
+<a name="system-and-environment-information"></a>
+<details>
+<summary>📋 System and Environment Information</summary>
+
+The project was developed and tested on the following operating system:
+
+- **Operating System**: {platform.platform()}
+
+The environments were set up using:
+
+- **Project setup scripts** (`./setup`) installed with **{py_version}**
+- **Project code** (`./src`) installed with **{software_version}**
+
+Further details can be found in the [Installation](#installation) section.
+
+</details>
+
+<a name="project-activation"></a>
+<details>
+<summary>🚀 Project Activation</summary>
+
+To configure the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file.
+
+> ⚠️ The `.env` file is excluded from this repository for security reasons. To replicate the environment, please follow the instructions in the [Installation](#installation) section.
+
+{activate}
+
+</details>
+
+<a name="cli-tools"></a>
+<details>
+<summary>🔧 CLI Tools</summary>
+
+{cli_tools}
+
+</details>
+
+<a name="configuration-files-root-level"></a>
+<details>
+<summary>🗂️ Configuration Files (Root-Level)</summary>
+
+{config}
+
+</details>
+
+<a name="installation"></a>
+<details>
+<summary>💻 Installation</summary>
+
+Follow these steps to set up the project on your local machine:
+
+{install}
+
+</details>
+
+<a name="script-structure-and-usage"></a>
+<details>
+<summary>📜 Script Structure and Usage</summary>
+
+{usage}
+
+</details>
+
+<a name="dataset-list"></a>
+<details>
+<summary>📦 Dataset List</summary>
+
+To set up or configure a dataset, run the following command:
+
+```
+set-dataset
+```
+
+**The following datasets are included in the project:**
+
+| Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |
+|------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
+
+</details>
+
+<a name="code--dataset-network-analysis"></a>
+<details>
+<summary>Code & Dataset Network Analysis</summary>
+
+</details>
+
+<a name="project-directory-structure"></a>
+<details>
+<summary>📁 Project Directory Structure</summary>
+
+The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file.
+
+```
+
+```
+
+</details>
+
+<a name="creating-a-replication-package-based-on-dcas"></a>
+<details>
+<summary>📚 Creating a Replication Package Based on DCAS</summary>
+
+{dcas}
+
+</details>
+"""
+     
+    
+    header_old = f"""# {project_name}
 
 {project_description}
 
