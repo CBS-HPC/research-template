@@ -407,7 +407,8 @@ def repo_user_info(version_control, repo_name, code_repo):
         privacy_setting = None
         default_setting = "private"
 
-        while not repo_user or not privacy_setting:
+        while not hostname or not repo_user or not privacy_setting:
+            hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
             repo_user = input(f"Enter your {code_repo} username: ").strip()
             privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
 
@@ -426,8 +427,6 @@ def repo_user_info(version_control, repo_name, code_repo):
             token_env_key = "GL_TOKEN"
             user_env_key = "GITLAB_USER"
             host_env_key = "GL_HOSTNAME"
-
-        hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
 
         # Token retrieval
         token = load_from_env(token_env_key)
@@ -765,7 +764,7 @@ def make_safe_path(path: str, language: str = "python") -> str:
     if language == "python":
         return path_fixed  # Use as-is, Python handles forward slashes fine
     elif language == "r":
-        return f'"{path_fixed}"'  # Wrap in double quotes
+        return f"\"{path_fixed}\"" 
     elif language == "matlab":
         return f"'{path_fixed}'"  # Wrap in single quotes
     elif language == "stata":
@@ -773,7 +772,7 @@ def make_safe_path(path: str, language: str = "python") -> str:
     else:
         raise ValueError(f"Unsupported language: {language}")
 
-def make_safe_path(path: str) -> str:
+def make_safe_path_old(path: str) -> str:
     """Convert a file path to R-safe format (slashes + quotes)."""
     path = os.path.abspath(path)
     path_fixed = path.replace("\\", "/")  # 1. Fix slashes
