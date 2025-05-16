@@ -169,13 +169,15 @@ These starter scripts are placed in the `src/` directory and include:
 
 ```
 ├── s00_main.*                  → orchestrates the full pipeline
-├── s00_workflow.*              → Notebook (.ipynb, .Rmd, .mlx) orchestrating the full pipeline
-├── s01_install_dependencies.*  → "Installs any missing packages required for the project."
+├── s00_workflow.*              → notebook (.ipynb, .Rmd, .mlx) orchestrating the full pipeline
+├── s01_install_dependencies.*  → installs any missing packages required for the project
 ├── s02_utils.*                 → shared helper functions (not directly executable)
 ├── s03_data_collection.*       → imports or generates raw data
 ├── s04_preprocessing.*         → cleans and transforms data
 ├── s05_modeling.*              → fits models and generates outputs
 ├── s06_visualization.*         → creates plots and summaries
+├── get_dependencies.*          → retrieves and checks required dependencies for the project environment. (Utilised)
+
 ```
 
 Each script is structured to:

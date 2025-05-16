@@ -368,8 +368,9 @@ All scripts use relative paths based on their location, ensuring portability and
         md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `./src`.\n")
         md.append("### Scripts Detected in Workflow:\n")
         for kind, path in scripts:
-            name = os.path.splitext(os.path.basename(path))[0]
-            display = name.replace("_", " ").title()
+            name = os.path.basename(path)
+            display = os.path.splitext(os.path.basename(path))[0]
+            display = display.replace("_", " ").title()
             filename = os.path.basename(path)
             desc = file_descriptions.get(filename)
             if desc:
@@ -383,8 +384,8 @@ All scripts use relative paths based on their location, ensuring portability and
 
         md.append("### Execution Options:\n")
         if orchestrator:
-            md.append(f"**A. Run the full pipeline via the orchestration script:**\n")
-            md.append(f"```\n {os.path.basename(orchestrator)}\n```")
+            md.append(f"**Run the full pipeline via the orchestration script:**\n")
+            md.append(f"\n `{os.path.basename(orchestrator)}`:\n")
             try:
                 code = open(orchestrator, encoding="utf-8").read().rstrip()
                 md.append(f"```{programming_language.lower()}\n{code}\n```")
@@ -393,10 +394,10 @@ All scripts use relative paths based on their location, ensuring portability and
         else:
             md.append("_No orchestration script (`00_…`) found._")
 
-        if notebook:
-            md.append(f"**B. Step-through execution using the notebook:** `{os.path.basename(notebook)}`")
-        else:
-            md.append("_No notebook (`00_…`) found._")
+        #if notebook:
+        #    md.append(f"**B. Step-through execution using the notebook:** `{os.path.basename(notebook)}`")
+        #else:
+        #    md.append("_No notebook (`00_…`) found._")
 
         return "\n".join(md)
 
@@ -925,14 +926,15 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
         def src_file_descriptions(programming_language):
 
             src_template = {
-                "s00_main": "The entry point script that orchestrates the workflow of the project.",
-                "s01_install_dependencies": "Installs any missing {language} packages required for the project.",
-                "s02_utils": "Contains helper functions for common tasks throughout the project.",
-                "s03_data_collection": "Script to collect and import raw data from external sources.",
-                "s04_preprocessing": "Handles data cleaning and transformation tasks.",
-                "s05_modeling": "Defines the process for building and training models using the data.",
-                "s06_visualization": "Generates visual outputs such as charts, graphs, and plots.",
-                "get_dependencies": "Checks and retrieves necessary {language} package dependencies."            
+                "s00_main": "orchestrates the full pipeline",
+                "s00_workflow": "notebook orchestrating the full pipeline",
+                "s01_install_dependencies": "Installs any missing packages required for the project",
+                "s02_utils": "shared helper functions (not directly executable)",
+                "s03_data_collection": "imports or generates raw data",
+                "s04_preprocessing": "cleans and transforms data",
+                "s05_modeling": "fits models and generates outputs",
+                "s06_visualization": "creates plots and summaries",
+                "get_dependencies": "retrieves and checks required packages required for the project (Utilised)"            
             }
             
 
