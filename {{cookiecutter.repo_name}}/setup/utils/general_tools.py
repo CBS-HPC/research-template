@@ -406,6 +406,8 @@ def repo_user_info(version_control, repo_name, code_repo):
         repo_user = None 
         privacy_setting = None
         default_setting = "private"
+        hostname = None
+        default_host = {"github": "github.com", "gitlab": "gitlab.com"}.get(code_repo.lower())
 
         while not hostname or not repo_user or not privacy_setting:
             hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
@@ -418,12 +420,10 @@ def repo_user_info(version_control, repo_name, code_repo):
 
         # Ask for hostname
         if code_repo.lower() == "github":
-            default_host = "github.com"
             token_env_key = "GH_TOKEN"
             user_env_key = "GITHUB_USER"
             host_env_key = "GH_HOSTNAME"
         elif code_repo.lower() == "gitlab":
-            default_host = "gitlab.com"
             token_env_key = "GL_TOKEN"
             user_env_key = "GITLAB_USER"
             host_env_key = "GL_HOSTNAME"
