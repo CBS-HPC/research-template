@@ -89,8 +89,11 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
     except Exception as e:
         print(f"An error occurred: {e}")
         return False
+    
 
-def repo_init(code_repo,repo_name): 
+    
+
+def repo_init_old(code_repo,repo_name):  # FIX ME - Likely redundent
     
     _, _, _, command, _ = get_login_credentials(code_repo,repo_name)   
     
@@ -292,11 +295,13 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
     
-    flag = repo_login(version_control,repo_name,code_repo)
+    #flag = repo_login(version_control,repo_name,code_repo)
     
-    if not flag:
-        flag = repo_init(code_repo,repo_name)
-    if flag: 
+    #if not flag:
+    #   flag = repo_init(code_repo,repo_name)
+    
+    #if flag: 
+    if repo_login(version_control,repo_name,code_repo):
         flag, username, repo_name = repo_create(code_repo, repo_name, project_description)
         if flag:
             repo_to_env_file(code_repo,username,repo_name)
