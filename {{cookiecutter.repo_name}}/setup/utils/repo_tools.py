@@ -116,7 +116,56 @@ def repo_init(code_repo):
             print(f"{exe} auth login failed: {e}")
             return False
 
-def repo_create(code_repo,username, privacy_setting, repo_name, description):
+def repo_create(code_repo, username, privacy_setting, repo_name, description):
+    try:
+        _, token, _ = get_login_credentials(code_repo)
+
+        if not token:
+            raise ValueError("Authentication token not found.")
+
+        code_repo = code_repo.lower()
+        if code_repo not in ["github", "gitlab"]:
+            raise ValueError("Unsupported code repository. Choose 'github' or 'gitlab'.")
+
+        domain = "github.com" if code_repo == "github" else "gitlab.com"
+        default_branch = "main" if code_repo == "github" else "master"
+        remote_url = f"https://{username}:{token}@{domain}/{username}/{repo_name}.git"
+
+        # Create or check the repo
+        if code_repo == "github":
+            try:
+                subprocess.run(['gh', 'repo', 'view', f'{username}/{repo_name}'],check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"Repository '{username}/{repo_name}' already exists on GitHub.")
+            except subprocess.CalledProcessError:
+                subprocess.run(['gh', 'repo', 'create', f'{username}/{repo_name}',f'--{privacy_setting}', "--description", description,"--source", ".", "--push"], check=True)
+                print(f"Repository '{repo_name}' created and pushed successfully on GitHub.")
+
+        elif code_repo == "gitlab":
+            try:
+                subprocess.run(['glab', 'repo', 'view', f'{username}/{repo_name}'],check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"Repository '{username}/{repo_name}' already exists on GitLab.")
+            except subprocess.CalledProcessError:
+                subprocess.run(['glab', 'repo', 'create',f'--{privacy_setting}', "--description", description,"--name", repo_name], check=True)
+                print(f"Repository '{repo_name}' created on GitLab.")
+
+        # Set the remote URL
+        remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
+        if "origin" not in remotes.stdout:
+            subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
+        else:
+            subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
+
+        # Configure credentials and push
+        subprocess.run(["git", "config", "--local", "credential.helper", "store"], check=True)
+        subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
+        print(f"Repository pushed to {code_repo} on branch '{default_branch}'.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+
+def repo_create_old(code_repo,username, privacy_setting, repo_name, description):
     
     try:
         _, token, _= get_login_credentials(code_repo)
@@ -137,7 +186,7 @@ def repo_create(code_repo,username, privacy_setting, repo_name, description):
                 subprocess.run(['glab', "repo", "create",f"--{privacy_setting}", "--description", description], check=True)
                 print(f"Repository {repo_name} created and pushed successfully.")
              
-        subprocess.run(["git", "config", "--global", "credential.helper", "store"],check=True)
+        subprocess.run(["git", "config", "--local", "credential.helper", "store"],check=True)
         subprocess.run(["git", "push", f"https://{username}:{token}@{code_repo.lower()}.com/{username}/{repo_name}.git"],check=True)
         
             

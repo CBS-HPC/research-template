@@ -153,10 +153,10 @@ def check_git_config():
 
         # Check the current Git user configuration
         current_name = subprocess.run(
-            ["git", "config", "--global", "user.name"],
+            ["git", "config", "--local", "user.name"],
             capture_output=True, text=True, check=True)
         current_email = subprocess.run(
-            ["git", "config", "--global", "user.email"],
+            ["git", "config", "--local", "user.email"],
             capture_output=True, text=True, check=True)
         
         # Handle potential UnicodeDecodeError
@@ -199,9 +199,9 @@ def setup_git_config(version_control,git_name,git_email):
         if not git_name or not git_email:
             git_name,git_email = git_user_info(version_control)
 
-        # Configure Git user name and email globally
-        subprocess.run(["git", "config", "--global", "user.name", git_name], check=True)
-        subprocess.run(["git", "config", "--global", "user.email", git_email], check=True)
+        # Configure Git user name and email locally
+        subprocess.run(["git", "config", "--local", "user.name", git_name], check=True)
+        subprocess.run(["git", "config", "--local", "user.email", git_email], check=True)
 
         print(f"Git configured with name: {git_name} and email: {git_email}")
         return True,git_name,git_email
