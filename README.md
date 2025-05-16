@@ -446,7 +446,7 @@ Once installed, the following CLI commands become available from the terminal:
 
 | Command                     | Description                                                                                       |
 |-----------------------------|---------------------------------------------------------------------------------------------------|
-| `run-backup`                | Executes a full project backup using preconfigured rules and paths.                               |
+| `push-backup`                | Executes a full project backup using preconfigured rules and paths.                               |
 | `set-dataset`               | Initializes or registers datasets (e.g., add metadata, sync folders).                            |
 | `update-dependencies`       | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`.                   |
 | `run-setup` *(in progress)* | Main entry point to initialize or reconfigure the project environment.                           |

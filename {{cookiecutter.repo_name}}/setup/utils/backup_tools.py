@@ -179,7 +179,7 @@ def check_rclone_remote(remote_name):
         return False
 
 @ensure_correct_kernel
-def run_backup(remote_backups,repo_name):
+def push_backup(remote_backups,repo_name):
     
     # Change to project root directory
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -213,7 +213,7 @@ def main():
 
     repo_name = args.repo_name or load_from_env("REPO_NAME", ".cookiecutter")
     remote_backup = args.remote_backup or load_from_env("REMOTE_BACKUP", ".cookiecutter")
-    run_backup(remote_backup, repo_name)
+    push_backup(remote_backup, repo_name)
 
 if __name__ == "__main__":
     

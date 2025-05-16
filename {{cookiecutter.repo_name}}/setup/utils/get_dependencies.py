@@ -198,7 +198,7 @@ def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
         src_folder = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")))
         cmd = f"""
-        "addpath('{src_folder}'); get_dependencies"
+        "addpath({src_folder}); get_dependencies"
         """
         output = run_script("matlab", cmd)
         print(output)

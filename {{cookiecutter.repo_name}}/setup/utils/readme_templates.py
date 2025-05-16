@@ -445,7 +445,7 @@ After installing the setup package, the following commands become available from
 
 | Command                  | Description                                                                                 |
 |--------------------------|---------------------------------------------------------------------------------------------|
-| `run-backup`             | Executes a full project backup using preconfigured rules and paths.                         |
+| `push-backup`             | Executes a full project backup using preconfigured rules and paths.                         |
 | `set-dataset`            | Initializes or registers datasets for use in the project (e.g., adds metadata or links).    |
 | `update-dependencies`    | Retrieves current dependencies required by the project `./setup` and `./src`.               |
 | `run-setup` (in progress)| Main entry point to initialize or reconfigure the project environment.                      |
