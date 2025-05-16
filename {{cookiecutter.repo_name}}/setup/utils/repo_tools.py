@@ -90,7 +90,9 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         print(f"An error occurred: {e}")
         return False
 
-def repo_init(code_repo):    
+def repo_init(code_repo,repo_name): 
+    
+    _, _, _, command, _ = get_login_credentials(code_repo,repo_name)   
     
     if code_repo.lower() == "github":
         exe = "gh"
@@ -99,13 +101,16 @@ def repo_init(code_repo):
     else:
         return False
     
+    if not command:
+        command = [exe, "auth", "login"]
+    
     try:
         # Check if the user is logged in
         subprocess.run([exe, "auth", "status"], capture_output=True, text=True, check=True)
         return True 
     except Exception as e:
         try:
-            subprocess.run([exe, "auth", "login"], check=True)
+            subprocess.run(command, check=True)
             return True        
         except Exception as e:
             print(f"{exe} auth login failed: {e}")
@@ -115,19 +120,7 @@ def repo_create(code_repo, repo_name, project_description):
     try:
         user, token, hostname, _, privacy_setting = get_login_credentials(code_repo,repo_name)
 
-        if not token:
-            raise ValueError("Authentication token not found.")
-
-        code_repo = code_repo.lower()
-        if code_repo not in ["github", "gitlab"]:
-            raise ValueError("Unsupported code repository. Choose 'github' or 'gitlab'.")
-
-        # Use hostname from credentials (fallback already handled in get_login_credentials)
-        default_branch = "main" if code_repo == "github" else "master"
-        remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
-
-        # Create or check the repo
-        if code_repo == "github":
+        def create_gh():
             try:
                 subprocess.run(
                     ['gh', 'repo', 'view', f'{user}/{repo_name}'],
@@ -143,20 +136,37 @@ def repo_create(code_repo, repo_name, project_description):
                 )
                 print(f"Repository '{repo_name}' created and pushed successfully on GitHub.")
 
-        elif code_repo == "gitlab":
+        def create_gl():
             try:
                 subprocess.run(
-                    ['glab', 'repo', 'view', f'{user}/{repo_name}'],
+                    ['glab', 'repo', 'view', f'{user}/{repo_name}'], #"--hostname", hostname
                     check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 print(f"Repository '{user}/{repo_name}' already exists on GitLab.")
             except subprocess.CalledProcessError:
                 subprocess.run(
                     ['glab', 'repo', 'create', f'--{privacy_setting}', "--description", project_description,
-                     "--name", repo_name],
+                     "--name", repo_name], #"--hostname", hostname
                     check=True
                 )
                 print(f"Repository '{repo_name}' created on GitLab.")
+
+        if not token:
+            raise ValueError("Authentication token not found.")
+
+        code_repo = code_repo.lower()
+        if code_repo not in ["github", "gitlab"]:
+            raise ValueError("Unsupported code repository. Choose 'github' or 'gitlab'.")
+
+        # Use hostname from credentials (fallback already handled in get_login_credentials)
+        default_branch = "main" if code_repo == "github" else "master"
+        remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
+
+        # Create or check the repo
+        if code_repo == "github":
+            create_gh()
+        elif code_repo == "gitlab":
+            create_gl()
 
         # Set the remote URL
         remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
@@ -285,7 +295,7 @@ def setup_repo(version_control,code_repo,repo_name,project_description):
     flag = repo_login(version_control,repo_name,code_repo)
     
     if not flag:
-        flag = repo_init(code_repo)
+        flag = repo_init(code_repo,repo_name)
     if flag: 
         flag, username, repo_name = repo_create(code_repo, repo_name, project_description)
         if flag:
