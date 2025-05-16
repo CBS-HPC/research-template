@@ -15,36 +15,31 @@ pip_installer(required_libraries =  ['requests'])
 import requests
 
 # GitHub and Gitlad Functions
-def repo_details(version_control,code_repo,repo_name):
-    username = load_from_env(f"{code_repo.upper()}_USER")
-    privacy_setting = load_from_env(f"{code_repo.upper()}_PRIVACY")
 
-    if not username or not privacy_setting:
-        username, privacy_setting, _ = repo_user_info(version_control,repo_name,code_repo)
-
-    return username, privacy_setting
-
-def get_login_credentials(code_repo):
+def get_login_credentials(code_repo,repo_name):
     """Returns the user, token, and command based on the code repository."""
     if code_repo.lower() == "github":
         user = load_from_env('GITHUB_USER')
         token = load_from_env('GH_TOKEN')
-        command = ['gh', 'auth', 'login', '--with-token']
+        hostname = load_from_env('GH_HOSTNAME') or "github.com"
+        command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
+         #command = ['gh', 'auth', 'login', '--with-token']
+        privacy_setting = load_from_env("GITHUB_PRIVACY")
 
     elif code_repo.lower() == "gitlab":
         user = load_from_env('GITLAB_USER')
         token = load_from_env('GL_TOKEN')
-        hostname = load_from_env('GL_HOSTNAME')
-        command =[]
-        if hostname:
-            command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
-        #else:
-        #    return None, None, None
-
+        hostname = load_from_env('GL_HOSTNAME') or "gitlab.com"
+        command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
+        privacy_setting = load_from_env("GITLAB_PRIVACY")
     else:
-        return None, None, None
+        return None, None, None, None, None
+    
+    if not user or not token or not privacy_setting:
+        version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
+        user, privacy_setting, token, hostname = repo_user_info(version_control,repo_name,code_repo)
 
-    return user, token, command
+    return user, token, hostname, command, privacy_setting
 
 def repo_login(version_control = None, repo_name = None , code_repo = None):
 
@@ -69,7 +64,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
 
     try:
         # Get login details based on the repository type
-        user, token, command = get_login_credentials(code_repo)
+        user, token, _, command, _=  get_login_credentials(code_repo,repo_name)
 
         # Return False if no command is found (invalid code_repo)
         if not command:
@@ -77,7 +72,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
 
         # If user or token is missing, attempt to retrieve them
         if not user or not token:
-            user, _, token = repo_user_info(version_control, repo_name, code_repo)
+            user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
 
         # Attempt authentication if both user and token are provided
         if user and token:
@@ -85,7 +80,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
                 return True
             else:
                 # Retry with fresh credentials if authentication failed
-                user, _, token = repo_user_info(version_control, repo_name, code_repo)
+                user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
                 if user and token and authenticate(command, token):
                     return True
 
@@ -116,9 +111,9 @@ def repo_init(code_repo):
             print(f"{exe} auth login failed: {e}")
             return False
 
-def repo_create(code_repo, username, privacy_setting, repo_name, description):
+def repo_create(code_repo, repo_name, project_description):
     try:
-        _, token, _ = get_login_credentials(code_repo)
+        user, token, hostname, _, privacy_setting = get_login_credentials(code_repo,repo_name)
 
         if not token:
             raise ValueError("Authentication token not found.")
@@ -127,25 +122,40 @@ def repo_create(code_repo, username, privacy_setting, repo_name, description):
         if code_repo not in ["github", "gitlab"]:
             raise ValueError("Unsupported code repository. Choose 'github' or 'gitlab'.")
 
-        domain = "github.com" if code_repo == "github" else "gitlab.com"
+        # Use hostname from credentials (fallback already handled in get_login_credentials)
         default_branch = "main" if code_repo == "github" else "master"
-        remote_url = f"https://{username}:{token}@{domain}/{username}/{repo_name}.git"
+        remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
 
         # Create or check the repo
         if code_repo == "github":
             try:
-                subprocess.run(['gh', 'repo', 'view', f'{username}/{repo_name}'],check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                print(f"Repository '{username}/{repo_name}' already exists on GitHub.")
+                subprocess.run(
+                    ['gh', 'repo', 'view', f'{user}/{repo_name}', '--hostname', hostname],
+                    check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                print(f"Repository '{user}/{repo_name}' already exists on GitHub.")
             except subprocess.CalledProcessError:
-                subprocess.run(['gh', 'repo', 'create', f'{username}/{repo_name}',f'--{privacy_setting}', "--description", description,"--source", ".", "--push"], check=True)
+                subprocess.run(
+                    ['gh', 'repo', 'create', f'{user}/{repo_name}',
+                     f'--{privacy_setting}', "--description", project_description,
+                     "--source", ".", "--push", "--hostname", hostname],
+                    check=True
+                )
                 print(f"Repository '{repo_name}' created and pushed successfully on GitHub.")
 
         elif code_repo == "gitlab":
             try:
-                subprocess.run(['glab', 'repo', 'view', f'{username}/{repo_name}'],check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                print(f"Repository '{username}/{repo_name}' already exists on GitLab.")
+                subprocess.run(
+                    ['glab', 'repo', 'view', f'{user}/{repo_name}', '--hostname', hostname],
+                    check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                print(f"Repository '{user}/{repo_name}' already exists on GitLab.")
             except subprocess.CalledProcessError:
-                subprocess.run(['glab', 'repo', 'create',f'--{privacy_setting}', "--description", description,"--name", repo_name], check=True)
+                subprocess.run(
+                    ['glab', 'repo', 'create', f'--{privacy_setting}', "--description", project_description,
+                     "--name", repo_name, '--hostname', hostname],
+                    check=True
+                )
                 print(f"Repository '{repo_name}' created on GitLab.")
 
         # Set the remote URL
@@ -158,44 +168,13 @@ def repo_create(code_repo, username, privacy_setting, repo_name, description):
         # Configure credentials and push
         subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
         subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
-        print(f"Repository pushed to {code_repo} on branch '{default_branch}'.")
-        return True, username,repo_name   # Return True if everything is successful
+        print(f"Repository pushed to {hostname} on branch '{default_branch}'.")
+        return True, user, repo_name
+
     except Exception as e:
         print(f"An error occurred: {e}")
-        print(f"Failed to create '{username}/{repo_name}' on Github")
-        return False, None, None 
-
-
-
-def repo_create_old(code_repo,username, privacy_setting, repo_name, description):
-    
-    try:
-        _, token, _= get_login_credentials(code_repo)
-
-        if code_repo.lower() ==  "github":
-            try:
-                subprocess.run(['gh', 'repo', 'view', f'{username}/{repo_name}'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                print(f"Repository '{username}/{repo_name}' already exists on GitHub.")
-            except subprocess.CalledProcessError:
-                subprocess.run(['gh', "repo", "create", f"{username}/{repo_name}",f"--{privacy_setting}", "--description", description, "--source", ".", "--push"], check=True)
-                print(f"Repository {repo_name} created and pushed successfully.")
-
-        elif code_repo.lower() == "gitlab":
-            try:
-                subprocess.run(['glab', 'repo', 'view', f'{username}/{repo_name}'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                print(f"Repository '{username}/{repo_name}' already exists on GitLab.")
-            except subprocess.CalledProcessError:
-                subprocess.run(['glab', "repo", "create",f"--{privacy_setting}", "--description", description], check=True)
-                print(f"Repository {repo_name} created and pushed successfully.")
-             
-        subprocess.run(["git", "config", "--global", "credential.helper", "store"],check=True)
-        subprocess.run(["git", "push", f"https://{username}:{token}@{code_repo.lower()}.com/{username}/{repo_name}.git"],check=True)
-        
-            
-        return True, username,repo_name   # Return True if everything is successful
-    except Exception as e:
-        print(f"Failed to create '{username}/{repo_name}' on Github")
-        return False, None, None 
+        print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
+        return False, None, None
 
 def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     """
@@ -301,16 +280,14 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     
     print(f"{code_repo} username and token added to {env_file}")
 
-def setup_repo(version_control,code_repo,repo_name,description):
+def setup_repo(version_control,code_repo,repo_name,project_description):
     
     flag = repo_login(version_control,repo_name,code_repo)
     
     if not flag:
         flag = repo_init(code_repo)
-    
     if flag: 
-        username,privacy_setting = repo_details(version_control,code_repo,repo_name)
-        flag, username, repo_name = repo_create(code_repo,username,privacy_setting,repo_name,description)
+        flag, username, repo_name = repo_create(code_repo, repo_name, project_description)
         if flag:
             repo_to_env_file(code_repo,username,repo_name)
         return flag

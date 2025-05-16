@@ -10,7 +10,7 @@ from utils.repo_tools import *
 from utils.virenv_tools import *
 from utils.get_dependencies import update_setup_dependency, update_src_dependency, update_env_files
 
-def setup_remote_repository(version_control,code_repo,repo_name,description):
+def setup_remote_repository(version_control,code_repo,repo_name,project_description):
     """Handle repository creation and log-in based on selected platform."""
 
     # Change Dir to project_root
@@ -25,7 +25,7 @@ def setup_remote_repository(version_control,code_repo,repo_name,description):
     else:
         return False 
     if flag:    
-        flag = setup_repo(version_control,code_repo,repo_name,description) 
+        flag = setup_repo(version_control,code_repo,repo_name,project_description) 
     if not flag:
         save_to_env("None","CODE_REPO",".cookiecutter")
     return flag
