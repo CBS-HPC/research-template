@@ -35,11 +35,11 @@ def get_login_credentials(code_repo):
         user = load_from_env('GITLAB_USER')
         token = load_from_env('GL_TOKEN')
         hostname = load_from_env('GL_HOSTNAME')
-
+        command =[]
         if hostname:
             command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
-        else:
-            return None, None, None
+        #else:
+        #    return None, None, None
 
     else:
         return None, None, None
