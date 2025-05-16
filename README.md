@@ -159,22 +159,23 @@ If you select **R**, **Stata** or **Matlab** the template will prompt for the pa
 
 Script generation is **language-agnostic**: based on your selected language, the template will create files with the appropriate extensions:
 
-- `.py` for Python  
-- `.R` for R  
-- `.m` for Matlab  
-- `.do` for Stata  
+- `.py` (scripts) and `.ipynb` (notebooks) for Python
+- `.R` (scripts) and `.Rmd` (notebooks) for R
+- `.m`(scripts) and `.mlx` (notebooks) for Matlab 
+- `.do` (scripts) and `.ipynb` (notebooks) for Stata
+
 
 These starter scripts are placed in the `src/` directory and include:
 
 ```
-├── main.*              → orchestrates the full pipeline
-├── data_collection.*   → imports or generates raw data
-├── preprocessing.*     → cleans and transforms data
-├── modeling.*          → fits models and generates outputs
-├── visualization.*     → creates plots and summaries
-├── utils.*             → shared helper functions (not directly executable)
-├── workflow.ipynb      → Jupyter notebook (Python, Stata, Matlab)
-├── workflow.Rmd        → RMarkdown notebook (R only)
+├── s00_main.*                  → orchestrates the full pipeline
+├── s00_workflow.*              → Notebook (.ipynb, .Rmd, .mlx) orchestrating the full pipeline
+├── s01_install_dependencies.*  → "Installs any missing packages required for the project."
+├── s02_utils.*                 → shared helper functions (not directly executable)
+├── s03_data_collection.*       → imports or generates raw data
+├── s04_preprocessing.*         → cleans and transforms data
+├── s05_modeling.*              → fits models and generates outputs
+├── s06_visualization.*         → creates plots and summaries
 ```
 
 Each script is structured to:
