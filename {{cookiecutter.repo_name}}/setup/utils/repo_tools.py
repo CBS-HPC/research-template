@@ -41,9 +41,100 @@ def get_login_credentials(code_repo,repo_name):
 
     return user, token, hostname, command, privacy_setting
 
+def get_login_credentials_codeberg(code_repo, repo_name):
+    """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
+    code_repo = code_repo.lower()
+
+    if code_repo == "github":
+        user = load_from_env('GITHUB_USER')
+        token = load_from_env('GH_TOKEN')
+        hostname = load_from_env('GH_HOSTNAME') or "github.com"
+        command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
+        privacy_setting = load_from_env("GITHUB_PRIVACY")
+
+    elif code_repo == "gitlab":
+        user = load_from_env('GITLAB_USER')
+        token = load_from_env('GL_TOKEN')
+        hostname = load_from_env('GL_HOSTNAME') or "gitlab.com"
+        command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
+        privacy_setting = load_from_env("GITLAB_PRIVACY")
+
+    elif code_repo == "codeberg":
+        user = load_from_env('CODEBERG_USER')
+        token = load_from_env('CODEBERG_TOKEN')
+        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
+        command = None  # No CLI login for Codeberg
+        privacy_setting = load_from_env("CODEBERG_PRIVACY")
+
+    else:
+        return None, None, None, None, None
+
+    # Fallback to repo_user_info if anything critical is missing
+    if not user or not token or not privacy_setting:
+        version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
+        user, privacy_setting, token, hostname = repo_user_info(version_control, repo_name, code_repo)
+
+    return user, token, hostname, command, privacy_setting
+
+def repo_login_codeberg(version_control=None, repo_name=None, code_repo=None):
+    def authenticate(command, token):
+        """Attempts to authenticate using the provided command and token."""
+        try:
+            subprocess.run(command, input=token, text=True, capture_output=True, check=True)
+            return True
+        except Exception:
+            return False
+
+    def authenticate_codeberg(token, hostname):
+        """Authenticates with Codeberg by making an API call."""
+        try:
+            response = requests.get(
+                f"https://{hostname}/api/v1/user",
+                headers={"Authorization": f"token {token}"}
+            )
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    # Load fallback values if not provided
+    if not version_control:
+        version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
+    if not repo_name:
+        repo_name = load_from_env("REPO_NAME", ".cookiecutter")
+    if not code_repo:
+        code_repo = load_from_env("CODE_REPO", ".cookiecutter")
+
+    # Check that all values are now set
+    if not (version_control and repo_name and code_repo):
+        return False
+
+    try:
+        # Get login credentials
+        user, token, hostname, command, _ = get_login_credentials(code_repo, repo_name)
+
+        if not user or not token:
+            user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
+
+        if not token:
+            return False
+
+        code_repo = code_repo.lower()
+
+        if code_repo == "codeberg":
+            return authenticate_codeberg(token, hostname)
+
+        if not command:
+            return False
+
+        # Authenticate using CLI for GitHub or GitLab
+        return authenticate(command, token)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
 def repo_login(version_control = None, repo_name = None , code_repo = None):
 
-  
     def authenticate(command, token):
         """Attempts to authenticate using the provided command and token."""
         try:
@@ -90,10 +181,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         print(f"An error occurred: {e}")
         return False
     
-
-    
-
-def repo_init_old(code_repo,repo_name):  # FIX ME - Likely redundent
+def repo_init(code_repo,repo_name):  # FIX ME - Likely redundent
     
     _, _, _, command, _ = get_login_credentials(code_repo,repo_name)   
     
@@ -154,11 +242,31 @@ def repo_create(code_repo, repo_name, project_description):
                 )
                 print(f"Repository '{repo_name}' created on GitLab.")
 
+        def create_cb():
+            api_url = f"https://{hostname}/api/v1/user/repos"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"token {token}"
+            }
+            payload = {
+                "name": repo_name,
+                "description": project_description,
+                "private": (privacy_setting == "private"),
+                "auto_init": True
+            }
+            response = requests.post(api_url, headers=headers, json=payload)
+            if response.status_code == 201:
+                print(f"Repository '{repo_name}' created successfully on Codeberg.")
+            elif response.status_code == 409:
+                print(f"Repository '{repo_name}' already exists on Codeberg.")
+            else:
+                raise Exception(f"Codeberg repo creation failed: {response.status_code} {response.text}")
+
         if not token:
             raise ValueError("Authentication token not found.")
 
         code_repo = code_repo.lower()
-        if code_repo not in ["github", "gitlab"]:
+        if code_repo not in ["github", "gitlab", "codeberg"]:
             raise ValueError("Unsupported code repository. Choose 'github' or 'gitlab'.")
 
         # Use hostname from credentials (fallback already handled in get_login_credentials)
@@ -170,6 +278,8 @@ def repo_create(code_repo, repo_name, project_description):
             create_gh()
         elif code_repo == "gitlab":
             create_gl()
+        elif code_repo == "codeberg":
+            create_cb()
 
         # Set the remote URL
         remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
@@ -295,13 +405,12 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
     
-    #flag = repo_login(version_control,repo_name,code_repo)
+    flag = repo_login(version_control,repo_name,code_repo)
     
-    #if not flag:
-    #   flag = repo_init(code_repo,repo_name)
+    if not flag:
+       flag = repo_init(code_repo,repo_name)
     
-    #if flag: 
-    if repo_login(version_control,repo_name,code_repo):
+    if flag:
         flag, username, repo_name = repo_create(code_repo, repo_name, project_description)
         if flag:
             repo_to_env_file(code_repo,username,repo_name)
