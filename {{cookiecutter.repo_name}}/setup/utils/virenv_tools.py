@@ -118,7 +118,7 @@ def set_pip_packages(version_control,programming_language):
     elif programming_language.lower()  == 'stata':
         install_packages.extend(['jupyterlab','stata_setup'])
     elif programming_language.lower()  == 'matlab':
-        #install_packages.extend(['jupyterlab','jupyter-matlab-proxy'])
+        install_packages.extend(['jupyterlab','jupyter-matlab-proxy'])
     elif programming_language.lower() == 'sas':
         install_packages.extend(['jupyterlab','saspy'])
 
