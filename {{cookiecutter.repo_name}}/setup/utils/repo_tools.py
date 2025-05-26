@@ -22,8 +22,8 @@ def get_login_credentials(code_repo,repo_name):
         user = load_from_env('GITHUB_USER')
         token = load_from_env('GH_TOKEN')
         hostname = load_from_env('GH_HOSTNAME') or "github.com"
-        command = ['gh', 'auth', 'login', '--with-token']
-        #command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
+        #command = ['gh', 'auth', 'login', '--with-token']
+        command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
          #command = ['gh', 'auth', 'login', '--with-token']
         privacy_setting = load_from_env("GITHUB_PRIVACY")
 
@@ -31,8 +31,8 @@ def get_login_credentials(code_repo,repo_name):
         user = load_from_env('GITLAB_USER')
         token = load_from_env('GL_TOKEN')
         hostname = load_from_env('GL_HOSTNAME') or "gitlab.com"
-        command = ['glab', 'auth', 'login','--token']
-        #command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
+        #command = ['glab', 'auth', 'login','--token']
+        command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
         privacy_setting = load_from_env("GITLAB_PRIVACY")
     else:
         return None, None, None, None, None
@@ -141,8 +141,10 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         """Attempts to authenticate using the provided command and token."""
         try:
             subprocess.run(command, input=token, text=True, capture_output=True)
+            print("dre")
             return True
         except Exception as e:
+            print("dre2")
             return False
 
     if not version_control:
