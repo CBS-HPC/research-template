@@ -154,7 +154,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
     if not code_repo:
         code_repo = load_from_env("CODE_REPO",".cookiecutter")
 
-    if not version_control or repo_name or code_repo:
+    if not version_control or not repo_name or not code_repo:
         print("dre5")
         return False 
     print("dre6")
