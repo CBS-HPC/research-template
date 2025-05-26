@@ -21,15 +21,15 @@ def setup_remote_repository(version_control, code_repo, repo_name, project_descr
     if not version_control or not os.path.isdir(".git"):
         return False
 
-    # Install CLI tools if needed
-    cli_installed = {
-        "github": install_gh("./bin/gh"),
-        "gitlab": install_glab("./bin/glab"),
-        "codeberg": True  # No CLI tool needed
-    }.get(code_repo.lower(), False)
+    if code_repo.lower() == "github":
+        success = install_gh("./bin/gh")     
+    elif code_repo.lower() == "gitlab":
+        success  = install_glab("./bin/glab")
+    else:
+        success= True
 
     # Setup repository if CLI tool installed
-    if cli_installed:
+    if success:
         success = setup_repo(version_control, code_repo, repo_name, project_description)
     else:
         success = False

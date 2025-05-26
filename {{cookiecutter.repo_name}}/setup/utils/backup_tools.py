@@ -84,25 +84,46 @@ def rclone_remote(remote_name: str = "deic storage",email:str = None, password:s
         print(f"An unexpected error occurred: {e}")
 
 def rclone_folder(remote_name, base_folder):
-    # Generate the rclone path
+    while True:
+        # Check if folder exists
+        check_command = ['rclone', 'lsf', f"{remote_name}:/{base_folder}"]
+        folder_exists = subprocess.run(check_command, capture_output=True, text=True)
+        
+        if folder_exists.returncode == 0 and folder_exists.stdout.strip():
+            print(f"The folder '{base_folder}' already exists on remote '{remote_name}'.")
+            choice = input("Do you want to overwrite it (o), enter a new folder name (n), or cancel (c)? [o/n/c]: ").strip().lower()
+
+            if choice == "o":
+                print(f"Overwriting existing folder '{base_folder}' on remote '{remote_name}'...")
+                break  # Proceed to mkdir (will not actually delete, but assume overwrite is fine)
+            elif choice == "n":
+                base_folder = input("Enter new base folder name: ").strip()
+                continue  # Check again
+            else:
+                print("Operation cancelled by user.")
+                return None
+
+        else:
+            # Folder doesn't exist, safe to proceed
+            break
+
+    # Create the folder
     rclone_repo = f'{remote_name}:{base_folder}'
     command = ['rclone', 'mkdir', rclone_repo]
 
     try:
-        # Execute the command and capture output
         subprocess.run(command, check=True, capture_output=True, text=True)
         print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
-        
         save_to_env(rclone_repo, "RCLODE_REPO")
         return rclone_repo
 
     except subprocess.CalledProcessError as e:
-        # Check if the specific SSH error is in stderr
         if "couldn't connect SSH: ssh: handshake failed" in e.stderr:
             if remote_name == "deic storage":
-                print('Connection to "Diec Storage" failed. Please log-on to "https://storage.deic.dk/" with MFA')
+                print('Connection to "Deic Storage" failed. Please log in to https://storage.deic.dk/ with MFA.')
         else:
             print(f"Failed to create backup folder: {e.stderr.strip()}")
+
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 

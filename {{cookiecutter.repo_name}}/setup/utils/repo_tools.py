@@ -168,7 +168,7 @@ def repo_create(code_repo, repo_name, project_description):
             raise ValueError("Unsupported code repository. Choose 'github' or 'gitlab'.")
 
         # Use hostname from credentials (fallback already handled in get_login_credentials)
-        default_branch = "main" if code_repo == "github" else "master"
+        default_branch = "main" if code_repo in ["github","codeberg"] else "master"
         remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
 
         # Create or check the repo
