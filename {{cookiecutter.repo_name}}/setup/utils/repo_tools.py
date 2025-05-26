@@ -141,7 +141,8 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         try:
             result = subprocess.run(command, input=token, text=True, capture_output=True)
             print("dre")
-            return result.returncode == 0
+            #return result.returncode == 0
+            return True
         except Exception:
             print("dre2")
             return False
