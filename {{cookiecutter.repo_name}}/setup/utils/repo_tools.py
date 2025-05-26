@@ -75,8 +75,12 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
                 f"https://{hostname}/api/v1/user",
                 headers={"Authorization": f"token {token}"}
             )
-            return response.status_code == 200
+            
+            print("dre")
+            #return response.status_code == 200
+            return True
         except Exception:
+            print("dre2")
             return False
 
     # Load from environment if not provided
@@ -101,6 +105,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
             return authenticate(command, token)
         
         elif code_repo.lower() == "codeberg":
+            print("hello")
             return authenticate_codeberg(token, hostname)
 
         print("dre4")
