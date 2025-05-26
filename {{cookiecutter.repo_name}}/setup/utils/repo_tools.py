@@ -408,6 +408,7 @@ def setup_repo(version_control,code_repo,repo_name,project_description):
     flag = repo_login(version_control,repo_name,code_repo)
     
     if not flag:
+       print("Hello")
        flag = repo_init(code_repo,repo_name)
     
     if flag:
