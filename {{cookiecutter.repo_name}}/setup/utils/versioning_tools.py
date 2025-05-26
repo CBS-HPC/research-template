@@ -38,7 +38,7 @@ def setup_git(version_control,code_repo):
         
         if flag and version_control == "Git":  
             rename = None
-            if code_repo.lower() == "github":
+            if code_repo.lower() in ["github","codeberg"]:
                 rename = "main"
             flag = git_init(msg = "Initial commit",rename = rename)
             

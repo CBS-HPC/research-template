@@ -18,18 +18,15 @@ def setup_remote_repository(version_control, code_repo, repo_name, project_descr
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(str(project_root))
 
-    # Validate inputs and environment
-    valid_repos = ["github", "gitlab", "codeberg"]
-    if not version_control or not os.path.isdir(".git") or code_repo.lower() not in valid_repos:
+    if not version_control or not os.path.isdir(".git"):
         return False
 
     # Install CLI tools if needed
-    code_repo_lower = code_repo.lower()
     cli_installed = {
         "github": install_gh("./bin/gh"),
         "gitlab": install_glab("./bin/glab"),
         "codeberg": True  # No CLI tool needed
-    }.get(code_repo_lower, False)
+    }.get(code_repo.lower(), False)
 
     # Setup repository if CLI tool installed
     if cli_installed:
