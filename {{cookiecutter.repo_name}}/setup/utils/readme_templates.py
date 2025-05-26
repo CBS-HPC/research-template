@@ -78,7 +78,7 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
             )
         return usage
 
-    def set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo):            
+    def set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user,hostname):            
         setup = ""
 
         if repo_name and repo_user:
@@ -86,9 +86,8 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
             "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
             "Clone the repository using the following command:\n"
             setup += "```\n"
-            if code_repo.lower() in ["github","gitlab"]:
-                web_repo = code_repo.lower()
-                setup += (f"git clone https://{web_repo}.com/{repo_user}/{repo_name}.git\n"   
+            if hostname:
+                setup += (f"git clone https://{hostname}/{repo_user}/{repo_name}.git\n"   
                         "```\n")
         setup += ("### Navigate to the Project Directory\n"
                 "Change into the project directory:\n"  
@@ -489,16 +488,33 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     authors = load_from_env("AUTHORS",".cookiecutter")
     orcids = load_from_env("ORCIDS",".cookiecutter")
     emails = load_from_env("EMAIL",".cookiecutter")
-    repo_user = load_from_env(f"{code_repo}_USER")
     project_name = load_from_env("PROJECT_NAME",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
     py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
+
+
+        # Generate URL based on version control
+    if code_repo.lower() == "github":
+        repo_user = load_from_env("GITHUB_USER")
+        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
+    elif code_repo.lower() == "gitlab":
+        repo_user = load_from_env("GITLAB_USER")
+        hostname = load_from_env('GITHUB_HOSTNAME') or "gitlab.com"
+
+    elif code_repo.lower() == "codeberg":
+        repo_user = load_from_env("CODEBERG_USER")
+        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
+ 
+    else:
+        repo_user = None
+        hostname = None
+
 
     py_version = get_version("python")
     software_version = get_version(programming_language)
     conda_version = get_version("conda") if py_manager.lower() == "conda" else "conda"
     pip_version = get_version("pip")
-    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, code_repo)
+    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, hostname)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
     usage = set_script_structure(programming_language,software_version,src_path,json_file)
@@ -990,13 +1006,20 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
 
     # Generate URL based on version control
     if code_repo.lower() == "github":
-        user = load_from_env(["GITHUB_USER"])
-        repo = load_from_env(["GITHUB_REPO"])
-        base_url = "https://github.com"
+        user = load_from_env("GITHUB_USER")
+        repo = load_from_env("GITHUB_REPO")
+        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
+        base_url = f"https://{hostname}"  
     elif code_repo.lower() == "gitlab":
-        user = load_from_env(["GITLAB_USER"])
-        repo = load_from_env(["GITLAB_REPO"])
-        base_url = "https://gitlab.com"
+        user = load_from_env("GITLAB_USER")
+        repo = load_from_env("GITLAB_REPO")
+        hostname = load_from_env('GITHUB_HOSTNAME') or "gitlab.com"
+        base_url = f"https://{hostname}"  
+    elif code_repo.lower() == "codeberg":
+        user = load_from_env("CODEBERG_USER")
+        repo = load_from_env("CODEBERG_REPO")
+        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
+        base_url = f"https://{hostname}"     
     else:
         user = None
         repo = None

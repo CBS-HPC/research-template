@@ -10,20 +10,55 @@ from utils.repo_tools import *
 from utils.virenv_tools import *
 from utils.get_dependencies import update_setup_dependency, update_src_dependency, update_env_files
 
-def setup_remote_repository(version_control,code_repo,repo_name,project_description):
+
+def setup_remote_repository(version_control, code_repo, repo_name, project_description):
+    """Handle repository creation and login based on selected platform."""
+
+    # Navigate to project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(str(project_root))
+
+    # Validate inputs and environment
+    valid_repos = ["github", "gitlab", "codeberg"]
+    if not version_control or not os.path.isdir(".git") or code_repo.lower() not in valid_repos:
+        return False
+
+    # Install CLI tools if needed
+    code_repo_lower = code_repo.lower()
+    cli_installed = {
+        "github": install_gh("./bin/gh"),
+        "gitlab": install_glab("./bin/glab"),
+        "codeberg": True  # No CLI tool needed
+    }.get(code_repo_lower, False)
+
+    # Setup repository if CLI tool installed
+    if cli_installed:
+        success = setup_repo(version_control, code_repo, repo_name, project_description)
+    else:
+        success = False
+
+    # Fallback if setup failed
+    if not success:
+        save_to_env("None", "CODE_REPO", ".cookiecutter")
+
+    return success
+
+def setup_remote_repository_old(version_control,code_repo,repo_name,project_description):
     """Handle repository creation and log-in based on selected platform."""
 
     # Change Dir to project_root
     os.chdir(str(pathlib.Path(__file__).resolve().parent.parent.parent))
 
-    if version_control == None or not os.path.isdir(".git"):
+    if version_control == None or not os.path.isdir(".git") or code_repo.lower not in ["github","gitlab","codeberg"]:
         return False
-    if code_repo and code_repo.lower() == "github":
+    
+    if code_repo.lower() == "github":
         flag = install_gh("./bin/gh")     
-    elif code_repo and code_repo.lower() == "gitlab":
+    elif code_repo.lower() == "gitlab":
         flag  = install_glab("./bin/glab")
     else:
-        return False 
+        flag = True
+    
     if flag:    
         flag = setup_repo(version_control,code_repo,repo_name,project_description) 
     if not flag:
