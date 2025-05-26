@@ -155,27 +155,33 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         code_repo = load_from_env("CODE_REPO",".cookiecutter")
 
     if not version_control or repo_name or code_repo:
+        print("dre5")
         return False 
-
+    print("dre6")
     try:
         # Get login details based on the repository type
         user, token, _, command, _=  get_login_credentials(code_repo,repo_name)
 
         # Return False if no command is found (invalid code_repo)
         if not command:
+            print("dre7")
             return False
 
         # If user or token is missing, attempt to retrieve them
         if not user or not token:
+            print("dre8")
             user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
+
 
         # Attempt authentication if both user and token are provided
         if user and token:
+            print("dre3")
             if authenticate(command, token):
                 return True
             else:
                 # Retry with fresh credentials if authentication failed
                 user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
+                print("dre4")
                 if user and token and authenticate(command, token):
                     return True
 
