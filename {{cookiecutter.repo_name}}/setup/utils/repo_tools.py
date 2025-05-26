@@ -16,33 +16,6 @@ import requests
 
 # GitHub and Gitlad Functions
 
-def get_login_credentials_old(code_repo,repo_name):
-    """Returns the user, token, and command based on the code repository."""
-    if code_repo.lower() == "github":
-        user = load_from_env('GITHUB_USER')
-        token = load_from_env('GH_TOKEN')
-        hostname = load_from_env('GH_HOSTNAME') or "github.com"
-        #command = ['gh', 'auth', 'login', '--with-token']
-        command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
-         #command = ['gh', 'auth', 'login', '--with-token']
-        privacy_setting = load_from_env("GITHUB_PRIVACY")
-
-    elif code_repo.lower() == "gitlab":
-        user = load_from_env('GITLAB_USER')
-        token = load_from_env('GL_TOKEN')
-        hostname = load_from_env('GL_HOSTNAME') or "gitlab.com"
-        #command = ['glab', 'auth', 'login','--token']
-        command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
-        privacy_setting = load_from_env("GITLAB_PRIVACY")
-    else:
-        return None, None, None, None, None
-    
-    if not user or not token or not privacy_setting:
-        version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
-        user, privacy_setting, token, hostname = repo_user_info(version_control,repo_name,code_repo)
-
-    return user, token, hostname, command, privacy_setting
-
 def get_login_credentials(code_repo, repo_name):
     """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
     code_repo = code_repo.lower()
@@ -77,60 +50,6 @@ def get_login_credentials(code_repo, repo_name):
         user, privacy_setting, token, hostname = repo_user_info(version_control, repo_name, code_repo)
 
     return user, token, hostname, command, privacy_setting
-
-def repo_login_codeberg(version_control=None, repo_name=None, code_repo=None):
-    def authenticate(command, token):
-        """Attempts to authenticate using the provided command and token."""
-        try:
-            result = subprocess.run(command, input=token, text=True, capture_output=True)
-            return result.returncode == 0
-        except Exception:
-            return False
-
-    def authenticate_codeberg(token, hostname):
-        """Authenticates with Codeberg by making an API call."""
-        try:
-            response = requests.get(
-                f"https://{hostname}/api/v1/user",
-                headers={"Authorization": f"token {token}"}
-            )
-            return response.status_code == 200
-        except Exception:
-            return False
-
-    # Load from environment if not provided
-    version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
-    repo_name = repo_name or load_from_env("REPO_NAME", ".cookiecutter")
-    code_repo = code_repo or load_from_env("CODE_REPO", ".cookiecutter")
-
-    # Check that all values are now set
-    if not all([version_control, repo_name, code_repo]):
-        return False
-
-    try:
-        # Get login credentials
-        user, token, hostname, command, _ = get_login_credentials(code_repo, repo_name)
-
-        if not user or not token:
-            user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
-
-        if not token:
-            return False
-
-        code_repo = code_repo.lower()
-
-        if code_repo == "codeberg":
-            return authenticate_codeberg(token, hostname)
-
-        if not command:
-            return False
-
-        # Authenticate using CLI for GitHub or GitLab
-        return authenticate(command, token)
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return False
 
 def repo_login(version_control = None, repo_name = None , code_repo = None):
 
@@ -181,7 +100,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         if code_repo.lower() in ["github","gitlab"]:
             return authenticate(command, token)
         
-        elif code_repo == "codeberg":
+        elif code_repo.lower() == "codeberg":
             return authenticate_codeberg(token, hostname)
 
         print("dre4")
