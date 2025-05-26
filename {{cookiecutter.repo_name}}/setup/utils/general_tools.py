@@ -462,50 +462,6 @@ def repo_user_info(version_control, repo_name, code_repo):
     else:
         return None, None, None, None
 
-def repo_user_info_old(version_control, repo_name, code_repo):
-    if code_repo.lower() in ["github", "gitlab"] and version_control.lower() in ["git", "datalad", "dvc"]: 
-        repo_user = None 
-        privacy_setting = None
-        default_setting = "private"
-        hostname = None
-        default_host = {"github": "github.com", "gitlab": "gitlab.com"}.get(code_repo.lower())
-
-        while not hostname or not repo_user or not privacy_setting:
-            hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
-            repo_user = input(f"Enter your {code_repo} username: ").strip()
-            privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
-
-            if privacy_setting not in ["private", "public"]:
-                print("Invalid choice. Defaulting to 'private'.")
-                privacy_setting = None
-
-        # Ask for hostname
-        if code_repo.lower() == "github":
-            token_env_key = "GH_TOKEN"
-            user_env_key = "GITHUB_USER"
-            host_env_key = "GH_HOSTNAME"
-        elif code_repo.lower() == "gitlab":
-            token_env_key = "GL_TOKEN"
-            user_env_key = "GITLAB_USER"
-            host_env_key = "GL_HOSTNAME"
-
-        # Token retrieval
-        token = load_from_env(token_env_key)
-        if not token:
-            while not token:
-                token = getpass.getpass(f"Enter {code_repo} token: ").strip()
-
-        # Save credentials and info
-        save_to_env(repo_user, user_env_key)
-        save_to_env(privacy_setting, f"{code_repo.upper()}_PRIVACY")
-        save_to_env(repo_name, f"{code_repo.upper()}_REPO")
-        save_to_env(token, token_env_key)
-        save_to_env(hostname, host_env_key)
-
-        return repo_user, privacy_setting, token, hostname
-    else:
-        return None, None, None, None
-
 # Setting programming language 
 def set_programming_language(programming_language):
 
