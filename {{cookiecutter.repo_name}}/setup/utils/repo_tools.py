@@ -150,7 +150,8 @@ def repo_create(code_repo, repo_name, project_description):
                 "name": repo_name,
                 "description": project_description,
                 "private": (privacy_setting == "private"),
-                "auto_init": True
+                #"auto_init": True
+                "auto_init": False
             }
             response = requests.post(api_url, headers=headers, json=payload)
             if response.status_code == 201:
