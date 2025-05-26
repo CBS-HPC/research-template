@@ -402,6 +402,67 @@ def git_user_info(version_control):
         return None, None
 
 def repo_user_info(version_control, repo_name, code_repo):
+    valid_repos = ["github", "gitlab", "codeberg"]
+    valid_vcs = ["git", "datalad", "dvc"]
+
+    if code_repo.lower() in valid_repos and version_control.lower() in valid_vcs:
+        repo_user = None
+        privacy_setting = None
+        default_setting = "private"
+        hostname = None
+        default_host = {
+            "github": "github.com",
+            "gitlab": "gitlab.com",
+            "codeberg": "codeberg.org"
+        }.get(code_repo.lower())
+
+        while not hostname or not repo_user or not privacy_setting:
+            hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
+            repo_user = input(f"Enter your {code_repo} username: ").strip()
+            privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
+
+            if privacy_setting not in ["private", "public"]:
+                print("Invalid choice. Defaulting to 'private'.")
+                privacy_setting = None
+
+        # Assign keys based on repository
+        if code_repo.lower() == "github":
+            token_env_key = "GITHUB_TOKEN"
+            user_env_key = "GITHUB_USER"
+            host_env_key = "GITHUB_HOSTNAME"
+            repo_env_key = "GITHUB_REPO"
+            privacy_env_key = "GITHUB_PRIVACY"
+        elif code_repo.lower() == "gitlab":
+            token_env_key = "GITLAB_TOKEN"
+            user_env_key = "GITLAB_USER"
+            host_env_key = "GITLAB_HOSTNAME"
+            repo_env_key = "GITLAB_REPO"
+            privacy_env_key = "GITLAB_PRIVACY"
+        elif code_repo.lower() == "codeberg":
+            token_env_key = "CODEBERG_TOKEN"
+            user_env_key = "CODEBERG_USER"
+            host_env_key = "CODEBERG_HOSTNAME"
+            repo_env_key = "CODEBERG_REPO"
+            privacy_env_key = "CODEBERG_PRIVACY"
+
+        # Token retrieval
+        token = load_from_env(token_env_key)
+        if not token:
+            while not token:
+                token = getpass.getpass(f"Enter {code_repo} token: ").strip()
+
+        # Save credentials and info
+        save_to_env(repo_user, user_env_key)
+        save_to_env(privacy_setting, privacy_env_key)
+        save_to_env(repo_name, repo_env_key)
+        save_to_env(token, token_env_key)
+        save_to_env(hostname, host_env_key)
+
+        return repo_user, privacy_setting, token, hostname
+    else:
+        return None, None, None, None
+
+def repo_user_info_old(version_control, repo_name, code_repo):
     if code_repo.lower() in ["github", "gitlab"] and version_control.lower() in ["git", "datalad", "dvc"]: 
         repo_user = None 
         privacy_setting = None
@@ -444,45 +505,6 @@ def repo_user_info(version_control, repo_name, code_repo):
         return repo_user, privacy_setting, token, hostname
     else:
         return None, None, None, None
-
-
-def repo_user_info_old(version_control,repo_name,code_repo):
-    
-    if code_repo.lower() in ["github","gitlab"] and version_control.lower() in ["git","datalad","dvc"]: 
-        repo_user = None 
-        privacy_setting = None
-        default_setting = "private"
-        while not repo_user or not privacy_setting:
-            repo_user = input(f"Enter your {code_repo} username: ").strip()
-            privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
-
-            if privacy_setting not in ["private", "public"]:
-                print("Invalid choice. Defaulting to 'private'.")
-                privacy_setting = None
-
-        save_to_env(repo_user,f"{code_repo}_USER")
-        save_to_env(privacy_setting,f"{code_repo}_PRIVACY")
-        save_to_env(repo_name,f"{code_repo}_REPO") 
-
-        if code_repo.lower() == "github":
-            token = load_from_env('GH_TOKEN')
-        elif code_repo.lower() == "gitlab":
-            token = load_from_env('GL_TOKEN')
- 
-        if not token:
-           while not token: 
-                token = getpass.getpass(f"Enter {code_repo} token: ").strip()
-                #token = input(f"Enter {code_repo} token: ").strip()
-
-        if code_repo.lower() == "github":
-            save_to_env(token,'GH_TOKEN')
-        elif code_repo.lower() == "gitlab":
-            save_to_env(token,'GL_TOKEN')
- 
-
-        return repo_user, privacy_setting, token
-    else:
-        return None, None,None
 
 # Setting programming language 
 def set_programming_language(programming_language):

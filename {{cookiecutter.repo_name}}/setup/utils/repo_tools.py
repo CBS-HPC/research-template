@@ -22,15 +22,15 @@ def get_login_credentials(code_repo, repo_name):
 
     if code_repo == "github":
         user = load_from_env('GITHUB_USER')
-        token = load_from_env('GH_TOKEN')
-        hostname = load_from_env('GH_HOSTNAME') or "github.com"
+        token = load_from_env('GITHUB_TOKEN')
+        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
         command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
         privacy_setting = load_from_env("GITHUB_PRIVACY")
 
     elif code_repo == "gitlab":
         user = load_from_env('GITLAB_USER')
-        token = load_from_env('GL_TOKEN')
-        hostname = load_from_env('GL_HOSTNAME') or "gitlab.com"
+        token = load_from_env('GITLAB_TOKEN')
+        hostname = load_from_env('GITLAB_HOSTNAME') or "gitlab.com"
         command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
         privacy_setting = load_from_env("GITLAB_PRIVACY")
 
@@ -196,7 +196,6 @@ def repo_create(code_repo, repo_name, project_description):
         subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
         subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
         print(f"Repository pushed to {hostname} on branch '{default_branch}'.")
-        repo_to_env_file(code_repo,user,repo_name)
         return True
 
     except Exception as e:
@@ -204,7 +203,7 @@ def repo_create(code_repo, repo_name, project_description):
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
         return False
 
-def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
+def repo_to_env_file_old(code_repo,username,repo_name, env_file=".env"):
     """
     Adds GitHub username and token from `gh auth status` to the .env file. If the file does not exist,
     it will be created.
@@ -286,13 +285,13 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
 
     if code_repo.lower() == "github":
         token = get_gh_token()
-        token_tag = "GH"
+        token_tag = "GITHUB"
         hostname = None
    
     elif code_repo.lower() == "gitlab":
         token = get_glab_token()
         hostname = get_glab_hostname()
-        token_tag = "GLAB"
+        token_tag = "GITLAB"
   
     if not username and not token:
         print(f"Failed to retrieve {code_repo}. Make sure you're logged in to {code_repo}.")
