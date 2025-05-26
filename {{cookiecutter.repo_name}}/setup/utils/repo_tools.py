@@ -16,7 +16,7 @@ import requests
 
 # GitHub and Gitlad Functions
 
-def get_login_credentials(code_repo,repo_name):
+def get_login_credentials_old(code_repo,repo_name):
     """Returns the user, token, and command based on the code repository."""
     if code_repo.lower() == "github":
         user = load_from_env('GITHUB_USER')
@@ -43,7 +43,7 @@ def get_login_credentials(code_repo,repo_name):
 
     return user, token, hostname, command, privacy_setting
 
-def get_login_credentials_codeberg(code_repo, repo_name):
+def get_login_credentials(code_repo, repo_name):
     """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
     code_repo = code_repo.lower()
 
@@ -65,7 +65,7 @@ def get_login_credentials_codeberg(code_repo, repo_name):
         user = load_from_env('CODEBERG_USER')
         token = load_from_env('CODEBERG_TOKEN')
         hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
-        command = None  # No CLI login for Codeberg
+        command = "Not needed" # No CLI login for Codeberg
         privacy_setting = load_from_env("CODEBERG_PRIVACY")
 
     else:
@@ -82,8 +82,8 @@ def repo_login_codeberg(version_control=None, repo_name=None, code_repo=None):
     def authenticate(command, token):
         """Attempts to authenticate using the provided command and token."""
         try:
-            subprocess.run(command, input=token, text=True, capture_output=True, check=True)
-            return True
+            result = subprocess.run(command, input=token, text=True, capture_output=True)
+            return result.returncode == 0
         except Exception:
             return False
 
@@ -98,16 +98,13 @@ def repo_login_codeberg(version_control=None, repo_name=None, code_repo=None):
         except Exception:
             return False
 
-    # Load fallback values if not provided
-    if not version_control:
-        version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
-    if not repo_name:
-        repo_name = load_from_env("REPO_NAME", ".cookiecutter")
-    if not code_repo:
-        code_repo = load_from_env("CODE_REPO", ".cookiecutter")
+    # Load from environment if not provided
+    version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
+    repo_name = repo_name or load_from_env("REPO_NAME", ".cookiecutter")
+    code_repo = code_repo or load_from_env("CODE_REPO", ".cookiecutter")
 
     # Check that all values are now set
-    if not (version_control and repo_name and code_repo):
+    if not all([version_control, repo_name, code_repo]):
         return False
 
     try:
@@ -139,51 +136,49 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
 
     def authenticate(command, token):
         """Attempts to authenticate using the provided command and token."""
+        if not token or not command:
+            return False     
         try:
-            subprocess.run(command, input=token, text=True, capture_output=True)
-            print("dre")
-            return True
-        except Exception as e:
-            print("dre2")
+            result = subprocess.run(command, input=token, text=True, capture_output=True)
+            return result.returncode == 0
+        except Exception:
             return False
 
-    if not version_control:
-        version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
-    if not repo_name:    
-        repo_name = load_from_env("REPO_NAME",".cookiecutter")
-    if not code_repo:
-        code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    def authenticate_codeberg(token, hostname):
+        """Authenticates with Codeberg by making an API call.""" 
+        if not token or not hostname:
+            return False        
+        try:
+            response = requests.get(
+                f"https://{hostname}/api/v1/user",
+                headers={"Authorization": f"token {token}"}
+            )
+            return response.status_code == 200
+        except Exception:
+            return False
 
-    if not version_control or not repo_name or not code_repo:
-        print("dre5")
-        return False 
-    print("dre6")
+    # Load from environment if not provided
+    version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
+    repo_name = repo_name or load_from_env("REPO_NAME", ".cookiecutter")
+    code_repo = code_repo or load_from_env("CODE_REPO", ".cookiecutter")
+
+    if not all([version_control, repo_name, code_repo]):
+        return False
+    
     try:
         # Get login details based on the repository type
-        user, token, _, command, _=  get_login_credentials(code_repo,repo_name)
+        _, token, hostname, command, _ = get_login_credentials(code_repo, repo_name)
 
-        # Return False if no command is found (invalid code_repo)
-        if not command:
-            print("dre7")
-            return False
-
-        # If user or token is missing, attempt to retrieve them
-        if not user or not token:
-            print("dre8")
-            user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
-
+        if not command or not token or not hostname:
+            _, _,_, _ = repo_user_info(version_control, repo_name, code_repo)
+            _, token, hostname, command, _ =  get_login_credentials(code_repo,repo_name)
 
         # Attempt authentication if both user and token are provided
-        if user and token:
-            print("dre3")
-            if authenticate(command, token):
-                return True
-            else:
-                # Retry with fresh credentials if authentication failed
-                user, _, token, _ = repo_user_info(version_control, repo_name, code_repo)
-                print("dre4")
-                if user and token and authenticate(command, token):
-                    return True
+        if code_repo.lower() in ["github","gitlab"]:
+            return authenticate(command, token)
+        
+        elif code_repo == "codeberg":
+            return authenticate_codeberg(token, hostname)
 
         return False
 
@@ -191,32 +186,6 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         print(f"An error occurred: {e}")
         return False
     
-def repo_init(code_repo,repo_name):  # FIX ME - Likely redundent
-    
-    _, _, _, command, _ = get_login_credentials(code_repo,repo_name)   
-    
-    if code_repo.lower() == "github":
-        exe = "gh"
-    elif code_repo.lower() == "gitlab":
-        exe = "glab"
-    else:
-        return False
-    
-    if not command:
-        command = [exe, "auth", "login"]
-    
-    try:
-        # Check if the user is logged in
-        subprocess.run([exe, "auth", "status"], capture_output=True, text=True, check=True)
-        return True 
-    except Exception as e:
-        try:
-            subprocess.run(command, check=True)
-            return True        
-        except Exception as e:
-            print(f"{exe} auth login failed: {e}")
-            return False
-
 def repo_create(code_repo, repo_name, project_description):
     try:
         user, token, hostname, _, privacy_setting = get_login_credentials(code_repo,repo_name)
@@ -302,12 +271,13 @@ def repo_create(code_repo, repo_name, project_description):
         subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
         subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
         print(f"Repository pushed to {hostname} on branch '{default_branch}'.")
-        return True, user, repo_name
+        repo_to_env_file(code_repo,user,repo_name)
+        return True
 
     except Exception as e:
         print(f"An error occurred: {e}")
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
-        return False, None, None
+        return False
 
 def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     """
@@ -414,15 +384,9 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
     print(f"{code_repo} username and token added to {env_file}")
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
-    
     if repo_login(version_control,repo_name,code_repo):
-        flag, username, repo_name = repo_create(code_repo, repo_name, project_description)
-        if flag:
-            repo_to_env_file(code_repo,username,repo_name)
-        print("Hello")
-        return flag
+        return repo_create(code_repo, repo_name, project_description)
     else:
-        print("Hello2")
         return False 
 
 def install_glab(install_path=None):
