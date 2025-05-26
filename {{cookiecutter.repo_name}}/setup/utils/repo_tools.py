@@ -415,7 +415,7 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
     
-    if repo_login(version_control,repo_name,code_repo)
+    if repo_login(version_control,repo_name,code_repo):
         flag, username, repo_name = repo_create(code_repo, repo_name, project_description)
         if flag:
             repo_to_env_file(code_repo,username,repo_name)
