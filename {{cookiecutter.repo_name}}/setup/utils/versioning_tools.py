@@ -445,7 +445,7 @@ def dvc_init(remote_storage,code_repo,repo_name):
     for folder in folders:
         subprocess.run(["dvc", "add",folder], check=True)
 
-    if code_repo.lower() == "github":
+    if code_repo.lower() in ["github","codeberg"]:
         # Rename branch to 'main' if it was initialized as 'master'
         subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
     _= git_commit("Initial commit")

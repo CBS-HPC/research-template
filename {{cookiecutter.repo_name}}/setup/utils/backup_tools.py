@@ -14,13 +14,15 @@ def setup_remote_backup(remote_backups,repo_name):
         remote_backups= [item.strip() for item in remote_backups.split(",")]
         for remote_backup in remote_backups:
             email, password = remote_user_info(remote_backup.lower())
+            email, password,base_folder = remote_user_info(remote_backup.lower(),'RClone_backup/' + repo_name)
             if install_rclone("./bin"):
                 rclone_remote(remote_backup.lower(),email, password)
-                _= rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
+                _= rclone_folder(remote_backup.lower(), base_folder)
        
-def remote_user_info(remote_name):
+def remote_user_info(remote_name,base_folder):
     email = None
     password = None
+
     
     if remote_name == "deic storage":
         default_email = load_from_env("EMAIL", ".cookiecutter")
@@ -38,7 +40,9 @@ def remote_user_info(remote_name):
                 print("Both email and password are required.\n")
 
         print(f"\nUsing email for Deic Storage: {email}\n")
-    return email, password
+
+    
+    return email, password, base_folder
     
 def rclone_remote(remote_name: str = "deic storage",email:str = None, password:str = None ):
     """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
@@ -194,9 +198,9 @@ def push_backup(remote_backups,repo_name):
                     rclone_repo = load_from_env("RCLODE_REPO")
             
                 if not rclone_repo:
-                    email, password = remote_user_info(remote_backup.lower())
+                    email, password,base_folder = remote_user_info(remote_backup.lower(),'RClone_backup/' + repo_name)
                     rclone_remote(remote_backup.lower(),email, password)
-                    rclone_repo = rclone_folder(remote_backup.lower(), 'RClone_backup/' + repo_name)
+                    rclone_repo = rclone_folder(remote_backup.lower(), base_folder)
             
                 if rclone_repo:
                     rclone_sync(rclone_repo, folder_to_backup=None)
