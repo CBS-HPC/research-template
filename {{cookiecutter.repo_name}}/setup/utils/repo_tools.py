@@ -140,8 +140,10 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
             return False     
         try:
             result = subprocess.run(command, input=token, text=True, capture_output=True)
+            print("dre")
             return result.returncode == 0
         except Exception:
+            print("dre2")
             return False
 
     def authenticate_codeberg(token, hostname):
@@ -158,11 +160,11 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
             return False
 
     # Load from environment if not provided
-    version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
     repo_name = repo_name or load_from_env("REPO_NAME", ".cookiecutter")
     code_repo = code_repo or load_from_env("CODE_REPO", ".cookiecutter")
 
-    if not all([version_control, repo_name, code_repo]):
+    if not repo_name or not code_repo:
+        print("dre3")
         return False
     
     try:
@@ -170,6 +172,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         _, token, hostname, command, _ = get_login_credentials(code_repo, repo_name)
 
         if not command or not token or not hostname:
+            version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
             _, _,_, _ = repo_user_info(version_control, repo_name, code_repo)
             _, token, hostname, command, _ =  get_login_credentials(code_repo,repo_name)
 
@@ -180,10 +183,12 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         elif code_repo == "codeberg":
             return authenticate_codeberg(token, hostname)
 
+        print("dre4")
         return False
 
     except Exception as e:
         print(f"An error occurred: {e}")
+        print("dre5")
         return False
     
 def repo_create(code_repo, repo_name, project_description):
@@ -385,6 +390,7 @@ def repo_to_env_file(code_repo,username,repo_name, env_file=".env"):
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
     if repo_login(version_control,repo_name,code_repo):
+        print("dre6")
         return repo_create(code_repo, repo_name, project_description)
     else:
         return False 
