@@ -50,9 +50,16 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
             load_conda
             
             # Activate Conda environment
-            if [ -n "$CONDA" ]; then
+            #if [ -n "$CONDA" ]; then
+                #eval "$($CONDA/conda shell.bash hook)"
+                #conda activate "$env_path"
+
+            CONDA_ENV_PATH=$(realpath "$env_path")
+            
+            if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then    
+                echo "Activating Conda environment at $CONDA_ENV_PATH"
                 eval "$($CONDA/conda shell.bash hook)"
-                conda activate "$env_path"
+                conda activate "$CONDA_ENV_PATH"
             else
                 echo "Error: conda script not found."
             fi
@@ -64,25 +71,19 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
             script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
             cd "$script_dir"
 
-            venv_activate="$env_path/bin/activate"
+            #venv_activate="$env_path/bin/activate"
 
-            if [ -f "$venv_activate" ]; then
-                echo "Activating venv using $venv_activate"
-                source "$venv_activate"
+            #if [ -f "$venv_activate" ]; then
+                #echo "Activating venv using $venv_activate"
+                #source "$venv_activate"
+
+            VENV_ENV_PATH=$(realpath "$env_path")    
+            if [ -n "$VENV_ENV_PATH" ]; then
+                VENV_ENV_PATH=$(realpath "$env_path")
+                echo "Activating Venv environment at $VENV_ENV_PATH"
+                source "$VENV_ENV_PATH/bin/activate"
             else
                 echo "Error: venv activation script not found."
-            fi
-            ;;
-        "virtualenv")
-            echo "Activating virtualenv environment: $env_path"
-            
-            virtualenv_activate="$env_path/bin/activate"
-
-            if [ -f "$virtualenv_activate" ]; then
-                echo "Activating virtualenv using $virtualenv_activate"
-                source "$virtualenv_activate"
-            else
-                echo "Error: virtualenv activation script not found."
             fi
             ;;
         *)
