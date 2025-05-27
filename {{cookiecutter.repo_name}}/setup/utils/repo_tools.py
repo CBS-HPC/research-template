@@ -105,7 +105,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         print(f"An error occurred: {e}")
         return False
     
-def repo_create(code_repo, repo_name, project_description):
+def repo_create(code_repo, repo_name, project_description,create_repo:bool = False):
     try:
         user, token, hostname, _, privacy_setting = get_login_credentials(code_repo,repo_name)
 
@@ -172,12 +172,13 @@ def repo_create(code_repo, repo_name, project_description):
         remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
 
         # Create or check the repo
-        if code_repo == "github":
-            create_gh()
-        elif code_repo == "gitlab":
-            create_gl()
-        elif code_repo == "codeberg":
-            create_cb()
+        if create_repo:
+            if code_repo == "github":
+                create_gh()
+            elif code_repo == "gitlab":
+                create_gl()
+            elif code_repo == "codeberg":
+                create_cb()
 
         # Set the remote URL
         remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
@@ -199,7 +200,7 @@ def repo_create(code_repo, repo_name, project_description):
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
     if repo_login(version_control,repo_name,code_repo):
-        return repo_create(code_repo, repo_name, project_description)
+        return repo_create(code_repo, repo_name, project_description,True)
     else:
         return False 
 
@@ -340,3 +341,21 @@ def install_gh(install_path=None):
             os.remove(installer_name)
             print(f"Installer {installer_name} removed.")
 
+@ensure_correct_kernel
+def main():
+    
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
+ 
+    # Create Remote Repository
+    repo_create(code_repo, repo_name, project_description,False)
+
+ 
+if __name__ == "__main__":
+    
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
+    main()
