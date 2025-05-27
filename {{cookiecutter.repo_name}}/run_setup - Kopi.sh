@@ -11,31 +11,35 @@ outro_path=$6
 # Allow custom .env file path as first argument
 envFile="${1:-.env}"
 
-
 load_conda() {
-    local conda_path=""
-
     if [ -f "$envFile" ]; then
         while IFS='=' read -r key value; do
-            # Skip comments and empty keys
-            [[ "$key" =~ ^[[:space:]]*# ]] && continue
-            [[ -z "$key" ]] && continue
+            if [[ ! "$key" =~ ^[[:space:]]*# && -n "$key" ]]; then
+                key=$(echo "$key" | xargs)
+                value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
-            key=$(echo "$key" | xargs)
-            value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
+                if [[ "$key" == "CONDA" ]]; then
+                    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                    
+                    # If value is not absolute, resolve it relative to script_dir
+                    if [[ "$value" != /* ]]; then
+                        abs_value="$(realpath -m "$script_dir/$value")"
+                    else
+                        abs_value="$value"
+                    fi
 
-            if [[ "$key" == "CONDA" ]]; then
-                conda_path=$(realpath "$value")
-                if [ -x "$conda_path/conda" ]; then
-                    export CONDA="$conda_path"
-                    echo "Resolved and exported CONDA: $CONDA"
-                else
-                    echo "Warning: conda binary not found at $conda_path/conda" >&2
+                    # Check if the resulting path contains the conda binary
+                    if [ -x "$abs_value/conda" ]; then
+                        export CONDA="$abs_value"
+                        echo "Resolved and found Conda at: $CONDA"
+                    else
+                        echo "Warning: Conda binary not found at $abs_value/conda"
+                    fi
                 fi
             fi
         done < "$envFile"
     else
-        echo "Warning: $envFile not found" >&2
+        echo "Warning: $envFile not found"
     fi
 }
 

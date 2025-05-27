@@ -595,6 +595,3 @@ def create_conda_environment_yml(r_version=None,requirements_file:str="requireme
         yaml.dump(conda_env, f, default_flow_style=False, sort_keys=False)
 
     print(f"✅ Conda environment file created: {output_file}")
-
-
-

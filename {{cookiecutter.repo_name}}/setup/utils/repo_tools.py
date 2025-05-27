@@ -105,7 +105,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         print(f"An error occurred: {e}")
         return False
     
-def repo_create(code_repo, repo_name, project_description,create_repo:bool = False):
+def repo_create(code_repo, repo_name, project_description):
     try:
         user, token, hostname, _, privacy_setting = get_login_credentials(code_repo,repo_name)
 
@@ -172,13 +172,12 @@ def repo_create(code_repo, repo_name, project_description,create_repo:bool = Fal
         remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
 
         # Create or check the repo
-        if create_repo:
-            if code_repo == "github":
-                create_gh()
-            elif code_repo == "gitlab":
-                create_gl()
-            elif code_repo == "codeberg":
-                create_cb()
+        if code_repo == "github":
+            create_gh()
+        elif code_repo == "gitlab":
+            create_gl()
+        elif code_repo == "codeberg":
+            create_cb()
 
         # Set the remote URL
         remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
@@ -200,7 +199,7 @@ def repo_create(code_repo, repo_name, project_description,create_repo:bool = Fal
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
     if repo_login(version_control,repo_name,code_repo):
-        return repo_create(code_repo, repo_name, project_description,True)
+        return repo_create(code_repo, repo_name, project_description)
     else:
         return False 
 
@@ -343,13 +342,17 @@ def install_gh(install_path=None):
 
 @ensure_correct_kernel
 def main():
-    
+    version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
- 
+    remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
+    
+    setup_version_control(version_control,remote_storage,code_repo,repo_name)
+
     # Create Remote Repository
-    repo_create(code_repo, repo_name, project_description,False)
+    setup_repo(version_control,code_repo,repo_name,project_description)
+    #repo_create(code_repo, repo_name, project_description)
 
  
 if __name__ == "__main__":

@@ -3,13 +3,27 @@
 # Allow custom .env file path as first argument
 envFile="${1:-.env}"
 
+# Allow custom .env file path as first argument
+envFile="${1:-.env}"
+
+# Save original PATH once, before activation
+if [ -z "$ORIGINAL_PATH" ]; then
+    export ORIGINAL_PATH="$PATH"
+    echo "Saved ORIGINAL_PATH."
+fi
+
 reset_env() {
     unset CONDA_ENV_PATH
     unset CONDA
     unset VENV_ENV_PATH
 
-    # Optionally reset other environment variables like PATH if necessary
-    export PATH=$(echo "$PATH" | sed -e 's/:\/.*conda.*//g' -e 's/:\/.*venv.*//g')
+    if [ -n "$ORIGINAL_PATH" ]; then
+        export PATH="$ORIGINAL_PATH"
+        echo "PATH restored to original."
+    else
+        export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        echo "PATH reset to default minimal system paths."
+    fi
 }
 
 activate_env() {
@@ -107,7 +121,6 @@ verify_env_paths() {
 }
 
 reset_env
-
 activate_env
 
 # Now use the local vars

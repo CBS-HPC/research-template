@@ -7,8 +7,15 @@ reset_env() {
     unset CONDA_ENV_PATH
     unset CONDA
     unset VENV_ENV_PATH
-    # Optionally reset other environment variables like PATH if necessary
-    export PATH=$(echo "$PATH" | sed -e 's/:\/.*conda.*//g' -e 's/:\/.*venv.*//g')
+
+    if [ -n "$ORIGINAL_PATH" ]; then
+        export PATH="$ORIGINAL_PATH"
+        echo "PATH restored to original."
+    else
+        # Fallback if ORIGINAL_PATH is not set
+        export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        echo "PATH reset to default minimal system paths."
+    fi
 }
 
 load_env_paths() {
