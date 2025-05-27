@@ -7,37 +7,28 @@ reset_env() {
     unset CONDA_ENV_PATH
     unset CONDA
     unset VENV_ENV_PATH
-
+    unset "$CONDA_ENV_PATH"
+    unset "$CONDA"
+    unset "$VENV_ENV_PATH"
     # Optionally reset other environment variables like PATH if necessary
-    export PATH=$(echo "$PATH" | sed -e 's/:\/.*conda.*//g' -e 's/:\/.*venv.*//g')
+    export PATH=$(echo $PATH | sed -e 's/:\/.*conda.*//g' -e 's/:\/.*venv.*//g') # Removes paths related to conda or venv
 }
 
 activate_env() {
-    local venv_path=""
-    local conda_path=""
-    local conda_bin=""
-
     if [ -f "$envFile" ]; then
         while IFS='=' read -r key value; do
             if [[ ! "$key" =~ ^[[:space:]]*# && -n "$key" ]]; then
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
-
-                case "$key" in
-                    VENV_ENV_PATH)
-                        export VENV_ENV_PATH=$(realpath "$value")
-                        ;;
-                    CONDA_ENV_PATH)
-                        export CONDA_ENV_PATH=$(realpath "$value")
-                        ;;
-                    CONDA)
-                        export CONDA=$(realpath "$value")
-                        ;;
-                esac
+                if [[ "$key" == "VENV_ENV_PATH" || "$key" == "CONDA_ENV_PATH" ]]; then
+                    abs_value=$(realpath "$value")
+                    export "$key"="$abs_value"
+                    echo "Loaded $key as absolute path: $abs_value"
+                fi
             fi
         done < "$envFile"
     else
-        echo "Warning: $envFile not found" >&2
+        echo "Warning: $envFile not found"
     fi
 }
 
@@ -51,22 +42,13 @@ load_env() {
                 if [[ "$key" != "VENV_ENV_PATH" && "$key" != "CONDA_ENV_PATH" && "$key" != "CONDA" && "$key" != "PYTHON" ]]; then
                     if [ -d "$value" ]; then
                         abs_path=$(realpath "$value")
-                        # Check if path is already in $PATH
-                        if [[ ":$PATH:" != *":$abs_path:"* ]]; then
-                            export PATH="$abs_path:$PATH"
-                            echo "Added $key to PATH ($abs_path)"
-                        else
-                            echo "Skipped $key, already in PATH ($abs_path)"
-                        fi
+                        export PATH="$abs_path:$PATH"
+                        echo "Added $key to PATH ($abs_path)"
                     elif [ -x "$value" ]; then
                         abs_path=$(realpath "$value")
                         bin_dir=$(dirname "$abs_path")
-                        if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
-                            export PATH="$bin_dir:$PATH"
-                            echo "Added $key (executable) to PATH ($bin_dir)"
-                        else
-                            echo "Skipped $key, already in PATH ($bin_dir)"
-                        fi
+                        export PATH="$bin_dir:$PATH"
+                        echo "Added $key (executable) to PATH ($bin_dir)"
                     fi
                 fi
             fi
@@ -110,13 +92,14 @@ reset_env
 
 activate_env
 
-# Now use the local vars
+# Activate Conda environment
 if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then
     echo "Activating Conda environment at $CONDA_ENV_PATH"
     eval "$($CONDA/conda shell.bash hook)"
     conda activate "$CONDA_ENV_PATH"
 fi
 
+# Activate virtual environment if defined
 if [ -n "$VENV_ENV_PATH" ]; then
     echo "Activating Venv environment at $VENV_ENV_PATH"
     source "$VENV_ENV_PATH/bin/activate"

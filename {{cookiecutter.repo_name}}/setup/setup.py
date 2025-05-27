@@ -15,7 +15,9 @@ setup(
             'run-setup=utils.run_setup:main',
             'update-readme=utils.readme_templates:main',
             'reset-templates=utils.code_templates:main',
-            'code-examples=utils.example_templates:main'
+            'code-examples=utils.example_templates:main',
+            'git-config=utils.repo_tools:main'
+
         ],
     },
     install_requires=[
