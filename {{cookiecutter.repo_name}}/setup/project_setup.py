@@ -219,7 +219,7 @@ def multiple_backups(remote_backup):
 
 intro_path = "./setup/intro.py"
 outro_path = "./setup/outro.py"
-version_control_path = "./setup/utils/versioning_tools.py"
+version_control_path = "./setup/utils/versioning_setup.py"
 remote_repository_path = "./setup/utils/repo_setup.py"
 setup_bash = "./run_setup.sh"
 setup_powershell = "./run_setup.ps1"
