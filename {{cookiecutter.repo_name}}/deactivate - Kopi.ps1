@@ -1,8 +1,5 @@
 # Deactivation script for {{ cookiecutter.repo_name }}
 
-# Change directory to the script's folder to handle relative paths properly
-Set-Location -Path $PSScriptRoot
-
 # Path to .env file
 $envFile = ".\.env"
 
@@ -22,17 +19,9 @@ function Get-EnvValueFromDotEnv {
     return $null
 }
 
+
 $condaEnvPath   = Get-EnvValueFromDotEnv -varName "CONDA_ENV_PATH"
 $venvEnvPath    = Get-EnvValueFromDotEnv -varName "VENV_ENV_PATH"
-
-# Restore original PATH if saved
-if ($env:ORIGINAL_PATH) {
-    $env:PATH = $env:ORIGINAL_PATH
-    Remove-Item Env:ORIGINAL_PATH -ErrorAction SilentlyContinue
-    Write-Host "Restored original PATH."
-} else {
-    Write-Warning "Original PATH was not saved. PATH not restored."
-}
 
 # Informational messages
 if ($condaEnvPath) {
@@ -40,14 +29,9 @@ if ($condaEnvPath) {
     conda deactivate
 }
 
-# venv deactivate call safety
 if ($venvEnvPath) {
     Write-Output "Deactivating virtual environment"
-    if (Get-Command deactivate -ErrorAction SilentlyContinue) {
-        deactivate
-    } else {
-        Write-Warning "No 'deactivate' command found for virtual environment."
-    }
+    deactivate 
 }
 
 # Helper function to clean a value from PATH

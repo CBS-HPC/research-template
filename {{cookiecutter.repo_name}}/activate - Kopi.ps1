@@ -1,15 +1,5 @@
-
-# Change directory to the script's folder to handle relative paths properly
-Set-Location -Path $PSScriptRoot
-
 # Path to .env file
 $envFile = ".\.env"
-
-# Save original PATH if not already saved
-if (-not $env:ORIGINAL_PATH) {
-    $env:ORIGINAL_PATH = $env:PATH
-    Write-Host "Saved ORIGINAL_PATH"
-}
 
 # Function to get a variable's value from the .env file
 function Get-EnvValueFromDotEnv {
@@ -73,9 +63,12 @@ $venvEnvPath    = Get-EnvValueFromDotEnv -varName "VENV_ENV_PATH"
 
 if ($condaEnvPath -and $condaPath) {
     Write-Output "Activating Conda environment at $condaEnvPath"
-    $resolvedCondaPath = Resolve-Path -Path $condaPath | Select-Object -ExpandProperty Path
+    $rawCondaPath = Resolve-Path -Path $condaPath
 
-    if ($resolvedCondaPath) {
+    if ($rawCondaPath) {
+        # Normalize and resolve the full path
+        $resolvedCondaPath = Resolve-Path -Path $rawCondaPath | Select-Object -ExpandProperty Path
+    
         # Check if it ends in "Library\bin"
         if ($resolvedCondaPath -like "*\Library\bin") {
             # Move up two levels to reach root Conda directory
@@ -83,10 +76,10 @@ if ($condaEnvPath -and $condaPath) {
         } else {
             $condaPath = $resolvedCondaPath
         }
-
-        & "$condaPath\shell\condabin\conda-hook.ps1"
-        conda activate "$condaEnvPath"
     }
+
+    & "$condaPath\shell\condabin\conda-hook.ps1"
+    conda activate "$condaEnvPath"
 }
 
 if ($venvEnvPath) {
@@ -102,13 +95,11 @@ if (Test-Path $envFile) {
             $value = $matches[2].Trim('"')
 
             # Skip variables already handled
-            if (Test-Path $value) {
-                $resolved = (Resolve-Path -Path $value).Path
-                if ($env:PATH -notlike "*$resolved*") {
+            if ($key -notin @("VENV_ENV_PATH", "CONDA_ENV_PATH", "CONDA","PYTHON")) {
+                if (Test-Path $value) {
+                    $resolved = Resolve-Path -Path $value
                     $env:PATH = "$resolved;$env:PATH"
                     Write-Host "Added $key to PATH: $resolved"
-                } else {
-                    Write-Host "Skipped $key, already in PATH: $resolved"
                 }
             }
         }

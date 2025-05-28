@@ -1,5 +1,9 @@
 #!/bin/bash
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$script_dir"
+
+
 # Get the env_path, env_manager, and script paths passed from input
 env_path=$1
 env_manager=$2

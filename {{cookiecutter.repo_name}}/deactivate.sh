@@ -1,5 +1,8 @@
 #!/bin/bash
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$script_dir"
+
 # Allow custom .env file path as first argument
 envFile="${1:-.env}"
 
