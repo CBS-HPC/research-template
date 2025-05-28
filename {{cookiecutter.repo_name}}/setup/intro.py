@@ -33,10 +33,16 @@ def main():
     orcids = load_from_env("ORCIDS",".cookiecutter")
 
     # Upgrade Pip:
-    subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade pip"], check=True)
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: pip upgrade failed: {e}")
 
     # Install problamtic packages
-    subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: failed istalling 'python-dotenv': {e}")
 
     pip_packages = set_packages(version_control,programming_language)
     package_installer(required_libraries = pip_packages)
