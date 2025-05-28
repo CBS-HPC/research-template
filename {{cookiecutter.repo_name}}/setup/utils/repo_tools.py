@@ -51,8 +51,7 @@ def get_login_credentials(code_repo, repo_name):
 
     return user, token, hostname, command, privacy_setting
 
-import requests
-import subprocess
+
 
 def repo_login(version_control=None, repo_name=None, code_repo=None):
 
@@ -198,6 +197,42 @@ def repo_create(code_repo, repo_name, project_description):
         print(f"An error occurred: {e}")
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
         return False
+
+def get_login_credentials_cli(code_repo, repo_name):
+    """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
+    code_repo = code_repo.lower()
+
+    if code_repo == "github":
+        user = load_from_env('GITHUB_USER')
+        token = load_from_env('GITHUB_TOKEN')
+        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
+        command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
+        privacy_setting = load_from_env("GITHUB_PRIVACY")
+
+    elif code_repo == "gitlab":
+        user = load_from_env('GITLAB_USER')
+        token = load_from_env('GITLAB_TOKEN')
+        hostname = load_from_env('GITLAB_HOSTNAME') or "gitlab.com"
+        command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
+        privacy_setting = load_from_env("GITLAB_PRIVACY")
+
+    elif code_repo == "codeberg":
+        user = load_from_env('CODEBERG_USER')
+        token = load_from_env('CODEBERG_TOKEN')
+        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
+        command = "Not needed" # No CLI login for Codeberg
+        privacy_setting = load_from_env("CODEBERG_PRIVACY")
+
+    else:
+        return None, None, None, None, None
+
+    # Fallback to repo_user_info if anything critical is missing
+    if not user or not token or not privacy_setting:
+        version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
+        user, privacy_setting, token, hostname = repo_user_info(version_control, repo_name, code_repo)
+
+    return user, token, hostname, command, privacy_setting
+
 
 def repo_login_cli(version_control = None, repo_name = None , code_repo = None):
 

@@ -190,9 +190,6 @@ def set_conda_packages(version_control,install_packages,code_repo):
         if os_type in ["darwin","linux"] and not is_installed('git-annex', 'git-annex'):
             install_packages.extend(['git-annex'])
 
-    if code_repo.lower() == "github" and not is_installed('gh', 'GitHub Cli'):
-        install_packages.extend(['gh']) 
-
     return install_packages
 
 def conda_pip_install(repo_path, pip_packages):

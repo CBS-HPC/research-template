@@ -36,21 +36,15 @@ def setup_git(version_control,code_repo):
         if not flag:
             flag, git_name, git_email = setup_git_config(version_control,git_name, git_email)
         
-        
-
         if flag and version_control == "Git":  
-            rename = None
-            if code_repo.lower() in ["github","codeberg"]:
-                rename = "main"
-            flag = git_init(msg = "Initial commit",rename = rename)
-            
+            default_branch = "main" if code_repo.lower() in ["github", "codeberg"] else "master"           
+            flag = git_init(msg = "Initial commit",branch_name = default_branch)
             # Creating its own git repo for "data"
             if flag:
-                #curdir = os.getcwd()
                 with change_dir("./data"):
-                    flag = git_init(msg = "Initial commit", rename="data", path = os.getcwd())
+                    flag = git_init(msg = "Initial commit", branch_name = "data", path = os.getcwd())
+                    subprocess.run(["git", "config", "--global", "init.defaultBranch", default_branch], check=True)
                     git_log_to_file(os.path.join(".gitlog"))
-             
         if flag:
             save_to_env(git_name,"GIT_USER") 
             save_to_env(git_email,"GIT_EMAIL")    
@@ -211,7 +205,7 @@ def setup_git_config(version_control,git_name,git_email):
         print(f"Failed to configure Git: {e}")
         return False,git_name,git_email
       
-def git_init(msg, rename, path: str =None):
+def git_init(msg, branch_name, path: str =None):
     
     if not path: 
         path = str(pathlib.Path(__file__).resolve().parent.parent.parent)
@@ -220,8 +214,8 @@ def git_init(msg, rename, path: str =None):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    if rename:
-        subprocess.run(["git", "config", "--global", "init.defaultBranch", rename], check=True)
+    if branch_name:
+        subprocess.run(["git", "config", "--global", "init.defaultBranch", branch_name], check=True)
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(os.path.join(path, ".git")):
