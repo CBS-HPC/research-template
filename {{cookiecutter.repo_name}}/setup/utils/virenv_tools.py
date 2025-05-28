@@ -22,7 +22,8 @@ def setup_virtual_environment(version_control, programming_language, python_env_
     """    
     install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
 
-    pip_packages = set_packages(version_control,programming_language)    
+    pip_packages = set_packages(version_control,programming_language) 
+    pip_packages = None  
     env_name = None
   
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":

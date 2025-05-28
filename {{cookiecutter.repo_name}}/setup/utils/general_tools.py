@@ -8,6 +8,26 @@ from functools import wraps
 import pathlib
 import getpass
 
+
+def set_packages(version_control,programming_language):
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec']
+    #install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
+    if programming_language.lower()  == 'python':
+        install_packages.extend(['jupyterlab'])
+    elif programming_language.lower()  == 'stata':
+        install_packages.extend(['jupyterlab','stata_setup'])
+    elif programming_language.lower()  == 'matlab':
+        install_packages.extend(['jupyterlab','jupyter-matlab-proxy'])
+    elif programming_language.lower() == 'sas':
+        install_packages.extend(['jupyterlab','saspy'])
+
+    if version_control.lower()  == "dvc" and not is_installed('dvc','DVC'):
+        install_packages.extend(['dvc[all]'])
+    elif version_control.lower()  == "datalad" and not is_installed('datalad','Datalad'):
+        install_packages.extend(['datalad-installer','datalad','pyopenssl'])
+    
+    return install_packages
+
 def package_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
     if not required_libraries:
         return
