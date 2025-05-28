@@ -112,7 +112,7 @@ def load_env_file(extensions = ['.yml', '.txt']): # FIX ME - NOT USED
         return None
 
 def set_pip_packages(version_control,programming_language):
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec','pipreqs']
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab'])
     elif programming_language.lower()  == 'stata':
