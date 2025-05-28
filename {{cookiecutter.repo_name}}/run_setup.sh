@@ -43,17 +43,7 @@ load_conda() {
 if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installation" ]; then
     case "$env_manager" in
         "conda")
-            echo "Activating Conda environment: $env_path"
-            script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-            cd "$script_dir"
-
             load_conda
-            
-            # Activate Conda environment
-            #if [ -n "$CONDA" ]; then
-                #eval "$($CONDA/conda shell.bash hook)"
-                #conda activate "$env_path"
-
             CONDA_ENV_PATH=$(realpath "$env_path")
             
             if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then    
@@ -65,17 +55,7 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
             fi
 
             ;;
-        "venv")
-            echo "Activating venv environment: $env_path"
-            
-            script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-            cd "$script_dir"
-
-            #venv_activate="$env_path/bin/activate"
-
-            #if [ -f "$venv_activate" ]; then
-                #echo "Activating venv using $venv_activate"
-                #source "$venv_activate"
+        "venv")           
 
             VENV_ENV_PATH=$(realpath "$env_path")    
             if [ -n "$VENV_ENV_PATH" ]; then
