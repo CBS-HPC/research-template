@@ -28,54 +28,33 @@ def set_packages(version_control,programming_language):
     
     return install_packages
 
-def package_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
+def package_installer(required_libraries: list = None):
     if not required_libraries:
         return
 
-    def install_uv(cmd_prefix):
-        """Helper to install uv using pip with given command prefix."""
+    def install_uv():
+        """Install 'uv' using pip if it's not already available."""
         try:
             print("Installing 'uv' package...")
-            subprocess.run(cmd_prefix + ["install", "uv"], check=True)
+            subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
             print("'uv' installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Failed to install 'uv': {e}")
 
-    # Determine paths and commands
-    if conda_env:
-        env_path = pathlib.Path(conda_env).resolve()
-        freeze_cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "freeze"]
-        uv_install_cmd_prefix = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip"]
-        pip_cmd_prefix = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip"]
-        uv_cmd_prefix = ["conda", "run", "--prefix", str(env_path), "uv", "pip", "install", "--system"]
-    elif venv_env:
-        env_path = pathlib.Path(venv_env).resolve()
-        if sys.platform == "win32":
-            pip_path = os.path.join(env_path, "Scripts", "pip.exe")
-            python_path = os.path.join(env_path, "Scripts", "python.exe")
-        else:
-            pip_path = os.path.join(env_path, "bin", "pip")
-            python_path = os.path.join(env_path, "bin", "python")
+    # Command definitions based on sys.executable
+    freeze_cmd = [sys.executable, "-m", "pip", "freeze"]
+    pip_cmd_prefix = [sys.executable, "-m", "pip"]
+    uv_cmd_prefix = ["uv", "pip", "install", "--system"]
 
-        freeze_cmd = [pip_path, "freeze"]
-        uv_install_cmd_prefix = [python_path, "-m", "pip"]  # Use pip to install uv
-        pip_cmd_prefix = [pip_path]
-        uv_cmd_prefix = [os.path.join(env_path, "bin", "uv"), "pip", "install"]
-    else:
-        freeze_cmd = [sys.executable, "-m", "pip", "freeze"]
-        uv_install_cmd_prefix = [sys.executable, "-m", "pip"]
-        pip_cmd_prefix = [sys.executable, "-m", "pip"]
-        uv_cmd_prefix = ["uv", "pip", "install", "--system"]
-
-    # Ensure uv is installed
+    # Ensure uv is installed and available
     uv_available = shutil.which("uv") is not None
     if not uv_available:
-        install_uv(uv_install_cmd_prefix)
+        install_uv()
         uv_available = shutil.which("uv") is not None
         if not uv_available:
             print("Warning: 'uv' could not be installed. Falling back to pip.")
     uv_available = False
-    # Get installed packages
+    # Collect currently installed packages
     try:
         installed = subprocess.check_output(freeze_cmd).decode().lower().splitlines()
         installed_pkgs = {pkg.split("==")[0] for pkg in installed if "==" in pkg}
@@ -90,104 +69,19 @@ def package_installer(required_libraries: list = None, conda_env: str = None, ve
     print(f"Installing missing libraries: {missing_libraries}")
 
     for lib in missing_libraries:
-        # Try uv first
+        # Try uv install
         if uv_available:
             try:
                 subprocess.run(uv_cmd_prefix + [lib], check=True)
-                continue  # skip pip fallback
+                continue  # Skip pip if uv worked
             except subprocess.CalledProcessError as e:
                 print(f"uv failed for '{lib}': {e}. Falling back to pip.")
 
-        # Fallback to pip
+        # Fallback to pip install
         try:
             subprocess.run(pip_cmd_prefix + ["install", lib], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Failed to install '{lib}' with pip: {e}")
-
-def package_installer_notworking(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
-    if not required_libraries:
-        return
-
-    def install_uv(cmd_prefix):
-        """Helper to install uv using pip with given command prefix."""
-        try:
-            print("Installing 'uv' package...")
-            subprocess.run(cmd_prefix + ["install", "uv"], check=True)
-            print("'uv' installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to install 'uv': {e}")
-
-    # Determine environment path and pip/uv commands
-    if conda_env:
-        env_path = pathlib.Path(conda_env).resolve()
-        freeze_cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "freeze"]
-        uv_install_cmd_prefix = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip"]
-        uv_cmd_prefix = ["conda", "run", "--prefix", str(env_path), "uv", "pip","install"]
-    elif venv_env:
-        env_path = pathlib.Path(venv_env).resolve()
-        pip_path = os.path.join(env_path, "bin", "pip") if sys.platform != "win32" else os.path.join(env_path, "Scripts", "pip")
-        freeze_cmd = [pip_path, "freeze"]
-        uv_install_cmd_prefix = [pip_path]
-        uv_cmd_prefix = ["uv", "pip","install"]
-    else:
-        freeze_cmd = [sys.executable, "-m", "pip", "freeze"]
-        uv_install_cmd_prefix = [sys.executable, "-m", "pip"]
-        uv_cmd_prefix = ["uv", "pip","install","--system"]
-
-    # Check if uv is available
-    uv_available = shutil.which("uv") is not None
-
-    # If uv not available, install it first
-    if not uv_available:
-        install_uv(uv_install_cmd_prefix)
-        # After installation, re-check if uv is now available
-        uv_available = shutil.which("uv") is not None
-        if not uv_available:
-            print("Warning: 'uv' could not be installed. Falling back to pip.")
-
-    # Get list of installed packages
-    try:
-        installed = subprocess.check_output(freeze_cmd).decode().lower().splitlines()
-        installed_pkgs = {pkg.split("==")[0] for pkg in installed if "==" in pkg}
-    except subprocess.CalledProcessError as e:
-        print(f"Error checking installed packages: {e}")
-        return
-
-    # Identify missing packages
-    missing_libraries = [lib for lib in required_libraries if lib.lower().split("==")[0] not in installed_pkgs]
-
-    if not missing_libraries:
-        return
-
-    print(f"Installing missing libraries: {missing_libraries}")
-
-    try:
-        if conda_env:
-            if uv_available:
-                cmd = uv_cmd_prefix + missing_libraries
-            else:
-                cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "install"] + missing_libraries
-
-        elif venv_env:
-            if uv_available:
-                env = os.environ.copy()
-                env["PATH"] = os.path.dirname(pip_path) + os.pathsep + env.get("PATH", "")
-                cmd = uv_cmd_prefix + missing_libraries
-                subprocess.run(cmd, check=True, env=env)
-                return
-            else:
-                cmd = [pip_path, "install"] + missing_libraries
-
-        else:
-            if uv_available:
-                cmd = uv_cmd_prefix + missing_libraries
-            else:
-                cmd = [sys.executable, "-m", "pip", "install"] + missing_libraries
-
-        subprocess.run(cmd, check=True)
-
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install some packages: {e}")
 
 def package_installer_old(required_libraries:list = None,conda_exe:bool = False):
     installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
