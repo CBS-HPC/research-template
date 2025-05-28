@@ -21,6 +21,26 @@ def setup_remote_repository(version_control, code_repo, repo_name, project_descr
     if not version_control or not os.path.isdir(".git"):
         return False
 
+    # Setup repository if CLI tool installed
+
+    success = setup_repo(version_control, code_repo, repo_name, project_description)
+ 
+    # Fallback if setup failed
+    if not success:
+        save_to_env("None", "CODE_REPO", ".cookiecutter")
+
+    return success
+
+def setup_remote_repository_CLI(version_control, code_repo, repo_name, project_description):
+    """Handle repository creation and login based on selected platform."""
+
+    # Navigate to project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(str(project_root))
+
+    if not version_control or not os.path.isdir(".git"):
+        return False
+
     if code_repo.lower() == "github":
         success = install_gh("./bin/gh")     
     elif code_repo.lower() == "gitlab":
@@ -39,28 +59,6 @@ def setup_remote_repository(version_control, code_repo, repo_name, project_descr
         save_to_env("None", "CODE_REPO", ".cookiecutter")
 
     return success
-
-def setup_remote_repository_old(version_control,code_repo,repo_name,project_description):
-    """Handle repository creation and log-in based on selected platform."""
-
-    # Change Dir to project_root
-    os.chdir(str(pathlib.Path(__file__).resolve().parent.parent.parent))
-
-    if version_control == None or not os.path.isdir(".git") or code_repo.lower not in ["github","gitlab","codeberg"]:
-        return False
-    
-    if code_repo.lower() == "github":
-        flag = install_gh("./bin/gh")     
-    elif code_repo.lower() == "gitlab":
-        flag  = install_glab("./bin/glab")
-    else:
-        flag = True
-    
-    if flag:    
-        flag = setup_repo(version_control,code_repo,repo_name,project_description) 
-    if not flag:
-        save_to_env("None","CODE_REPO",".cookiecutter")
-    return flag
 
 def install_py_package():
 
