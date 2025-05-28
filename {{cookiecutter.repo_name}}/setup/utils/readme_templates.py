@@ -125,8 +125,8 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
         setup += "pip install -r requirements.txt\n"
         setup += "```\n\n"
 
-        setup += "#### Install using uv (recommended):\n"
-        setup += f"If you prefer a faster and more reproducible alternative to pip, you can use [{uv_version}](https://github.com/astral-sh/uv) to install the dependencies from `requirements.txt`:\n"
+        setup += "#### Install using uv :\n"
+        setup += f"If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies from `requirements.txt`:\n"
         setup += "```\n"
         setup += "uv pip install -r requirements.txt\n"
         setup += "```\n\n"
