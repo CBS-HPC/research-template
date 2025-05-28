@@ -24,6 +24,7 @@ setup(
         'python-dotenv',
         'pyyaml',
         'requests',
+        'rpds-py==0.21.0',
         'nbformat',
         'beautifulsoup4',
     ],

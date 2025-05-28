@@ -22,7 +22,7 @@ def setup_virtual_environment(version_control, programming_language, python_env_
     """    
     install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
 
-    pip_packages = set_pip_packages(version_control,programming_language)    
+    pip_packages = set_packages(version_control,programming_language)    
     env_name = None
   
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
@@ -56,10 +56,6 @@ def setup_virtual_environment(version_control, programming_language, python_env_
 
     if env_name:
         env_name = env_name.replace("\\", "/")
-    
-    #if not env_name or not python_env_manager: 
-    #    subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
-    #    print(f'Packages {pip_packages} installed successfully in the current environment.')
 
     return env_name
 
@@ -111,8 +107,9 @@ def load_env_file(extensions = ['.yml', '.txt']): # FIX ME - NOT USED
     else:
         return None
 
-def set_pip_packages(version_control,programming_language):
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
+def set_packages(version_control,programming_language):
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec']
+    #install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab'])
     elif programming_language.lower()  == 'stata':
@@ -153,7 +150,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         command = ['conda', 'create', '--yes', '--prefix', env_path, '-c', 'conda-forge']
 
         command.extend(conda_packages)
-        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: conda install = {conda_packages}; pip install = {pip_packages}. '
+        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: {conda_packages}; {pip_packages}. '
 
     flag = create_conda_env(command,msg)
 
@@ -198,7 +195,7 @@ def conda_pip_install(env_path, pip_packages):
 
     Parameters:
     repo_name (str): Name of the Conda environment to activate.
-    pip_packages (list): List of pip packages to install.
+    pip_packages (list): List of packages to install.
 
     Returns:
     None
@@ -208,9 +205,9 @@ def conda_pip_install(env_path, pip_packages):
 
     try:
         package_installer(required_libraries = pip_packages, conda_env = env_path)
-        print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{env_path}'.")
+        print(f"Successfully installed packages: {', '.join(pip_packages)} in Conda environment '{env_path}'.")
     except subprocess.CalledProcessError as e:
-        print(f"Error installing pip packages in Conda environment '{env_path}': {e}")
+        print(f"Error installing packages in Conda environment '{env_path}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
@@ -396,13 +393,13 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
     Updates an existing environment.yml file to:
     - Change the environment name to `repo_name`
     - Add additional packages from `conda_packages` list
-    - Add additional pip packages from `pip_packages` list
+    - Add additional packages from `pip_packages` list
 
     Parameters:
     env_file (str): Path to the existing environment.yml file
     repo_name (str): The new environment name (usually repo name)
     conda_packages (list): List of additional Conda packages to install
-    pip_packages (list): List of additional pip packages to install
+    pip_packages (list): List of additional packages to install
 
     Returns:
     None
@@ -450,7 +447,7 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
     with open(env_file, 'w') as file:
         yaml.dump(env_data, file, default_flow_style=False)
 
-    print(f"Updated {env_file} with new environment name '{repo_name}', added Conda packages, and added pip packages.")
+    print(f"Updated {env_file} with new environment name '{repo_name}', added Conda packages, and additional packages.")
 
 # Venv and Virtualenv Functions
 def create_venv_env(env_name, pip_packages=None):
@@ -463,42 +460,13 @@ def create_venv_env(env_name, pip_packages=None):
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
         print(f'Venv environment "{env_path}" for Python created successfully.')
 
-        # Install pip packages if provided
+        # Install packages if provided
         if pip_packages:
             package_installer(required_libraries = pip_packages, venv_env = env_path)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
         #env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VENV_ENV_PATH")
-
-        # Return the path to the virtual environment
-        return env_path
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
-        return None
-    except Exception as e:
-        print(f"Error: An unexpected error occurred: {e}")
-        return None
-
-def create_virtualenv_env_old(env_name, pip_packages=None):
-    """Create a Python virtual environment using virtualenv and install packages."""
-    try:
-        # Get the absolute path to the environment
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/virtualenv/{env_name}"))
-
-        # Create the virtual environment
-        subprocess.run(['virtualenv', env_path], check=True)
-        print(f'Virtualenv environment "{env_path}" for Python created successfully.')
-
-        # Install pip packages if provided
-        if pip_packages:
-            pip_path = os.path.join(env_path, 'bin', 'pip') if sys.platform != 'win32' else os.path.join(env_path, 'Scripts', 'pip')
-            subprocess.run([pip_path, 'install'] + pip_packages, check=True)
-            print(f'Packages {pip_packages} installed successfully in the virtualenv environment.')
-        
-        #env_path = os.path.relpath(env_path)
-        save_to_env(env_path,"VIRTUALENV_ENV_PATH")
 
         # Return the path to the virtual environment
         return env_path
