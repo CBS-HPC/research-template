@@ -705,8 +705,15 @@ def get_version(programming_language):
         version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
         version =version.stdout.strip()  # Returns version info
     elif programming_language.lower() == "pip":
+        if not exe_path:
+            return "pip"
         version = subprocess.check_output(["pip", "--version"], text=True)
-        version = " ".join(version.split()[:2])
+        version =version.stdout.strip()  # Returns version info
+    elif programming_language.lower() == "uv":
+        if not exe_path:
+            return "uv"
+        version = subprocess.check_output(["uv", "--version"], text=True)
+        version = " ".join(version.split()[:2])    
     elif programming_language.lower() == "conda":
         if not exe_path:
             return "conda"   

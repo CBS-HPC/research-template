@@ -78,7 +78,7 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
             )
         return usage
 
-    def set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user,hostname):            
+    def set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user,hostname):            
         setup = ""
 
         if repo_name and repo_user:
@@ -124,8 +124,19 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
         setup += "```\n"
         setup += "pip install -r requirements.txt\n"
         setup += "```\n\n"
+
+        setup += "#### Install using uv (recommended):\n"
+        setup += f"If you prefer a faster and more reproducible alternative to pip, you can use [{uv_version}](https://github.com/astral-sh/uv) to install the dependencies from `requirements.txt`:\n"
+        setup += "```\n"
+        setup += "uv pip install -r requirements.txt\n"
+        setup += "```\n\n"
+        setup += "> 💡 [uv](https://github.com/astral-sh/uv) provides faster installs and better reproducibility by resolving and locking dependencies consistently. Install it with `pip install uv` or follow the [official instructions](https://github.com/astral-sh/uv).\n\n"
+
+
         if programming_language.lower() == "r":
-            setup += f"> ⚡ Note: Pip installation will **not** install **{software_version}**.\n\n"
+            setup += f"> ⚡ Note: Pip or uv installation will **not** install **{software_version}**.\n\n"
+
+
         
         setup += "#### Install the `setup` package:\n"
         setup += "If you installed dependencies manually using Conda or Pip, you must also install the local `setup` package used for configuration and automation scripts:\n"
@@ -514,7 +525,8 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     software_version = get_version(programming_language)
     conda_version = get_version("conda") if py_manager.lower() == "conda" else "conda"
     pip_version = get_version("pip")
-    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,repo_name, repo_user, hostname)
+    uv_version = get_version("uv")
+    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user, hostname)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
     usage = set_script_structure(programming_language,software_version,src_path,json_file)
