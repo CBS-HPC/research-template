@@ -1,6 +1,24 @@
 import os
 import pathlib
 
+from utils.general_tools import *
+
+# Upgrade Pip:
+try:
+    subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True)
+except subprocess.CalledProcessError as e:
+    print(f"Warning: pip upgrade failed: {e}")
+
+# Install problamtic packages
+try:
+    subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
+except subprocess.CalledProcessError as e:
+    print(f"Warning: failed istalling 'python-dotenv': {e}")
+
+pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
+package_installer(required_libraries = pip_packages)
+print(f'Packages {pip_packages} installed successfully in the current environment.')
+
 from utils import *
 
 def create_folders():
@@ -31,23 +49,7 @@ def main():
     version = load_from_env("VERSION",".cookiecutter")
     authors = load_from_env("AUTHORS",".cookiecutter")
     orcids = load_from_env("ORCIDS",".cookiecutter")
-
-    # Upgrade Pip:
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: pip upgrade failed: {e}")
-
-    # Install problamtic packages
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: failed istalling 'python-dotenv': {e}")
-
-    pip_packages = set_packages(version_control,programming_language)
-    package_installer(required_libraries = pip_packages)
-    print(f'Packages {pip_packages} installed successfully in the current environment.')
-
+    
     # Set to .env
     set_program_path(programming_language)
 
