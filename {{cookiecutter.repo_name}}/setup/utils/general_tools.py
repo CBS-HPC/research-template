@@ -701,7 +701,7 @@ def get_version(programming_language):
     elif programming_language.lower() == "uv":
         try:
             version = subprocess.check_output(["uv", "--version"], text=True)
-            version = version.stdout.strip()  # Returns version info       
+            version = version.strip()  # Returns version info       
         except subprocess.CalledProcessError as e:
             return "uv" 
     elif programming_language.lower() == "conda":
