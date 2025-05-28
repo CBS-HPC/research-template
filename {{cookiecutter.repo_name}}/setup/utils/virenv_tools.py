@@ -51,7 +51,7 @@ def setup_virtual_environment(version_control, programming_language, python_env_
     elif python_env_manager.lower() == "venv":
         env_name = create_venv_env(repo_name,pip_packages)
     else:
-        pip_installer(pip_packages)
+        pip_installer(required_libraries = pip_packages)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
     if env_name:
@@ -218,7 +218,7 @@ def conda_pip_install(env_path, pip_packages):
         # Execute the pip install command
         #subprocess.run(pip_command, check=True)
 
-        pip_installer(pip_packages,env_path)
+        pip_installer(required_libraries = pip_packages, conda_env = env_path)
         print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{env_path}'.")
     except subprocess.CalledProcessError as e:
         print(f"Error installing pip packages in Conda environment '{env_path}': {e}")
@@ -476,9 +476,7 @@ def create_venv_env(env_name, pip_packages=None):
 
         # Install pip packages if provided
         if pip_packages:
-            pip_installer(pip_packages)
-            #pip_path = os.path.join(env_path, "bin", 'pip') if sys.platform != 'win32' else os.path.join(env_path, "Scripts", 'pip')
-            #subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+            pip_installer(required_libraries = pip_packages, venv_env = env_path)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
         #env_path = os.path.relpath(env_path)

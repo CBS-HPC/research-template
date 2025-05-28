@@ -8,14 +8,27 @@ from functools import wraps
 import pathlib
 import getpass
 
-def pip_installer(required_libraries: list = None, conda_env: str = None):
+import subprocess
+import sys
+import shutil
+import pathlib
+import os
+
+def pip_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
     if not required_libraries:
         return
 
-    # Determine how to get installed packages based on environment
+    # Check if `uv` is available
+    uv_available = shutil.which("uv") is not None
+
+    # Determine environment path and freeze command
     if conda_env:
         env_path = pathlib.Path(conda_env).resolve()
         freeze_cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "freeze"]
+    elif venv_env:
+        env_path = pathlib.Path(venv_env).resolve()
+        pip_path = os.path.join(env_path, "bin", "pip") if sys.platform != "win32" else os.path.join(env_path, "Scripts", "pip")
+        freeze_cmd = [pip_path, "freeze"]
     else:
         freeze_cmd = [sys.executable, "-m", "pip", "freeze"]
 
@@ -31,25 +44,38 @@ def pip_installer(required_libraries: list = None, conda_env: str = None):
     missing_libraries = [lib for lib in required_libraries if lib.lower().split("==")[0] not in installed_pkgs]
 
     if not missing_libraries:
-        #print("All required libraries are already installed.")
         return
 
     print(f"Installing missing libraries: {missing_libraries}")
 
-    # Prepare install command
     try:
         if conda_env:
-            pip_command = [
-                "conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "install"
-            ] + missing_libraries
-        else:
-            pip_command = [sys.executable, "-m", "pip", "install"] + missing_libraries
+            if uv_available:
+                cmd = ["conda", "run", "--prefix", str(env_path), "uv", "pip", "install"] + missing_libraries
+            else:
+                cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "install"] + missing_libraries
 
-        subprocess.run(pip_command, check=True)
+        elif venv_env:
+            pip_path = os.path.join(env_path, "bin", "pip") if sys.platform != "win32" else os.path.join(env_path, "Scripts", "pip")
+            if uv_available:
+                cmd = ["uv", "pip", "install"] + missing_libraries
+                env = os.environ.copy()
+                env["PATH"] = os.path.dirname(pip_path) + os.pathsep + env["PATH"]
+                subprocess.run(cmd, check=True, env=env)
+                return
+            else:
+                cmd = [pip_path, "install"] + missing_libraries
+
+        else:
+            if uv_available:
+                cmd = ["uv", "pip", "install"] + missing_libraries
+            else:
+                cmd = [sys.executable, "-m", "pip", "install"] + missing_libraries
+
+        subprocess.run(cmd, check=True)
 
     except subprocess.CalledProcessError as e:
         print(f"Failed to install some packages: {e}")
-
 
 def pip_installer_old(required_libraries:list = None,conda_exe:bool = False):
     installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
