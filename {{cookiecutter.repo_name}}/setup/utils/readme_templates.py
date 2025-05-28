@@ -1086,26 +1086,12 @@ def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], r
 
                 if line == "Software version:" and i + 1 < len(content):
                     current_software = content[i + 1].strip()
-                    software_dependencies[current_software] = {"install_cmd": None, "dependencies": []}
-                    continue
-
-                if line == "Install Command:" and current_software:
-                    install_cmd = content[i + 1].strip()
-                    software_dependencies[current_software]["install_cmd"] = install_cmd
-
-                    if "pip" in install_cmd:
-                        install_str = f"**To replicate the environment below, please run '{install_cmd}' within {current_software} as the initial step. See [this guide](https://pip.pypa.io/en/stable/user_guide/#ensuring-repeatability) for further info on using the 'requirements.txt'.**\n"
-                    elif "conda" in install_cmd:
-                        install_str = f"**To replicate the {current_software} environment below (using Conda), please run '{install_cmd}'as the initial step. For further info Conda environments, visit [this page](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).**\n"
-                    else:
-                        install_str = f"**To install the dependencies below, please run '{install_cmd}' within {current_software} as the first step to replicate the environment.**\n\n"
-
-                    software_dependencies[current_software]["install_cmd"] = install_str
+                    software_dependencies[current_software] = {"dependencies": []}
                     continue
 
                 if line == "Dependencies:":
                     continue
-
+                
                 if current_software and "==" in line:
                     package, version = line.split("==")
                     software_dependencies[current_software]["dependencies"].append((package, version))
@@ -1149,11 +1135,7 @@ The environments were set up using:"""
 
             # Correctly loop through the dictionary
             for software, details in software_dependencies.items():
-                install_cmd = details.get("install_cmd")
-                if install_cmd is not None:
-                    software_requirements_section += install_cmd
-                    
-                #software_requirements_section += f"\n**{software}**\n"
+                   
                 for package, version in details["dependencies"]:
                     software_requirements_section += f"  - {package}: {version}\n"
 

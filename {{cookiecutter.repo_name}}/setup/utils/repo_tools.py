@@ -199,7 +199,7 @@ def repo_create(code_repo, repo_name, project_description):
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
         return False
 
-def get_login_credentials_cli(code_repo, repo_name):
+def get_login_credentials_old(code_repo, repo_name):
     """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
     code_repo = code_repo.lower()
 
@@ -234,7 +234,7 @@ def get_login_credentials_cli(code_repo, repo_name):
 
     return user, token, hostname, command, privacy_setting
 
-def repo_login_cli(version_control = None, repo_name = None , code_repo = None):
+def repo_login_old(version_control = None, repo_name = None , code_repo = None):
 
     def authenticate(command, token):
         """Attempts to authenticate using the provided command and token."""
@@ -288,7 +288,7 @@ def repo_login_cli(version_control = None, repo_name = None , code_repo = None):
         print(f"An error occurred: {e}")
         return False
     
-def repo_create_cli(code_repo, repo_name, project_description):
+def repo_create_old(code_repo, repo_name, project_description):
     try:
         user, token, hostname, _, privacy_setting = get_login_credentials_cli(code_repo,repo_name)
 
@@ -380,7 +380,7 @@ def repo_create_cli(code_repo, repo_name, project_description):
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
         return False
 
-def install_glab_cli(install_path=None):
+def install_glab_old(install_path=None):
     
     def get_glab_version():
         url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
@@ -451,7 +451,7 @@ def install_glab_cli(install_path=None):
 
     return exe_to_path('glab',os.path.join(install_path, "bin"))
    
-def install_gh_cli(install_path=None):
+def install_gh_old(install_path=None):
     """
     Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
 

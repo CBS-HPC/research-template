@@ -20,18 +20,13 @@ def setup_remote_repository(version_control, code_repo, repo_name, project_descr
 
     if not version_control or not os.path.isdir(".git"):
         return False
-
-    # Setup repository if CLI tool installed
-
-    success = setup_repo(version_control, code_repo, repo_name, project_description)
+    
+    if setup_repo(version_control, code_repo, repo_name, project_description):
+        return True
+    save_to_env("None", "CODE_REPO", ".cookiecutter")
+    return False
  
-    # Fallback if setup failed
-    if not success:
-        save_to_env("None", "CODE_REPO", ".cookiecutter")
-
-    return success
-
-def setup_remote_repository_CLI(version_control, code_repo, repo_name, project_description):
+def setup_remote_repository_old(version_control, code_repo, repo_name, project_description):
     """Handle repository creation and login based on selected platform."""
 
     # Navigate to project root

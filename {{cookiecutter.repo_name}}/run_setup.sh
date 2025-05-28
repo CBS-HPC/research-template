@@ -71,7 +71,7 @@ if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installat
             fi
             ;;
         *)
-            echo "Error: Unsupported environment manager '$env_manager'. Supported values are: Conda, venv, virtualenv."
+            echo "Error: Unsupported environment manager '$env_manager'. Supported values are: Conda, Venv and 'Base Installation'"
             ;;
     esac
 else

@@ -2,7 +2,7 @@
 
 param (
     [string]$env_path,
-    [string]$env_manager,  # Environment manager: Conda, venv, or virtualenv
+    [string]$env_manager,  # Environment manager: Conda, venv
     [string]$intro_path,
     [string]$version_control_path,
     [string]$remote_repository_path,
@@ -24,10 +24,6 @@ if ($env_path -ne "Base Installation" -and $env_manager -ne "Base Installation")
         }
         "venv" {
             Write-Output "Using Python from venv: $env_path"
-            $pythonExe = Join-Path $env_path "Scripts\python.exe"
-        }
-        "virtualenv" {
-            Write-Output "Using Python from virtualenv: $env_path"
             $pythonExe = Join-Path $env_path "Scripts\python.exe"
         }
         default {

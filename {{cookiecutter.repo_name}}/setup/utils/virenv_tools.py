@@ -48,12 +48,9 @@ def setup_virtual_environment(version_control, programming_language, python_env_
         else:
             env_name = setup_conda(install_path=install_path, repo_name=repo_name,conda_packages=conda_packages, pip_packages=None,env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
         
-    elif python_env_manager.lower() in ["venv","virtualenv"]:
-        if python_env_manager.lower() == "venv":
-            env_name = create_venv_env(repo_name,pip_packages)
-        elif python_env_manager.lower() == "virtualenv":
-            env_name = create_virtualenv_env(repo_name,pip_packages)  
-    
+    elif python_env_manager.lower() == "venv":
+        env_name = create_venv_env(repo_name,pip_packages)
+
     if env_name:
         env_name = env_name.replace("\\", "/")
     
@@ -112,7 +109,7 @@ def load_env_file(extensions = ['.yml', '.txt']): # FIX ME - NOT USED
         return None
 
 def set_pip_packages(version_control,programming_language):
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec','pipreqs']
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab'])
     elif programming_language.lower()  == 'stata':
@@ -192,7 +189,7 @@ def set_conda_packages(version_control,install_packages,code_repo):
 
     return install_packages
 
-def conda_pip_install(repo_path, pip_packages):
+def conda_pip_install(env_path, pip_packages):
     """
     Activates a Conda environment and installs packages using pip.
 
@@ -212,15 +209,16 @@ def conda_pip_install(repo_path, pip_packages):
         #    "conda", "run", "-n", repo_name, sys.executable, "-m", "pip", "install"
         #] + pip_packages
 
-        pip_command = [
-            "conda", "run", "--prefix", repo_path, sys.executable, "-m", "pip", "install"
-        ] + pip_packages
+        #pip_command = [
+        #    "conda", "run", "--prefix", env_path, sys.executable, "-m", "pip", "install"
+        #] + pip_packages
         # Execute the pip install command
-        subprocess.run(pip_command, check=True)
+        #subprocess.run(pip_command, check=True)
 
-        print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{repo_path}'.")
+        pip_installer(pip_packages,env_path)
+        print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{env_path}'.")
     except subprocess.CalledProcessError as e:
-        print(f"Error installing pip packages in Conda environment '{repo_path}': {e}")
+        print(f"Error installing pip packages in Conda environment '{env_path}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
@@ -475,8 +473,9 @@ def create_venv_env(env_name, pip_packages=None):
 
         # Install pip packages if provided
         if pip_packages:
-            pip_path = os.path.join(env_path, "bin", 'pip') if sys.platform != 'win32' else os.path.join(env_path, "Scripts", 'pip')
-            subprocess.run([pip_path, 'install'] + pip_packages, check=True)
+            pip_installer(pip_packages)
+            #pip_path = os.path.join(env_path, "bin", 'pip') if sys.platform != 'win32' else os.path.join(env_path, "Scripts", 'pip')
+            #subprocess.run([pip_path, 'install'] + pip_packages, check=True)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
         #env_path = os.path.relpath(env_path)
@@ -492,7 +491,7 @@ def create_venv_env(env_name, pip_packages=None):
         print(f"Error: An unexpected error occurred: {e}")
         return None
 
-def create_virtualenv_env(env_name, pip_packages=None):
+def create_virtualenv_env_old(env_name, pip_packages=None):
     """Create a Python virtual environment using virtualenv and install packages."""
     try:
         # Get the absolute path to the environment

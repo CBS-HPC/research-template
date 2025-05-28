@@ -8,7 +8,50 @@ from functools import wraps
 import pathlib
 import getpass
 
-def pip_installer(required_libraries:list = None):
+def pip_installer(required_libraries: list = None, conda_env: str = None):
+    if not required_libraries:
+        return
+
+    # Determine how to get installed packages based on environment
+    if conda_env:
+        env_path = pathlib.Path(conda_env).resolve()
+        freeze_cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "freeze"]
+    else:
+        freeze_cmd = [sys.executable, "-m", "pip", "freeze"]
+
+    # Get list of installed packages
+    try:
+        installed = subprocess.check_output(freeze_cmd).decode().lower().splitlines()
+        installed_pkgs = {pkg.split("==")[0] for pkg in installed if "==" in pkg}
+    except subprocess.CalledProcessError as e:
+        print(f"Error checking installed packages: {e}")
+        return
+
+    # Identify missing packages
+    missing_libraries = [lib for lib in required_libraries if lib.lower().split("==")[0] not in installed_pkgs]
+
+    if not missing_libraries:
+        print("All required libraries are already installed.")
+        return
+
+    print(f"Installing missing libraries: {missing_libraries}")
+
+    # Prepare install command
+    try:
+        if conda_env:
+            pip_command = [
+                "conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "install"
+            ] + missing_libraries
+        else:
+            pip_command = [sys.executable, "-m", "pip", "install"] + missing_libraries
+
+        subprocess.run(pip_command, check=True)
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install some packages: {e}")
+
+
+def pip_installer_old(required_libraries:list = None,conda_exe:bool = False):
     installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
     for lib in required_libraries:
@@ -360,15 +403,6 @@ def is_installed(executable: str = None, name: str = None):
     else:
         print(f"{name} is not on Path")
         return False
-
-# FIX ME - Not used
-def set_from_env():
-  
-    is_installed('git')
-    is_installed('datalad')
-    is_installed('git-annex')
-    is_installed('rclone')
-    is_installed('git-annex-remote-rclone')
 
 # Setting Options
 def git_user_info(version_control):

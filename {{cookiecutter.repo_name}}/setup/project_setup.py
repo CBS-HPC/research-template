@@ -169,16 +169,11 @@ def set_options(programming_language,version_control):
 
      # Set requirements file
     requirements_file = "requirements.txt"
-    install_cmd = f"pip install -r {requirements_file}"
 
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
-        
         requirements_file = "environment.yml"
-        install_cmd =  f"conda env create -f {requirements_file}"
-  
-    save_to_env(install_cmd,"INSTALL_CMD",".cookiecutter")
+       
     save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")     
-
 
     if version_control in ["Git","Datalad","DVC"]:
         code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","Codeberg","None"])
@@ -199,7 +194,7 @@ def set_options(programming_language,version_control):
 
     conda_r_version, conda_python_version = select_version()
 
-    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version 
+    return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, conda_r_version, conda_python_version 
 
 def multiple_backups(remote_backup):
 
@@ -241,7 +236,7 @@ remote_backup = "{{cookiecutter.remote_backup}}"
 
 remote_backup = multiple_backups(remote_backup)
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
-programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, install_cmd, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
+programming_language, python_env_manager, r_env_manager, code_repo, remote_storage, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
 
 # Set project info to .cookiecutter
 save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
