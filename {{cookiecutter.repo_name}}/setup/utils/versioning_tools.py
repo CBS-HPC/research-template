@@ -36,6 +36,8 @@ def setup_git(version_control,code_repo):
         if not flag:
             flag, git_name, git_email = setup_git_config(version_control,git_name, git_email)
         
+        
+
         if flag and version_control == "Git":  
             rename = None
             if code_repo.lower() in ["github","codeberg"]:
@@ -218,13 +220,16 @@ def git_init(msg, rename, path: str =None):
     if not os.path.exists(path):
         os.makedirs(path)
 
+    if rename:
+        subprocess.run(["git", "config", "--global", "init.defaultBranch", rename], check=True)
+
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(os.path.join(path, ".git")):
         subprocess.run(["git", "init"], check=True, cwd=path)
         print(f"Initialized a new Git repository in {path}.")
 
-        if rename:
-            subprocess.run(["git", "branch", "-m", "master", rename], check=True, cwd=path)
+        #if rename:
+        #    subprocess.run(["git", "branch", "-m", "master", rename], check=True, cwd=path)
 
         _ = git_commit(msg, path)
         print(f"Created the following commit: {msg}")
