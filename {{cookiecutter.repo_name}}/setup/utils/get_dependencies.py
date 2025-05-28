@@ -8,11 +8,11 @@ import importlib
 from typing import Dict, List
 import pathlib
 
+from .virenv_tools import *
+
 pip_installer(required_libraries =  ['nbformat'])
 
 import nbformat
-
-from .virenv_tools import *
 
 # Determine file extension based on programming language
 ext_map = {
