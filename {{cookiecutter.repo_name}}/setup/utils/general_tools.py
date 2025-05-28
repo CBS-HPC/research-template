@@ -90,8 +90,6 @@ def package_installer(required_libraries: list = None, conda_env: str = None, ve
     print(f"Installing missing libraries: {missing_libraries}")
 
     for lib in missing_libraries:
-        print(f"Installing '{lib}'...")
-
         # Try uv first
         if uv_available:
             try:
