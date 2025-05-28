@@ -129,7 +129,7 @@ def repo_create(code_repo, repo_name, project_description):
             response = requests.post(api_url, headers=headers, json=payload)
             if response.status_code == 201:
                 print(f"Repository '{repo_name}' created successfully on GitHub.")
-            elif response.status_code == 400 and 'already exists' in response.text.lower():
+            elif response.status_code == 422 and 'already exists' in response.text.lower():
                 print(f"Repository '{repo_name}' already exists on GitHub.")
             else:
                 raise Exception(f"GitHub repo creation failed: {response.status_code} {response.text}")
@@ -146,7 +146,7 @@ def repo_create(code_repo, repo_name, project_description):
             response = requests.post(api_url, headers=headers, data=payload)
             if response.status_code == 201:
                 print(f"Repository '{repo_name}' created successfully on GitLab.")
-            elif response.status_code == 409:
+            elif response.status_code == 400 and 'has already been taken' in response.text.lower():
                 print(f"Repository '{repo_name}' already exists on GitLab.")
             else:
                 raise Exception(f"GitLab repo creation failed: {response.status_code} {response.text}")
