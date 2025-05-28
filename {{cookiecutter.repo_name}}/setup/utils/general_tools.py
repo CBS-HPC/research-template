@@ -118,7 +118,7 @@ def package_installer_old(required_libraries:list = None,conda_exe:bool = False)
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-package_installer(required_libraries = ['python-dotenv'],use_uv = False)
+package_installer(required_libraries = ['python-dotenv'])
 
 from dotenv import dotenv_values, load_dotenv
 
