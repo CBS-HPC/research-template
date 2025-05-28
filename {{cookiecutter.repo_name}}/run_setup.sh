@@ -44,7 +44,7 @@ load_conda() {
 }
 
 # Activate environment based on the environment manager
-if [ "$env_path" != "Base Installation" ] && [ "$env_manager" != "Base Installation" ]; then
+if [ "$env_path" != "base Installation" ] && [ "$env_manager" != "base Installation" ]; then
     case "$env_manager" in
         "conda")
             load_conda

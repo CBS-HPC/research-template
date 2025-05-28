@@ -15,7 +15,7 @@ $env_path = $env_path -replace '\\', '/'
 $pythonExe = "python"
 
 # Resolve Python executable based on environment manager
-if ($env_path -ne "Base Installation" -and $env_manager -ne "Base Installation") {
+if ($env_path -ne "base Installation" -and $env_manager -ne "base Installation") {
     switch ($env_manager.ToLower()) {
         "conda" {
             Write-Output "Activating Conda environment: $env_path"

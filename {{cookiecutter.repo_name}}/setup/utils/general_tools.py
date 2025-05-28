@@ -672,7 +672,7 @@ def set_programming_language(programming_language):
 
 def get_version(programming_language):
     
-    if programming_language not in ["python","pip"]:
+    if programming_language not in ["python","pip","uv"]:
         exe_path = load_from_env(programming_language)
         exe_path  = check_path_format(exe_path)
         if not exe_path:
@@ -705,15 +705,20 @@ def get_version(programming_language):
         version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
         version =version.stdout.strip()  # Returns version info
     elif programming_language.lower() == "pip":
-        if not exe_path:
+
+        try:
+            version = subprocess.check_output(["pip", "--version"], text=True)
+            version = " ".join(version.split()[:2])    
+            version =version.stdout.strip()  # Returns version info
+        except subprocess.CalledProcessError as e:
             return "pip"
-        version = subprocess.check_output(["pip", "--version"], text=True)
-        version =version.stdout.strip()  # Returns version info
     elif programming_language.lower() == "uv":
-        if not exe_path:
-            return "uv"
-        version = subprocess.check_output(["uv", "--version"], text=True)
-        version = " ".join(version.split()[:2])    
+        try:
+            version = subprocess.check_output(["uv", "--version"], text=True)
+            version =version.stdout.strip()  # Returns version info       
+            version =version.stdout.strip()  # Returns version info
+        except subprocess.CalledProcessError as e:
+            return "uv" 
     elif programming_language.lower() == "conda":
         if not exe_path:
             return "conda"   
