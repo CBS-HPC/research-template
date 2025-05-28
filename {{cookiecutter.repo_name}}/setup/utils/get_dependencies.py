@@ -10,7 +10,7 @@ import pathlib
 
 from .virenv_tools import *
 
-pip_installer(required_libraries =  ['nbformat'])
+package_installer(required_libraries =  ['nbformat'])
 
 import nbformat
 

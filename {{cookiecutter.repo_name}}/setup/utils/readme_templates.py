@@ -8,7 +8,7 @@ import platform
 
 from .general_tools import *
 
-pip_installer(required_libraries =  ['pyyaml','requests','pathspec'])
+package_installer(required_libraries =  ['pyyaml','requests','pathspec'])
 
 import yaml
 import requests

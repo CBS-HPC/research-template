@@ -9,7 +9,7 @@ import glob
 
 from .general_tools import *
 
-pip_installer(required_libraries =  ['requests'])
+package_installer(required_libraries =  ['requests'])
 
 import requests
 

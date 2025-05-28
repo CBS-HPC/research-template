@@ -14,23 +14,52 @@ import shutil
 import pathlib
 import os
 
-def pip_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
+import sys
+import os
+import subprocess
+import pathlib
+import shutil
+
+def package_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
     if not required_libraries:
         return
 
-    # Check if `uv` is available
-    uv_available = shutil.which("uv") is not None
+    def install_uv(cmd_prefix):
+        """Helper to install uv using pip with given command prefix."""
+        try:
+            print("Installing 'uv' package...")
+            subprocess.run(cmd_prefix + ["install", "uv"], check=True)
+            print("'uv' installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install 'uv': {e}")
 
-    # Determine environment path and freeze command
+    # Determine environment path and pip/uv commands
     if conda_env:
         env_path = pathlib.Path(conda_env).resolve()
         freeze_cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "freeze"]
+        uv_install_cmd_prefix = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip"]
+        uv_cmd_prefix = ["conda", "run", "--prefix", str(env_path), "uv", "pip"]
     elif venv_env:
         env_path = pathlib.Path(venv_env).resolve()
         pip_path = os.path.join(env_path, "bin", "pip") if sys.platform != "win32" else os.path.join(env_path, "Scripts", "pip")
         freeze_cmd = [pip_path, "freeze"]
+        uv_install_cmd_prefix = [pip_path]
+        uv_cmd_prefix = ["uv", "pip"]
     else:
         freeze_cmd = [sys.executable, "-m", "pip", "freeze"]
+        uv_install_cmd_prefix = [sys.executable, "-m", "pip"]
+        uv_cmd_prefix = ["uv", "pip"]
+
+    # Check if uv is available
+    uv_available = shutil.which("uv") is not None
+
+    # If uv not available, install it first
+    if not uv_available:
+        install_uv(uv_install_cmd_prefix)
+        # After installation, re-check if uv is now available
+        uv_available = shutil.which("uv") is not None
+        if not uv_available:
+            print("Warning: 'uv' could not be installed. Falling back to pip.")
 
     # Get list of installed packages
     try:
@@ -51,16 +80,15 @@ def pip_installer(required_libraries: list = None, conda_env: str = None, venv_e
     try:
         if conda_env:
             if uv_available:
-                cmd = ["conda", "run", "--prefix", str(env_path), "uv", "pip", "install"] + missing_libraries
+                cmd = uv_cmd_prefix + ["install"] + missing_libraries
             else:
                 cmd = ["conda", "run", "--prefix", str(env_path), sys.executable, "-m", "pip", "install"] + missing_libraries
 
         elif venv_env:
-            pip_path = os.path.join(env_path, "bin", "pip") if sys.platform != "win32" else os.path.join(env_path, "Scripts", "pip")
             if uv_available:
-                cmd = ["uv", "pip", "install"] + missing_libraries
                 env = os.environ.copy()
-                env["PATH"] = os.path.dirname(pip_path) + os.pathsep + env["PATH"]
+                env["PATH"] = os.path.dirname(pip_path) + os.pathsep + env.get("PATH", "")
+                cmd = uv_cmd_prefix + ["install"] + missing_libraries
                 subprocess.run(cmd, check=True, env=env)
                 return
             else:
@@ -68,7 +96,7 @@ def pip_installer(required_libraries: list = None, conda_env: str = None, venv_e
 
         else:
             if uv_available:
-                cmd = ["uv", "pip", "install"] + missing_libraries
+                cmd = uv_cmd_prefix + ["install"] + missing_libraries
             else:
                 cmd = [sys.executable, "-m", "pip", "install"] + missing_libraries
 
@@ -77,7 +105,7 @@ def pip_installer(required_libraries: list = None, conda_env: str = None, venv_e
     except subprocess.CalledProcessError as e:
         print(f"Failed to install some packages: {e}")
 
-def pip_installer_old(required_libraries:list = None,conda_exe:bool = False):
+def package_installer_old(required_libraries:list = None,conda_exe:bool = False):
     installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
 
     for lib in required_libraries:
@@ -89,7 +117,7 @@ def pip_installer_old(required_libraries:list = None,conda_exe:bool = False):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-pip_installer(required_libraries =  ['python-dotenv'])
+package_installer(required_libraries =  ['python-dotenv'])
 
 from dotenv import dotenv_values, load_dotenv
 

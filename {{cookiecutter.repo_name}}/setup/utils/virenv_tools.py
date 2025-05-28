@@ -7,7 +7,7 @@ import pathlib
 
 from .general_tools import *
 
-pip_installer(required_libraries =  ['pyyaml'])
+package_installer(required_libraries =  ['pyyaml'])
 
 import yaml
 
@@ -51,7 +51,7 @@ def setup_virtual_environment(version_control, programming_language, python_env_
     elif python_env_manager.lower() == "venv":
         env_name = create_venv_env(repo_name,pip_packages)
     else:
-        pip_installer(required_libraries = pip_packages)
+        package_installer(required_libraries = pip_packages)
         print(f'Packages {pip_packages} installed successfully in the current environment.')
 
     if env_name:
@@ -207,18 +207,7 @@ def conda_pip_install(env_path, pip_packages):
         return
 
     try:
-        # Construct the pip install command
-        #pip_command = [
-        #    "conda", "run", "-n", repo_name, sys.executable, "-m", "pip", "install"
-        #] + pip_packages
-
-        #pip_command = [
-        #    "conda", "run", "--prefix", env_path, sys.executable, "-m", "pip", "install"
-        #] + pip_packages
-        # Execute the pip install command
-        #subprocess.run(pip_command, check=True)
-
-        pip_installer(required_libraries = pip_packages, conda_env = env_path)
+        package_installer(required_libraries = pip_packages, conda_env = env_path)
         print(f"Successfully installed pip packages: {', '.join(pip_packages)} in Conda environment '{env_path}'.")
     except subprocess.CalledProcessError as e:
         print(f"Error installing pip packages in Conda environment '{env_path}': {e}")
@@ -476,7 +465,7 @@ def create_venv_env(env_name, pip_packages=None):
 
         # Install pip packages if provided
         if pip_packages:
-            pip_installer(required_libraries = pip_packages, venv_env = env_path)
+            package_installer(required_libraries = pip_packages, venv_env = env_path)
             print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
         #env_path = os.path.relpath(env_path)

@@ -7,7 +7,7 @@ from .code_templates import write_script
 from .readme_templates import main as update_readme_main
 from .get_dependencies import main as get_setup_dependencies_main
 
-pip_installer(required_libraries=['rpds-py==0.21.0', 'nbformat'])
+package_installer(required_libraries=['rpds-py==0.21.0', 'nbformat'])
 
 def create_example(project_language, folder_path):
     """

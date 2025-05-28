@@ -199,7 +199,7 @@ def set_options(programming_language,version_control):
 def multiple_backups(remote_backup):
 
     if remote_backup == "Multiple":
-        pip_installer(required_libraries = ['questionary'])
+        package_installer(required_libraries = ['questionary'])
         import questionary
         options = ["Deic Storage", "Dropbox", "Onedrive", "Local"]
         remote_backup = questionary.checkbox(
