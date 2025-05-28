@@ -16,6 +16,12 @@ import requests
 
 # GitHub and Gitlad Functions
 
+def setup_repo(version_control,code_repo,repo_name,project_description):
+    if repo_login(version_control,repo_name,code_repo):
+        return repo_create(code_repo, repo_name, project_description)
+    else:
+        return False 
+
 def get_login_credentials(code_repo, repo_name):
     """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
     code_repo = code_repo.lower()
@@ -24,34 +30,29 @@ def get_login_credentials(code_repo, repo_name):
         user = load_from_env('GITHUB_USER')
         token = load_from_env('GITHUB_TOKEN')
         hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
-        command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
         privacy_setting = load_from_env("GITHUB_PRIVACY")
 
     elif code_repo == "gitlab":
         user = load_from_env('GITLAB_USER')
         token = load_from_env('GITLAB_TOKEN')
         hostname = load_from_env('GITLAB_HOSTNAME') or "gitlab.com"
-        command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
         privacy_setting = load_from_env("GITLAB_PRIVACY")
 
     elif code_repo == "codeberg":
         user = load_from_env('CODEBERG_USER')
         token = load_from_env('CODEBERG_TOKEN')
         hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
-        command = "Not needed" # No CLI login for Codeberg
         privacy_setting = load_from_env("CODEBERG_PRIVACY")
 
     else:
-        return None, None, None, None, None
+        return None, None, None, None
 
     # Fallback to repo_user_info if anything critical is missing
     if not user or not token or not privacy_setting:
         version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
         user, privacy_setting, token, hostname = repo_user_info(version_control, repo_name, code_repo)
 
-    return user, token, hostname, command, privacy_setting
-
-
+    return user, token, hostname, privacy_setting
 
 def repo_login(version_control=None, repo_name=None, code_repo=None):
 
@@ -86,12 +87,12 @@ def repo_login(version_control=None, repo_name=None, code_repo=None):
     
     try:
         # Get login details based on the repository type
-        _, token, hostname, _, _ = get_login_credentials(code_repo, repo_name)
+        _, token, hostname, _ = get_login_credentials(code_repo, repo_name)
 
         if not token or not hostname:
             version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
             _, _, _, _ = repo_user_info(version_control, repo_name, code_repo)
-            _, token, hostname, _, _ = get_login_credentials(code_repo, repo_name)
+            _, token, hostname, _ = get_login_credentials(code_repo, repo_name)
 
         code_repo_lower = code_repo.lower()
         if code_repo_lower in ["github", "gitlab", "codeberg"]:
@@ -105,7 +106,7 @@ def repo_login(version_control=None, repo_name=None, code_repo=None):
 
 def repo_create(code_repo, repo_name, project_description):
     try:
-        user, token, hostname, _, privacy_setting = get_login_credentials(code_repo, repo_name)
+        user, token, hostname, privacy_setting = get_login_credentials(code_repo, repo_name)
         if not token:
             raise ValueError("Authentication token not found.")
 
@@ -233,7 +234,6 @@ def get_login_credentials_cli(code_repo, repo_name):
 
     return user, token, hostname, command, privacy_setting
 
-
 def repo_login_cli(version_control = None, repo_name = None , code_repo = None):
 
     def authenticate(command, token):
@@ -269,12 +269,12 @@ def repo_login_cli(version_control = None, repo_name = None , code_repo = None):
     
     try:
         # Get login details based on the repository type
-        _, token, hostname, command, _ = get_login_credentials(code_repo, repo_name)
+        _, token, hostname, command, _ = get_login_credentials_cli(code_repo, repo_name)
 
         if not command or not token or not hostname:
             version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
             _, _,_, _ = repo_user_info(version_control, repo_name, code_repo)
-            _, token, hostname, command, _ =  get_login_credentials(code_repo,repo_name)
+            _, token, hostname, command, _ =  get_login_credentials_cli(code_repo,repo_name)
 
         # Attempt authentication if both user and token are provided
         if code_repo.lower() in ["github","gitlab"]:
@@ -290,7 +290,7 @@ def repo_login_cli(version_control = None, repo_name = None , code_repo = None):
     
 def repo_create_cli(code_repo, repo_name, project_description):
     try:
-        user, token, hostname, _, privacy_setting = get_login_credentials(code_repo,repo_name)
+        user, token, hostname, _, privacy_setting = get_login_credentials_cli(code_repo,repo_name)
 
         def create_gh():
             try:
@@ -380,13 +380,7 @@ def repo_create_cli(code_repo, repo_name, project_description):
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
         return False
 
-def setup_repo(version_control,code_repo,repo_name,project_description):
-    if repo_login(version_control,repo_name,code_repo):
-        return repo_create(code_repo, repo_name, project_description)
-    else:
-        return False 
-
-def install_glab(install_path=None):
+def install_glab_cli(install_path=None):
     
     def get_glab_version():
         url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
@@ -457,7 +451,7 @@ def install_glab(install_path=None):
 
     return exe_to_path('glab',os.path.join(install_path, "bin"))
    
-def install_gh(install_path=None):
+def install_gh_cli(install_path=None):
     """
     Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
 
