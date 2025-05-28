@@ -696,7 +696,6 @@ def get_version(programming_language):
         try:
             version = subprocess.check_output(["pip", "--version"], text=True)
             version = " ".join(version.split()[:2])    
-            version = version.stdout.strip()  # Returns version info
         except subprocess.CalledProcessError as e:
             return "pip"
     elif programming_language.lower() == "uv":
