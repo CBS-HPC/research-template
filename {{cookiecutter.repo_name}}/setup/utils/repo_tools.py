@@ -51,7 +51,155 @@ def get_login_credentials(code_repo, repo_name):
 
     return user, token, hostname, command, privacy_setting
 
-def repo_login(version_control = None, repo_name = None , code_repo = None):
+import requests
+import subprocess
+
+def repo_login(version_control=None, repo_name=None, code_repo=None):
+
+    def authenticate_api(token, hostname, platform):
+        """Authenticate by requesting user info via API."""
+        if not token or not hostname:
+            return False
+        try:
+            if platform == "github":
+                url = "https://api.github.com/user"
+                headers = {"Authorization": f"token {token}"}
+            elif platform == "gitlab":
+                url = f"https://{hostname}/api/v4/user"
+                headers = {"PRIVATE-TOKEN": token}
+            elif platform == "codeberg":
+                url = f"https://{hostname}/api/v1/user"
+                headers = {"Authorization": f"token {token}"}
+            else:
+                return False
+
+            response = requests.get(url, headers=headers)
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    # Load from environment if not provided
+    repo_name = repo_name or load_from_env("REPO_NAME", ".cookiecutter")
+    code_repo = code_repo or load_from_env("CODE_REPO", ".cookiecutter")
+
+    if not repo_name or not code_repo:
+        return False
+    
+    try:
+        # Get login details based on the repository type
+        _, token, hostname, _, _ = get_login_credentials(code_repo, repo_name)
+
+        if not token or not hostname:
+            version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
+            _, _, _, _ = repo_user_info(version_control, repo_name, code_repo)
+            _, token, hostname, _, _ = get_login_credentials(code_repo, repo_name)
+
+        code_repo_lower = code_repo.lower()
+        if code_repo_lower in ["github", "gitlab", "codeberg"]:
+            return authenticate_api(token, hostname, code_repo_lower)
+
+        return False
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+def repo_create(code_repo, repo_name, project_description):
+    try:
+        user, token, hostname, _, privacy_setting = get_login_credentials(code_repo, repo_name)
+        if not token:
+            raise ValueError("Authentication token not found.")
+
+        code_repo_lower = code_repo.lower()
+        if code_repo_lower not in ["github", "gitlab", "codeberg"]:
+            raise ValueError("Unsupported code repository. Choose 'github', 'gitlab', or 'codeberg'.")
+
+        def create_github():
+            api_url = "https://api.github.com/user/repos"
+            headers = {
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            payload = {
+                "name": repo_name,
+                "description": project_description,
+                "private": (privacy_setting == "private"),
+                "auto_init": False
+            }
+            response = requests.post(api_url, headers=headers, json=payload)
+            if response.status_code == 201:
+                print(f"Repository '{repo_name}' created successfully on GitHub.")
+            elif response.status_code == 422 and 'already exists' in response.text.lower():
+                print(f"Repository '{repo_name}' already exists on GitHub.")
+            else:
+                raise Exception(f"GitHub repo creation failed: {response.status_code} {response.text}")
+
+        def create_gitlab():
+            api_url = f"https://{hostname}/api/v4/projects"
+            headers = {"PRIVATE-TOKEN": token}
+            payload = {
+                "name": repo_name,
+                "description": project_description,
+                "visibility": "private" if privacy_setting == "private" else "public",
+                "initialize_with_readme": False
+            }
+            response = requests.post(api_url, headers=headers, data=payload)
+            if response.status_code == 201:
+                print(f"Repository '{repo_name}' created successfully on GitLab.")
+            elif response.status_code == 409:
+                print(f"Repository '{repo_name}' already exists on GitLab.")
+            else:
+                raise Exception(f"GitLab repo creation failed: {response.status_code} {response.text}")
+
+        def create_codeberg():
+            api_url = f"https://{hostname}/api/v1/user/repos"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"token {token}"
+            }
+            payload = {
+                "name": repo_name,
+                "description": project_description,
+                "private": (privacy_setting == "private"),
+                "auto_init": False
+            }
+            response = requests.post(api_url, headers=headers, json=payload)
+            if response.status_code == 201:
+                print(f"Repository '{repo_name}' created successfully on Codeberg.")
+            elif response.status_code == 409:
+                print(f"Repository '{repo_name}' already exists on Codeberg.")
+            else:
+                raise Exception(f"Codeberg repo creation failed: {response.status_code} {response.text}")
+
+        # Create or check the repo
+        if code_repo_lower == "github":
+            create_github()
+        elif code_repo_lower == "gitlab":
+            create_gitlab()
+        elif code_repo_lower == "codeberg":
+            create_codeberg()
+
+        # Setup remote URL and push
+        default_branch = "main" if code_repo_lower in ["github", "codeberg"] else "master"
+        remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
+
+        remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
+        if "origin" not in remotes.stdout:
+            subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
+        else:
+            subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
+
+        subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
+        subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
+        print(f"Repository pushed to {hostname} on branch '{default_branch}'.")
+        return True
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
+        return False
+
+def repo_login_cli(version_control = None, repo_name = None , code_repo = None):
 
     def authenticate(command, token):
         """Attempts to authenticate using the provided command and token."""
@@ -105,7 +253,7 @@ def repo_login(version_control = None, repo_name = None , code_repo = None):
         print(f"An error occurred: {e}")
         return False
     
-def repo_create(code_repo, repo_name, project_description):
+def repo_create_cli(code_repo, repo_name, project_description):
     try:
         user, token, hostname, _, privacy_setting = get_login_credentials(code_repo,repo_name)
 
