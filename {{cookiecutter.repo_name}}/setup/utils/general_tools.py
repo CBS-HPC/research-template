@@ -74,7 +74,7 @@ def package_installer(required_libraries: list = None, conda_env: str = None, ve
         uv_available = shutil.which("uv") is not None
         if not uv_available:
             print("Warning: 'uv' could not be installed. Falling back to pip.")
-
+    uv_available = False
     # Get installed packages
     try:
         installed = subprocess.check_output(freeze_cmd).decode().lower().splitlines()
