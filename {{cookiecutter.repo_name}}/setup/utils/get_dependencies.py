@@ -7,6 +7,9 @@ from datetime import datetime
 import importlib
 from typing import Dict, List
 import pathlib
+
+pip_installer(required_libraries =  ['nbformat'])
+
 import nbformat
 
 from .virenv_tools import *

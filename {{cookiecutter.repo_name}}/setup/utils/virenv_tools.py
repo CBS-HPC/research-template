@@ -50,13 +50,16 @@ def setup_virtual_environment(version_control, programming_language, python_env_
         
     elif python_env_manager.lower() == "venv":
         env_name = create_venv_env(repo_name,pip_packages)
+    else:
+        pip_installer(pip_packages)
+        print(f'Packages {pip_packages} installed successfully in the current environment.')
 
     if env_name:
         env_name = env_name.replace("\\", "/")
     
-    if not env_name or not python_env_manager: 
-        subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
-        print(f'Packages {pip_packages} installed successfully in the current environment.')
+    #if not env_name or not python_env_manager: 
+    #    subprocess.run([sys.executable, '-m', 'pip', 'install'] + pip_packages, check=True)
+    #    print(f'Packages {pip_packages} installed successfully in the current environment.')
 
     return env_name
 
