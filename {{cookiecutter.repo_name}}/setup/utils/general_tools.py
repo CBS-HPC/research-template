@@ -30,11 +30,17 @@ def package_installer(required_libraries: list = None, conda_env: str = None, ve
         uv_cmd_prefix = ["conda", "run", "--prefix", str(env_path), "uv", "pip", "install", "--system"]
     elif venv_env:
         env_path = pathlib.Path(venv_env).resolve()
-        pip_path = os.path.join(env_path, "bin", "pip") if sys.platform != "win32" else os.path.join(env_path, "Scripts", "pip")
+        if sys.platform == "win32":
+            pip_path = os.path.join(env_path, "Scripts", "pip.exe")
+            python_path = os.path.join(env_path, "Scripts", "python.exe")
+        else:
+            pip_path = os.path.join(env_path, "bin", "pip")
+            python_path = os.path.join(env_path, "bin", "python")
+
         freeze_cmd = [pip_path, "freeze"]
-        uv_install_cmd_prefix = [pip_path]
+        uv_install_cmd_prefix = [python_path, "-m", "pip"]  # Use pip to install uv
         pip_cmd_prefix = [pip_path]
-        uv_cmd_prefix = ["uv", "pip", "install", "--system"]
+        uv_cmd_prefix = [os.path.join(env_path, "bin", "uv"), "pip", "install"]
     else:
         freeze_cmd = [sys.executable, "-m", "pip", "freeze"]
         uv_install_cmd_prefix = [sys.executable, "-m", "pip"]
