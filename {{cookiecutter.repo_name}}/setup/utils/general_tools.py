@@ -83,18 +83,6 @@ def package_installer(required_libraries: list = None):
         except subprocess.CalledProcessError as e:
             print(f"Failed to install '{lib}' with pip: {e}")
 
-def package_installer_old(required_libraries:list = None,conda_exe:bool = False):
-    installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
-
-    for lib in required_libraries:
-        try:
-            # Check if the library is already installed
-            if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-                print(f"Installing {lib}...")
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to install {lib}: {e}")
-
 package_installer(required_libraries = ['python-dotenv'])
 
 from dotenv import dotenv_values, load_dotenv
@@ -705,18 +693,16 @@ def get_version(programming_language):
         version = subprocess.run([exe_path, "-version"], capture_output=True, text=True)
         version =version.stdout.strip()  # Returns version info
     elif programming_language.lower() == "pip":
-
         try:
             version = subprocess.check_output(["pip", "--version"], text=True)
             version = " ".join(version.split()[:2])    
-            version =version.stdout.strip()  # Returns version info
+            version = version.stdout.strip()  # Returns version info
         except subprocess.CalledProcessError as e:
             return "pip"
     elif programming_language.lower() == "uv":
         try:
             version = subprocess.check_output(["uv", "--version"], text=True)
-            version =version.stdout.strip()  # Returns version info       
-            version =version.stdout.strip()  # Returns version info
+            version = version.stdout.strip()  # Returns version info       
         except subprocess.CalledProcessError as e:
             return "uv" 
     elif programming_language.lower() == "conda":
