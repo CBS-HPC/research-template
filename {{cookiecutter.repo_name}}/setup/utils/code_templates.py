@@ -4,7 +4,7 @@ import pathlib
 
 from .general_tools import *
 
-package_installer(required_libraries = [,'nbformat'])
+package_installer(required_libraries = ['nbformat'])
 #package_installer(required_libraries = ['rpds-py==0.21.0','nbformat'])
 
 import nbformat as nbf  # For creating Jupyter notebooks
