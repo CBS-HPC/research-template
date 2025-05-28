@@ -33,6 +33,7 @@ def main():
     orcids = load_from_env("ORCIDS",".cookiecutter")
 
     # Install packages
+    subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
     pip_packages = set_packages(version_control,programming_language)
     package_installer(required_libraries = pip_packages)
     print(f'Packages {pip_packages} installed successfully in the current environment.')
