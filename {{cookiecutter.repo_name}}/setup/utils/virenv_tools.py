@@ -12,7 +12,7 @@ package_installer(required_libraries =  ['pyyaml'])
 import yaml
 
 # Virtual Environment
-def setup_virtual_environment(version_control, programming_language, python_env_manager, r_env_manager, code_repo,repo_name, conda_r_version, conda_python_version, install_path = "./bin/miniconda3"):
+def setup_virtual_environment(version_control, python_env_manager, r_env_manager, repo_name, conda_r_version, conda_python_version, install_path = "./bin/miniconda3"):
     """
     Create a virtual environment for Python or R based on the specified programming language.
 
@@ -22,38 +22,13 @@ def setup_virtual_environment(version_control, programming_language, python_env_
     """    
     install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
 
-    pip_packages = set_packages(version_control,programming_language) 
-    pip_packages = None  
     env_name = None
   
     if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
-    
-        install_packages = []
-        
-        if python_env_manager.lower() == "conda":
-            if conda_python_version:
-                install_packages.extend([f'python={conda_python_version}'])
-            else:
-                install_packages.extend(['python'])
-
-        if r_env_manager.lower() == "conda":
-            if conda_r_version:
-                install_packages.extend([f'r-base={conda_r_version}'])
-            else:
-                install_packages.extend(['r-base'])
-
-        conda_packages = set_conda_packages(version_control,install_packages,code_repo)
-
-        if python_env_manager and python_env_manager.lower() == "conda":
-            env_name = setup_conda(install_path=install_path,repo_name=repo_name,conda_packages=conda_packages, pip_packages=pip_packages, env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
-        else:
-            env_name = setup_conda(install_path=install_path, repo_name=repo_name,conda_packages=conda_packages, pip_packages=None,env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
-        
+        conda_packages = set_conda_packages(version_control,python_env_manager,r_env_manager,conda_python_version,conda_r_version)
+        env_name = setup_conda(install_path=install_path, repo_name=repo_name, conda_packages=conda_packages, env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
     elif python_env_manager.lower() == "venv":
-        env_name = create_venv_env(repo_name,pip_packages)
-    else:
-        package_installer(required_libraries = pip_packages)
-        print(f'Packages {pip_packages} installed successfully in the current environment.')
+        env_name = create_venv_env(repo_name)
 
     if env_name:
         env_name = env_name.replace("\\", "/")
@@ -108,27 +83,8 @@ def load_env_file(extensions = ['.yml', '.txt']): # FIX ME - NOT USED
     else:
         return None
 
-def set_packages(version_control,programming_language):
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec']
-    #install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
-    if programming_language.lower()  == 'python':
-        install_packages.extend(['jupyterlab'])
-    elif programming_language.lower()  == 'stata':
-        install_packages.extend(['jupyterlab','stata_setup'])
-    elif programming_language.lower()  == 'matlab':
-        install_packages.extend(['jupyterlab','jupyter-matlab-proxy'])
-    elif programming_language.lower() == 'sas':
-        install_packages.extend(['jupyterlab','saspy'])
-
-    if version_control.lower()  == "dvc" and not is_installed('dvc','DVC'):
-        install_packages.extend(['dvc[all]'])
-    elif version_control.lower()  == "datalad" and not is_installed('datalad','Datalad'):
-        install_packages.extend(['datalad-installer','datalad','pyopenssl'])
-    
-    return install_packages
-
 # Conda Functions:
-def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_packages:list = [], env_file:str = None, conda_r_version:str = None, conda_python_version:str = None):
+def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], env_file:str = None, conda_r_version:str = None, conda_python_version:str = None):
     
     install_path = os.path.abspath(install_path)
 
@@ -144,14 +100,12 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
             env_file = generate_env_yml(repo_name,env_file)
         update_env_yaml(env_file, repo_name, conda_packages)
         command = ['conda', 'env', 'create', '-f', env_file, '--prefix', env_path]
-        #command = ['conda', 'env', 'create', '-f', env_file, '--name', repo_name]
         msg = f'Conda environment "{repo_name}" created successfully from {env_file}.'
     else:
-        #command = ['conda', 'create','--yes', '--name', repo_name, '-c', 'conda-forge']
         command = ['conda', 'create', '--yes', '--prefix', env_path, '-c', 'conda-forge']
 
         command.extend(conda_packages)
-        msg = f'Conda environment "{repo_name}" was created successfully. The following packages were installed: {conda_packages}; {pip_packages}. '
+        msg = f'Conda environment "{repo_name}" was created successfully. The following conda packages were installed: {conda_packages}.'
 
     flag = create_conda_env(command,msg)
 
@@ -166,7 +120,6 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
         flag = create_conda_env(command,msg)
 
     if flag:
-        conda_pip_install(env_path, pip_packages)
         export_conda_env(env_path)
         
        # env_path = os.path.relpath(env_path)
@@ -175,7 +128,23 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], pip_pa
     else:
         return None
 
-def set_conda_packages(version_control,install_packages,code_repo):
+def set_conda_packages(version_control,python_env_manager,r_env_manager,conda_python_version,conda_r_version):
+
+    install_packages = []
+        
+    if python_env_manager.lower() == "conda":
+        if conda_python_version:
+            install_packages.extend([f'python={conda_python_version}'])
+        else:
+            install_packages.extend(['python'])
+
+    if r_env_manager.lower() == "conda":
+        if conda_r_version:
+            install_packages.extend([f'r-base={conda_r_version}'])
+        else:
+            install_packages.extend(['r-base'])
+
+    
     os_type = platform.system().lower()    
     
     if version_control.lower() in ['git','dvc','datalad'] and not is_installed('git', 'Git'):
@@ -189,28 +158,6 @@ def set_conda_packages(version_control,install_packages,code_repo):
             install_packages.extend(['git-annex'])
 
     return install_packages
-
-def conda_pip_install(env_path, pip_packages):
-    """
-    Activates a Conda environment and installs packages using pip.
-
-    Parameters:
-    repo_name (str): Name of the Conda environment to activate.
-    pip_packages (list): List of packages to install.
-
-    Returns:
-    None
-    """
-    if not pip_packages:
-        return
-
-    try:
-        package_installer(required_libraries = pip_packages, conda_env = env_path)
-        print(f"Successfully installed packages: {', '.join(pip_packages)} in Conda environment '{env_path}'.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error installing packages in Conda environment '{env_path}': {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
 
 def update_conda_env_file(file_path: str):
     # Get the current working directory
@@ -451,7 +398,7 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
     print(f"Updated {env_file} with new environment name '{repo_name}', added Conda packages, and additional packages.")
 
 # Venv and Virtualenv Functions
-def create_venv_env(env_name, pip_packages=None):
+def create_venv_env(env_name):
     """Create a Python virtual environment using venv and install packages."""
     try:
         # Get the absolute path to the environment
@@ -460,13 +407,7 @@ def create_venv_env(env_name, pip_packages=None):
         # Create the virtual environment
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
         print(f'Venv environment "{env_path}" for Python created successfully.')
-
-        # Install packages if provided
-        if pip_packages:
-            package_installer(required_libraries = pip_packages, venv_env = env_path)
-            print(f'Packages {pip_packages} installed successfully in the venv environment.')
         
-        #env_path = os.path.relpath(env_path)
         save_to_env(env_path,"VENV_ENV_PATH")
 
         # Return the path to the virtual environment
