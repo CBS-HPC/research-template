@@ -81,28 +81,28 @@ fi
 # Check if the script paths are provided and run them
 
 if [ -f "$intro_path" ]; then
-    echo "Running intro.py from $intro_path..."
+    echo "Running Intro Script from $intro_path..."
     python "$intro_path"
 else
     echo "Error: $intro_path not found."
 fi
 
 if [ -f "$version_control_path" ]; then
-    echo "Running versioning_setup.py from $version_control_path..."
+    echo "Running Version Control Setup from $version_control_path..."
     python "$version_control_path"
 else
     echo "Error: $version_control_path not found."
 fi
 
 if [ -f "$remote_repository_path" ]; then
-    echo "Running repo_setup.py from $remote_repository_path..."
+    echo "Running Remote Repository Setup from $remote_repository_path..."
     python "$remote_repository_path"
 else
     echo "Error: $remote_repository_path not found."
 fi
 
 if [ -f "$outro_path" ]; then
-    echo "Running outro.py from $outro_path..."
+    echo "Running Outro Script from $outro_path..."
     python "$outro_path"
 else
     echo "Error: $outro_path not found."

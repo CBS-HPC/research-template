@@ -75,7 +75,6 @@ def install_py_package():
     else:
         print(f"Error during installation: {result.stderr}")
 
-
 @ensure_correct_kernel
 def main():
     

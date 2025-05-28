@@ -431,6 +431,10 @@ def dvc_init(remote_storage,code_repo,repo_name):
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".git"):
+
+        if code_repo.lower() in ["github","codeberg"]:
+            subprocess.run(["git", "config", "--global", "init.defaultBranch", "main"], check=True)
+
         subprocess.run(["git", "init"], check=True)
 
     # Init dvc
@@ -450,9 +454,6 @@ def dvc_init(remote_storage,code_repo,repo_name):
     for folder in folders:
         subprocess.run(["dvc", "add",folder], check=True)
 
-    if code_repo.lower() in ["github","codeberg"]:
-        # Rename branch to 'main' if it was initialized as 'master'
-        subprocess.run(["git", "branch", "-m", "master", "main"], check=True)
     _= git_commit("Initial commit")
     print("Created an initial commit.")
 
@@ -831,3 +832,21 @@ def install_rclone(install_path):
         rclone_path = download_rclone(install_path)
         return exe_to_path('rclone', os.path.dirname(rclone_path))
     return True
+
+@ensure_correct_kernel
+def main():
+    version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
+
+    # Setup Version Control
+    setup_version_control(version_control,remote_storage,code_repo,repo_name)
+
+if __name__ == "__main__":
+    
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
+    main()

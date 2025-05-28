@@ -1,7 +1,6 @@
 # utils/__init__.py
 
 # Setup files
-from .versioning_setup import *
 from .repo_setup import *
 
 from .general_tools import *

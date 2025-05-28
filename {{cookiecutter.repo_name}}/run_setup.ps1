@@ -53,9 +53,9 @@ function Run-PythonScript {
 }
 
 # Run Python scripts
-Run-PythonScript -script_path $intro_path -label "intro.py"
-Run-PythonScript -script_path $version_control_path -label "versioning_setup.py"
-Run-PythonScript -script_path $remote_repository_path -label "repo_setup.py"
-Run-PythonScript -script_path $outro_path -label "outro.py"
+Run-PythonScript -script_path $intro_path -label "Intro Script"
+Run-PythonScript -script_path $version_control_path -label "Version Control Setup"
+Run-PythonScript -script_path $remote_repository_path -label "Remote Repository Setup"
+Run-PythonScript -script_path $outro_path -label "Outro Script"
 
 Write-Output "Environment setup completed successfully."

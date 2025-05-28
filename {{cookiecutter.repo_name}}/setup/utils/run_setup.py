@@ -9,7 +9,7 @@ from utils import *
 
 @ensure_correct_kernel
 def main():
-    versioning_setup.main()
+    versioning_tools.main()
     repo_setup.main()
 
 if __name__ == "__main__":
