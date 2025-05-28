@@ -20,7 +20,7 @@ import subprocess
 import pathlib
 import shutil
 
-def package_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None,use_uv:bool = True):
+def package_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
     if not required_libraries:
         return
 
@@ -50,17 +50,16 @@ def package_installer(required_libraries: list = None, conda_env: str = None, ve
         uv_install_cmd_prefix = [sys.executable, "-m", "pip"]
         uv_cmd_prefix = ["uv", "pip"]
 
-    if use_uv:
-        # Check if uv is available
-        uv_available = shutil.which("uv") is not None
+    # Check if uv is available
+    uv_available = shutil.which("uv") is not None
 
-        # If uv not available, install it first
+    # If uv not available, install it first
+    if not uv_available:
+        install_uv(uv_install_cmd_prefix)
+        # After installation, re-check if uv is now available
+        uv_available = shutil.which("uv") is not None
         if not uv_available:
-            install_uv(uv_install_cmd_prefix)
-            # After installation, re-check if uv is now available
-            uv_available = shutil.which("uv") is not None
-            if not uv_available:
-                print("Warning: 'uv' could not be installed. Falling back to pip.")
+            print("Warning: 'uv' could not be installed. Falling back to pip.")
     else: 
         uv_available = False
     # Get list of installed packages
@@ -98,7 +97,7 @@ def package_installer(required_libraries: list = None, conda_env: str = None, ve
 
         else:
             if uv_available:
-                cmd = uv_cmd_prefix + ["install"] + missing_libraries
+                cmd = uv_cmd_prefix + ["install","--system"] + missing_libraries
             else:
                 cmd = [sys.executable, "-m", "pip", "install"] + missing_libraries
 
