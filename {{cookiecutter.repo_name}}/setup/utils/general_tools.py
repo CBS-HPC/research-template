@@ -20,7 +20,7 @@ import subprocess
 import pathlib
 import shutil
 
-def package_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None):
+def package_installer(required_libraries: list = None, conda_env: str = None, venv_env: str = None,use_uv:bool = True):
     if not required_libraries:
         return
 
@@ -50,17 +50,19 @@ def package_installer(required_libraries: list = None, conda_env: str = None, ve
         uv_install_cmd_prefix = [sys.executable, "-m", "pip"]
         uv_cmd_prefix = ["uv", "pip"]
 
-    # Check if uv is available
-    uv_available = shutil.which("uv") is not None
-
-    # If uv not available, install it first
-    if not uv_available:
-        install_uv(uv_install_cmd_prefix)
-        # After installation, re-check if uv is now available
+    if use_uv:
+        # Check if uv is available
         uv_available = shutil.which("uv") is not None
-        if not uv_available:
-            print("Warning: 'uv' could not be installed. Falling back to pip.")
 
+        # If uv not available, install it first
+        if not uv_available:
+            install_uv(uv_install_cmd_prefix)
+            # After installation, re-check if uv is now available
+            uv_available = shutil.which("uv") is not None
+            if not uv_available:
+                print("Warning: 'uv' could not be installed. Falling back to pip.")
+    else: 
+        uv_available = False
     # Get list of installed packages
     try:
         installed = subprocess.check_output(freeze_cmd).decode().lower().splitlines()
@@ -117,7 +119,7 @@ def package_installer_old(required_libraries:list = None,conda_exe:bool = False)
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {lib}: {e}")
 
-package_installer(required_libraries =  ['python-dotenv'])
+package_installer(required_libraries = ['python-dotenv'],use_uv = False)
 
 from dotenv import dotenv_values, load_dotenv
 
