@@ -577,13 +577,14 @@ def remote_user_info(remote_name,repo_name):
         save_to_env(base_folder,"DEIC_BASE")
 
         return email, password, base_folder
-    else:
-
+    elif remote_name.lower() != "none":
         # Handle base folder input (default from input value or fallback to home dir)
         default_base = 'RClone_backup/' + repo_name
         base_folder = input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
-    # Add other remote handlers here if needed
-    return None, None, base_folder
+        # Add other remote handlers here if needed
+        return None, None, base_folder
+    else:
+        return None, None, None
   
 
 # Setting programming language 
@@ -882,12 +883,6 @@ def make_safe_path(path: str, language: str = "python") -> str:
         return f'"{path_fixed}"'  # Wrap in double quotes (for use in do-files)
     else:
         raise ValueError(f"Unsupported language: {language}")
-
-def make_safe_path_old(path: str) -> str:
-    """Convert a file path to R-safe format (slashes + quotes)."""
-    path = os.path.abspath(path)
-    path_fixed = path.replace("\\", "/")  # 1. Fix slashes
-    return f"\"{path_fixed}\""             # 2. Wrap in quotes
 
 def set_program_path(programming_language):
 
