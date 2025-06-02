@@ -254,8 +254,8 @@ git_user_info(version_control)
 repo_user,_,_,_= repo_user_info(version_control,repo_name,code_repo)
 
 # Setup RClone backup remote
-from utils.backup_tools import *
-setup_remote_backup(remote_backup,repo_name)
+remote_user_info(remote_backup,repo_name)
+
 
 # Create Virtual Environment
 from utils.virenv_tools import *

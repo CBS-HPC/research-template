@@ -6,7 +6,11 @@ import platform
 
 # Upgrade Pip:
 try:
-    subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True)
+    subprocess.run([
+        sys.executable, "-m", "pip", "install", "--upgrade", "pip"], 
+        check=True,
+        stderr=subprocess.DEVNULL)
+    
 except subprocess.CalledProcessError as e:
     print(f"Warning: pip upgrade failed: {e}")
 
@@ -14,8 +18,8 @@ from utils.general_tools import *
 
 pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
 package_installer(required_libraries = pip_packages)
-print(f'Packages {pip_packages} installed successfully in the current environment.')
 
+from utils.backup_tools import *
 from utils.readme_templates import *
 from utils.code_templates import *
 from utils.versioning_tools import *
@@ -24,7 +28,6 @@ from utils.get_dependencies import *
 
 @ensure_correct_kernel
 def intro():
-
 
     def create_folders():
         PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -201,6 +204,8 @@ def outro():
     
 if __name__ == "__main__":
 
+    setup_remote_backup(load_from_env("REMOTE_BACKUP", ".cookiecutter"), load_from_env("REPO_NAME", ".cookiecutter"))
+    
     intro()
 
     version_setup()

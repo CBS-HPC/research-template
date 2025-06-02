@@ -13,37 +13,12 @@ def setup_remote_backup(remote_backups,repo_name):
     if remote_backups.lower() != "none":
         remote_backups= [item.strip() for item in remote_backups.split(",")]
         for remote_backup in remote_backups:
+
             email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
             if install_rclone("./bin"):
                 rclone_remote(remote_backup.lower(),email, password)
                 _= rclone_folder(remote_backup.lower(), base_folder)
 
-
-def remote_user_info(remote_name,repo_name):
-    """Prompt for remote login credentials and base folder path."""
-
-    # Handle base folder input (default from input value or fallback to home dir)
-    default_base = 'RClone_backup/' + repo_name
-    base_folder = input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
-
-    if remote_name.lower() == "deic storage":
-        default_email = load_from_env("EMAIL", ".cookiecutter")
-        email = password = None
-
-        while not email or not password:
-            email = input(f"Please enter email to Deic Storage [{default_email}]: ").strip() or default_email
-            password = getpass.getpass("Please enter password to Deic Storage: ").strip()
-
-            if not email or not password:
-                print("Both email and password are required.\n")
-
-        print(f"\nUsing email: {email}")
-        print(f"Using base folder: {base_folder}\n")
-        return email, password, base_folder
-
-    # Add other remote handlers here if needed
-    return None, None, base_folder
-  
 def rclone_remote(remote_name: str = "deic storage",email:str = None, password:str = None ):
     """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
 
@@ -203,32 +178,32 @@ def check_rclone_remote(remote_name):
         print(f"An unexpected error occurred: {e}")
         return False
 
-@ensure_correct_kernel
-def push_backup(remote_backups,repo_name):
-    
-    # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-    
-    if remote_backups.lower() != "none": 
-        if install_rclone("./bin"):
-            remote_backups= [item.strip() for item in remote_backups.split(",")]
-            for remote_backup in remote_backups:
-                rclone_repo = None
-                if check_rclone_remote(remote_backup.lower()):
-                    rclone_repo = load_from_env("RCLODE_REPO")
-            
-                if not rclone_repo:
-                    email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
-                    rclone_remote(remote_backup.lower(),email, password)
-                    rclone_repo = rclone_folder(remote_backup.lower(), base_folder)
-            
-                if rclone_repo:
-                    rclone_sync(rclone_repo, folder_to_backup=None)
-                else: 
-                    print(f"Failed to backup to {remote_backup}")
+def push_backup():
 
-def main():
+    @ensure_correct_kernel
+    def run_backup(remote_backups,repo_name):
+        
+        # Change to project root directory
+        project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+        os.chdir(project_root)
+        
+        if remote_backups.lower() != "none": 
+            if install_rclone("./bin"):
+                remote_backups= [item.strip() for item in remote_backups.split(",")]
+                for remote_backup in remote_backups:
+                    rclone_repo = None
+                    if check_rclone_remote(remote_backup.lower()):
+                        rclone_repo = load_from_env("RCLODE_REPO")
+                
+                    if not rclone_repo:
+                        email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
+                        rclone_remote(remote_backup.lower(),email, password)
+                        rclone_repo = rclone_folder(remote_backup.lower(), base_folder)
+                
+                    if rclone_repo:
+                        rclone_sync(rclone_repo, folder_to_backup=None)
+                    else: 
+                        print(f"Failed to backup to {remote_backup}")
 
     # Add command-line argument parsing
     parser = argparse.ArgumentParser(description="Run backup process")
@@ -238,7 +213,7 @@ def main():
 
     repo_name = args.repo_name or load_from_env("REPO_NAME", ".cookiecutter")
     remote_backup = args.remote_backup or load_from_env("REMOTE_BACKUP", ".cookiecutter")
-    push_backup(remote_backup, repo_name)
+    run_backup(remote_backup, repo_name)
 
 if __name__ == "__main__":
     
@@ -246,4 +221,4 @@ if __name__ == "__main__":
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
 
-    main()
+    push_backup()
