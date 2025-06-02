@@ -32,6 +32,11 @@ def set_packages(version_control,programming_language):
 def package_installer(required_libraries: list = None):
     if not required_libraries:
         return
+    def in_virtualenv() -> bool:
+        return (
+            hasattr(sys, 'real_prefix') or
+            (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+        )
 
     def install_uv():
         """Install 'uv' using pip if it's not already available."""
@@ -44,8 +49,11 @@ def package_installer(required_libraries: list = None):
 
     # Command prefixes
     pip_cmd_prefix = [sys.executable, "-m", "pip"]
-    #uv_cmd_prefix = ["uv", "pip", "install", "--system"]
-    uv_cmd_prefix = ["uv", "pip", "install"]
+
+    if in_virtualenv():
+        uv_cmd_prefix = ["uv", "pip", "install", "--system"]
+    else:
+        uv_cmd_prefix = ["uv", "pip", "install"]
 
     # Check for uv availability
     uv_available = shutil.which("uv") is not None
