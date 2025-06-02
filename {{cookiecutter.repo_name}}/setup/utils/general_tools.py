@@ -96,14 +96,24 @@ def package_installer(required_libraries: list = None):
     if uv_available:
         try:
             subprocess.run(
-                [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries, 
+                [sys.executable, "-m","uv", "pip", "install", "--system"] + missing_libraries,
                 check=True,
                 stderr=DEVNULL
             )
-  
             return
         except subprocess.CalledProcessError:
             pass
+
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
+                check=True,
+                stderr=DEVNULL
+            )
+            return
+        except subprocess.CalledProcessError as e:
+            print("uv failed in both modes. Falling back to pip.")
+
     try:
         subprocess.run(
             [sys.executable, "-m", "pip", "install"] + missing_libraries,
