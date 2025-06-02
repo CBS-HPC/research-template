@@ -5,8 +5,7 @@ import platform
 import re
 import pathlib
 
-from utils.general_tools import *
-
+from utils.virenv_tools import *
 
 ext_map = {
     "r": "Rscript",
@@ -253,18 +252,15 @@ git_user_info(version_control)
 # Set git repo info
 repo_user,_,_,_= repo_user_info(version_control,repo_name,code_repo)
 
-# Setup RClone backup remote
+# RClone remote login info
 remote_user_info(remote_backup,repo_name)
 
-
 # Create Virtual Environment
-from utils.virenv_tools import *
 env_path = setup_virtual_environment(version_control,python_env_manager,r_env_manager,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
-os_type = platform.system().lower()
-if os_type == "windows":
+if platform.system().lower() == "windows":
     run_powershell(setup_powershell, env_path, python_env_manager, main_setup)
-elif os_type == "darwin" or os_type == "linux":
+elif platform.system().lower()== "darwin" or platform.system().lower() == "linux":
     os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./activate.sh")), 0o755)
     os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./deactivate.sh")), 0o755)
     run_bash(setup_bash, env_path, python_env_manager, main_setup)
