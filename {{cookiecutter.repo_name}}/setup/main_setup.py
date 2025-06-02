@@ -4,13 +4,19 @@ import pathlib
 import subprocess
 import platform
 
-from utils.general_tools import *
-
 # Upgrade Pip:
 try:
     subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True)
 except subprocess.CalledProcessError as e:
     print(f"Warning: pip upgrade failed: {e}")
+
+# Pip install dotenv:
+try:
+    subprocess.run([sys.executable, "-m", "pip", "install", "'python-dotenv'"], check=True)
+except subprocess.CalledProcessError as e:
+    print(f"Warning: pip upgrade failed: {e}")
+
+from utils.general_tools import *
 
 pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
 package_installer(required_libraries = pip_packages)
@@ -39,7 +45,6 @@ def intro():
     os.chdir(project_root)
 
     print('Running "Intro"')
-    print(project_root)
 
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
@@ -72,7 +77,6 @@ def version_setup():
     os.chdir(project_root)
 
     print('Running "Version Control Setup"')
-    print(project_root)
 
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
@@ -98,11 +102,8 @@ def remote_repo_setup():
     def install_py_package(setup_path:str="./setup"):
 
         # Change the current working directory to to setup folder
-        #os.chdir(pathlib.Path(__file__).resolve().parent.parent)
         os.chdir(setup_path)
     
-        print(os.getcwd())
-
         # Run "pip install -e ."
         result = subprocess.run(['pip', 'install', '-e', '.'], capture_output=True, text=True)
 
@@ -116,7 +117,6 @@ def remote_repo_setup():
     os.chdir(project_root)
 
     print('Running "Remote Repo Setup"')
-    print(project_root)
 
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
