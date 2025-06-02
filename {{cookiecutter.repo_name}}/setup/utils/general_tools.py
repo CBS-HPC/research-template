@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from functools import wraps
 import pathlib
 import getpass
+import importlib.metadata
 
 
 def set_packages(version_control,programming_language):
@@ -29,6 +30,75 @@ def set_packages(version_control,programming_language):
     return install_packages
 
 def package_installer(required_libraries: list = None):
+    if not required_libraries:
+        return
+
+    def install_uv():
+        """Install 'uv' using pip if it's not already available."""
+        try:
+            print("Installing 'uv' package...")
+            subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+            print("'uv' installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install 'uv': {e}")
+
+    # Command prefixes
+    pip_cmd_prefix = [sys.executable, "-m", "pip"]
+    uv_cmd_prefix = ["uv", "pip", "install", "--system"]
+
+    # Check for uv availability
+    uv_available = shutil.which("uv") is not None
+    if not uv_available:
+        install_uv()
+        uv_available = shutil.which("uv") is not None
+        if not uv_available:
+            print("Warning: 'uv' could not be installed. Falling back to pip.")
+    uv_available = False
+    # Collect installed package names using importlib.metadata
+    try:
+        installed_pkgs = {
+            dist.metadata["Name"].lower() for dist in importlib.metadata.distributions()
+        }
+    except Exception as e:
+        print(f"Error checking installed packages: {e}")
+        return
+
+    # Normalize and filter missing packages
+    missing_libraries = []
+    for lib in required_libraries:
+        norm_name = (
+            lib.split("==")[0]
+            .split(">=")[0]
+            .split("<=")[0]
+            .split("~=")[0]
+            .strip()
+            .lower()
+        )
+        if norm_name not in installed_pkgs:
+            missing_libraries.append(lib)
+
+    if not missing_libraries:
+        return
+
+    print(f"Installing missing libraries: {missing_libraries}")
+
+    for lib in missing_libraries:
+        # Try installing with uv if available
+        if uv_available:
+            try:
+                subprocess.run(uv_cmd_prefix + [lib], check=True)
+                continue  # Skip pip if uv worked
+            except subprocess.CalledProcessError as e:
+                print(f"uv failed for '{lib}': {e}. Falling back to pip.")
+
+        # Fallback to pip install
+        try:
+            subprocess.run(pip_cmd_prefix + ["install", lib], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install '{lib}' with pip: {e}")
+
+
+def package_installer_old(required_libraries: list = None):
     if not required_libraries:
         return
 
