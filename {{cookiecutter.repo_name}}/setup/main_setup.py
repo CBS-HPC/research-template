@@ -12,7 +12,7 @@ except subprocess.CalledProcessError as e:
 
 # Pip install dotenv:
 try:
-    subprocess.run([sys.executable, "-m", "pip", "install", "'python-dotenv'"], check=True)
+    subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
 except subprocess.CalledProcessError as e:
     print(f"Warning: pip upgrade failed: {e}")
 
