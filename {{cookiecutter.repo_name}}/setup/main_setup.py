@@ -18,7 +18,6 @@ print(f'Packages {pip_packages} installed successfully in the current environmen
 
 from utils import *
 
-
 @ensure_correct_kernel
 def intro():
     def create_folders():
@@ -36,7 +35,7 @@ def intro():
             (folder / ".gitkeep").touch(exist_ok=True)
     
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    project_root = pathlib.Path(__file__).resolve().parent.parent
     os.chdir(project_root)
 
     print('Running "Intro"')
@@ -69,7 +68,7 @@ def intro():
 def version_setup():
 
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    project_root = pathlib.Path(__file__).resolve().parent.parent
     os.chdir(project_root)
 
     print('Running "Version Control Setup"')
@@ -113,7 +112,7 @@ def remote_repo_setup():
             print(f"Error during installation: {result.stderr}")
 
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    project_root = pathlib.Path(__file__).resolve().parent.parent
     os.chdir(project_root)
 
     print('Running "Remote Repo Setup"')
@@ -169,7 +168,7 @@ def outro():
 
      # Ensure the working directory is the project root
     
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    project_root = pathlib.Path(__file__).resolve().parent.parent
     os.chdir(project_root)
 
     print('Running "Outro"')
