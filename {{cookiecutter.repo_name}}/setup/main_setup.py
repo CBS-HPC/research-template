@@ -10,12 +10,6 @@ try:
 except subprocess.CalledProcessError as e:
     print(f"Warning: pip upgrade failed: {e}")
 
-# Pip install dotenv:
-try:
-    subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
-except subprocess.CalledProcessError as e:
-    print(f"Warning: pip upgrade failed: {e}")
-
 from utils.general_tools import *
 
 pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
