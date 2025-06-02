@@ -44,7 +44,8 @@ def package_installer(required_libraries: list = None):
 
     # Command prefixes
     pip_cmd_prefix = [sys.executable, "-m", "pip"]
-    uv_cmd_prefix = ["uv", "pip", "install", "--system"]
+    #uv_cmd_prefix = ["uv", "pip", "install", "--system"]
+    uv_cmd_prefix = ["uv", "pip", "install"]
 
     # Check for uv availability
     uv_available = shutil.which("uv") is not None
