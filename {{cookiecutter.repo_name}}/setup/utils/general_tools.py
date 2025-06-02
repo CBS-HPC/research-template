@@ -44,27 +44,9 @@ def package_installer(required_libraries: list = None):
                 stderr=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
             )
-            # Confirm 'uv' is now importable or callable
-            result = subprocess.run(
-                [sys.executable, "-m", "pip", "show", "uv"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                check=True,
-                text=True
-            )
-            if result.stdout:
-                print("'uv' installed successfully in the current Python environment.")
-            else:
-                print("Warning: 'uv' installation completed, but package not detected.")
+            print("'uv' installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Failed to install 'uv' via pip: {e}")
-
-    uv_available = shutil.which("uv") is not None
-    if not uv_available:
-        install_uv()
-        uv_available = shutil.which("uv") is not None
-        if not uv_available:
-            print("Warning: 'uv' could not be installed. Falling back to pip.")
 
     try:
         installed_pkgs = {
@@ -93,32 +75,38 @@ def package_installer(required_libraries: list = None):
 
     print(f"Installing missing libraries: {missing_libraries}")
 
-    if uv_available:
-        try:
-            subprocess.run(
-                [sys.executable, "-m","uv", "pip", "install", "--system"] + missing_libraries,
-                check=True,
-                stderr=DEVNULL
-            )
-            return
-        except subprocess.CalledProcessError:
-            pass
+    # Try installing uv
+    try:
+        import uv  # noqa: F401
+    except ImportError:
+        install_uv()
 
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
-                check=True,
-                stderr=DEVNULL
-            )
-            return
-        except subprocess.CalledProcessError as e:
-            print("uv failed in both modes. Falling back to pip.")
+    # Attempt using uv (as module)
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
+            check=True,
+            stderr=subprocess.DEVNULL
+        )
+        return
+    except subprocess.CalledProcessError:
+        pass
+
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
+            check=True,
+            stderr=subprocess.DEVNULL
+        )
+        return
+    except subprocess.CalledProcessError as e:
+        print("uv failed in both modes. Falling back to pip.")
 
     try:
         subprocess.run(
             [sys.executable, "-m", "pip", "install"] + missing_libraries,
             check=True,
-            stderr=DEVNULL
+            stderr=subprocess.DEVNULL
         )
     except subprocess.CalledProcessError as e:
         print(f"Failed to install with pip: {e}")
