@@ -53,7 +53,6 @@ def package_installer(required_libraries: list = None):
         uv_available = shutil.which("uv") is not None
         if not uv_available:
             print("Warning: 'uv' could not be installed. Falling back to pip.")
-    uv_available = False
     # Collect installed package names using importlib.metadata
     try:
         installed_pkgs = {
