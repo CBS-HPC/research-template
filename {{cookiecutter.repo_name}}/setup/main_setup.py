@@ -84,7 +84,7 @@ def version_setup():
     setup_version_control(version_control,remote_storage,code_repo,repo_name)
 
 @ensure_correct_kernel
-def repo_setup():
+def remote_repo_setup():
     def setup_remote_repository(version_control, code_repo, repo_name, project_description):
         """Handle repository creation and login based on selected platform."""
 
@@ -205,6 +205,6 @@ if __name__ == "__main__":
 
     version_setup()
 
-    repo_setup()
+    remote_repo_setup()
 
     outro()
