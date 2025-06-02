@@ -234,6 +234,7 @@ def package_installer_old(required_libraries: list = None):
 
 package_installer(required_libraries = ['python-dotenv'])
 
+print(sys.executable)
 from dotenv import dotenv_values, load_dotenv
 
 @contextmanager
