@@ -24,7 +24,7 @@ file_ext_map = {
     "sas": "sas"
 }
 
-def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
+def run_bash(script_path, env_path=None, python_env_manager=None,intro_path=None, version_control_path=None, remote_repository_path=None, outro_path=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
@@ -32,18 +32,21 @@ def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None
     try:
         script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
         env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
-        main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
+        intro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(intro_path))
+        version_control_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(version_control_path))
+        remote_repository_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(remote_repository_path))
+        outro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(outro_path))
         
         # Make sure the script is executable
         os.chmod(script_path, 0o755)
 
         # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(),main_setup])  # Pass repo_name and paths to the script
+        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(),intro_path,version_control_path, remote_repository_path,outro_path])  # Pass repo_name and paths to the script
         print(f"Script {script_path} executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def run_powershell(script_path, env_path=None, python_env_manager=None, main_setup=None):
+def run_powershell(script_path, env_path=None, python_env_manager=None, intro_path=None, version_control_path=None, remote_repository_path=None, outro_path=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
@@ -52,9 +55,12 @@ def run_powershell(script_path, env_path=None, python_env_manager=None, main_set
     try:
         script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
         env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
-        main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
+        intro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(intro_path))
+        version_control_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(version_control_path))
+        remote_repository_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(remote_repository_path))
+        outro_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(outro_path))
                                                                                        
-        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,main_setup])
+        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,intro_path,version_control_path,remote_repository_path,outro_path])
         print(f"Script {script_path} executed successfully.")
     
     except subprocess.CalledProcessError as e:
@@ -206,7 +212,10 @@ def multiple_backups(remote_backup):
             remote_backup = "None"
     return remote_backup
 
-main_setup = "./setup/main_setup.py"
+intro_path = "./setup/intro.py"
+outro_path = "./setup/outro.py"
+version_control_path = "./setup/utils/versioning_setup.py"
+remote_repository_path = "./setup/utils/repo_setup.py"
 setup_bash = "./run_setup.sh"
 setup_powershell = "./run_setup.ps1"
 miniconda_path =  "./bin/miniconda3"
@@ -263,9 +272,9 @@ env_path = setup_virtual_environment(version_control,python_env_manager,r_env_ma
 
 os_type = platform.system().lower()
 if os_type == "windows":
-    run_powershell(setup_powershell, env_path, python_env_manager, main_setup)
+    run_powershell(setup_powershell, env_path, python_env_manager, intro_path, version_control_path, remote_repository_path, outro_path)
 elif os_type == "darwin" or os_type == "linux":
     os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./activate.sh")), 0o755)
     os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./deactivate.sh")), 0o755)
-    run_bash(setup_bash, env_path, python_env_manager, main_setup)
+    run_bash(setup_bash, env_path, python_env_manager, intro_path, version_control_path, remote_repository_path, outro_path)
     

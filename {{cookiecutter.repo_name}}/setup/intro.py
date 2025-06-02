@@ -9,12 +9,6 @@ try:
 except subprocess.CalledProcessError as e:
     print(f"Warning: pip upgrade failed: {e}")
 
-# Install problamtic packages
-try:
-    subprocess.run([sys.executable, "-m", "pip", "install", "python-dotenv"], check=True)
-except subprocess.CalledProcessError as e:
-    print(f"Warning: failed istalling 'python-dotenv': {e}")
-
 pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
 package_installer(required_libraries = pip_packages)
 print(f'Packages {pip_packages} installed successfully in the current environment.')
@@ -34,7 +28,6 @@ def create_folders():
     for folder in folders:
         folder.mkdir(parents=True, exist_ok=True)
         (folder / ".gitkeep").touch(exist_ok=True)
-
 
 @ensure_correct_kernel
 def main():

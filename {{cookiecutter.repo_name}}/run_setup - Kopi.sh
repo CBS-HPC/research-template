@@ -7,7 +7,10 @@ cd "$script_dir"
 # Get the env_path, env_manager, and script paths passed from input
 env_path=$1
 env_manager=$2
-main_setup=$3
+intro_path=$3
+version_control_path=$4
+remote_repository_path=$5
+outro_path=$6
 
 # Allow custom .env file path as first argument
 envFile="${1:-.env}"
@@ -77,11 +80,32 @@ fi
 
 # Check if the script paths are provided and run them
 
-if [ -f "$main_setup" ]; then
-    echo "Running main setup script from $main_setup..."
-    python "$main_setup"
+if [ -f "$intro_path" ]; then
+    echo "Running Intro Script from $intro_path..."
+    python "$intro_path"
 else
-    echo "Error: $main_setup not found."
+    echo "Error: $intro_path not found."
+fi
+
+if [ -f "$version_control_path" ]; then
+    echo "Running Version Control Setup from $version_control_path..."
+    python "$version_control_path"
+else
+    echo "Error: $version_control_path not found."
+fi
+
+if [ -f "$remote_repository_path" ]; then
+    echo "Running Remote Repository Setup from $remote_repository_path..."
+    python "$remote_repository_path"
+else
+    echo "Error: $remote_repository_path not found."
+fi
+
+if [ -f "$outro_path" ]; then
+    echo "Running Outro Script from $outro_path..."
+    python "$outro_path"
+else
+    echo "Error: $outro_path not found."
 fi
 
 echo "Environment setup completed successfully."

@@ -3,7 +3,10 @@
 param (
     [string]$env_path,
     [string]$env_manager,  # Environment manager: Conda, venv
-    [string]$main_setup
+    [string]$intro_path,
+    [string]$version_control_path,
+    [string]$remote_repository_path,
+    [string]$outro_path
 )
 
 $env_path = $env_path -replace '\\', '/'
@@ -46,7 +49,9 @@ function Run-PythonScript {
 }
 
 # Run Python scripts
-Run-PythonScript -script_path $main_setup -label "main setup script"
-
+Run-PythonScript -script_path $intro_path -label "Intro Script"
+Run-PythonScript -script_path $version_control_path -label "Version Control Setup"
+Run-PythonScript -script_path $remote_repository_path -label "Remote Repository Setup"
+Run-PythonScript -script_path $outro_path -label "Outro Script"
 
 Write-Output "Environment setup completed successfully."
