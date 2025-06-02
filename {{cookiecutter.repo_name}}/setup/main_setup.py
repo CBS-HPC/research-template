@@ -22,10 +22,16 @@ pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),loa
 package_installer(required_libraries = pip_packages)
 print(f'Packages {pip_packages} installed successfully in the current environment.')
 
-from utils import *
+from utils.readme_templates import *
+from utils.code_templates import *
+from utils.versioning_tools import *
+from utils.repo_tools import *
+from utils.get_dependencies import *
 
 @ensure_correct_kernel
 def intro():
+
+
     def create_folders():
         PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
@@ -88,6 +94,7 @@ def version_setup():
 
 @ensure_correct_kernel
 def remote_repo_setup():
+
     def setup_remote_repository(version_control, code_repo, repo_name, project_description):
         """Handle repository creation and login based on selected platform."""
 
