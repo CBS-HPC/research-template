@@ -81,17 +81,6 @@ def package_installer(required_libraries: list = None):
     except ImportError:
         install_uv()
 
-    # Attempt using uv (as module)
-    #try:
-    #    subprocess.run(
-    #        [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
-    #        check=True,
-    #        stderr=subprocess.DEVNULL
-    #    )
-    #    return
-    #except subprocess.CalledProcessError:
-    #    pass
-
     try:
         subprocess.run(
             [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
@@ -100,6 +89,17 @@ def package_installer(required_libraries: list = None):
         )
         return
     except subprocess.CalledProcessError as e:
+        pass
+
+        # Attempt using uv (as module)
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
+            check=True,
+            stderr=subprocess.DEVNULL
+        )
+        return
+    except subprocess.CalledProcessError:
         print("uv failed in both modes. Falling back to pip.")
 
     try:
