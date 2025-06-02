@@ -82,15 +82,15 @@ def package_installer(required_libraries: list = None):
         install_uv()
 
     # Attempt using uv (as module)
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
-            check=True,
-            stderr=subprocess.DEVNULL
-        )
-        return
-    except subprocess.CalledProcessError:
-        pass
+    #try:
+    #    subprocess.run(
+    #        [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
+    #        check=True,
+    #        stderr=subprocess.DEVNULL
+    #    )
+    #    return
+    #except subprocess.CalledProcessError:
+    #    pass
 
     try:
         subprocess.run(
