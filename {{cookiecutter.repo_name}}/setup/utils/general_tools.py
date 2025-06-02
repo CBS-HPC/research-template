@@ -32,11 +32,7 @@ def set_packages(version_control,programming_language):
 def package_installer(required_libraries: list = None):
     if not required_libraries:
         return
-    def in_virtualenv() -> bool:
-        return (
-            hasattr(sys, 'real_prefix') or
-            (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
-        )
+
 
     def install_uv():
         """Install 'uv' using pip if it's not already available."""
@@ -49,11 +45,6 @@ def package_installer(required_libraries: list = None):
 
     # Command prefixes
     pip_cmd_prefix = [sys.executable, "-m", "pip"]
-
-    if in_virtualenv():
-        uv_cmd_prefix = ["uv", "pip", "install", "--system"]
-    else:
-        uv_cmd_prefix = ["uv", "pip", "install"]
 
     # Check for uv availability
     uv_available = shutil.which("uv") is not None
@@ -91,17 +82,24 @@ def package_installer(required_libraries: list = None):
     print(f"Installing missing libraries: {missing_libraries}")
 
     for lib in missing_libraries:
-        # Try installing with uv if available
         if uv_available:
+            # Try with --system first
             try:
-                subprocess.run(uv_cmd_prefix + [lib], check=True)
-                continue  # Skip pip if uv worked
-            except subprocess.CalledProcessError as e:
-                print(f"uv failed for '{lib}': {e}. Falling back to pip.")
+                subprocess.run(["uv", "pip", "install", "--system", lib], check=True)
+                continue
+            except subprocess.CalledProcessError:
+                pass  # Try without --system
 
-        # Fallback to pip install
+            # Try without --system
+            try:
+                subprocess.run(["uv", "pip", "install", lib], check=True)
+                continue
+            except subprocess.CalledProcessError as e:
+                print(f"uv failed for '{lib}' in both modes: {e}. Falling back to pip.")
+
+        # Fallback to pip
         try:
-            subprocess.run(pip_cmd_prefix + ["install", lib], check=True)
+            subprocess.run( [sys.executable, "-m", "pip", "install", lib], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Failed to install '{lib}' with pip: {e}")
 
