@@ -25,7 +25,6 @@ language_dirs = {
     "matlab": "./src",
     "sas": "./src"
 }
-code_path = language_dirs.get(programming_language)
 
 def create_example(project_language):
     """
@@ -43,7 +42,7 @@ def create_example(project_language):
         return f"Unsupported programming language: {programming_language}"
 
     folder_path = language_dirs.get(programming_language)
-    
+
     if project_language == "r":
         create_r_example(folder_path)
     elif project_language == "python":
