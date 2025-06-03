@@ -51,7 +51,7 @@ def write_script(folder_path, script_name, extension, content):
         else:
             nbf.write(content, file)
 
-def create_scripts(programming_language, folder_path):
+def create_scripts(programming_language):
     """
     Creates a project structure with specific scripts for data science tasks
     and a workflow script in R or Python.
