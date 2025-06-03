@@ -182,9 +182,9 @@ def generate_ci_configs(programming_language: str, code_repo: str, project_root:
     templates = template_map[programming_language](version)
 
     file_map = {
-        "github": str(project_root / pathlib.Path(".github/workflows/ci.yml")),
-        "gitlab": str(project_root / pathlib.Path(".gitlab-ci.yml")),
-        "codeberg": str(project_root / pathlib.Path(".woodpecker.yml")),
+        "github": project_root / pathlib.Path(".github/workflows/ci.yml"),
+        "gitlab": project_root / pathlib.Path(".gitlab-ci.yml"),
+        "codeberg": project_root / pathlib.Path(".woodpecker.yml"),
     }
 
     if code_repo not in file_map:
@@ -209,9 +209,9 @@ def toggle_ci_files(enable: bool = True, code_repo: str = "all", project_root: s
     """
     
     ci_files = {
-        "github": str(project_root / pathlib.Path(".github/workflows/ci.yml")),
-        "gitlab": str(project_root / pathlib.Path(".gitlab-ci.yml")),
-        "codeberg": str(project_root / pathlib.Path(".woodpecker.yml")),
+        "github": project_root / pathlib.Path(".github/workflows/ci.yml"),
+        "gitlab": project_root / pathlib.Path(".gitlab-ci.yml"),
+        "codeberg": project_root / pathlib.Path(".woodpecker.yml"),
     }
 
     if code_repo == "all":
