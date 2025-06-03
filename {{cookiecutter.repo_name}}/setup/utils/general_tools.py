@@ -15,7 +15,7 @@ def set_packages(version_control,programming_language):
     install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec']
     #install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
     if programming_language.lower()  == 'python':
-        install_packages.extend(['jupyterlab'])
+        install_packages.extend(['jupyterlab','pytest'])
     elif programming_language.lower()  == 'stata':
         install_packages.extend(['jupyterlab','stata_setup'])
     elif programming_language.lower()  == 'matlab':
@@ -939,36 +939,3 @@ def ensure_correct_kernel(func):
         return func(*args, **kwargs)
 
     return wrapper
-   
-# Other
-def get_hardware_info():
-    """
-    Extract hardware information and save it to a file.
-    Works on Windows, Linux, and macOS.
-    """
-    os_type = platform.system().lower()
-    command = ""
-
-    if os_type == "Windows":
-        command = "systeminfo"
-    elif os_type == "Linux":
-        command = "lshw -short"  # Alternative: "dmidecode"
-    elif os_type == "Darwin":  # macOS
-        command = "system_profiler SPHardwareDataType"
-    else:
-        print("Unsupported operating system.")
-        return
-
-    try:
-        # Execute the command and capture the output
-        hardware_info = subprocess.check_output(command, shell=True, text=True)
-
-        # Save the hardware information to a file
-        with open("hardware_information.txt", "w") as file:
-            file.write(hardware_info)
-
-        print("Hardware information saved to hardware_information.txt")
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error retrieving hardware information: {e}")
-

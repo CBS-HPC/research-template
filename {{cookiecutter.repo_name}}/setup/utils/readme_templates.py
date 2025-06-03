@@ -5,6 +5,10 @@ import os
 import json
 import pathlib
 import platform
+import psutil
+import subprocess
+import shutil
+from datetime import datetime
 
 from .general_tools import *
 
@@ -440,6 +444,7 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     cli_tools = set_cli_tools(programming_language)
     dcas = set_dcas()
     code_path = language_dirs.get(programming_language.lower())
+    system_spec = get_system_specs()
     
     # Project header
     header = f"""# {project_name}
@@ -455,6 +460,8 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
 <summary>📋 System and Environment Information</summary>
 
 The project was developed and tested on the following operating system:
+
+{system_spec}
 
 - **Operating System**: {platform.platform()}
 
@@ -561,6 +568,97 @@ The current repository structure is shown in the tree below, and descriptions fo
     with open(readme_file, "w",encoding="utf-8") as file:
         file.write(header)
     print(f"README.md created at: {readme_file}")
+
+def get_system_specs():
+    
+    def detect_gpu():
+        # Try NVIDIA
+        if shutil.which("nvidia-smi"):
+            try:
+                output = subprocess.check_output(
+                    ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                    stderr=subprocess.DEVNULL
+                ).decode().strip()
+                gpus = output.splitlines()
+                return ", ".join(gpus) if gpus else None
+            except Exception:
+                return None
+
+        # Try PyTorch
+        try:
+            import torch
+            if torch.cuda.is_available():
+                gpus = [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
+                return ", ".join(gpus)
+        except ImportError:
+            pass
+
+        # Try AMD (Linux)
+        if platform.system() == "Linux":
+            try:
+                lspci_output = subprocess.check_output(["lspci"], text=True)
+                amd_gpus = [line for line in lspci_output.splitlines() if "AMD" in line and "VGA" in line]
+                if amd_gpus:
+                    return " / ".join(amd_gpus)
+            except Exception:
+                pass
+
+            if shutil.which("rocm-smi"):
+                try:
+                    rocm_output = subprocess.check_output(["rocm-smi", "--showproductname"], text=True)
+                    rocm_lines = [line.strip() for line in rocm_output.splitlines() if "GPU" in line]
+                    return " / ".join(rocm_lines) if rocm_lines else None
+                except Exception:
+                    return None
+
+        # Try Apple Silicon
+        if platform.system() == "Darwin" and "Apple" in platform.processor():
+            return platform.processor()
+
+        return None  # GPU not detected
+
+    def format_specs(info_dict):
+        lines = []
+        for k, v in info_dict.items():
+            lines.append(f"- **{k}**: {v}")
+        return "\n".join(lines) + "\n"
+
+    info = {}
+    
+    # Basic OS and Python
+    info["OS"] = f"{platform.system()} {platform.release()} ({platform.version()})"
+    info["Architecture"] = platform.machine()
+    info["Python Version"] = platform.python_version()
+
+    # CPU
+    try:
+        import cpuinfo
+    except ImportError:
+        subprocess.check_call([os.sys.executable, "-m", "pip", "install", "py-cpuinfo"])
+        import cpuinfo
+
+    cpu = cpuinfo.get_cpu_info()
+    info["CPU"] = cpu.get("brand_raw", platform.processor() or "Unknown")
+    info["Cores (Physical)"] = psutil.cpu_count(logical=False)
+    info["Cores (Logical)"] = psutil.cpu_count(logical=True)
+
+    # RAM
+    ram_gb = psutil.virtual_memory().total / (1024 ** 3)
+    info["RAM"] = f"{ram_gb:.2f} GB"
+
+    # GPU detection
+    gpu_info = detect_gpu()
+    if gpu_info:
+        info["GPU"] = gpu_info
+
+    # Timestamp
+    info["Collected On"] = datetime.now().isoformat()
+
+    section_text = format_specs(info)
+
+    return section_text 
+
+
 
 # Project Tree
 def read_treeignore(file_path="./.treeignore"):
