@@ -12,11 +12,12 @@ from datetime import datetime
 
 from .general_tools import *
 
-package_installer(required_libraries =  ['pyyaml','requests','pathspec'])
+package_installer(required_libraries =  ['pyyaml','requests','pathspec','psutil',"py-cpuinfo"])
 
 import yaml
 import requests
 import pathspec
+import cpuinfo
 
 # Determine file extension based on programming language
 ext_map = {
@@ -463,8 +464,6 @@ The project was developed and tested on the following operating system:
 
 {system_spec}
 
-- **Operating System**: {platform.platform()}
-
 The environments were set up using:
 
 - **Project setup scripts** (`./setup`) installed with **{py_version}**
@@ -628,15 +627,8 @@ def get_system_specs():
     # Basic OS and Python
     info["OS"] = f"{platform.system()} {platform.release()} ({platform.version()})"
     info["Architecture"] = platform.machine()
-    info["Python Version"] = platform.python_version()
 
     # CPU
-    try:
-        import cpuinfo
-    except ImportError:
-        subprocess.check_call([os.sys.executable, "-m", "pip", "install", "py-cpuinfo"])
-        import cpuinfo
-
     cpu = cpuinfo.get_cpu_info()
     info["CPU"] = cpu.get("brand_raw", platform.processor() or "Unknown")
     info["Cores (Physical)"] = psutil.cpu_count(logical=False)
@@ -658,8 +650,6 @@ def get_system_specs():
 
     return section_text 
 
-
-
 # Project Tree
 def read_treeignore(file_path="./.treeignore"):
     """Load ignore rules from a .gitignore-style file."""
@@ -669,31 +659,6 @@ def read_treeignore(file_path="./.treeignore"):
         patterns = f.read().splitlines()
     spec = pathspec.PathSpec.from_lines('gitwildmatch', patterns)
     return spec
-
-def read_treeignore_old(file_path="./.treeignore"):
-    """
-    Reads the .treeignore file and returns a list of ignored paths.
-    
-    Parameters:
-    file_path (str): Path to the .treeignore file (default is ".treeignore").
-    
-    Returns:
-    list: A list of ignored paths from the .treeignore file.
-    """
-    ignore_list = []
-    file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
-
-    try:
-        with open(file_path, 'r') as f:
-            for line in f:
-                # Strip leading/trailing whitespace and ignore empty lines or comments
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    ignore_list.append(line)
-    except FileNotFoundError:
-        print(f"Warning: {file_path} not found. Returning empty ignore list.")
-    
-    return ignore_list
 
 def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptions.json", root_folder=None):
     """
