@@ -30,7 +30,7 @@ def set_packages(version_control,programming_language):
     
     return install_packages
 
-def package_installer(required_libraries: list = None,force_pip: bool = False):
+def package_installer(required_libraries: list = None,pip_install: bool = False):
     if not required_libraries:
         return
 
@@ -75,7 +75,7 @@ def package_installer(required_libraries: list = None,force_pip: bool = False):
 
     print(f"Installing missing libraries: {missing_libraries}")
 
-    if not force_pip:
+    if not pip_install:
         # Try installing uv
         try:
             import uv  # noqa: F401
