@@ -218,7 +218,6 @@ def create_notebooks(programming_language, folder_path,file_name = "s00_workflow
     else:
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
-
 def generate_root_level_tests(programming_language, scripts):
     """
     Creates unit test stubs in a top-level tests/ folder for a given programming language.
@@ -251,23 +250,24 @@ def generate_root_level_tests(programming_language, scripts):
         if programming_language == "python":
             content = f'def test_{base}():\n    assert True  # Add real tests for {base}.py\n'
         elif programming_language == "r":
-            content = f'test_that("{base} runs", {{\n  expect_true(TRUE)\n}})\n'
+            content = f"""{% raw %}test_that("{base} runs", {{\n  expect_true(TRUE)\n}})\n{% endraw %}"""
+
         elif programming_language == "matlab":
-            content = (
-                f"function tests = test_{base}\n"
-                "tests = functiontests(localfunctions);\n"
-                "end\n\n"
-                "function test_case(testCase)\n"
-                "verifyTrue(testCase, true)\n"
-                "end\n"
-            )
+            content = f"""{% raw %}function tests = test_{base}\n
+                tests = functiontests(localfunctions);\n
+                end\n\n
+                function test_case(testCase)\n
+                verifyTrue(testCase, true)\n
+                end\n
+                {% endraw %}"""
         elif programming_language == "stata":
-            content = (
-                "clear all\n"
-                "set more off\n"
-                f'display "Testing {base}"\n'
-                "assert 1 == 1\n"
-            )
+            content = f"""{% raw %}
+                clear all\n
+                set more off\n
+                display "Testing {base}"\n
+                assert 1 == 1\n
+                {% endraw %}"""
+            
 
         write_script(folder_path, script_name, extension, content)
 
