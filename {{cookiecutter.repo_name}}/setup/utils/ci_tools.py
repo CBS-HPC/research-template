@@ -239,7 +239,7 @@ def toggle_ci_files(enable: bool = True, code_repo: str = "all", project_root: s
 
 def set_git_alis(project_root: str = "."):
 
-    git_folder = str(project_root/ pathlib.Path(".git"))
+    git_folder = project_root/ pathlib.Path(".git")
 
     # Git alias setup (only if .git exists)
     if git_folder.exists() and git_folder.is_dir():
