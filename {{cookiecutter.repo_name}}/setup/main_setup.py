@@ -62,7 +62,7 @@ def intro():
     # Create Data folders
     create_folders()
     # Create scripts and notebook
-    create_scripts(programming_language, "./src")
+    create_scripts(programming_language)
     
     # Create a citation file
     create_citation_file(project_name,version,authors,orcids,version_control,doi=None, release_date=None)
@@ -134,13 +134,13 @@ def remote_repo_setup():
     print("Creating 'requirements.txt','environment.yml'")
     update_env_files()
     update_setup_dependency()
-    update_src_dependency()
+    update_code_dependency()
 
     # Installing package:
     install_py_package("./setup")
 
     # Pushing to Git
-    push_msg = " Created `requirements.txt`, `environment.yml`, and `dependencies.txt` in `setup` and `src`, installed Setup package and updated in README.md" 
+    push_msg = " Created `requirements.txt`, `environment.yml`, and `dependencies.txt`, installed Setup package and updated in README.md" 
     git_push(flag,push_msg)
 
 @ensure_correct_kernel
@@ -186,12 +186,7 @@ def outro():
         activate_to_delete = "./activate.ps1"
         deactivate_to_delete = "./deactivate.ps1"
 
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-
     files_to_remove = ["./setup/project_setup.py","./run_setup.sh","./run_setup.ps1","./setup/main_setup.py",activate_to_delete,deactivate_to_delete]
-
-    if programming_language.lower() != 'r':
-        files_to_remove.append("./src/renv_setup.R")
 
     # Deleting Setup scripts
     delete_files(files_to_remove)
