@@ -74,7 +74,8 @@ def create_scripts(programming_language):
         "s03_data_collection": "Data extraction/scraping",
         "s04_preprocessing": "Data cleaning, transformation, feature engineering",
         "s05_modeling": "Training and evaluation of models",
-        "s06_visualization": "Functions for plots and visualizations"
+        "s06_visualization": "Functions for plots and visualizations",
+        "get_dependencies": "retrieves dependencies"
     }
 
 
@@ -93,6 +94,9 @@ def create_scripts(programming_language):
 
     # Create Install_dependencies
     create_install_dependencies(programming_language, folder_path,file_name = "s01_install_dependencies")
+
+    # Create unit-test test files
+    generate_root_level_tests(programming_language, scripts)
 
 # Orchstration scripts 
 def create_step_script(programming_language, folder_path, script_name, purpose):
@@ -213,6 +217,61 @@ def create_notebooks(programming_language, folder_path,file_name = "s00_workflow
         create_sas_notebook(folder_path,file_name)
     else:
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
+
+
+def generate_root_level_tests(programming_language, scripts):
+    """
+    Creates unit test stubs in a top-level tests/ folder for a given programming language.
+
+    Parameters:
+        language (str): One of 'python', 'r', 'matlab', 'stata'
+        base_dir (str): Base directory of the project (default is current dir)
+    """
+    programming_language = programming_language.lower()
+
+    if programming_language == "r":
+        folder_path = "./tests/testthat"
+        extension = ".R"
+    elif programming_language == "stata":
+        folder_path = "./tests"
+        extension = ".do"
+    elif programming_language == "matlab":
+        folder_path = "./tests"
+        extension = ".m"
+    elif programming_language == "python":
+        folder_path = "./tests"
+        extension = ".py"
+    else:
+        raise ValueError(f"Unsupported language: {programming_language}")
+
+
+    for base, _ in scripts.items():
+        script_name = f"test_{base}"
+    
+        if programming_language == "python":
+            content = f'def test_{base}():\n    assert True  # Add real tests for {base}.py\n'
+        elif programming_language == "r":
+            content = f'test_that("{base} runs", {{\n  expect_true(TRUE)\n}})\n'
+        elif programming_language == "matlab":
+            content = (
+                f"function tests = test_{base}\n"
+                "tests = functiontests(localfunctions);\n"
+                "end\n\n"
+                "function test_case(testCase)\n"
+                "verifyTrue(testCase, true)\n"
+                "end\n"
+            )
+        elif programming_language == "stata":
+            content = (
+                "clear all\n"
+                "set more off\n"
+                f'display "Testing {base}"\n'
+                "assert 1 == 1\n"
+            )
+
+        write_script(folder_path, script_name, extension, content)
+
+    print(f"✅ Created test files for {programming_language} in {folder_path}")
 
 
 # Python
