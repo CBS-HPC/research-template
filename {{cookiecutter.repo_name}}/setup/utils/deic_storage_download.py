@@ -7,7 +7,8 @@ import pathlib
 
 from .general_tools import *
 
-package_installer(required_libraries = ['beautifulsoup4'] )
+package_installer(required_libraries = ['beautifulsoup4'],force_pip=True)
+
 from bs4 import BeautifulSoup
 
 def links_deic_storage(url):

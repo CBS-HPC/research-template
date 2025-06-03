@@ -30,7 +30,7 @@ def set_packages(version_control,programming_language):
     
     return install_packages
 
-def package_installer(required_libraries: list = None):
+def package_installer(required_libraries: list = None,force_pip: bool = False):
     if not required_libraries:
         return
 
@@ -75,32 +75,33 @@ def package_installer(required_libraries: list = None):
 
     print(f"Installing missing libraries: {missing_libraries}")
 
-    # Try installing uv
-    try:
-        import uv  # noqa: F401
-    except ImportError:
-        install_uv()
+    if not force_pip:
+        # Try installing uv
+        try:
+            import uv  # noqa: F401
+        except ImportError:
+            install_uv()
 
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
-            check=True,
-            stderr=subprocess.DEVNULL
-        )
-        return
-    except subprocess.CalledProcessError as e:
-        pass
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
+                check=True,
+                stderr=subprocess.DEVNULL
+            )
+            return
+        except subprocess.CalledProcessError as e:
+            pass
 
-        # Attempt using uv (as module)
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
-            check=True,
-            stderr=subprocess.DEVNULL
-        )
-        return
-    except subprocess.CalledProcessError:
-        print("uv failed in both modes. Falling back to pip.")
+            # Attempt using uv (as module)
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
+                check=True,
+                stderr=subprocess.DEVNULL
+            )
+            return
+        except subprocess.CalledProcessError:
+            print("uv failed in both modes. Falling back to pip.")
 
     try:
         subprocess.run(
