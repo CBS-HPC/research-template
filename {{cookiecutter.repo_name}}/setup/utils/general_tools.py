@@ -12,7 +12,7 @@ import importlib.metadata
 
 
 def set_packages(version_control,programming_language):
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec']
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil']
     #install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','rpds-py==0.21.0','nbformat','setuptools','pathspec']
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab','pytest'])
