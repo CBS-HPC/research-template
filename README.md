@@ -436,6 +436,68 @@ source deactivate.sh
 </details>
 
 <details>
+<summary>📅 Unit Testing and Continuous Integration (CI)</summary>
+
+This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility.
+
+---
+
+### 🧪 Unit Testing
+
+Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure varies slightly by language:
+
+| Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
+| -------- | ------------------ | ----------- | ----------------- | ---------------- |
+| Python   | `pytest`           | `src/`      | `tests/`          | `test_*.py`      |
+| R        | `testthat`         | `R/`        | `tests/testthat/` | `test-*.R`       |
+| MATLAB   | `matlab.unittest`  | `src/`      | `tests/`          | `test_*.m`       |
+| Stata    | `.do` script-based | `stata/do/` | `tests/`          | `test_*.do`      |
+
+Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
+
+---
+
+### ⚙️ Continuous Integration (CI)
+
+The template supports CI pipelines on all major platforms:
+
+- **GitHub Actions**
+- **GitLab CI/CD**
+- **Codeberg CI** (via Woodpecker)
+
+CI configurations are auto-generated based on your language and repository host, and placed in the appropriate file:
+
+| Platform | Config File                |
+| -------- | -------------------------- |
+| GitHub   | `.github/workflows/ci.yml` |
+| GitLab   | `.gitlab-ci.yml`           |
+| Codeberg | `.woodpecker.yml`          |
+
+Each pipeline performs the following:
+
+1. Installs the appropriate language environment
+2. Installs dependencies (e.g., `requirements.txt`, `renv.lock`)
+3. Runs tests in the `tests/` directory
+4. Outputs test logs and error reports
+
+For R projects, CI will run `renv::restore(project = 'R')` if `R/renv.lock` exists. Otherwise, it falls back to `install.packages()`.
+
+---
+
+### 🔄 CI Toggle via CLI
+
+CI can be toggled on or off using the built-in CLI command:
+
+```bash
+ci-toggle --disable --repo github   # Disable GitHub CI
+disable-ci --repo all              # Disable all platforms
+ci-toggle --enable --repo gitlab   # Re-enable GitLab CI
+
+</details>
+
+
+
+<details>
 <summary>🔧 CLI Tools</summary>
 
 The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
