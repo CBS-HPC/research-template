@@ -207,7 +207,8 @@ def toggle_ci_files(enable: bool = True, code_repo: str = "all", project_root: s
         code_repo (str): 'github', 'gitlab', 'codeberg', or 'all'.
         project_root (str): project_root directory of the project.
     """
-    
+    code_repo = code_repo.lower()
+
     ci_files = {
         "github": project_root / pathlib.Path(".github/workflows/ci.yml"),
         "gitlab": project_root / pathlib.Path(".gitlab-ci.yml"),
