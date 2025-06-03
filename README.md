@@ -379,7 +379,7 @@ You can find or update human-readable file descriptions in `file_descriptions.js
 │   ├── dependencies.txt      # List of Python dependencies for `setup` module  
 │   ├── setup.py              # Setup script to register the project as a Python package
 │   └── utils/                # Utility functions and scripts for environment setup
-└── src/                      # Source code for data processing, analysis, and reporting
+└── src (R/stata)/                  # Source code for data processing, analysis, and reporting
     ├── dependencies.txt            # List of dependencies for `src` module  
     ├── get_dependencies.*          # retrieves and checks required packages required for the project (Utilised)
     ├── s00_main.*                  # Orchestrates the full workflow pipeline

@@ -111,7 +111,7 @@ def package_installer(required_libraries: list = None):
     except subprocess.CalledProcessError as e:
         print(f"Failed to install with pip: {e}")
 
-package_installer(required_libraries = ['python-dotenv'])
+package_installer(required_libraries = ['python-dotenv','psutil'])
 
 from dotenv import dotenv_values, load_dotenv
 

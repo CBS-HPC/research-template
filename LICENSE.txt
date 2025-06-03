@@ -3,7 +3,7 @@
 This repository is part of the **CBS Reproducible Research Template** and includes both documentation and software. These materials are made available under two complementary open-source licenses:
 
 - **Process documentation and project configuration files** (e.g., `README.md`, `CITATION.cff`, `file_descriptions.json`) are licensed under the [Creative Commons Attribution 4.0 International (CC-BY 4.0) License][cc-by-human].
-- **Software and scripts** (e.g., files under `setup/`, `src/`, `bin/`) are licensed under the [MIT License][mit-license].
+- **Software and scripts** are licensed under the [MIT License][mit-license].
 
 This licensing model is **adapted from [The Turing Way](https://github.com/the-turing-way)** and draws directly from materials published under [CC-BY 4.0 via Zenodo (DOI: 10.5281/zenodo.15213042)](https://zenodo.org/record/15213042).
 
