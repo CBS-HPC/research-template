@@ -1,0 +1,299 @@
+import pathlib
+import argparse
+import subprocess
+
+from .general_tools import *
+
+@ensure_correct_kernel
+def ci_config():
+     # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+
+    if set_git_alis(project_root):
+        generate_ci_configs(programming_language, code_repo, project_root)
+        toggle_ci_files(enable = False, code_repo = code_repo, project_root = project_root)
+
+
+# -------- CI Generator Dispatcher --------
+def generate_ci_configs(programming_language: str, code_repo: str, project_root: str = "."):
+    """
+    Generate a CI configuration file for a given language and code hosting platform.
+    """
+        # -------- Version Extraction --------
+    def parse_version(version_string: str, programming_language: str) -> str:
+        programming_language = programming_language.lower()
+        if programming_language == "python":
+            return version_string.lower().replace("python", "").strip()
+        elif programming_language == "r":
+            return version_string.lower().replace("r version", "").strip()
+        elif programming_language == "matlab":
+            return version_string.split()[1]  # "9.11.0.2022996"
+        else:
+            raise ValueError("Unsupported programming_language.")
+
+    # -------- CI Templates --------
+    def _ci_for_python(version: str):
+        return {
+            "github": f"""\
+    name: Python CI
+
+    on: [push, pull_request]
+
+    jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        - uses: actions/setup-python@v4
+            with:
+            python-version: '{version}'
+        - run: pip install -r requirements.txt
+        - run: pytest
+    """,
+            "gitlab": f"""\
+    image: python:{version}
+
+    test:
+    stage: test
+    script:
+        - pip install -r requirements.txt
+        - pytest
+    """,
+            "codeberg": f"""\
+    pipeline:
+    test:
+        image: python:{version}
+        commands:
+        - pip install -r requirements.txt
+        - pytest
+    """
+        }
+
+    def _ci_for_r(version: str):
+        return {
+            "github": f"""\
+    name: R CI
+
+    on: [push, pull_request]
+
+    jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        - uses: r-lib/actions/setup-r@v2
+            with:
+            r-version: '{version}'
+        - name: Install renv
+            run: Rscript -e 'install.packages("renv")'
+        - name: Restore or install dependencies
+            run: |
+            if [ -f "R/renv.lock" ]; then
+                Rscript -e 'renv::restore(project = "R")'
+            else
+                Rscript -e 'install.packages("testthat")'
+            fi
+        - name: Run tests
+            run: Rscript -e 'testthat::test_dir("tests/testthat")'
+    """,
+            "gitlab": f"""\
+    image: rocker/r-ver:{version}
+
+    test:
+    stage: test
+    script:
+        - Rscript -e 'install.packages("renv")'
+        - |
+        if [ -f "R/renv.lock" ]; then
+            Rscript -e 'renv::restore(project = "R")'
+        else
+            Rscript -e 'install.packages("testthat")'
+        fi
+        - Rscript -e 'testthat::test_dir("tests/testthat")'
+    """,
+            "codeberg": f"""\
+    pipeline:
+    test:
+        image: rocker/r-ver:{version}
+        commands:
+        - Rscript -e 'install.packages("renv")'
+        - |
+            if [ -f "R/renv.lock" ]; then
+            Rscript -e 'renv::restore(project = "R")'
+            else
+            Rscript -e 'install.packages("testthat")'
+            fi
+        - Rscript -e 'testthat::test_dir("tests/testthat")'
+    """
+        }
+
+    def _ci_for_matlab(version: str):
+        return {
+            "github": f"""\
+    name: MATLAB CI
+
+    on: [push, pull_request]
+
+    jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        - uses: matlab-actions/setup-matlab@v2
+        - uses: matlab-actions/run-tests@v2
+            with:
+            source-folder: src
+            test-folder: tests
+    """,
+            "gitlab": f"""\
+    test:
+    stage: test
+    script:
+        - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
+    """,
+            "codeberg": f"""\
+    pipeline:
+    test:
+        image: mathworks/matlab:{version}
+        commands:
+        - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
+    """
+        }
+
+    programming_language = programming_language.lower()
+    code_repo = code_repo.lower()
+
+
+    version = parse_version(get_version(programming_language), programming_language)
+
+    template_map = {
+        "python": _ci_for_python,
+        "r": _ci_for_r,
+        "matlab": _ci_for_matlab
+    }
+
+    if programming_language not in template_map:
+        raise ValueError(f"Unsupported language: {programming_language}")
+
+    templates = template_map[programming_language](version)
+
+    file_map = {
+        "github": str(project_root / pathlib.Path(".github/workflows/ci.yml")),
+        "gitlab": str(project_root / pathlib.Path(".gitlab-ci.yml")),
+        "codeberg": str(project_root / pathlib.Path(".woodpecker.yml")),
+    }
+
+    if code_repo not in file_map:
+        raise ValueError(f"Unsupported code_repo: {code_repo}")
+
+    path = file_map[code_repo]
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(path, "w") as f:
+        f.write(templates[code_repo])
+
+    print(f"✅ CI config created for {programming_language} on {code_repo} using version {version}")
+
+def toggle_ci_files(enable: bool = True, code_repo: str = "all", project_root: str = "."):
+    """
+    Enables or disables CI by renaming .yml files (to .disabled) for GitHub, GitLab, and Codeberg.
+    
+    Parameters:
+        enable (bool): True to enable CI, False to disable it.
+        code_repo (str): 'github', 'gitlab', 'codeberg', or 'all'.
+        project_root (str): project_root directory of the project.
+    """
+    
+    ci_files = {
+        "github": str(project_root / pathlib.Path(".github/workflows/ci.yml")),
+        "gitlab": str(project_root / pathlib.Path(".gitlab-ci.yml")),
+        "codeberg": str(project_root / pathlib.Path(".woodpecker.yml")),
+    }
+
+    if code_repo == "all":
+        targets = ci_files
+    else:
+        if code_repo not in ci_files:
+            raise ValueError(f"Unsupported code_repo: {code_repo}")
+        targets = {code_repo: ci_files[code_repo]}
+
+    for name, path in targets.items():
+        if enable:
+            disabled = path.with_suffix(path.suffix + ".disabled")
+            if disabled.exists():
+                disabled.rename(path)
+                print(f"✅ Re-enabled CI for {name}")
+            else:
+                print(f"ℹ️  CI for {name} is already enabled or missing.")
+        else:
+            if path.exists():
+                disabled = path.with_suffix(path.suffix + ".disabled")
+                path.rename(disabled)
+                print(f"🚫 Disabled CI for {name}")
+            else:
+                print(f"ℹ️  CI for {name} is already disabled or not found.")
+
+def set_git_alis(project_root: str = "."):
+
+    git_folder = str(project_root/ pathlib.Path(".git"))
+
+    # Git alias setup (only if .git exists)
+    if git_folder.exists() and git_folder.is_dir():
+        try:
+            subprocess.run(
+                [
+                    "git", "config", "--global",
+                    "alias.commit-skip",
+                    "!f() { git commit -m \"$1 [skip ci]\"; }; f"
+                ],
+                check=True
+            )
+            print("✅ Git alias 'commit-skip' added.")
+            return True
+        except Exception as e:
+            print(f"⚠️ Could not add Git alias: {e}")
+            return False
+    else:
+        print("ℹ️ Skipped Git alias setup: .git folder not found in project root.")
+        return False
+
+@ensure_correct_kernel
+def ci_control():
+ 
+  # Ensure we're in the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+
+    parser = argparse.ArgumentParser(description="Enable or disable CI config files.")
+    parser.add_argument(
+        "--enable",
+        action="store_true",
+        help="Enable CI by renaming .yml.disabled → .yml",
+    )
+    parser.add_argument(
+        "--disable",
+        action="store_true",
+        help="Disable CI by renaming .yml → .yml.disabled",
+    )
+
+
+    args = parser.parse_args()
+
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+
+    if args.enable and args.disable:
+        print("❌ You can't use --enable and --disable together.")
+    elif args.enable:
+        toggle_ci_files(enable=True, code_repo=code_repo, project_root=project_root)
+    elif args.disable:
+        toggle_ci_files(enable=False, code_repo=code_repo, project_root=project_root)
+    else:
+        print("ℹ️ Use --enable or --disable to toggle CI.")
+
+
+if __name__ == "__main__":
+    ci_config()

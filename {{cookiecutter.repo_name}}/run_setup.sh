@@ -68,11 +68,11 @@ if [ "$env_manager" != "base Installation" ]; then
             fi
             ;;
         *)
-            echo "Error: Unsupported environment manager '$env_manager'. Supported values are: Conda, Venv and 'Base Installation'"
+            echo "No valid env_path or env_manager provided. Using system Python.2"
             ;;
     esac
 else
-    echo "No valid env_path or env_manager provided. Skipping environment activation."
+    echo "No valid env_path or env_manager provided. Using system Python."
 fi
 
 # Check if the script paths are provided and run them

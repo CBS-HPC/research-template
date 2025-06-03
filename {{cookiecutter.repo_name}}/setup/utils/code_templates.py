@@ -69,13 +69,14 @@ def create_scripts(programming_language):
     folder_path = language_dirs.get(programming_language)
 
     # Script details based on purpose
-    scripts = {"s01_install_dependencies": "Helper to intall dependencies",
+    scripts = {"s00_main": "",
+        "s01_install_dependencies": "Helper to intall dependencies",
         "s02_utils": "Helper functions or utilities",
         "s03_data_collection": "Data extraction/scraping",
         "s04_preprocessing": "Data cleaning, transformation, feature engineering",
         "s05_modeling": "Training and evaluation of models",
         "s06_visualization": "Functions for plots and visualizations",
-        "get_dependencies": "retrieves dependencies"
+        "get_dependencies": ""
     }
 
 

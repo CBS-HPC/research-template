@@ -24,7 +24,7 @@ if ($env_manager -ne "base Installation") {
             $pythonExe = Join-Path $env_path "Scripts\python.exe"
         }
         default {
-            Write-Output "Error: Unsupported environment manager '$env_manager'."
+            Write-Output "No valid env_path or env_manager provided. Using system Python.2"
         }
     }
 } else {

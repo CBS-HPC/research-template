@@ -25,6 +25,7 @@ from utils.code_templates import *
 from utils.versioning_tools import *
 from utils.repo_tools import *
 from utils.get_dependencies import *
+from utils.ci_tools import *
 
 @ensure_correct_kernel
 def intro():
@@ -99,6 +100,7 @@ def remote_repo_setup():
             return False
         
         if setup_repo(version_control, code_repo, repo_name, project_description):
+            ci_config()
             return True
         save_to_env("None", "CODE_REPO", ".cookiecutter")
         return False

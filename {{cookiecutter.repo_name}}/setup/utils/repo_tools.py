@@ -9,12 +9,13 @@ import pathlib
 
 from .general_tools import *
 from .versioning_tools import *
+from .ci_tools import ci_config
 
 package_installer(required_libraries =  ['requests'])
 
 import requests
 
-# GitHub and Gitlad Functions
+# GitHub, Gitlad and Codeberg Functions
 
 def setup_repo(version_control,code_repo,repo_name,project_description):
     if repo_login(version_control,repo_name,code_repo):
@@ -199,188 +200,7 @@ def repo_create(code_repo, repo_name, project_description):
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
         return False
 
-def get_login_credentials_old(code_repo, repo_name):
-    """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
-    code_repo = code_repo.lower()
-
-    if code_repo == "github":
-        user = load_from_env('GITHUB_USER')
-        token = load_from_env('GITHUB_TOKEN')
-        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
-        command = ['gh', 'auth', 'login', '--hostname', hostname, '--with-token']
-        privacy_setting = load_from_env("GITHUB_PRIVACY")
-
-    elif code_repo == "gitlab":
-        user = load_from_env('GITLAB_USER')
-        token = load_from_env('GITLAB_TOKEN')
-        hostname = load_from_env('GITLAB_HOSTNAME') or "gitlab.com"
-        command = ['glab', 'auth', 'login', '--hostname', hostname, '--token']
-        privacy_setting = load_from_env("GITLAB_PRIVACY")
-
-    elif code_repo == "codeberg":
-        user = load_from_env('CODEBERG_USER')
-        token = load_from_env('CODEBERG_TOKEN')
-        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
-        command = "Not needed" # No CLI login for Codeberg
-        privacy_setting = load_from_env("CODEBERG_PRIVACY")
-
-    else:
-        return None, None, None, None, None
-
-    # Fallback to repo_user_info if anything critical is missing
-    if not user or not token or not privacy_setting:
-        version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
-        user, privacy_setting, token, hostname = repo_user_info(version_control, repo_name, code_repo)
-
-    return user, token, hostname, command, privacy_setting
-
-def repo_login_old(version_control = None, repo_name = None , code_repo = None):
-
-    def authenticate(command, token):
-        """Attempts to authenticate using the provided command and token."""
-        if not token or not command:
-            return False     
-        try:
-            subprocess.run(command, input=token, text=True, capture_output=True)
-            #return result.returncode == 0
-            return True
-        except Exception:
-            return False
-
-    def authenticate_codeberg(token, hostname):
-        """Authenticates with Codeberg by making an API call.""" 
-        if not token or not hostname:
-            return False        
-        try:
-            requests.get(
-                f"https://{hostname}/api/v1/user",
-                headers={"Authorization": f"token {token}"}
-            )
-            return True
-        except Exception:
-            return False
-
-    # Load from environment if not provided
-    repo_name = repo_name or load_from_env("REPO_NAME", ".cookiecutter")
-    code_repo = code_repo or load_from_env("CODE_REPO", ".cookiecutter")
-
-    if not repo_name or not code_repo:
-        return False
-    
-    try:
-        # Get login details based on the repository type
-        _, token, hostname, command, _ = get_login_credentials_cli(code_repo, repo_name)
-
-        if not command or not token or not hostname:
-            version_control = version_control or load_from_env("VERSION_CONTROL", ".cookiecutter")
-            _, _,_, _ = repo_user_info(version_control, repo_name, code_repo)
-            _, token, hostname, command, _ =  get_login_credentials_cli(code_repo,repo_name)
-
-        # Attempt authentication if both user and token are provided
-        if code_repo.lower() in ["github","gitlab"]:
-            return authenticate(command, token)
-        
-        elif code_repo.lower() == "codeberg":
-            return authenticate_codeberg(token, hostname)
-        return False
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return False
-    
-def repo_create_old(code_repo, repo_name, project_description):
-    try:
-        user, token, hostname, _, privacy_setting = get_login_credentials_cli(code_repo,repo_name)
-
-        def create_gh():
-            try:
-                subprocess.run(
-                    ['gh', 'repo', 'view', f'{user}/{repo_name}'],
-                    check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                print(f"Repository '{user}/{repo_name}' already exists on GitHub.")
-            except subprocess.CalledProcessError:
-                subprocess.run(
-                    ['gh', 'repo', 'create', f'{user}/{repo_name}',
-                     f'--{privacy_setting}', "--description", project_description,
-                     "--source", ".", "--push"],
-                    check=True
-                )
-                print(f"Repository '{repo_name}' created and pushed successfully on GitHub.")
-
-        def create_gl():
-            try:
-                subprocess.run(
-                    ['glab', 'repo', 'view', f'{user}/{repo_name}'], #"--hostname", hostname
-                    check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                print(f"Repository '{user}/{repo_name}' already exists on GitLab.")
-            except subprocess.CalledProcessError:
-                subprocess.run(
-                    ['glab', 'repo', 'create', f'--{privacy_setting}', "--description", project_description,
-                     "--name", repo_name], #"--hostname", hostname
-                    check=True
-                )
-                print(f"Repository '{repo_name}' created on GitLab.")
-
-        def create_cb():
-            api_url = f"https://{hostname}/api/v1/user/repos"
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"token {token}"
-            }
-            payload = {
-                "name": repo_name,
-                "description": project_description,
-                "private": (privacy_setting == "private"),
-                "auto_init": False
-            }
-            response = requests.post(api_url, headers=headers, json=payload)
-            if response.status_code == 201:
-                print(f"Repository '{repo_name}' created successfully on Codeberg.")
-            elif response.status_code == 409:
-                print(f"Repository '{repo_name}' already exists on Codeberg.")
-            else:
-                raise Exception(f"Codeberg repo creation failed: {response.status_code} {response.text}")
-
-        if not token:
-            raise ValueError("Authentication token not found.")
-
-        code_repo = code_repo.lower()
-        if code_repo not in ["github", "gitlab", "codeberg"]:
-            raise ValueError("Unsupported code repository. Choose 'github' or 'gitlab'.")
-
-        # Use hostname from credentials (fallback already handled in get_login_credentials)
-        default_branch = "main" if code_repo in ["github","codeberg"] else "master"
-        remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
-
-        # Create or check the repo
-        if code_repo == "github":
-            create_gh()
-        elif code_repo == "gitlab":
-            create_gl()
-        elif code_repo == "codeberg":
-            create_cb()
-
-        # Set the remote URL
-        remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
-        if "origin" not in remotes.stdout:
-            subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
-        else:
-            subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
-
-        # Configure credentials and push
-        subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
-        subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
-        print(f"Repository pushed to {hostname} on branch '{default_branch}'.")
-        return True
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
-        return False
-
-def install_glab_old(install_path=None):
+def install_glab(install_path=None):
     
     def get_glab_version():
         url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
@@ -451,7 +271,7 @@ def install_glab_old(install_path=None):
 
     return exe_to_path('glab',os.path.join(install_path, "bin"))
    
-def install_gh_old(install_path=None):
+def install_gh(install_path=None):
     """
     Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
 
@@ -528,7 +348,8 @@ def main():
     setup_version_control(version_control,remote_storage,code_repo,repo_name)
 
     # Create Remote Repository
-    setup_repo(version_control,code_repo,repo_name,project_description)
+    if setup_repo(version_control,code_repo,repo_name,project_description):
+        ci_config()
 
  
 if __name__ == "__main__":
