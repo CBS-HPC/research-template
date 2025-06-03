@@ -8,9 +8,26 @@ from .readme_templates import main as update_readme_main
 from .get_dependencies import main as get_setup_dependencies_main
 
 package_installer(required_libraries=['nbformat'])
-#package_installer(required_libraries=['rpds-py==0.21.0', 'nbformat'])
 
-def create_example(project_language, folder_path):
+# Determine file extension based on programming language
+ext_map = {
+    "r": "R",
+    "python": "py",
+    "matlab": "m",
+    "stata": "do",
+    "sas": "sas"
+}
+
+language_dirs = {
+    "r": "./R",
+    "stata": "./stata",
+    "python": "./src",
+    "matlab": "./src",
+    "sas": "./src"
+}
+code_path = language_dirs.get(programming_language)
+
+def create_example(project_language):
     """
     Create a realistic example project for a specified programming language.
     
@@ -18,18 +35,24 @@ def create_example(project_language, folder_path):
         project_language (str): "r", "python", "stata", "matlab", "sas"
         folder_path (str): Where to create the project
     """
-    if project_language.lower() not in ["r", "python", "stata", "matlab", "sas"]:
-        raise ValueError("Supported languages: r, python, stata, matlab, sas")
 
-    if project_language.lower() == "r":
+    programming_language = programming_language.lower()
+    ext = ext_map.get(programming_language)
+
+    if ext is None:
+        return f"Unsupported programming language: {programming_language}"
+
+    folder_path = language_dirs.get(programming_language)
+    
+    if project_language == "r":
         create_r_example(folder_path)
-    elif project_language.lower() == "python":
+    elif project_language == "python":
         create_python_example(folder_path)
-    elif project_language.lower() == "stata":
+    elif project_language == "stata":
         create_stata_example(folder_path)
-    elif project_language.lower() == "matlab":
+    elif project_language == "matlab":
         create_matlab_example(folder_path)
-    elif project_language.lower() == "sas":
+    elif project_language == "sas":
         create_sas_example(folder_path)
 
 
@@ -579,7 +602,7 @@ def main():
   
     # Create scripts and notebook
     print(f"loading {programming_language} code example")
-    create_example(programming_language, "./src")
+    create_example(programming_language)
     get_setup_dependencies_main()
     update_readme_main()
 

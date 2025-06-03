@@ -23,24 +23,40 @@ ext_map = {
     "sas": "sas"
 }
 
+language_dirs = {
+    "r": "./R",
+    "stata": "./stata",
+    "python": "./src",
+    "matlab": "./src",
+    "sas": "./src"
+}
+
 # README.md
 def creating_readme(programming_language = "None"):
 
+    programming_language = programming_language.lower()
+    ext = ext_map.get(programming_language)
+
+    if ext is None:
+        return f"Unsupported programming language: {programming_language}"
+
+    code_path = language_dirs.get(programming_language)
+   
     # Create and update README and Project Tree:
     file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./file_descriptions.json"))
     readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
-    src_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
+    code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(code_path))
     
     update_file_descriptions(programming_language,readme_file, file_descriptions)
 
-    generate_readme(programming_language,readme_file,src_path,file_descriptions)
+    generate_readme(programming_language,readme_file,code_path,file_descriptions,)
 
     ignore_list = read_treeignore()
     #ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
    
     create_tree(readme_file,ignore_list ,file_descriptions)
     
-def generate_readme(programming_language,readme_file = "./README.md",src_path = "./src",json_file="./file_descriptions.json"):
+def generate_readme(programming_language,readme_file = "./README.md",code_path = None,json_file="./file_descriptions.json"):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -149,9 +165,9 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
 
         if programming_language.lower() == "r":
             setup += "#### Install R dependencies using renv:\n\n"
-            setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/src` directory using the `renv` package and the provided lock file (`renv.lock`):\n\n"
+            setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/R` directory using the `renv` package and the provided lock file (`renv.lock`):\n\n"
             setup += "```\n"
-            setup += "cd src\n\n"
+            setup += "cd R\n\n"
             setup += "Rscript -e \"renv::restore()\"\n"
             setup += "```\n\n"
             setup += f"> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.\n\n"
@@ -169,122 +185,7 @@ def generate_readme(programming_language,readme_file = "./README.md",src_path = 
         
         return contact
 
-    def set_script_structure_old(programming_language,software_version):
-        """
-        Generate the README section for Script Structure and Usage based on the programming language.
-
-        Args:
-            programming_language (str): One of ['r', 'python', 'stata', 'matlab', 'sas']
-
-        Returns:
-            str: Formatted README section
-        """
-
-        programming_language = programming_language.lower()
-
-        if programming_language not in ["r", "python", "stata", "matlab", "sas"]:
-            raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
-
-        # Language-specific syntax settings
-        if programming_language == "r":
-            main_syntax = "::main()"
-            comment_prefix = "#"
-            source_cmd = "source('"
-            source_ext = ".R')"
-            notebook_ext = "Rmd"
-        elif programming_language == "python":
-            main_syntax = ".main()"
-            comment_prefix = "#"
-            source_cmd = "import "
-            source_ext = ""
-            notebook_ext = "ipynb"
-        elif programming_language == "stata":
-            main_syntax = "_main"
-            comment_prefix = "*"
-            source_cmd = "do "
-            source_ext = ".do"
-            notebook_ext = "ipynb"
-        elif programming_language == "matlab":
-            main_syntax = "_main()"
-            comment_prefix = "%"
-            source_cmd = "run('"
-            source_ext = ".m')"
-            notebook_ext = "ipynb / mlx"
-        elif programming_language == "sas":
-            main_syntax = "_main"
-            comment_prefix = "*"
-            source_cmd = "%include \""
-            source_ext = ".sas\";"
-            notebook_ext = "ipynb"
-
-        # Build the README text
-        structure_usage = f"""The project is written in **{software_version}** and includes modular scripts for standardized data science workflows, organized under `src/`.
-
-Each script is structured to:
-- Define a `main()` function for execution
-- Set up project paths automatically (00_raw, 01_interim, 02_processed, results)
-- Remain passive unless the `main()` is explicitly called
-
-The typical workflow includes the following steps:
-
-0. **Install Dependencies** — Ensures all required packages/libraries are installed.
-1. **Load Utilities** — Loads helper functions used by other scripts (not a pipeline step).
-2. **Data Collection** — Imports or generates datasets, stored in `data/00_raw/`.
-3. **Preprocessing** — Cleans and transforms the raw data, outputting to `data/01_interim/`.
-4. **Modeling** — Trains and evaluates machine learning models using processed data. Results saved to `data/02_processed/`.
-5. **Visualization** — Produces plots and visual summaries, saved to `results/figures/`.
-
-> 🛠️ **Note:** `utils` does not define a `main()` function and should not be executed directly.
-
-### Execution Options
-
-You can execute the entire pipeline either by:
-
-**A. Running the `src/main.{source_ext}` orchestration script:**
-
-```
-{comment_prefix} Install dependencies
-{source_cmd}install_dependencies{source_ext}
-    
-{comment_prefix} Load scripts
-{source_cmd}data_collection{source_ext}
-{source_cmd}preprocessing{source_ext}
-{source_cmd}modeling{source_ext}
-{source_cmd}visualization{source_ext}
-{source_cmd}utils{source_ext}
-
-{comment_prefix} Run main functions
-data_collection{main_syntax}
-preprocessing{main_syntax}
-modeling{main_syntax}
-visualization{main_syntax}
-```
-
-**B. Opening the notebook interface:**  
-A pre-built notebook `workflow.{notebook_ext}` is available in the project root.  
-This notebook provides the same logic as the main script, but interactively via Jupyter or RMarkdown (depending on the language).
-
-Use this notebook for:
-
-- Exploratory analysis  
-- Teaching/demonstration  
-- Step-by-step debugging
-
-### Output Paths
-
-| Step             | Output Directory          |
-|------------------|----------------------------|
-| Data Collection  | `data/00_raw/`                 |
-| Preprocessing    | `data/01_interim/`             |
-| Modeling         | `data/02_processed/`           |
-| Visualization    | `results/figures/`          |
-
-All scripts use relative paths based on their location, ensuring portability and reproducibility across systems.
-"""
-
-        return structure_usage
-
-    def set_script_structure(programming_language, software_version, folder_path="./src",json_file = "./file_description.json"):
+    def set_script_structure(programming_language, software_version, folder_path, json_file = "./file_description.json"):
         """
         Generate the README section for Script Structure and Usage based on the programming language.
 
@@ -374,8 +275,10 @@ All scripts use relative paths based on their location, ensuring portability and
         ]
         notebook = nb_candidates[0] if nb_candidates else None
 
+        code_path = language_dirs.get(programming_language)
+
         md = []
-        md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `./src`.\n")
+        md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{code_path}`.\n")
         md.append("### Scripts Detected in Workflow:\n")
         for kind, path in scripts:
             name = os.path.basename(path)
@@ -443,8 +346,11 @@ All scripts use relative paths based on their location, ensuring portability and
 """ 
         return config
 
-    def set_cli_tools():
-        cli_tools = """
+    def set_cli_tools(programming_language):
+
+        code_path = language_dirs.get(programming_language.lower())
+
+        cli_tools = f"""
 The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
 
 > ℹ️ **Note**: To use these commands, you must first install the local `setup` package.  
@@ -457,10 +363,10 @@ After installing the setup package, the following commands become available from
 |--------------------------|---------------------------------------------------------------------------------------------|
 | `push-backup`             | Executes a full project backup using preconfigured rules and paths.                         |
 | `set-dataset`            | Initializes or registers datasets for use in the project (e.g., adds metadata or links).    |
-| `update-dependencies`    | Retrieves current dependencies required by the project `./setup` and `./src`.               |
+| `update-dependencies`    | Retrieves current dependencies required by the project `./setup` and `{code_path}`.               |
 | `run-setup` (in progress)| Main entry point to initialize or reconfigure the project environment.                      |
 | `update-readme`          | Automatically updates the main `README.md` file with current metadata and structure.        |
-| `reset-templates`        | Resets or regenerates the code templates for `./src`.                                       |
+| `reset-templates`        | Resets or regenerates the code templates for `{code_path}`.                                       |
 | `code-examples`          | Generates example code and notebooks for supported languages (Python, R, SAS, etc.).        |
 | `dcas-migrate`(in progress)| Migrates and validates the project structure for DCAS (Data and Code Availability Standard) compliance.|
 
@@ -529,14 +435,13 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user, hostname)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
-    usage = set_script_structure(programming_language,software_version,src_path,json_file)
+    usage = set_script_structure(programming_language,software_version,code_path,json_file)
     config = set_config_table(programming_language)
-    cli_tools = set_cli_tools()
+    cli_tools = set_cli_tools(programming_language)
     dcas = set_dcas()
-
+    code_path = language_dirs.get(programming_language.lower())
+    
     # Project header
-
-
     header = f"""# {project_name}
 
 {project_description}
@@ -556,7 +461,7 @@ The project was developed and tested on the following operating system:
 The environments were set up using:
 
 - **Project setup scripts** (`./setup`) installed with **{py_version}**
-- **Project code** (`./src`) installed with **{software_version}**
+- **Project code** (`{code_path}`) installed with **{software_version}**
 
 Further details can be found in the [Installation](#installation) section.
 
@@ -834,9 +739,9 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
     def create_file_descriptions(programming_language,json_file):
 
-        def src_file_descriptions(programming_language):
+        def code_file_descriptions(programming_language):
 
-            src_template = {
+            code_template = {
                 "s00_main": "orchestrates the full pipeline",
                 "s00_workflow": "notebook orchestrating the full pipeline",
                 "s01_install_dependencies": "Installs any missing packages required for the project",
@@ -853,7 +758,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
             # Generate the descriptions by replacing placeholders in the template
             descriptions = {}
-            for key, description in src_template.items():
+            for key, description in code_template.items():
                 file_name = f"{key}.{file_extension}"  # Create the file name with the correct extension
                 descriptions[file_name] = description.format(language=programming_language)
 
@@ -868,6 +773,8 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
                 "02_processed": "The final, clean data used for analysis or modeling.",
                 "00_raw": "Original, immutable raw data.",
                 "src": "Directory containing source code for use in this project.",
+                "R": "Directory containing source code for use in this project.",
+                "stata": "Directory containing source code for use in this project.",
                 "docs": "Directory for documentation files, reports, or rendered markdown.",
                 "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",
                 "results": "Directory for generated results from the project, such as models, logs, or summaries.",
@@ -909,7 +816,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
         if programming_language:
             # Update the existing dictionary with the new descriptions
-            file_descriptions.update(src_file_descriptions(programming_language))
+            file_descriptions.update(code_file_descriptions(programming_language))
 
         # Save to JSON file
         with open(json_file, "w", encoding="utf-8") as file:
@@ -1083,7 +990,7 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
     else:
         print(f"Failed to download {readme_file} from {url}")
 
-def update_requirements(dependencies_files: list = ["./src/dependencies.txt"], readme_file: str = "./README.md", sections: list = ["src"]):
+def update_requirements(dependencies_files, readme_file, sections):
     
     def read_dependencies(dependencies_files,sections):
         
@@ -1128,12 +1035,11 @@ The environments were set up using:"""
         # Iterate through all dependency files and corresponding sections
         for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
 
-            if section == "/setup":
-                software_requirements_section +=f"\n- **Project setup scripts** (`./setup`) installed with **{py_version}** with its **main** dependencies listed below:\n"
-            elif  section == "/src":
-                software_requirements_section +=f"\n- **Project code** (`./src`) installed with **{software_version }** with its **main** dependencies listed below:\n"
-            else: 
-                software_requirements_section += f"\n#### **{section}**\n"
+            if section == "./setup":
+                software_requirements_section +=f"\n- **Project setup scripts** (`{section}`) installed with **{py_version}** with its **main** dependencies listed below:\n"
+            else:
+                software_requirements_section +=f"\n- **Project code** (`{section}`) installed with **{software_version}** with its **main** dependencies listed below:\n"
+         
 
             # Check if the dependencies file exists
             if not os.path.exists(dependencies_file):
@@ -1197,14 +1103,16 @@ The environments were set up using:"""
 
     write_to_readme(readme_file,software_requirements_section)
 
-def main():
-    creating_readme(programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
 
+def main():
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    creating_readme(programming_language = programming_language)
+    code_path = language_dirs.get(programming_language.lower())
     files = [str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt")),
-            str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
+            str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"{code_path}/dependencies.txt"))
             ]
     readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
-    update_requirements(dependencies_files=files,readme_file = readme_file ,sections=["/setup","/src"])
+    update_requirements(dependencies_files = files, readme_file = readme_file ,sections = ["./setup",code_path])
 
 if __name__ == "__main__":
     

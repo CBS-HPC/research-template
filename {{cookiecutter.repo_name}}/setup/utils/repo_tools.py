@@ -529,7 +529,6 @@ def main():
 
     # Create Remote Repository
     setup_repo(version_control,code_repo,repo_name,project_description)
-    #repo_create(code_repo, repo_name, project_description)
 
  
 if __name__ == "__main__":

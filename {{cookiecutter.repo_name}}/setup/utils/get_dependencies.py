@@ -23,7 +23,15 @@ ext_map = {
     "sas": "sas"
 }
 
-def run_get_dependencies(programming_language, folder_path="./src"):
+language_dirs = {
+    "r": "./R",
+    "stata": "./stata",
+    "python": "./src",
+    "matlab": "./src",
+    "sas": "./src"
+}
+
+def run_get_dependencies(programming_language):
     """
     Runs the get_dependencies.* script for the specified programming language.
 
@@ -39,6 +47,8 @@ def run_get_dependencies(programming_language, folder_path="./src"):
 
     if ext is None:
         return f"Unsupported programming language: {programming_language}"
+
+    folder_path = language_dirs.get(programming_language)
 
     script_filename = f"get_dependencies.{ext}"
     script_path = os.path.join(folder_path, script_filename)
@@ -77,7 +87,6 @@ def resolve_parent_module(module_name):
     if '.' in module_name:
         return module_name.split('.')[0]
     return module_name
-
 
 def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt"):
     
@@ -175,89 +184,11 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     print(f"{file_name} successfully generated at {output_file}")
 
-def get_setup_dependencies_old(folder_path: str = None, file_name: str = "dependencies.txt"):
-    
-    def get_dependencies_from_file(python_files):
-        used_packages = set()
-
-        for file in python_files:
-            try:
-                with open(file, "r", encoding="utf-8") as f:
-                    tree = ast.parse(f.read(), filename=file)
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.Import):
-                        for alias in node.names:
-                            used_packages.add(resolve_parent_module(alias.name))
-                    elif isinstance(node, ast.ImportFrom) and node.module:
-                        used_packages.add(resolve_parent_module(node.module))
-            except (SyntaxError, UnicodeDecodeError) as e:
-                print(f"Skipping {file} due to parse error: {e}")
-        
-        # List Python standard library modules by checking files in the standard library path
-        std_lib_path = sysconfig.get_paths()["stdlib"]
-        standard_libs = []
-        for root, dirs, files in os.walk(std_lib_path):
-            for file in files:
-                if file.endswith(".py") or file.endswith(".pyc"):
-                    standard_libs.append(os.path.splitext(file)[0])
-
-        installed_packages = {}
-        for package in used_packages:
-            try:
-                version = importlib.metadata.version(package)
-                installed_packages[package] = version
-            except importlib.metadata.PackageNotFoundError:
-                if package not in standard_libs and package not in sys.builtin_module_names:
-                    installed_packages[package] = "Not available" 
-        
-        python_script_names = {os.path.splitext(os.path.basename(file))[0] for file in python_files}
-        valid_packages = {package: version for package, version in installed_packages.items()
-                        if not (version == "Not available" and package in python_script_names)}
-        return valid_packages
-    
-    if folder_path is None:
-        folder_path = os.path.dirname(os.path.abspath(__file__))
-
-    print(f"Scanning folder: {folder_path}")
-    python_files = []
-    for root, dirs, files in os.walk(folder_path):
-        for file in files:
-            if file.endswith(".py"):
-                python_files.append(os.path.join(root, file))
-
-    if not python_files:
-        print("No Python files found in the specified folder.")
-        return
-
-    installed_packages  = get_dependencies_from_file(python_files)
-
-    # Write to file
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    relative_python_files = [os.path.relpath(file, folder_path) for file in python_files]
-    python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
-
-    if os.path.exists(os.path.dirname(file_name)):
-        output_file = file_name
-    else: 
-        output_file = os.path.join(folder_path,"dependencies.txt")
-    
-    with open(output_file, "w") as f:
-        f.write("Software version:\n")
-        f.write(f"{python_version}\n\n")
-        f.write(f"Timestamp: {timestamp}\n\n")
-        f.write("Files checked:\n")
-        f.write("\n".join(relative_python_files) + "\n\n")
-        f.write("Dependencies:\n")
-        for package, version in installed_packages .items():
-            f.write(f"{package}=={version}\n")
-
-    print(f"{file_name} successfully generated at {output_file}")
-
 def setup_renv(programming_language,msg:str):
     if programming_language.lower() == "r":
         # Call the setup script using the function
-        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.R")),"r")
-        project_root = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")),"r")
+        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./R/get_dependencies.R")),"r")
+        project_root = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./R")),"r")
         cmd = " -f " + script_path + " --args " + project_root
         output = run_script("r", cmd)
         print(output)
@@ -265,9 +196,9 @@ def setup_renv(programming_language,msg:str):
 
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
-        src_folder = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")),"matlab")
+        code_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")),"matlab")
         cmd = f"""
-        "addpath({src_folder}); get_dependencies"
+        "addpath({code_path}); get_dependencies"
         """
         output = run_script("matlab", cmd)
         print(output)
@@ -276,7 +207,7 @@ def setup_matlab(programming_language,msg:str):
 def setup_stata(programming_language,msg:str):
     if programming_language.lower() == "stata":
         # Call the setup script using the function
-        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/get_dependencies.do")),"stata")
+        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./stata/do/get_dependencies.do")),"stata")
         cmd = f"do {script_path}"
         output = run_script("stata", cmd)
         print(output)
@@ -298,19 +229,22 @@ def update_setup_dependency():
     setup_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
     get_setup_dependencies(folder_path=setup_folder,file_name =setup_file) 
 
-def update_src_dependency():
+def update_code_dependency():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    print("Screening './src' for dependencies")
-    src_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
     if programming_language.lower() == "python":
-        src_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
-        get_setup_dependencies(folder_path=src_folder,file_name=src_file)
+        print("Screening './src' for dependencies")
+        code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
+        code_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
+        get_setup_dependencies(folder_path=code_path,file_name=code_file)
     elif programming_language.lower() == "r":
+        print("Screening './R' for dependencies")
         setup_renv(programming_language,"/renv and .lock file has been updated")
     elif programming_language.lower() == "matlab":
-        #print(run_get_dependencies(programming_language, folder_path=src_folder))
+        print("Screening './src' for dependencies")
+        #print(run_get_dependencies(programming_language))
         setup_matlab(programming_language,"Tracking Matlab dependencies")
     elif programming_language.lower() == "stata":
+        print("Screening './stata' for dependencies")
         setup_stata(programming_language,"Tracking Stata dependencies")
     else:
         print("not implemented yet")
@@ -323,7 +257,7 @@ def main():
 
     # Run dependencies search
     update_setup_dependency()
-    update_src_dependency()
+    update_code_dependency()
 
 if __name__ == "__main__":
     # Ensure the working directory is the project root

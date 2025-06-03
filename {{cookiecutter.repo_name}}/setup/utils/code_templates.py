@@ -9,6 +9,22 @@ package_installer(required_libraries = ['nbformat'])
 
 import nbformat as nbf  # For creating Jupyter notebooks
 
+# Determine file extension based on programming language
+ext_map = {
+    "r": "R",
+    "python": "py",
+    "matlab": "m",
+    "stata": "do",
+    "sas": "sas"
+}
+
+language_dirs = {
+    "r": "./R",
+    "stata": "./stata",
+    "python": "./src",
+    "matlab": "./src",
+    "sas": "./src"
+}
 
 def write_script(folder_path, script_name, extension, content):
     """
@@ -44,10 +60,14 @@ def create_scripts(programming_language, folder_path):
     programming_language (str): "r" for R, "python" for Python.
     folder_path (str): The directory where the scripts will be saved.
     """
+    programming_language = programming_language.lower()
+    ext = ext_map.get(programming_language)
 
-    if programming_language.lower() not in ["python","r","matlab","stata","sas"]:
-        return
-    
+    if ext is None:
+        return f"Unsupported programming language: {programming_language}"
+   
+    folder_path = language_dirs.get(programming_language)
+
     # Script details based on purpose
     scripts = {"s01_install_dependencies": "Helper to intall dependencies",
         "s02_utils": "Helper functions or utilities",
@@ -195,30 +215,7 @@ def create_notebooks(programming_language, folder_path,file_name = "s00_workflow
         raise ValueError("Invalid programming_language choice. Please specify 'r', 'python', 'stata', 'matlab', or 'sas'.")
 
 
-# Create Step Scripts
-def create_r_script(folder_path, script_name, purpose):
-    extension = ".R"
-    content = f"""{% raw %}
-# {purpose} code
-
-base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-raw_data <- file.path(base_path, "data", "00_raw")
-interim_data <- file.path(base_path, "data", "01_interim")
-processed_data <- file.path(base_path, "data", "02_processed")
-
-main <- function() {{
-    # {purpose} code
-    print('Running {script_name}...')
-}}
-
-
-main()
-
-{% endraw %}
-"""
-    
-    write_script(folder_path, script_name, extension, content)
-
+# Python
 def create_python_script(folder_path, script_name, purpose):
     extension = ".py"
     content = f"""
@@ -244,96 +241,6 @@ if __name__ == "__main__":
 """
     write_script(folder_path, script_name, extension, content)
 
-def create_stata_script(folder_path, script_name, purpose):
-    extension = ".do"
-    content = f"""
-* {purpose} code
-
-global base_path ".."
-global raw_data "$base_path/data/00_raw"
-global interim_data "$base_path/data/01_interim"
-global processed_data "$base_path/data/02_processed"
-
-program define {script_name}_main
-    display "Running {script_name}..."
-end
-
-main
-"""
-    write_script(folder_path, script_name, extension, content)
-
-def create_matlab_script(folder_path, script_name, purpose):
-    extension = ".m"
-    content = f"""
-% {purpose} code
-
-base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-raw_data = fullfile(base_path, 'data', '00_raw');
-interim_data = fullfile(base_path, 'data', '01_interim');
-processed_data = fullfile(base_path, 'data', '02_processed');
-
-function {script_name}_main()
-    % {purpose} code
-    disp('Running {script_name}...');
-end
-
-if ~isdeployed
-    {script_name}_main();
-end
-"""
-    write_script(folder_path, script_name, extension, content)
-
-def create_sas_script(folder_path, script_name, purpose):
-    extension = ".sas"
-    content = f"""
-* {purpose} code;
-
-%let base_path = ..;
-%let raw_data = &base_path./data/00_raw;
-%let interim_data = &base_path./data/01_interim;
-%let processed_data = &base_path./data/02_processed;
-
-%macro {script_name}_main();
-    %put Running {script_name}...;
-%mend {script_name}_main;
-
-%{script_name}_main;
-"""
-    write_script(folder_path, script_name, extension, content)
-
-# Create Main()
-def create_r_main(folder_path,file_name):
-    extension = ".R"
-    content = f"""{% raw %}
-# Main: Running all steps in order
-
-# Install dependencies
-source('s01_install_dependencies.R')
-
-# Load utilities
-source("s02_utils.R")  # <- shared functions, not a step
-
-# Load Scripts
-source('s03_data_collection.R')
-source('s04_preprocessing.R')
-source('s05_modeling.R')
-source('s06_visualization.R')
-
-## Run data collection
-s03_data_collection$main()
-
-## Run preprocessing
-s04_preprocessing$main()
-
-## Run modeling
-s05_modeling$main()
-
-## Run visualization
-s06_visualization$main()
-{% endraw %}
-"""
-    write_script(folder_path, file_name, extension, content)
-
 def create_python_main(folder_path,file_name):
     extension = ".py"
     content = f"""{% raw %}
@@ -343,8 +250,8 @@ import os
 import sys
 
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-src_path = os.path.join(base_path, "src")
-sys.path.append(src_path)
+code_path = os.path.join(base_path, "src")
+sys.path.append(code_path)
 
 @ensure_correct_kernel
 def main():
@@ -379,98 +286,6 @@ if __name__ == "__main__":
 """
     write_script(folder_path, file_name, extension, content)
 
-def create_stata_main(folder_path,file_name):
-    extension = ".do"
-    content = f"""{% raw %}
-* Main: Running all steps in order
-
-* Install dependencies
-do "s01_install_dependencies.do"
-
-* Load utility functions (not executed directly)
-do "s02_utils.do"
-
-* Load Scripts
-do "s03_data_collection.do"
-do "s04_preprocessing.do"
-do "s05_modeling.do"
-do "s06_visualization.do"
-
-* Run data collection
-s03_data_collection_main
-
-* Run preprocessing
-s04_preprocessing_main
-
-* Run modeling
-s05_modeling_main
-
-* Run visualization
-s06_visualization_main
-{% endraw %}
-"""
-    write_script(folder_path, file_name, extension, content)
-
-def create_matlab_main(folder_path,file_name):
-    extension = ".m"
-    content = f"""{% raw %}
-% Main: Running all steps in order
-
-% Install dependencies
-run('s01_install_dependencies.m');
-
-% Load utility functions (not executed)
-run('s02_utils.m');
-
-% Run data collection
-s03_data_collection_main();
-
-% Run preprocessing
-s04_preprocessing_main();
-
-% Run modeling
-s05_modeling_main();
-
-% Run visualization
-s06_visualization_main();
-{% endraw %}
-"""
-    write_script(folder_path, file_name, extension, content)
-
-def create_sas_main(folder_path,file_name):
-    extension = ".sas"
-    content =f"""{% raw %}
-* Main: Running all steps in order;
-
-* Install dependencies
-%include "s01_install_dependencies.sas";
-
-* Load utilities
-%include "s02_utils.sas";
-
-* Load Scripts;
-%include "s03_data_collection.sas";
-%include "s04_preprocessing.sas";
-%include "s05_modeling.sas";
-%include "s06_visualization.sas";
-
-* Run data collection;
-%s03_data_collection_main;
-
-* Run preprocessing;
-%s04_preprocessing_main;
-
-* Run modeling;
-%s05_modeling_main;
-
-* Run visualization;
-%s06_visualization_main;
-{% endraw %}
-"""
-    write_script(folder_path, file_name, extension, content)
-
-
-# Create get_dependencies()
 def create_get_python_dependencies(folder_path,file_name):
     extension = ".py"
     content = r"""{% raw %}import os
@@ -603,6 +418,204 @@ if __name__ == "__main__":
 """
     write_script(folder_path, file_name, extension, content)
 
+def create_install_python_dependencies(folder_path,file_name):
+    """
+    Creates a script to install required Python dependencies.
+    
+    Parameters:
+    folder_path (str): The directory where the install_dependencies.py script will be saved.
+    """
+    extension = ".py"
+    content = r"""{% raw %}    
+import subprocess
+import sys
+import re
+import importlib.util
+
+def parse_dependencies(file_path='dependencies.txt'):
+    required_libraries = []
+    try:
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        
+        # Flag to start reading dependencies section
+        reading_dependencies = False
+        
+        for line in lines:
+            # Check for the start of the dependencies section
+            if 'Dependencies:' in line:
+                reading_dependencies = True
+                continue  # Skip the "Dependencies:" line
+            
+            # If we are in the dependencies section, extract the library names
+            if reading_dependencies:
+                # Stop reading if we encounter an empty line or another section
+                if line.strip() == '':
+                    break
+                
+                # Regex to match package names and versions
+                match = re.match(r'(\S+)(==\S+)?', line.strip())
+                if match:
+                    lib_name = match.group(1)
+                    version = match.group(2) if match.group(2) else None
+                    
+                    # Ignore libraries with 'Not available' as they don't need to be installed
+                    if version != 'Not available':
+                        required_libraries.append(f"{lib_name}{version if version else ''}")
+                
+    except FileNotFoundError:
+        print(f"Error: The file {file_path} was not found.")
+        return []
+
+    return required_libraries
+
+def is_standard_library(lib_name):
+    spec = importlib.util.find_spec(lib_name)
+    return spec is not None and spec.origin is None  # Origin None means it's built-in
+
+def install_dependencies(required_libraries):
+    # Get list of installed libraries
+    installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
+
+    # Check and install missing libraries
+    for lib in required_libraries:
+        try:
+            # Extract library name (without version) for checking
+            lib_name = lib.split('==')[0]
+            
+            # Skip installation for standard libraries
+            if is_standard_library(lib_name):
+                print(f"Skipping installation of standard library: {lib_name}")
+                continue
+
+            # Check if the library is already installed
+            if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
+                print(f"Installing {lib}...")
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
+            else:
+                print(f"{lib} is already installed.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install {lib}: {e}")
+
+@ensure_correct_kernel
+def main(dependencies_file='dependencies.txt'):
+    # Parse the dependencies from the text file
+    required_libraries = parse_dependencies(dependencies_file)
+    
+    # Install the missing dependencies
+    if required_libraries:
+        install_dependencies(required_libraries)
+    else:
+        print("No dependencies found to install.")
+
+if __name__ == "__main__":
+    main('dependencies.txt')  # Specify the dependencies file here
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)
+
+def create_python_notebook(folder_path,file_name = "s00_workflow"):
+    extension = ".ipynb"
+   
+    content = nbf.v4.new_notebook()
+
+    cells = [
+        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order"),
+
+        nbf.v4.new_markdown_cell("### Install dependencies"),
+        nbf.v4.new_code_cell(
+            "import sys\n"
+            "import os\n"
+            "base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))\n"
+            "code_path = os.path.join(base_path, 'src')\n"
+            "if code_path not in sys.path:\n"
+            "    sys.path.append(code_path)\n"
+            "import s01_install_dependencies\n"
+            "s01_install_dependencies.main()"
+        ),
+
+        nbf.v4.new_markdown_cell("### Load Scripts"),
+        nbf.v4.new_code_cell(
+            "import s02_utils  # helper functions only, not executed directly\n"
+            "import s03_data_collection\n"
+            "import s04_preprocessing\n"
+            "import s05_modeling\n"
+            "import s06_visualization"
+        ),
+
+        nbf.v4.new_markdown_cell("### Run Data Collection"),
+        nbf.v4.new_code_cell("s03_data_collection.main()"),
+
+        nbf.v4.new_markdown_cell("### Run Preprocessing"),
+        nbf.v4.new_code_cell("s04_preprocessing.main()"),
+
+        nbf.v4.new_markdown_cell("### Run Modeling"),
+        nbf.v4.new_code_cell("s05_modeling.main()"),
+
+        nbf.v4.new_markdown_cell("### Run Visualization"),
+        nbf.v4.new_code_cell("s06_visualization.main()")
+    ]
+
+    content.cells.extend(cells)
+
+    write_script(folder_path, file_name, extension, content)
+
+# R
+def create_r_script(folder_path, script_name, purpose):
+    extension = ".R"
+    content = f"""{% raw %}
+# {purpose} code
+
+base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
+raw_data <- file.path(base_path, "data", "00_raw")
+interim_data <- file.path(base_path, "data", "01_interim")
+processed_data <- file.path(base_path, "data", "02_processed")
+
+main <- function() {{
+    # {purpose} code
+    print('Running {script_name}...')
+}}
+
+
+main()
+
+{% endraw %}
+"""
+    
+    write_script(folder_path, script_name, extension, content)
+
+def create_r_main(folder_path,file_name):
+    extension = ".R"
+    content = f"""{% raw %}
+# Main: Running all steps in order
+
+# Install dependencies
+source('s01_install_dependencies.R')
+
+# Load utilities
+source("s02_utils.R")  # <- shared functions, not a step
+
+# Load Scripts
+source('s03_data_collection.R')
+source('s04_preprocessing.R')
+source('s05_modeling.R')
+source('s06_visualization.R')
+
+## Run data collection
+s03_data_collection$main()
+
+## Run preprocessing
+s04_preprocessing$main()
+
+## Run modeling
+s05_modeling$main()
+
+## Run visualization
+s06_visualization$main()
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)
+
 def create_get_r_dependencies(folder_path,file_name):
     extension = ".R"
     content = r"""{% raw %}install_renv <- function() {
@@ -616,11 +629,11 @@ def create_get_r_dependencies(folder_path,file_name):
 }
 
 get_project_root <- function(path = NULL) {
-  # --- Helper: Add 'src' if it exists ---
-  append_src_if_exists <- function(root) {
-    src_path <- file.path(root, "src")
-    if (dir.exists(src_path)) {
-      return(src_path)
+  # --- Helper: Add 'R' if it exists ---
+  append_code_if_exists <- function(root) {
+    code_path <- file.path(root, "R")
+    if (dir.exists(code_path)) {
+      return(code_path)
     }
     return(root)
   }
@@ -630,7 +643,7 @@ get_project_root <- function(path = NULL) {
     #path <- normalizePath(path, winslash = "/")
     path <- normalizePath(path, winslash = .Platform$file.sep)
     root <- if (file.exists(path) && !dir.exists(path)) dirname(path) else path
-    root <- append_src_if_exists(root)
+    root <- append_code_if_exists(root)
     return(root)
   }
   
@@ -639,10 +652,10 @@ get_project_root <- function(path = NULL) {
     doc <- rstudioapi::getActiveDocumentContext()$path
     if (nzchar(doc)) {
       root <- dirname(normalizePath(doc, winslash = "/"))
-      if (grepl("/src$", root)) {
-        return(root)  # Already in src
+      if (grepl("/R$", root)) {
+        return(root)  # Already in "R"
       }
-      root <- append_src_if_exists(root)
+      root <- append_code_if_exists(root)
       message("Detected project root (RStudio): ", root)
       return(root)
     }
@@ -675,9 +688,9 @@ get_project_root <- function(path = NULL) {
     root <- normalizePath(getwd(), winslash = "/")
   }
   
-  # Handle /src edge case
-  if (!grepl("/src$", root)) {
-    root <- append_src_if_exists(root)
+  # Handle /R edge case
+  if (!grepl("/R$", root)) {
+    root <- append_code_if_exists(root)
   }
   
   message("Detected project root: ", root)
@@ -696,7 +709,7 @@ renv_init <- function(folder_path) {
   if (!file.exists(lockfile)) {
     renv::init(project = folder_path, bare = TRUE, force = TRUE)
     message("renv infrastructure created.")
-    renv::install(c("jsonlite", "rmarkdown", "rstudioapi"))
+    renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat"))
   } else {
     message("renv infrastructure already exists.")
   }
@@ -877,6 +890,169 @@ get_dependencies(folder_path, file_name = "dependencies.txt")
     
     write_script(folder_path, file_name, extension, content)
 
+def create_install_r_dependencies(folder_path,file_name):
+    """
+    Create the install_dependencies script for R to install required dependencies.
+    
+    Parameters:
+    folder_path (str): The directory where the install_dependencies script will be saved.
+    """
+    extension = ".R"
+    content = r"""{% raw %}    
+install_dependencies <- function(file_path = NULL) {
+  # If no file_path is specified, look for dependencies.txt in the script folder
+  if (is.null(file_path)) {
+    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "dependencies.txt")
+  }
+  
+  # Define a function to read dependencies from a text file and return them as a list
+  get_txt_dependencies <- function(file_path) {
+    # Check if the file exists
+    if (!file.exists(file_path)) {
+      stop("Dependency file not found at: ", file_path)
+    }
+    
+    # Read the file
+    lines <- readLines(file_path)
+    
+    # Find the lines that contain package dependencies (they will have '==')
+    dependency_lines <- grep("==", lines, value = TRUE)
+    
+    # Split the lines into package names and versions
+    dependencies <- sapply(dependency_lines, function(line) {
+      parts <- strsplit(line, "==")[[1]]
+      package_name <- trimws(parts[1])
+      package_version <- trimws(parts[2])
+      list(name = package_name, version = package_version)
+    }, simplify = FALSE)
+    
+    return(dependencies)
+  }
+
+  # Get the dependencies from the file
+  dependencies <- get_txt_dependencies(file_path)
+  
+  # Extract package names and versions into vectors
+  required_packages <- sapply(dependencies, function(dep) dep$name)
+  package_versions <- sapply(dependencies, function(dep) dep$version)
+
+  # Install packages if they are not already installed or if the installed version is different
+  for (i in 1:length(required_packages)) {
+    pkg <- required_packages[i]
+    version <- package_versions[i]
+    
+    # Check if package is installed
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg)
+    }
+    
+    # Check if the installed version is correct, and reinstall if needed
+    current_version <- packageVersion(pkg)
+    if (as.character(current_version) != version) {
+      install.packages(pkg)
+    }
+  }
+}
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)
+
+def create_r_notebook(folder_path,file_name = "s00_workflow"):
+    extension = ".Rmd"
+    # Create RMarkdown content with the requested structure
+    content = dedent(r"""{% raw %}
+    ---
+    title: "Workflow: Running All Steps in Order"
+    output: html_document
+    ---
+
+    # Workflow
+
+    ## Install Dependencies
+    ```{r}
+    source("s01_install_dependencies.R")
+    ```
+
+    ## Load Utility and Workflow Scripts
+    ```{r}
+    source("s02_utils.R")  # shared helper functions, not executed directly
+    source("s03_data_collection.R")
+    source("s04_preprocessing.R")
+    source("s05_modeling.R")
+    source("s06_visualization.R")
+    ```
+
+    ## Run Data Collection
+    ```{r}
+    data_collection$main()
+    ```
+
+    ## Run Preprocessing
+    ```{r}
+    preprocessing$main()
+    ```
+
+    ## Run Modeling
+    ```{r}
+    modeling$main()
+    ```
+
+    ## Run Visualization
+    ```{r}
+    visualization$main()
+    ```
+    {% endraw %}""")
+
+    write_script(folder_path, file_name, extension, content)
+
+# Matlab
+def create_matlab_script(folder_path, script_name, purpose):
+    extension = ".m"
+    content = f"""
+% {purpose} code
+
+base_path = fullfile(fileparts(mfilename('fullpath')), '..');
+raw_data = fullfile(base_path, 'data', '00_raw');
+interim_data = fullfile(base_path, 'data', '01_interim');
+processed_data = fullfile(base_path, 'data', '02_processed');
+
+function {script_name}_main()
+    % {purpose} code
+    disp('Running {script_name}...');
+end
+
+if ~isdeployed
+    {script_name}_main();
+end
+"""
+    write_script(folder_path, script_name, extension, content)
+
+def create_matlab_main(folder_path,file_name):
+    extension = ".m"
+    content = f"""{% raw %}
+% Main: Running all steps in order
+
+% Install dependencies
+run('s01_install_dependencies.m');
+
+% Load utility functions (not executed)
+run('s02_utils.m');
+
+% Run data collection
+s03_data_collection_main();
+
+% Run preprocessing
+s04_preprocessing_main();
+
+% Run modeling
+s05_modeling_main();
+
+% Run visualization
+s06_visualization_main();
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)
+
 def create_get_matlab_dependencies(folder_path,file_name):
     extension = ".m"
     content = r"""{% raw %}function get_dependencies(folder_path, file_name)
@@ -970,6 +1146,204 @@ def create_get_matlab_dependencies(folder_path,file_name):
     fclose(fid);
     fprintf("%s successfully written in %s\n", file_name, depFile);
 end
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)
+
+def create_install_matlab_dependencies(folder_path,file_name):
+    """
+    Create the install_dependencies script for Matlab to install required dependencies.
+    
+    Parameters:
+    folder_path (str): The directory where the install_dependencies script will be saved.
+    """
+    extension = ".m"
+    content = """{% raw %}  
+function s01_install_dependencies(dependency_file)
+    % Default dependency file
+    if nargin < 1
+        dependency_file = 'dependencies.txt';
+    end
+
+    % Check if the dependency file exists
+    if ~isfile(dependency_file)
+        error("Dependency file '%s' does not exist.", dependency_file);
+    end
+
+    % Read the dependency file
+    fid = fopen(dependency_file, 'r');
+    if fid == -1
+        error("Unable to open the dependency file '%s'.", dependency_file);
+    end
+    dependency_lines = textscan(fid, '%s', 'Delimiter', '\n');
+    fclose(fid);
+    dependency_lines = dependency_lines{1};
+
+    % Extract MATLAB version from the file
+    matlab_version_line = dependency_lines{startsWith(dependency_lines, 'MATLAB version:')};
+    expected_version = strtrim(strrep(matlab_version_line, 'MATLAB version:', ''));
+
+    % Check MATLAB version
+    current_version = version;
+    if ~strcmp(current_version, expected_version)
+        error("MATLAB version mismatch! Current version: %s, Expected version: %s.", current_version, expected_version);
+    end
+    fprintf("MATLAB version check passed: %s\n", current_version);
+
+    % Extract dependencies
+    dependencies_start = find(startsWith(dependency_lines, 'Dependencies:')) + 1;
+    dependencies = dependency_lines(dependencies_start:end);
+
+    % Attempt to install missing toolboxes
+    for i = 1:length(dependencies)
+        line = strtrim(dependencies{i});
+        if isempty(line)
+            continue;
+        end
+
+        % Parse toolbox or file
+        tokens = regexp(line, '^(.*?)==(.+)$', 'tokens');
+        if isempty(tokens)
+            continue;
+        end
+        dependency_name = strtrim(tokens{1}{1});
+        dependency_version = strtrim(tokens{1}{2});
+
+        % Skip if the dependency is a file
+        if strcmp(dependency_version, 'Not available')
+            fprintf("Skipping file dependency: %s\n", dependency_name);
+            continue;
+        end
+
+        % Check if the toolbox is installed
+        installed_toolboxes = matlab.addons.installedAddons();
+        if any(strcmp(installed_toolboxes.Name, dependency_name))
+            fprintf("Toolbox '%s' is already installed.\n", dependency_name);
+        else
+            % Attempt to install the toolbox
+            fprintf("Installing toolbox: %s (Version: %s)...\n", dependency_name, dependency_version);
+            try
+                matlab.addons.installToolbox(dependency_name);
+                fprintf("Successfully installed toolbox: %s\n", dependency_name);
+            catch e
+                fprintf("Failed to install toolbox '%s': %s\n", dependency_name, e.message);
+            end
+        end
+    end
+
+    fprintf("Dependency installation process completed.\n");
+end
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)
+
+def create_matlab_notebook(folder_path,file_name = "s00_workflow"):
+    # --- 1. Create Jupyter Notebook (.ipynb) with MATLAB kernel ---
+    extension = ".ipynb"
+    content = nbf.v4.new_notebook()
+
+    cells = [
+        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order (MATLAB)"),
+
+        nbf.v4.new_markdown_cell("### MATLAB Setup (via jupyter-matlab-proxy)"),
+        nbf.v4.new_code_cell(
+            "%%matlab\n"
+            "% Add project source path to MATLAB\n"
+            "addpath(fullfile(pwd, 'src'));\n"
+            "run('s01_install_dependencies.m');"
+        ),
+
+        nbf.v4.new_markdown_cell("### Run Data Collection"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "s03_data_collection_main();"),
+
+        nbf.v4.new_markdown_cell("### Run Preprocessing"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "s04_preprocessing_main();"),
+
+        nbf.v4.new_markdown_cell("### Run Modeling"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "s05_modeling_main();"),
+
+        nbf.v4.new_markdown_cell("### Run Visualization"),
+        nbf.v4.new_code_cell("%%matlab\n"
+                             "s06_visualization_main();")
+    ]
+
+    content.cells.extend(cells)
+    write_script(folder_path, file_name, extension, content)
+
+    # --- 2. Create MATLAB Live Script (.mlx) version ---
+    extension = ".mlx"
+    content = dedent("""\
+    %% Workflow: Running All Steps in Order
+    % MATLAB Setup
+    addpath(fullfile(pwd, 'src'));
+    run('s01_install_dependencies.m');
+
+    %% Run Data Collection
+    data_collection_main();
+
+    %% Run Preprocessing
+    preprocessing_main();
+
+    %% Run Modeling
+    modeling_main();
+
+    %% Run Visualization
+    visualization_main();
+    """)
+    write_script(folder_path, file_name, extension, content)
+
+
+# Stata
+
+def create_stata_script(folder_path, script_name, purpose):
+    extension = ".do"
+    content = f"""
+* {purpose} code
+
+global base_path ".."
+global raw_data "$base_path/data/00_raw"
+global interim_data "$base_path/data/01_interim"
+global processed_data "$base_path/data/02_processed"
+
+program define {script_name}_main
+    display "Running {script_name}..."
+end
+
+main
+"""
+    write_script(folder_path, script_name, extension, content)
+
+def create_stata_main(folder_path,file_name):
+    extension = ".do"
+    content = f"""{% raw %}
+* Main: Running all steps in order
+
+* Install dependencies
+do "s01_install_dependencies.do"
+
+* Load utility functions (not executed directly)
+do "s02_utils.do"
+
+* Load Scripts
+do "s03_data_collection.do"
+do "s04_preprocessing.do"
+do "s05_modeling.do"
+do "s06_visualization.do"
+
+* Run data collection
+s03_data_collection_main
+
+* Run preprocessing
+s04_preprocessing_main
+
+* Run modeling
+s05_modeling_main
+
+* Run visualization
+s06_visualization_main
 {% endraw %}
 """
     write_script(folder_path, file_name, extension, content)
@@ -1077,8 +1451,117 @@ end
 """
     write_script(folder_path, file_name, extension, content)    
 
-# FIX ME 
-def create_get_sas_dependencies(folder_path,file_name):
+def create_install_stata_dependencies(folder_path,file_name):   # FIX ME 
+    """
+    Create the install_dependencies script for Stata to install required dependencies.
+    
+    Parameters:
+    folder_path (str): The directory where the install_dependencies script will be saved.
+    """
+    extension = ".do"
+    content = r"""
+* Install Stata dependencies
+
+* List of required packages
+ssc install outreg2, replace
+ssc install estout, replace
+net install rdrobust, from("https://www.example.com/rdrobust"), replace
+"""
+    write_script(folder_path, file_name, extension, content)
+
+def create_stata_notebook(folder_path,file_name = "s00_workflow"):
+    extension = ".ipynb"
+
+    content = nbf.v4.new_notebook()
+
+    cells = [
+        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order (Stata)"),
+
+        nbf.v4.new_markdown_cell("### Stata Setup"),
+        nbf.v4.new_code_cell(
+            "import stata_setup\n"
+            "stata_setup.config('/work/stata17', 'se')  # Adjust to your Stata installation path"
+        ),
+
+        nbf.v4.new_markdown_cell("### Run Data Collection"),
+        nbf.v4.new_code_cell("%%stata\n"
+                             "do s03_data_collection.do\n"
+                             "data_collection_main"),
+
+        nbf.v4.new_markdown_cell("### Run Preprocessing"),
+        nbf.v4.new_code_cell("%%stata\n"
+                             "do s04_preprocessing.do\n"
+                             "preprocessing_main"),
+
+        nbf.v4.new_markdown_cell("### Run Modeling"),
+        nbf.v4.new_code_cell("%%stata\n"
+                             "do s05_modeling.do\n"
+                             "modeling_main"),
+
+        nbf.v4.new_markdown_cell("### Run Visualization"),
+        nbf.v4.new_code_cell("%%stata\n"
+                             "do s06_visualization.do\n"
+                             "visualization_main")
+    ]
+
+    content.cells.extend(cells)
+
+    write_script(folder_path, file_name, extension, content)
+
+
+# SAS
+
+def create_sas_script(folder_path, script_name, purpose):
+    extension = ".sas"
+    content = f"""
+* {purpose} code;
+
+%let base_path = ..;
+%let raw_data = &base_path./data/00_raw;
+%let interim_data = &base_path./data/01_interim;
+%let processed_data = &base_path./data/02_processed;
+
+%macro {script_name}_main();
+    %put Running {script_name}...;
+%mend {script_name}_main;
+
+%{script_name}_main;
+"""
+    write_script(folder_path, script_name, extension, content)
+
+def create_sas_main(folder_path,file_name):
+    extension = ".sas"
+    content =f"""{% raw %}
+* Main: Running all steps in order;
+
+* Install dependencies
+%include "s01_install_dependencies.sas";
+
+* Load utilities
+%include "s02_utils.sas";
+
+* Load Scripts;
+%include "s03_data_collection.sas";
+%include "s04_preprocessing.sas";
+%include "s05_modeling.sas";
+%include "s06_visualization.sas";
+
+* Run data collection;
+%s03_data_collection_main;
+
+* Run preprocessing;
+%s04_preprocessing_main;
+
+* Run modeling;
+%s05_modeling_main;
+
+* Run visualization;
+%s06_visualization_main;
+{% endraw %}
+"""
+    write_script(folder_path, file_name, extension, content)
+
+def create_get_sas_dependencies(folder_path,file_name): # FIX ME 
     extension = ".m"
     content = r"""{% raw %}     
 %macro get_dependencies(folder_path);
@@ -1149,279 +1632,7 @@ def create_get_sas_dependencies(folder_path,file_name):
 """
     write_script(folder_path, file_name, extension, content)
 
-
-# Create install_dependencies()  
-def create_install_python_dependencies(folder_path,file_name):
-    """
-    Creates a script to install required Python dependencies.
-    
-    Parameters:
-    folder_path (str): The directory where the install_dependencies.py script will be saved.
-    """
-    extension = ".py"
-    content = r"""{% raw %}    
-import subprocess
-import sys
-import re
-import importlib.util
-
-def parse_dependencies(file_path='dependencies.txt'):
-    required_libraries = []
-    try:
-        with open(file_path, 'r') as f:
-            lines = f.readlines()
-        
-        # Flag to start reading dependencies section
-        reading_dependencies = False
-        
-        for line in lines:
-            # Check for the start of the dependencies section
-            if 'Dependencies:' in line:
-                reading_dependencies = True
-                continue  # Skip the "Dependencies:" line
-            
-            # If we are in the dependencies section, extract the library names
-            if reading_dependencies:
-                # Stop reading if we encounter an empty line or another section
-                if line.strip() == '':
-                    break
-                
-                # Regex to match package names and versions
-                match = re.match(r'(\S+)(==\S+)?', line.strip())
-                if match:
-                    lib_name = match.group(1)
-                    version = match.group(2) if match.group(2) else None
-                    
-                    # Ignore libraries with 'Not available' as they don't need to be installed
-                    if version != 'Not available':
-                        required_libraries.append(f"{lib_name}{version if version else ''}")
-                
-    except FileNotFoundError:
-        print(f"Error: The file {file_path} was not found.")
-        return []
-
-    return required_libraries
-
-def is_standard_library(lib_name):
-    spec = importlib.util.find_spec(lib_name)
-    return spec is not None and spec.origin is None  # Origin None means it's built-in
-
-def install_dependencies(required_libraries):
-    # Get list of installed libraries
-    installed_libraries = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode().splitlines()
-
-    # Check and install missing libraries
-    for lib in required_libraries:
-        try:
-            # Extract library name (without version) for checking
-            lib_name = lib.split('==')[0]
-            
-            # Skip installation for standard libraries
-            if is_standard_library(lib_name):
-                print(f"Skipping installation of standard library: {lib_name}")
-                continue
-
-            # Check if the library is already installed
-            if not any(lib.lower() in installed_lib.lower() for installed_lib in installed_libraries):
-                print(f"Installing {lib}...")
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', lib])
-            else:
-                print(f"{lib} is already installed.")
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to install {lib}: {e}")
-
-@ensure_correct_kernel
-def main(dependencies_file='dependencies.txt'):
-    # Parse the dependencies from the text file
-    required_libraries = parse_dependencies(dependencies_file)
-    
-    # Install the missing dependencies
-    if required_libraries:
-        install_dependencies(required_libraries)
-    else:
-        print("No dependencies found to install.")
-
-if __name__ == "__main__":
-    main('dependencies.txt')  # Specify the dependencies file here
-{% endraw %}
-"""
-    write_script(folder_path, file_name, extension, content)
-
-def create_install_r_dependencies(folder_path,file_name):
-    """
-    Create the install_dependencies script for R to install required dependencies.
-    
-    Parameters:
-    folder_path (str): The directory where the install_dependencies script will be saved.
-    """
-    extension = ".R"
-    content = r"""{% raw %}    
-install_dependencies <- function(file_path = NULL) {
-  # If no file_path is specified, look for dependencies.txt in the script folder
-  if (is.null(file_path)) {
-    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "dependencies.txt")
-  }
-  
-  # Define a function to read dependencies from a text file and return them as a list
-  get_txt_dependencies <- function(file_path) {
-    # Check if the file exists
-    if (!file.exists(file_path)) {
-      stop("Dependency file not found at: ", file_path)
-    }
-    
-    # Read the file
-    lines <- readLines(file_path)
-    
-    # Find the lines that contain package dependencies (they will have '==')
-    dependency_lines <- grep("==", lines, value = TRUE)
-    
-    # Split the lines into package names and versions
-    dependencies <- sapply(dependency_lines, function(line) {
-      parts <- strsplit(line, "==")[[1]]
-      package_name <- trimws(parts[1])
-      package_version <- trimws(parts[2])
-      list(name = package_name, version = package_version)
-    }, simplify = FALSE)
-    
-    return(dependencies)
-  }
-
-  # Get the dependencies from the file
-  dependencies <- get_txt_dependencies(file_path)
-  
-  # Extract package names and versions into vectors
-  required_packages <- sapply(dependencies, function(dep) dep$name)
-  package_versions <- sapply(dependencies, function(dep) dep$version)
-
-  # Install packages if they are not already installed or if the installed version is different
-  for (i in 1:length(required_packages)) {
-    pkg <- required_packages[i]
-    version <- package_versions[i]
-    
-    # Check if package is installed
-    if (!require(pkg, character.only = TRUE)) {
-      install.packages(pkg)
-    }
-    
-    # Check if the installed version is correct, and reinstall if needed
-    current_version <- packageVersion(pkg)
-    if (as.character(current_version) != version) {
-      install.packages(pkg)
-    }
-  }
-}
-{% endraw %}
-"""
-    write_script(folder_path, file_name, extension, content)
-
-def create_install_matlab_dependencies(folder_path,file_name):
-    """
-    Create the install_dependencies script for Matlab to install required dependencies.
-    
-    Parameters:
-    folder_path (str): The directory where the install_dependencies script will be saved.
-    """
-    extension = ".m"
-    content = """{% raw %}  
-function s01_install_dependencies(dependency_file)
-    % Default dependency file
-    if nargin < 1
-        dependency_file = 'dependencies.txt';
-    end
-
-    % Check if the dependency file exists
-    if ~isfile(dependency_file)
-        error("Dependency file '%s' does not exist.", dependency_file);
-    end
-
-    % Read the dependency file
-    fid = fopen(dependency_file, 'r');
-    if fid == -1
-        error("Unable to open the dependency file '%s'.", dependency_file);
-    end
-    dependency_lines = textscan(fid, '%s', 'Delimiter', '\n');
-    fclose(fid);
-    dependency_lines = dependency_lines{1};
-
-    % Extract MATLAB version from the file
-    matlab_version_line = dependency_lines{startsWith(dependency_lines, 'MATLAB version:')};
-    expected_version = strtrim(strrep(matlab_version_line, 'MATLAB version:', ''));
-
-    % Check MATLAB version
-    current_version = version;
-    if ~strcmp(current_version, expected_version)
-        error("MATLAB version mismatch! Current version: %s, Expected version: %s.", current_version, expected_version);
-    end
-    fprintf("MATLAB version check passed: %s\n", current_version);
-
-    % Extract dependencies
-    dependencies_start = find(startsWith(dependency_lines, 'Dependencies:')) + 1;
-    dependencies = dependency_lines(dependencies_start:end);
-
-    % Attempt to install missing toolboxes
-    for i = 1:length(dependencies)
-        line = strtrim(dependencies{i});
-        if isempty(line)
-            continue;
-        end
-
-        % Parse toolbox or file
-        tokens = regexp(line, '^(.*?)==(.+)$', 'tokens');
-        if isempty(tokens)
-            continue;
-        end
-        dependency_name = strtrim(tokens{1}{1});
-        dependency_version = strtrim(tokens{1}{2});
-
-        % Skip if the dependency is a file
-        if strcmp(dependency_version, 'Not available')
-            fprintf("Skipping file dependency: %s\n", dependency_name);
-            continue;
-        end
-
-        % Check if the toolbox is installed
-        installed_toolboxes = matlab.addons.installedAddons();
-        if any(strcmp(installed_toolboxes.Name, dependency_name))
-            fprintf("Toolbox '%s' is already installed.\n", dependency_name);
-        else
-            % Attempt to install the toolbox
-            fprintf("Installing toolbox: %s (Version: %s)...\n", dependency_name, dependency_version);
-            try
-                matlab.addons.installToolbox(dependency_name);
-                fprintf("Successfully installed toolbox: %s\n", dependency_name);
-            catch e
-                fprintf("Failed to install toolbox '%s': %s\n", dependency_name, e.message);
-            end
-        end
-    end
-
-    fprintf("Dependency installation process completed.\n");
-end
-{% endraw %}
-"""
-    write_script(folder_path, file_name, extension, content)
-
-# FIX ME 
-def create_install_stata_dependencies(folder_path,file_name):
-    """
-    Create the install_dependencies script for Stata to install required dependencies.
-    
-    Parameters:
-    folder_path (str): The directory where the install_dependencies script will be saved.
-    """
-    extension = ".do"
-    content = r"""
-* Install Stata dependencies
-
-* List of required packages
-ssc install outreg2, replace
-ssc install estout, replace
-net install rdrobust, from("https://www.example.com/rdrobust"), replace
-"""
-    write_script(folder_path, file_name, extension, content)
-
-# FIX ME 
-def create_install_sas_dependencies(folder_path,file_name):
+def create_install_sas_dependencies(folder_path,file_name): # FIX ME 
     """
     Create the install_dependencies script for SAS to install required dependencies.
     
@@ -1445,198 +1656,6 @@ def create_install_sas_dependencies(folder_path,file_name):
 * Call the install_dependencies macro;
 %install_dependencies;
 """
-    write_script(folder_path, file_name, extension, content)
-
-# Create Notebooks
-def create_python_notebook(folder_path,file_name = "s00_workflow"):
-    extension = ".ipynb"
-   
-    content = nbf.v4.new_notebook()
-
-    cells = [
-        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order"),
-
-        nbf.v4.new_markdown_cell("### Install dependencies"),
-        nbf.v4.new_code_cell(
-            "import sys\n"
-            "import os\n"
-            "base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))\n"
-            "src_path = os.path.join(base_path, 'src')\n"
-            "if src_path not in sys.path:\n"
-            "    sys.path.append(src_path)\n"
-            "import s01_install_dependencies\n"
-            "s01_install_dependencies.main()"
-        ),
-
-        nbf.v4.new_markdown_cell("### Load Scripts"),
-        nbf.v4.new_code_cell(
-            "import s02_utils  # helper functions only, not executed directly\n"
-            "import s03_data_collection\n"
-            "import s04_preprocessing\n"
-            "import s05_modeling\n"
-            "import s06_visualization"
-        ),
-
-        nbf.v4.new_markdown_cell("### Run Data Collection"),
-        nbf.v4.new_code_cell("s03_data_collection.main()"),
-
-        nbf.v4.new_markdown_cell("### Run Preprocessing"),
-        nbf.v4.new_code_cell("s04_preprocessing.main()"),
-
-        nbf.v4.new_markdown_cell("### Run Modeling"),
-        nbf.v4.new_code_cell("s05_modeling.main()"),
-
-        nbf.v4.new_markdown_cell("### Run Visualization"),
-        nbf.v4.new_code_cell("s06_visualization.main()")
-    ]
-
-    content.cells.extend(cells)
-
-    write_script(folder_path, file_name, extension, content)
-
-def create_r_notebook(folder_path,file_name = "s00_workflow"):
-    extension = ".Rmd"
-    # Create RMarkdown content with the requested structure
-    content = dedent(r"""{% raw %}
-    ---
-    title: "Workflow: Running All Steps in Order"
-    output: html_document
-    ---
-
-    # Workflow
-
-    ## Install Dependencies
-    ```{r}
-    source("s01_install_dependencies.R")
-    ```
-
-    ## Load Utility and Workflow Scripts
-    ```{r}
-    source("s02_utils.R")  # shared helper functions, not executed directly
-    source("s03_data_collection.R")
-    source("s04_preprocessing.R")
-    source("s05_modeling.R")
-    source("s06_visualization.R")
-    ```
-
-    ## Run Data Collection
-    ```{r}
-    data_collection$main()
-    ```
-
-    ## Run Preprocessing
-    ```{r}
-    preprocessing$main()
-    ```
-
-    ## Run Modeling
-    ```{r}
-    modeling$main()
-    ```
-
-    ## Run Visualization
-    ```{r}
-    visualization$main()
-    ```
-    {% endraw %}""")
-
-    write_script(folder_path, file_name, extension, content)
-
-def create_stata_notebook(folder_path,file_name = "s00_workflow"):
-    extension = ".ipynb"
-
-    content = nbf.v4.new_notebook()
-
-    cells = [
-        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order (Stata)"),
-
-        nbf.v4.new_markdown_cell("### Stata Setup"),
-        nbf.v4.new_code_cell(
-            "import stata_setup\n"
-            "stata_setup.config('/work/stata17', 'se')  # Adjust to your Stata installation path"
-        ),
-
-        nbf.v4.new_markdown_cell("### Run Data Collection"),
-        nbf.v4.new_code_cell("%%stata\n"
-                             "do s03_data_collection.do\n"
-                             "data_collection_main"),
-
-        nbf.v4.new_markdown_cell("### Run Preprocessing"),
-        nbf.v4.new_code_cell("%%stata\n"
-                             "do s04_preprocessing.do\n"
-                             "preprocessing_main"),
-
-        nbf.v4.new_markdown_cell("### Run Modeling"),
-        nbf.v4.new_code_cell("%%stata\n"
-                             "do s05_modeling.do\n"
-                             "modeling_main"),
-
-        nbf.v4.new_markdown_cell("### Run Visualization"),
-        nbf.v4.new_code_cell("%%stata\n"
-                             "do s06_visualization.do\n"
-                             "visualization_main")
-    ]
-
-    content.cells.extend(cells)
-
-    write_script(folder_path, file_name, extension, content)
-
-def create_matlab_notebook(folder_path,file_name = "s00_workflow"):
-    # --- 1. Create Jupyter Notebook (.ipynb) with MATLAB kernel ---
-    extension = ".ipynb"
-    content = nbf.v4.new_notebook()
-
-    cells = [
-        nbf.v4.new_markdown_cell("# Workflow: Running All Steps in Order (MATLAB)"),
-
-        nbf.v4.new_markdown_cell("### MATLAB Setup (via jupyter-matlab-proxy)"),
-        nbf.v4.new_code_cell(
-            "%%matlab\n"
-            "% Add project source path to MATLAB\n"
-            "addpath(fullfile(pwd, 'src'));\n"
-            "run('s01_install_dependencies.m');"
-        ),
-
-        nbf.v4.new_markdown_cell("### Run Data Collection"),
-        nbf.v4.new_code_cell("%%matlab\n"
-                             "s03_data_collection_main();"),
-
-        nbf.v4.new_markdown_cell("### Run Preprocessing"),
-        nbf.v4.new_code_cell("%%matlab\n"
-                             "s04_preprocessing_main();"),
-
-        nbf.v4.new_markdown_cell("### Run Modeling"),
-        nbf.v4.new_code_cell("%%matlab\n"
-                             "s05_modeling_main();"),
-
-        nbf.v4.new_markdown_cell("### Run Visualization"),
-        nbf.v4.new_code_cell("%%matlab\n"
-                             "s06_visualization_main();")
-    ]
-
-    content.cells.extend(cells)
-    write_script(folder_path, file_name, extension, content)
-
-    # --- 2. Create MATLAB Live Script (.mlx) version ---
-    extension = ".mlx"
-    content = dedent("""\
-    %% Workflow: Running All Steps in Order
-    % MATLAB Setup
-    addpath(fullfile(pwd, 'src'));
-    run('s01_install_dependencies.m');
-
-    %% Run Data Collection
-    data_collection_main();
-
-    %% Run Preprocessing
-    preprocessing_main();
-
-    %% Run Modeling
-    modeling_main();
-
-    %% Run Visualization
-    visualization_main();
-    """)
     write_script(folder_path, file_name, extension, content)
 
 def create_sas_notebook(folder_path,file_name = "s00_workflow"):
@@ -1666,6 +1685,8 @@ def create_sas_notebook(folder_path,file_name = "s00_workflow"):
     content.cells.extend(cells)
     write_script(folder_path, file_name, extension, content)
 
+
+
 @ensure_correct_kernel
 def main():
 
@@ -1673,10 +1694,8 @@ def main():
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
     
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-  
     # Create scripts and notebook
-    create_scripts(programming_language, "./src")
+    create_scripts(load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
 
     
 if __name__ == "__main__":
