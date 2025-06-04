@@ -29,7 +29,7 @@ def set_packages(version_control,programming_language):
     
     return install_packages
 
-def package_installer(required_libraries: list = None,pip_install: bool = False):
+def package_installer_old(required_libraries: list = None,pip_install: bool = False):
     if not required_libraries:
         return
 
@@ -95,6 +95,97 @@ def package_installer(required_libraries: list = None,pip_install: bool = False)
         try:
             subprocess.run(
                 [sys.executable, "-m", "uv", "pip", "install", "--system"] + missing_libraries,
+                check=True,
+                stderr=subprocess.DEVNULL
+            )
+            return
+        except subprocess.CalledProcessError:
+            print("uv failed in both modes. Falling back to pip.")
+
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install"] + missing_libraries,
+            check=True,
+            stderr=subprocess.DEVNULL
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install with pip: {e}")
+
+def package_installer(required_libraries: list = None, pip_install: bool = False):
+    if not required_libraries:
+        return
+
+    def install_uv():
+        try:
+            print("Installing 'uv' package into current Python environment...")
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            print("'uv' installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install 'uv' via pip: {e}")
+
+    def get_current_venv_path():
+        # sys.prefix points to the venv if active
+        venv_path = pathlib.Path(sys.prefix)
+        if (venv_path / "pyvenv.cfg").exists():
+            return venv_path
+        return None
+
+    try:
+        installed_pkgs = {
+            dist.metadata["Name"].lower()
+            for dist in importlib.metadata.distributions()
+        }
+    except Exception as e:
+        print(f"Error checking installed packages: {e}")
+        return
+
+    missing_libraries = []
+    for lib in required_libraries:
+        norm_name = (
+            lib.split("==")[0]
+               .split(">=")[0]
+               .split("<=")[0]
+               .split("~=")[0]
+               .strip()
+               .lower()
+        )
+        if norm_name not in installed_pkgs:
+            missing_libraries.append(lib)
+
+    if not missing_libraries:
+        return
+
+    print(f"Installing missing libraries: {missing_libraries}")
+
+    venv_path = get_current_venv_path()
+
+    if not pip_install:
+        try:
+            import uv  # noqa: F401
+        except ImportError:
+            install_uv()
+
+        if venv_path:
+            try:
+                subprocess.run(
+                    ["uv", "pip", "install", "--venv", str(venv_path)] + missing_libraries,
+                    check=True,
+                    stderr=subprocess.DEVNULL
+                )
+                return
+            except subprocess.CalledProcessError:
+                print("uv --venv failed. Trying fallback...")
+        else:
+            print("⚠️ No active venv detected. uv will install into system environment.")
+
+        try:
+            subprocess.run(
+                ["uv", "pip", "install", "--system"] + missing_libraries,
                 check=True,
                 stderr=subprocess.DEVNULL
             )
