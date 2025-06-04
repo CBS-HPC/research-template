@@ -2,7 +2,7 @@ import pathlib
 import argparse
 import subprocess
 
-from .general_tools import *
+from .versioning_tools import *
 
 @ensure_correct_kernel
 def ci_config():
@@ -16,6 +16,8 @@ def ci_config():
     if set_git_alis(project_root):
         generate_ci_configs(programming_language, code_repo, project_root)
         toggle_ci_files(enable = False, code_repo = code_repo, project_root = project_root)
+        if not git_push(True,f"Setups up CI at {code_repo}"):
+            remove_ci_configs()
 
 
 # -------- CI Generator Dispatcher --------
@@ -197,6 +199,49 @@ def generate_ci_configs(programming_language: str, code_repo: str, project_root:
         f.write(templates[code_repo])
 
     print(f"✅ CI config created for {programming_language} on {code_repo} using version {version}")
+
+def remove_ci_configs(code_repo: str = None, project_root: str = "."):
+    """
+    Remove CI configuration files created by generate_ci_configs,
+    including both enabled (.yml) and disabled (.yml.disabled) versions.
+
+    Parameters:
+        code_repo (str): 'github', 'gitlab', 'codeberg', or 'all'
+        project_root (str): Root path to the project directory
+    """
+    code_repo = code_repo.lower() if code_repo else "all"
+    project_root = pathlib.Path(project_root)
+
+    ci_files = {
+        "github": project_root / pathlib.Path(".github/workflows/ci.yml"),
+        "gitlab": project_root / pathlib.Path(".gitlab-ci.yml"),
+        "codeberg": project_root / pathlib.Path(".woodpecker.yml"),
+    }
+    if code_repo == "all":
+        targets = ci_files.items()
+    elif code_repo in ci_files:
+        targets = [(code_repo, ci_files[code_repo])]
+    else:
+        raise ValueError(f"Unsupported code_repo: {code_repo}")
+
+    for name, path in targets:
+        for variant in [path, path.with_suffix(path.suffix + ".disabled")]:
+            if variant.exists():
+                try:
+                    variant.unlink()
+                    print(f"🗑️  Removed {name} CI config: {variant}")
+                except Exception as e:
+                    print(f"⚠️ Failed to remove {variant}: {e}")
+
+        # Optional: Clean up empty GitHub workflow folder
+        if name == "github":
+            workflow_dir = path.parent
+            try:
+                if workflow_dir.exists() and not any(workflow_dir.iterdir()):
+                    workflow_dir.rmdir()
+                    print("🧹 Removed empty .github/workflows/ folder")
+            except Exception as e:
+                print(f"⚠️ Could not remove workflows folder: {e}")
 
 def toggle_ci_files(enable: bool = True, code_repo: str = "all", project_root: str = "."):
     """

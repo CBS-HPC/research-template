@@ -338,8 +338,10 @@ def git_push(flag: str, msg: str = "", path: str = None):
                         print("Pushed all branches to origin.")
             else:
                 print("No commit created — nothing to push.")
+            return True
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
+        return False
 
 def git_log_to_file(output_file_path):
     """
