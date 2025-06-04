@@ -484,14 +484,23 @@ For R projects, CI will run `renv::restore(project = 'R')` if `R/renv.lock` exis
 
 ---
 
-### 🔄 CI Toggle via CLI
+### 🔄 CI Config via CLI
+
+CI can be configured to the selected platform using the built-in CLI command:
+
+```
+ci_config 
+```
+
+### 🔄 CI Control via CLI
 
 CI can be toggled on or off using the built-in CLI command:
 
-```bash
-ci-toggle --disable --repo github   # Disable GitHub CI
-disable-ci --repo all              # Disable all platforms
-ci-toggle --enable --repo gitlab   # Re-enable GitLab CI
+```
+ci_control --enable 
+ci_control --disable   # Disable GitHub CI
+ 
+```
 
 </details>
 
