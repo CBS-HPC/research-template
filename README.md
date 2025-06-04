@@ -437,7 +437,9 @@ source deactivate.sh
 
 <details>
 <summary>📅 Unit Testing and Continuous Integration (CI)</summary>
+
 ---
+
 This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility.
 
 ### 🧪 Unit Testing
