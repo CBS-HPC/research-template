@@ -440,7 +440,11 @@ source deactivate.sh
 
 ---
 
-This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility.
+This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility. 
+
+It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected. 
+Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
+
 
 ### 🧪 Unit Testing
 
@@ -549,9 +553,6 @@ stata -b do tests/test_s00_main.do
 
 </details>
 
-### 🧪 Writing and Structuring Tests (with TDD)
-
-Writing well-structured tests improves reliability, debuggability, and reproducibility. This template encourages both traditional unit testing and **Test-Driven Development (TDD)** workflows.
 
 #### ✅ Best Practices
 
@@ -632,6 +633,14 @@ CI can be toggled on or off using the built-in CLI command:
 ```
 ci_control --enable 
 ci_control --disable 
+```
+
+### 🧷 Git Shortcut for Skipping CI
+
+To skip CI on a commit, use the built-in Git alias:
+
+```
+git commit-skip "Updated documentation"
 ```
 
 </details>
