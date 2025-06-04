@@ -206,7 +206,6 @@ def export_conda_env(env_path, output_file="environment.yml"):
             subprocess.run(['conda', 'env', 'export', '--prefix', env_path], stdout=f, check=True)      
         
         update_conda_env_file(output_file)
-        tag_env_file_with_platform_selectors(output_file)
         print(f"Conda environment '{env_path}' exported to {output_file}.")
 
     except subprocess.CalledProcessError as e:
@@ -421,50 +420,7 @@ def create_venv_env(env_name):
         print(f"Error: An unexpected error occurred: {e}")
         return None
 
-def create_requirements_txt(
-    requirements_file: str = "requirements.txt",
-    platform_rules_file: str = "platform_rules.json"
-):
-    # Resolve paths
-    root_dir = pathlib.Path(__file__).resolve().parent.parent.parent
-    requirements_path = root_dir / requirements_file
-    rules_path = root_dir / platform_rules_file
-
-    # Load platform-specific rules
-    if rules_path.exists():
-        with open(rules_path, "r") as f:
-            platform_rules = json.load(f)
-    else:
-        platform_rules = {}
-
-    # Run pip freeze
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", "freeze"],
-        capture_output=True,
-        text=True
-    )
-
-    if result.returncode != 0:
-        print("❌ Failed to run pip freeze:", result.stderr)
-        return
-
-    lines = result.stdout.strip().splitlines()
-    filtered_lines = []
-
-    for line in lines:
-        pkg = line.split("==")[0].lower()
-        if pkg in platform_rules:
-            platform = platform_rules[pkg]
-            filtered_lines.append(f"{line} ; sys_platform == \"{platform}\"")
-        else:
-            filtered_lines.append(line)
-
-    with open(requirements_path, "w") as f:
-        f.write("\n".join(filtered_lines) + "\n")
-
-    print(f"✅ requirements.txt written to: {requirements_path}")
-
-def create_requirements_txt_old(requirements_file:str="requirements.txt"):
+def create_requirements_txt(requirements_file:str="requirements.txt"):
 
     requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
 
@@ -534,15 +490,12 @@ def create_conda_environment_yml(r_version=None,requirements_file:str="requireme
     with open(output_file, "w", encoding="utf-8") as f:
         yaml.dump(conda_env, f, default_flow_style=False, sort_keys=False)
 
-    
-    tag_env_file_with_platform_selectors(output_file)
-
     print(f"✅ Conda environment file created: {output_file}")
 
-def tag_env_file_with_platform_selectors(input_file,platform_rules_file: str = "platform_rules.json"):
+def tag_env_file(env_file: str = "environment.yml", platform_rules_file: str = "platform_rules.json"):
     # Paths
     root = pathlib.Path(__file__).resolve().parent.parent.parent
-
+    env_file = root / env_file
     rules_path = root / platform_rules_file
 
     if not rules_path.exists():
@@ -554,7 +507,7 @@ def tag_env_file_with_platform_selectors(input_file,platform_rules_file: str = "
         rules = json.load(f)
 
     # Load environment.yml
-    with open(input_file, "r") as f:
+    with open(env_file, "r") as f:
         env_data = f.readlines()
 
     # Track which line we're in: normal dependencies vs pip:
@@ -588,7 +541,50 @@ def tag_env_file_with_platform_selectors(input_file,platform_rules_file: str = "
             updated_lines.append(line)
 
     # Write back
-    with open(input_file, "w") as f:
+    with open(env_file, "w") as f:
         f.writelines(updated_lines)
 
-    print(f"✅ Updated {input_file} with platform tags using {platform_rules_file}")
+    print(f"✅ Updated {env_file} with platform tags using {platform_rules_file}")
+
+def tag_requirements_txt(requirements_file: str = "requirements.txt",platform_rules_file: str = "platform_rules.json"):
+    # Resolve paths
+    root = pathlib.Path(__file__).resolve().parent.parent.parent
+    requirements_path = root / requirements_file
+    rules_path = root / platform_rules_file
+
+    # Load platform-specific rules
+    if rules_path.exists():
+        with open(rules_path, "r", encoding="utf-8") as f:
+            platform_rules = json.load(f)
+    else:
+        platform_rules = {}
+
+    if not platform_rules:
+        print("ℹ️ No platform rules found. Skipping tagging.")
+        return
+
+    if not requirements_path.exists():
+        raise FileNotFoundError(f"❌ Requirements file not found: {requirements_path}")
+
+    # Read the requirements.txt
+    with open(requirements_path, "r", encoding="utf-8") as f:
+        lines = f.read().strip().splitlines()
+
+    filtered_lines = []
+    for line in lines:
+        clean_line = line.strip()
+        if not clean_line or clean_line.startswith("#"):
+            filtered_lines.append(line)
+            continue
+
+        pkg = clean_line.split("==")[0].split(">=")[0].split("<=")[0].strip().lower()
+        if pkg in platform_rules:
+            platform = platform_rules[pkg]
+            filtered_lines.append(f"{clean_line} ; sys_platform == \"{platform}\"")
+        else:
+            filtered_lines.append(clean_line)
+
+    with open(requirements_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(filtered_lines) + "\n")
+
+    print(f"✅ requirements.txt updated with platform tags: {requirements_path}")

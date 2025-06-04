@@ -223,6 +223,11 @@ def update_env_files():
     elif requirements_file == "environment.yml": 
         export_conda_env(repo_name)
 
+    tag_requirements_txt(requirements_file="requirements.txt",platform_rules_file= "platform_rules.json")
+    tag_env_file(env_file = "environment.yml", platform_rules_file = "platform_rules.json")
+
+    
+
 def update_setup_dependency():
     print("Screening './setup' for dependencies")
     setup_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
