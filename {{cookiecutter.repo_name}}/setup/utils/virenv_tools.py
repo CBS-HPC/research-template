@@ -197,60 +197,6 @@ def export_conda_env(env_path, output_file="environment.yml"):
         else:
             print(f"'{file_path}' does not contain both 'name' and 'prefix' fields.")
 
-    def tag_env_file_with_platform_selectors(input_file,platform_rules_file: str = "platform_rules.json"):
-        # Paths
-        root = pathlib.Path(__file__).resolve().parent.parent.parent
-    
-        rules_path = root / platform_rules_file
-
-        if not rules_path.exists():
-            print(f"❌ {platform_rules_file} not found.")
-            return
-
-        # Load rules
-        with open(rules_path, "r") as f:
-            rules = json.load(f)
-
-        # Load environment.yml
-        with open(env_path, "r") as f:
-            env_data = f.readlines()
-
-        # Track which line we're in: normal dependencies vs pip:
-        in_pip_section = False
-        updated_lines = []
-
-        for line in env_data:
-            stripped = line.strip()
-            raw_name = stripped.split("==")[0].split(">=")[0].split()[0].lower() if stripped else ""
-
-            # Track when inside pip: block
-            if stripped.startswith("- pip"):
-                in_pip_section = True
-                updated_lines.append(line)
-                continue
-            elif stripped.startswith("-") and not line.startswith("  -"):
-                in_pip_section = False
-
-            # Tag pip or conda packages if matched
-            matched_platform = rules.get(raw_name)
-            if matched_platform:
-                if in_pip_section and line.strip().startswith("- "):
-                    # Pip section (indent expected)
-                    updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
-                elif not in_pip_section and line.strip().startswith("- "):
-                    # Conda package
-                    updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
-                else:
-                    updated_lines.append(line)
-            else:
-                updated_lines.append(line)
-
-        # Write back
-        with open(env_path, "w") as f:
-            f.writelines(updated_lines)
-
-        print(f"✅ Updated {input_file} with platform tags using {platform_rules_file}")
-
     output_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(output_file))
 
     try:
@@ -588,4 +534,61 @@ def create_conda_environment_yml(r_version=None,requirements_file:str="requireme
     with open(output_file, "w", encoding="utf-8") as f:
         yaml.dump(conda_env, f, default_flow_style=False, sort_keys=False)
 
+    
+    tag_env_file_with_platform_selectors(output_file)
+
     print(f"✅ Conda environment file created: {output_file}")
+
+def tag_env_file_with_platform_selectors(input_file,platform_rules_file: str = "platform_rules.json"):
+    # Paths
+    root = pathlib.Path(__file__).resolve().parent.parent.parent
+
+    rules_path = root / platform_rules_file
+
+    if not rules_path.exists():
+        print(f"❌ {platform_rules_file} not found.")
+        return
+
+    # Load rules
+    with open(rules_path, "r") as f:
+        rules = json.load(f)
+
+    # Load environment.yml
+    with open(input_file, "r") as f:
+        env_data = f.readlines()
+
+    # Track which line we're in: normal dependencies vs pip:
+    in_pip_section = False
+    updated_lines = []
+
+    for line in env_data:
+        stripped = line.strip()
+        raw_name = stripped.split("==")[0].split(">=")[0].split()[0].lower() if stripped else ""
+
+        # Track when inside pip: block
+        if stripped.startswith("- pip"):
+            in_pip_section = True
+            updated_lines.append(line)
+            continue
+        elif stripped.startswith("-") and not line.startswith("  -"):
+            in_pip_section = False
+
+        # Tag pip or conda packages if matched
+        matched_platform = rules.get(raw_name)
+        if matched_platform:
+            if in_pip_section and line.strip().startswith("- "):
+                # Pip section (indent expected)
+                updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
+            elif not in_pip_section and line.strip().startswith("- "):
+                # Conda package
+                updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
+            else:
+                updated_lines.append(line)
+        else:
+            updated_lines.append(line)
+
+    # Write back
+    with open(input_file, "w") as f:
+        f.writelines(updated_lines)
+
+    print(f"✅ Updated {input_file} with platform tags using {platform_rules_file}")
