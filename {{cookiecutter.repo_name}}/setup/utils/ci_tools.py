@@ -4,7 +4,7 @@ import subprocess
 
 from .versioning_tools import *
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def ci_config():
      # Ensure the working directory is the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -21,11 +21,11 @@ def ci_config():
 
 
 # -------- CI Generator Dispatcher --------
+
 def generate_ci_configs(programming_language: str, code_repo: str, project_root: str = "."):
     """
     Generate a CI configuration file for a given language and code hosting platform.
     """
-        # -------- Version Extraction --------
     def parse_version(version_string: str, programming_language: str) -> str:
         programming_language = programming_language.lower()
         if programming_language == "python":
@@ -33,143 +33,151 @@ def generate_ci_configs(programming_language: str, code_repo: str, project_root:
         elif programming_language == "r":
             return version_string.lower().replace("r version", "").strip()
         elif programming_language == "matlab":
-            return version_string.split()[1]  # "9.11.0.2022996"
+            return version_string.split()[1]  # e.g., "9.11.0.2022996"
         else:
             raise ValueError("Unsupported programming_language.")
 
-    # -------- CI Templates --------
     def _ci_for_python(version: str):
         return {
             "github": f"""\
-    name: Python CI
+name: Python CI
 
-    on: [push, pull_request]
+on: [push, pull_request]
 
-    jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v3
-        - uses: actions/setup-python@v4
-            with:
-            python-version: '{version}'
-        - run: pip install -r requirements.txt
-        - run: pytest
-    """,
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '{version}'
+      - run: pip install -r requirements.txt
+      - run: pytest
+""",
             "gitlab": f"""\
-    image: python:{version}
+image: python:{version}
 
-    test:
-    stage: test
-    script:
-        - pip install -r requirements.txt
-        - pytest
-    """,
+stages:
+  - test
+
+run-tests:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - pytest
+""",
             "codeberg": f"""\
-    pipeline:
-    test:
-        image: python:{version}
-        commands:
-        - pip install -r requirements.txt
-        - pytest
-    """
+pipeline:
+  test:
+    image: python:{version}
+    commands:
+      - pip install -r requirements.txt
+      - pytest
+"""
         }
 
     def _ci_for_r(version: str):
         return {
             "github": f"""\
-    name: R CI
+name: R CI
 
-    on: [push, pull_request]
+on: [push, pull_request]
 
-    jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v3
-        - uses: r-lib/actions/setup-r@v2
-            with:
-            r-version: '{version}'
-        - name: Install renv
-            run: Rscript -e 'install.packages("renv")'
-        - name: Restore or install dependencies
-            run: |
-            if [ -f "R/renv.lock" ]; then
-                Rscript -e 'renv::restore(project = "R")'
-            else
-                Rscript -e 'install.packages("testthat")'
-            fi
-        - name: Run tests
-            run: Rscript -e 'testthat::test_dir("tests/testthat")'
-    """,
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '{version}'
+      - name: Install renv
+        run: Rscript -e 'install.packages("renv")'
+      - name: Restore or install dependencies
+        run: |
+          if [ -f "R/renv.lock" ]; then
+            Rscript -e 'renv::restore(project = "R")'
+          else
+            Rscript -e 'install.packages("testthat")'
+          fi
+      - name: Run tests
+        run: Rscript -e 'testthat::test_dir("tests/testthat")'
+""",
             "gitlab": f"""\
-    image: rocker/r-ver:{version}
+image: rocker/r-ver:{version}
 
-    test:
-    stage: test
-    script:
-        - Rscript -e 'install.packages("renv")'
-        - |
-        if [ -f "R/renv.lock" ]; then
-            Rscript -e 'renv::restore(project = "R")'
-        else
-            Rscript -e 'install.packages("testthat")'
-        fi
-        - Rscript -e 'testthat::test_dir("tests/testthat")'
-    """,
+stages:
+  - test
+
+run-tests:
+  stage: test
+  script:
+    - Rscript -e 'install.packages("renv")'
+    - |
+      if [ -f "R/renv.lock" ]; then
+        Rscript -e 'renv::restore(project = "R")'
+      else
+        Rscript -e 'install.packages("testthat")'
+      fi
+    - Rscript -e 'testthat::test_dir("tests/testthat")'
+""",
             "codeberg": f"""\
-    pipeline:
-    test:
-        image: rocker/r-ver:{version}
-        commands:
-        - Rscript -e 'install.packages("renv")'
-        - |
-            if [ -f "R/renv.lock" ]; then
-            Rscript -e 'renv::restore(project = "R")'
-            else
-            Rscript -e 'install.packages("testthat")'
-            fi
-        - Rscript -e 'testthat::test_dir("tests/testthat")'
-    """
+pipeline:
+  test:
+    image: rocker/r-ver:{version}
+    commands:
+      - Rscript -e 'install.packages("renv")'
+      - |
+        if [ -f "R/renv.lock" ]; then
+          Rscript -e 'renv::restore(project = "R")'
+        else
+          Rscript -e 'install.packages("testthat")'
+        fi
+      - Rscript -e 'testthat::test_dir("tests/testthat")'
+"""
         }
 
     def _ci_for_matlab(version: str):
         return {
             "github": f"""\
-    name: MATLAB CI
+name: MATLAB CI
 
-    on: [push, pull_request]
+on: [push, pull_request]
 
-    jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v3
-        - uses: matlab-actions/setup-matlab@v2
-        - uses: matlab-actions/run-tests@v2
-            with:
-            source-folder: src
-            test-folder: tests
-    """,
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: matlab-actions/setup-matlab@v2
+      - uses: matlab-actions/run-tests@v2
+        with:
+          source-folder: src
+          test-folder: tests
+""",
             "gitlab": f"""\
-    test:
-    stage: test
-    script:
-        - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
-    """,
+stages:
+  - test
+
+run-tests:
+  stage: test
+  script:
+    - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
+""",
             "codeberg": f"""\
-    pipeline:
-    test:
-        image: mathworks/matlab:{version}
-        commands:
-        - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
-    """
+pipeline:
+  test:
+    image: mathworks/matlab:{version}
+    commands:
+      - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
+"""
         }
 
     programming_language = programming_language.lower()
     code_repo = code_repo.lower()
 
-
+    # You must define get_version() elsewhere
     version = parse_version(get_version(programming_language), programming_language)
 
     template_map = {
@@ -184,9 +192,9 @@ def generate_ci_configs(programming_language: str, code_repo: str, project_root:
     templates = template_map[programming_language](version)
 
     file_map = {
-        "github": project_root / pathlib.Path(".github/workflows/ci.yml"),
-        "gitlab": project_root / pathlib.Path(".gitlab-ci.yml"),
-        "codeberg": project_root / pathlib.Path(".woodpecker.yml"),
+        "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",
+        "gitlab": pathlib.Path(project_root) / ".gitlab-ci.yml",
+        "codeberg": pathlib.Path(project_root) / ".woodpecker.yml",
     }
 
     if code_repo not in file_map:
@@ -307,7 +315,7 @@ def set_git_alis(project_root: str = "."):
         print("ℹ️ Skipped Git alias setup: .git folder not found in project root.")
         return False
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def ci_control():
  
   # Ensure we're in the project root
