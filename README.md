@@ -462,73 +462,93 @@ Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_ma
 <details>
 <summary>**Python**</summary>
 
+
 Project structure:
+
 ```
 src/s00_main.py
 tests/test_s00_main.py
 ```
 
 Run tests:
+
 ```
 pytest
 ```
+
 </details>
 
 <details>
 <summary>**R**</summary>
+
 Project structure:
+
 ```
 R/s00_main.R
 tests/testthat/test-s00_main.R
 ```
 
 Run tests:
+
 ```
 testthat::test_dir("tests/testthat")
 ```
+
 From command line:
+
 ```
 Rscript -e 'testthat::test_dir("tests/testthat")'
 ```
+
 </details>
 
 <details>
 <summary>**Matlab**</summary>
 
 Project structure:
+
 ```
 src/s00_main.m
 tests/test_s00_main.m
 ```
 
 Run tests in MATLAB:
+
 ```
 results = runtests('tests');
 assert(all([results.Passed]), 'Some tests failed')
 ```
+
 From command line:
+
 ```
 matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some tests failed')"
 ```
+
 </details>
 
 <details>
 <summary>**Stata**</summary>
 
 Project structure:
+
 ```
 stata/do/s00_main.do
 tests/test_s00_main.do
 ```
 
 Run tests in Stata:
+
 ```
 do tests/test_s00_main.do
 ```
+
 Or in batch mode:
+
 ```
 stata -b do tests/test_s00_main.do
 ```
+
 </details>
 
 ### 🧪 Test Development Guidelines
