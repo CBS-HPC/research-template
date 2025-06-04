@@ -495,56 +495,69 @@ def create_conda_environment_yml(r_version=None,requirements_file:str="requireme
 def tag_env_file(env_file: str = "environment.yml", platform_rules_file: str = "platform_rules.json"):
     # Paths
     root = pathlib.Path(__file__).resolve().parent.parent.parent
-    env_file = root / env_file
+    env_path = root / env_file
     rules_path = root / platform_rules_file
+
+    if not env_path.exists():
+        print(f"❌ {env_file} not found.")
+        return
 
     if not rules_path.exists():
         print(f"❌ {platform_rules_file} not found.")
         return
 
-    # Load rules
-    with open(rules_path, "r") as f:
-        rules = json.load(f)
+    # Load platform rules (sys_platform -> conda selector map)
+    with open(rules_path, "r", encoding="utf-8") as f:
+        raw_rules = json.load(f)
 
-    # Load environment.yml
-    with open(env_file, "r") as f:
-        env_data = f.readlines()
+    sys_to_conda = {
+        "win32": "win",
+        "darwin": "osx",
+        "linux": "linux"
+    }
 
-    # Track which line we're in: normal dependencies vs pip:
+    # Translate rules
+    platform_rules = {}
+    for pkg, sys_platform in raw_rules.items():
+        conda_selector = sys_to_conda.get(sys_platform)
+        if conda_selector:
+            platform_rules[pkg.lower()] = conda_selector
+
+    # Read environment.yml
+    with open(env_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
     in_pip_section = False
     updated_lines = []
 
-    for line in env_data:
+    for line in lines:
         stripped = line.strip()
-        raw_name = stripped.split("==")[0].split(">=")[0].split()[0].lower() if stripped else ""
 
-        # Track when inside pip: block
-        if stripped.startswith("- pip"):
+        # Detect pip block
+        if stripped == "- pip":
             in_pip_section = True
             updated_lines.append(line)
             continue
-        elif stripped.startswith("-") and not line.startswith("  -"):
+
+        # End of pip block if indentation ends
+        if in_pip_section and not line.startswith("  ") and line.strip():
             in_pip_section = False
 
-        # Tag pip or conda packages if matched
-        matched_platform = rules.get(raw_name)
-        if matched_platform:
-            if in_pip_section and line.strip().startswith("- "):
-                # Pip section (indent expected)
-                updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
-            elif not in_pip_section and line.strip().startswith("- "):
-                # Conda package
-                updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
+        if stripped.startswith("- "):
+            pkg = stripped[2:].split("==")[0].split(">=")[0].strip().lower()
+            platform = platform_rules.get(pkg)
+            if platform:
+                updated_lines.append(line.rstrip() + f"  # [{platform}]\n")
             else:
                 updated_lines.append(line)
         else:
             updated_lines.append(line)
 
     # Write back
-    with open(env_file, "w") as f:
+    with open(env_path, "w", encoding="utf-8") as f:
         f.writelines(updated_lines)
 
-    print(f"✅ Updated {env_file} with platform tags using {platform_rules_file}")
+    print(f"✅ Updated {env_file} with Conda-style platform tags using {platform_rules_file}")
 
 def tag_requirements_txt(requirements_file: str = "requirements.txt",platform_rules_file: str = "platform_rules.json"):
     # Resolve paths
