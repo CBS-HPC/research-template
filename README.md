@@ -460,8 +460,7 @@ Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_ma
 #### 📄 Example Layouts and Test Commands
 
 <details>
-<summary>**Python**</summary>
-
+<summary>#### Python</summary>
 
 Project structure:
 
@@ -479,7 +478,7 @@ pytest
 </details>
 
 <details>
-<summary>**R**</summary>
+<summary>#### R</summary>
 
 Project structure:
 
@@ -503,7 +502,7 @@ Rscript -e 'testthat::test_dir("tests/testthat")'
 </details>
 
 <details>
-<summary>**Matlab**</summary>
+<summary>#### Matlab</summary>
 
 Project structure:
 
@@ -528,7 +527,7 @@ matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some 
 </details>
 
 <details>
-<summary>**Stata**</summary>
+<summary>#### Stata</summary>
 
 Project structure:
 
