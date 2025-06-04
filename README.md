@@ -549,41 +549,39 @@ stata -b do tests/test_s00_main.do
 
 </details>
 
-### 🧪 Test Development Guidelines
+### 🧪 Writing and Structuring Tests (with TDD)
 
-Writing good tests ensures that your code behaves as expected and simplifies debugging and maintenance.
+Writing well-structured tests improves reliability, debuggability, and reproducibility. This template encourages both traditional unit testing and **Test-Driven Development (TDD)** workflows.
 
-Here are best practices for test development:
+#### ✅ Best Practices
 
-- ✅ Focus on **core logic and data transformations** — test data cleaning, modeling, and utility functions.
-- ✅ Include **edge cases** — e.g., missing values, invalid inputs, or empty datasets.
-- ✅ Keep tests **independent and repeatable** — don’t rely on external state or prior test outcomes.
-- ✅ Use **assertions appropriate for your language**:
+- Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
+- Include **edge cases** — such as missing data, unexpected formats, or invalid input.
+- Keep tests **independent and repeatable** — avoid reliance on shared state or execution order.
+- Use assertions appropriate for your language:
   - `assert` in Python
-  - `expect_equal()`, `expect_error()` in R/testthat
-  - `verifyEqual()`, `verifyTrue()` in MATLAB
+  - `expect_equal()` / `expect_error()` in R
+  - `verifyEqual()` / `verifyTrue()` in MATLAB
   - `assert` in Stata
-- ✅ Organize tests to mirror your codebase (e.g., `s05_modeling.py` → `test_s05_modeling.py`)
+- Mirror your code structure — e.g., `s05_modeling.R` → `test-s05_modeling.R`
 
-> 🧪 Tests don’t need to be exhaustive — aim for **critical correctness** and **reproducibility**.
+> 💡 Tests don’t need to be exhaustive — focus on **critical correctness** and **key workflow branches**.
 
----
+#### 🔧 Test-Driven Development (TDD)
 
-### 🔧 Test-Driven Development (TDD)
-
-Test-Driven Development (TDD) is a workflow that emphasizes writing tests **before** writing the actual implementation. It's especially useful for ensuring reproducibility and correctness in research workflows.
+TDD encourages writing tests **before** implementation. This is especially effective in research workflows where reproducibility is critical.
 
 **TDD workflow:**
-1. **Write a failing test** that describes the desired behavior
-2. **Implement the minimum code** needed to make the test pass
-3. **Refactor** the implementation (if needed) while keeping the test green
+1. Write a **failing test** that defines the expected behavior
+2. Write the **minimal code** to make it pass
+3. Refactor with confidence — tests ensure nothing breaks
 
-**Benefits in research projects:**
-- Ensures reproducible and validated results
+**Why use TDD in research?**
+- Validates assumptions before modeling
 - Encourages modular, testable code
-- Prevents regressions when modifying scripts
+- Prevents regressions as scripts evolve
 
-> 💡 TDD fits naturally with script scaffolding in this template. Each script has a corresponding test file scaffold to encourage this workflow.
+> 🚀 Each generated script comes with a matching test file scaffold to support TDD from day one.
 
 ---
 
