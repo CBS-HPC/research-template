@@ -30,7 +30,8 @@ Whether you're preparing a replication package for publication, submitting data 
 - 📦 Automated script scaffolding for analysis, modeling, and visualization  
 - 🔐 Environment management via Conda or venv  
 - ☁️ Backup integration with DeiC Storage, Dropbox, and OneDrive  
-- 🚀 Remote repository setup with GitHub, GitLab, or Codeberg  
+- 🚀 Remote repository setup with GitHub, GitLab, or Codeberg
+- 🧪 Built-in unit testing, test scaffolds, TDD support, and CI integration across all languages  
 - 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`  
 - 🧰 Installation guides and activation scripts for both Windows and Bash  
 - 📑 Structured documentation of all files, code, and datasets
@@ -554,7 +555,7 @@ stata -b do tests/test_s00_main.do
 </details>
 
 
-#### ✅ Best Practices
+### ✅ Best Practices
 
 - Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
 - Include **edge cases** — such as missing data, unexpected formats, or invalid input.
@@ -568,7 +569,7 @@ stata -b do tests/test_s00_main.do
 
 > 💡 Tests don’t need to be exhaustive — focus on **critical correctness** and **key workflow branches**.
 
-#### 🔧 Test-Driven Development (TDD)
+### 🔧 Test-Driven Development (TDD)
 
 TDD encourages writing tests **before** implementation. This is especially effective in research workflows where reproducibility is critical.
 
