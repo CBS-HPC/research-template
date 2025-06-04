@@ -457,9 +457,10 @@ Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_ma
 
 ---
 
-### 📄 Example Layouts and Test Commands
+#### 📄 Example Layouts and Test Commands
 
-**Python**
+<details>
+<summary>**Python**</summary>
 
 Project structure:
 ```
@@ -471,8 +472,10 @@ Run tests:
 ```
 pytest
 ```
+</details>
 
-**R**
+<details>
+<summary>**R**</summary>
 Project structure:
 ```
 R/s00_main.R
@@ -487,8 +490,11 @@ From command line:
 ```
 Rscript -e 'testthat::test_dir("tests/testthat")'
 ```
+</details>
 
-**Matlab**
+<details>
+<summary>**Matlab**</summary>
+
 Project structure:
 ```
 src/s00_main.m
@@ -504,8 +510,11 @@ From command line:
 ```
 matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some tests failed')"
 ```
+</details>
 
-**Stata**
+<details>
+<summary>**Stata**</summary>
+
 Project structure:
 ```
 stata/do/s00_main.do
@@ -520,6 +529,7 @@ Or in batch mode:
 ```
 stata -b do tests/test_s00_main.do
 ```
+</details>
 
 ### 🧪 Test Development Guidelines
 
