@@ -4,6 +4,7 @@ import sys
 import platform
 import urllib.request
 import pathlib
+import json
 
 from .general_tools import *
 
@@ -159,35 +160,6 @@ def set_conda_packages(version_control,python_env_manager,r_env_manager,conda_py
 
     return install_packages
 
-def update_conda_env_file(file_path: str):
-    # Get the current working directory
-    current_dir = os.path.abspath(os.getcwd())
-    
-    # Load the existing environment.yml file
-    with open(file_path, 'r') as f:
-        env_data = yaml.safe_load(f)
-
-    # Check if 'prefix' and 'name' are defined
-    if 'prefix' in env_data and 'name' in env_data:
-        # Get the absolute path from the prefix
-        prefix_abs_path = env_data['prefix']
-        
-        # Extract the last part of the path for the 'name'
-        new_name = os.path.basename(prefix_abs_path)
-        
-        # Make the prefix relative to the current working directory
-        prefix_relative_path = os.path.relpath(prefix_abs_path, current_dir)
-        
-        # Update the 'name' and 'prefix'
-        env_data['name'] = new_name
-        env_data['prefix'] = prefix_relative_path
-
-        # Save the updated file
-        with open(file_path, 'w') as f:
-            yaml.dump(env_data, f, default_flow_style=False)
-    else:
-        print(f"'{file_path}' does not contain both 'name' and 'prefix' fields.")
-
 def export_conda_env(env_path, output_file="environment.yml"):
     """
     Export the details of a conda environment to a YAML file.
@@ -196,6 +168,88 @@ def export_conda_env(env_path, output_file="environment.yml"):
     - env_name: str, name of the conda environment to export.
     - output_file: str, name of the output YAML file. Defaults to 'environment.yml'.
     """
+    def update_conda_env_file(file_path: str):
+        # Get the current working directory
+        current_dir = os.path.abspath(os.getcwd())
+        
+        # Load the existing environment.yml file
+        with open(file_path, 'r') as f:
+            env_data = yaml.safe_load(f)
+
+        # Check if 'prefix' and 'name' are defined
+        if 'prefix' in env_data and 'name' in env_data:
+            # Get the absolute path from the prefix
+            prefix_abs_path = env_data['prefix']
+            
+            # Extract the last part of the path for the 'name'
+            new_name = os.path.basename(prefix_abs_path)
+            
+            # Make the prefix relative to the current working directory
+            prefix_relative_path = os.path.relpath(prefix_abs_path, current_dir)
+            
+            # Update the 'name' and 'prefix'
+            env_data['name'] = new_name
+            env_data['prefix'] = prefix_relative_path
+
+            # Save the updated file
+            with open(file_path, 'w') as f:
+                yaml.dump(env_data, f, default_flow_style=False)
+        else:
+            print(f"'{file_path}' does not contain both 'name' and 'prefix' fields.")
+
+    def tag_env_file_with_platform_selectors(input_file,platform_rules_file: str = "platform_rules.json"):
+        # Paths
+        root = pathlib.Path(__file__).resolve().parent.parent.parent
+    
+        rules_path = root / platform_rules_file
+
+        if not rules_path.exists():
+            print(f"❌ {platform_rules_file} not found.")
+            return
+
+        # Load rules
+        with open(rules_path, "r") as f:
+            rules = json.load(f)
+
+        # Load environment.yml
+        with open(env_path, "r") as f:
+            env_data = f.readlines()
+
+        # Track which line we're in: normal dependencies vs pip:
+        in_pip_section = False
+        updated_lines = []
+
+        for line in env_data:
+            stripped = line.strip()
+            raw_name = stripped.split("==")[0].split(">=")[0].split()[0].lower() if stripped else ""
+
+            # Track when inside pip: block
+            if stripped.startswith("- pip"):
+                in_pip_section = True
+                updated_lines.append(line)
+                continue
+            elif stripped.startswith("-") and not line.startswith("  -"):
+                in_pip_section = False
+
+            # Tag pip or conda packages if matched
+            matched_platform = rules.get(raw_name)
+            if matched_platform:
+                if in_pip_section and line.strip().startswith("- "):
+                    # Pip section (indent expected)
+                    updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
+                elif not in_pip_section and line.strip().startswith("- "):
+                    # Conda package
+                    updated_lines.append(line.rstrip() + f"  # [{matched_platform}]\n")
+                else:
+                    updated_lines.append(line)
+            else:
+                updated_lines.append(line)
+
+        # Write back
+        with open(env_path, "w") as f:
+            f.writelines(updated_lines)
+
+        print(f"✅ Updated {input_file} with platform tags using {platform_rules_file}")
 
     output_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(output_file))
 
@@ -206,6 +260,7 @@ def export_conda_env(env_path, output_file="environment.yml"):
             subprocess.run(['conda', 'env', 'export', '--prefix', env_path], stdout=f, check=True)      
         
         update_conda_env_file(output_file)
+        tag_env_file_with_platform_selectors(output_file)
         print(f"Conda environment '{env_path}' exported to {output_file}.")
 
     except subprocess.CalledProcessError as e:
@@ -420,7 +475,50 @@ def create_venv_env(env_name):
         print(f"Error: An unexpected error occurred: {e}")
         return None
 
-def create_requirements_txt(requirements_file:str="requirements.txt"):
+def create_requirements_txt(
+    requirements_file: str = "requirements.txt",
+    platform_rules_file: str = "platform_rules.json"
+):
+    # Resolve paths
+    root_dir = pathlib.Path(__file__).resolve().parent.parent.parent
+    requirements_path = root_dir / requirements_file
+    rules_path = root_dir / platform_rules_file
+
+    # Load platform-specific rules
+    if rules_path.exists():
+        with open(rules_path, "r") as f:
+            platform_rules = json.load(f)
+    else:
+        platform_rules = {}
+
+    # Run pip freeze
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "freeze"],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        print("❌ Failed to run pip freeze:", result.stderr)
+        return
+
+    lines = result.stdout.strip().splitlines()
+    filtered_lines = []
+
+    for line in lines:
+        pkg = line.split("==")[0].lower()
+        if pkg in platform_rules:
+            platform = platform_rules[pkg]
+            filtered_lines.append(f"{line} ; sys_platform == \"{platform}\"")
+        else:
+            filtered_lines.append(line)
+
+    with open(requirements_path, "w") as f:
+        f.write("\n".join(filtered_lines) + "\n")
+
+    print(f"✅ requirements.txt written to: {requirements_path}")
+
+def create_requirements_txt_old(requirements_file:str="requirements.txt"):
 
     requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
 

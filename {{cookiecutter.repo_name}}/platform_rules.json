@@ -1,0 +1,10 @@
+{
+  "pywin32": "win32",
+  "pypiwin32": "win32",
+  "wmi": "win32",
+  "pync": "darwin",
+  "pyobjc": "darwin",
+  "dbus-python": "linux",
+  "pygobject": "linux",
+  "pyudev": "linux"
+}
