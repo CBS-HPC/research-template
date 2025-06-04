@@ -46,6 +46,7 @@ This template is developed and maintained by the **CBS High-Performance Computin
 - [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts  
 - [**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure  
 - [**Git**](https://git-scm.com/downloads) *(optional)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
+- [**Personal Access Token**](#personal-access-tokens-and-permissions) *(optional)* – Required to push to remote repositories and enable CI workflows on **GitHub**, **GitLab**, or **Codeberg**. See the section *Personal Access Tokens and Permissions* for required scopes.
 
 Install Cookiecutter:
 
@@ -334,9 +335,28 @@ Supported platforms include:
 - [**GitLab**](https://gitlab.com) – a DevOps platform that supports both self-hosted and cloud-hosted repositories. Ideal for collaborative development with built-in CI/CD pipelines.
 - [**Codeberg**](https://codeberg.org) – a privacy-focused Git hosting service powered by [Gitea](https://about.gitea.com). Community-driven and compliant with European data governance standards.
 
-Repositories are created using the **HTTPS API**, and authenticated with **personal access tokens**.
+Repositories are created using the **HTTPS API**, and authenticated with [**personal access tokens**](#personal-access-tokens-and-permissions).
 
 > 🛡️ Your credentials and tokens are securely stored in the `.env` file and never exposed in plain text.
+
+###  🔐 Personal Access Tokens and Permissions
+
+A Personal Access Token (PAT) is needed to:
+
+- Create remote repositories
+- Push CI configuration files
+- Enable automated workflows (e.g. GitHub Actions, GitLab CI)
+
+#### 🔎 Required Token Scopes by Platform
+
+| Platform   | Purpose                              | Required Scopes           |
+|------------|--------------------------------------|---------------------------|
+| **GitHub** | Create repos, push code, configure CI workflows | `repo`, `workflow`       |
+| **GitLab** | Create repos, push code, configure CI/CD        | `api`                    |
+| **Codeberg** | Create repo (CI enabled manually)  | `repo` *(if using API)*   |
+
+
+
 
 </details>
 
