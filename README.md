@@ -437,10 +437,8 @@ source deactivate.sh
 
 <details>
 <summary>📅 Unit Testing and Continuous Integration (CI)</summary>
-
-This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility.
-
 ---
+This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility.
 
 ### 🧪 Unit Testing
 
@@ -455,12 +453,11 @@ Unit test files are automatically generated for core analysis scripts and placed
 
 Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
 
----
 
-#### 📄 Example Layouts and Test Commands
+📄 Example Layouts and Test Commands are shown below:
 
 <details>
-<summary>#### Python</summary>
+<summary>Python</summary>
 
 Project structure:
 
@@ -478,7 +475,7 @@ pytest
 </details>
 
 <details>
-<summary>#### R</summary>
+<summary>R</summary>
 
 Project structure:
 
@@ -502,7 +499,7 @@ Rscript -e 'testthat::test_dir("tests/testthat")'
 </details>
 
 <details>
-<summary>#### Matlab</summary>
+<summary>Matlab</summary>
 
 Project structure:
 
@@ -527,7 +524,7 @@ matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some 
 </details>
 
 <details>
-<summary>#### Stata</summary>
+<summary>Stata</summary>
 
 Project structure:
 
