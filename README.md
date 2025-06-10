@@ -613,21 +613,23 @@ TDD encourages writing tests **before** implementation. This is especially effec
 
 The template supports CI pipelines on all major platforms:
 
-- **GitHub Actions** – supports **Python**, **R**, and **MATLAB** - ✅ tests across **Linux**, **Windows**, and **macOS** runners by default.
+- **GitHub Actions** – supports **Python**, **R**, and **MATLAB**
+  ✅ tests across **Linux**, **Windows**, and **macOS** runners by default.
 
-- **GitLab CI/CD** – supports **Python**, **R**, and **MATLAB** - ✅ tests on **Linux** runners by default.
+- **GitLab CI/CD** – supports **Python**, **R**, and **MATLAB**
+  ✅ tests on **Linux** runners by default.
 
-- **Codeberg CI** (via Woodpecker) – supports **Python** and **R** only - ✅ tests on **Linux** runners by default.  
+- **Codeberg CI** (via Woodpecker) – supports **Python** and **R** only
+  ✅ tests on **Linux** runners by default.  
   ⚠️ No support for MATLAB or cross-platform testing.
 
 ❌ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.  
 
-⚠️ **MATLAB CI is only configured as a starting template** – it is unlikely to work out of the box on either GitHub or GitLab without a licensed MATLAB installation and toolboxes pre-installed on a self-hosted runner or Docker image. 
+⚠️ **MATLAB CI is only configured as a starting template and is unlikely to work out of the box on either GitHub or GitLab** 
 
-> You can read more about MATLAB CI support in the official documentation:  
-- [MathWorks GitHub Actions for MATLAB](https://github.com/mathworks-actions/setup-matlab)  
-- [MathWorks GitLab CI Template](https://github.com/mathworks/matlab-gitlab-ci-template)  
-- [Running Tests in CI with MATLAB](https://www.mathworks.com/help/matlab/matlab_prog/run-tests-in-continuous-integration-systems.html)
+You can read more about MATLAB CI support in the official documentation:  
+- **[GitHub](https://github.com/matlab-actions/setup-matlab/)**: Uses [MathWorks' official GitHub Actions](https://github.com/matlab-actions/setup-matlab/) and requires a valid license and a `MATLAB_TOKEN` secret.
+- **[GitLab](https://github.com/mathworks/matlab-gitlab-ci-template/blob/main/README.md)** : Uses a MATLAB Docker image and license server via the `MLM_LICENSE_FILE` variable. 
 
 CI configurations are **auto-generated** based on your selected programming language and code hosting platform, and are written to the appropriate file:
 
@@ -640,18 +642,10 @@ CI configurations are **auto-generated** based on your selected programming lang
 Each CI pipeline performs the following:
 
 1. Installs the appropriate language runtime and dependencies  
-2. Installs project dependencies (e.g., `requirements.txt`, `renv.lock`)  
+2. Installs project dependencies (e.g., `requirements.txt`, `renv.lock`) 
+   **R**: CI uses `renv::restore(project = "R")` if `R/renv.lock` is found, otherwise falls back to `install.packages()`.
 3. Executes tests in the `tests/` directory  
 4. Outputs test results and logs
-
-- **R projects**:  
-  CI uses `renv::restore(project = "R")` if `R/renv.lock` is found, otherwise falls back to `install.packages()`.
-
-- **MATLAB projects**:
-  - **GitHub**: Uses [MathWorks' official GitHub Actions](https://github.com/matlab-actions/setup-matlab/). Requires a valid license and a `MATLAB_TOKEN` secret.
-  - **GitLab**: Uses a MATLAB Docker image and license server via the `MLM_LICENSE_FILE` variable. See [GitLab CI template documentation](https://github.com/mathworks/matlab-gitlab-ci-template/blob/main/README.md).
-  - **Codeberg**: Not supported for MATLAB due to licensing and tooling limitations.
-
 ---
 
 ### 🔄 CI Config via CLI
