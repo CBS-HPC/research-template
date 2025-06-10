@@ -100,9 +100,7 @@ def package_installer_old(required_libraries: list = None,pip_install: bool = Fa
 def install_uv():
     try:
         import uv  # noqa: F401
-        print("dre1")
     except ImportError:
-        print("dre2")
         try:
             print("Installing 'uv' package into current Python environment...")
             subprocess.run(
@@ -118,13 +116,6 @@ def install_uv():
 def package_installer(required_libraries: list = None, pip_install: bool = False):
     if not required_libraries:
         return
-
-    def get_current_venv_path():
-        # sys.prefix points to the venv if active
-        venv_path = pathlib.Path(sys.prefix)
-        if (venv_path / "pyvenv.cfg").exists():
-            return venv_path
-        return None
 
     try:
         installed_pkgs = {
@@ -153,39 +144,19 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
 
     print(f"Installing missing libraries: {missing_libraries}")
 
-    venv_path = get_current_venv_path()
-
     if not pip_install:
         
         install_uv()
 
-        if venv_path:
-            try:
-                print("dre3")
-                subprocess.run(
-                    #["uv", "pip", "install", "--venv", str(venv_path)] + missing_libraries,
-                    [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
-                    #["uv", "pip", "install"] + missing_libraries,
-                    check=True,
-                    stderr=subprocess.DEVNULL
-                )
-                return
-            except subprocess.CalledProcessError:
-                print("uv --venv failed. Trying fallback...")
-        else:
-            print("⚠️ No active venv detected. uv will install into system environment.")
-
         try:
-            print("dre4")
             subprocess.run(
-                [sys.executable, "uv", "pip", "install", "--system"] + missing_libraries,
-                #["uv", "pip", "install", "--system"] + missing_libraries,
+                [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
                 check=True,
                 stderr=subprocess.DEVNULL
             )
             return
         except subprocess.CalledProcessError:
-            print("uv failed in both modes. Falling back to pip.")
+            print("uv failed. Trying fallback...")
 
     try:
         subprocess.run(
