@@ -12,6 +12,9 @@ import importlib.metadata
 
 
 def set_packages(version_control,programming_language):
+
+    if not programming_language or not version_control:
+        return []
     install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil',"py-cpuinfo"]
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab','pytest'])
