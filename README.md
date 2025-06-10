@@ -469,7 +469,7 @@ This template includes built-in support for **unit testing** and **CI automation
 It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected. 
 Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
 
-
+---
 ### 🧪 Unit Testing
 
 Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure varies slightly by language:
@@ -577,7 +577,7 @@ stata -b do tests/test_s00_main.do
 
 </details>
 
-
+---
 ### ✅ Best Practices
 
 - Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
@@ -592,6 +592,7 @@ stata -b do tests/test_s00_main.do
 
 > 💡 Tests don’t need to be exhaustive — focus on **critical correctness** and **key workflow branches**.
 
+---
 ### 🔧 Test-Driven Development (TDD)
 
 TDD encourages writing tests **before** implementation. This is especially effective in research workflows where reproducibility is critical.
