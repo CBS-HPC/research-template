@@ -333,6 +333,7 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
 | `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
 | `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
 | `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
+| `platform_rules.json`| Maps Python packages to platform-specific tags (win32, darwin, linux) to conditionally include them in requirements.txt or environment.yml. |
 """ 
         else:
             config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
@@ -347,7 +348,7 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
 | `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
 | `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
 | `renv.lock`             | Records the exact versions of R packages used in the project                                    |
-| `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
+| `platform_rules.json`| maps Python packages to platform-specific tags (win32, darwin, linux) to conditionally include them in requirements.txt or environment.yml. |
 """ 
         return config
 
@@ -482,6 +483,16 @@ To configure the project's environment—including project paths, environment va
 > ⚠️ The `.env` file is excluded from this repository for security reasons. To replicate the environment, please follow the instructions in the [Installation](#installation) section.
 
 {activate}
+
+</details>
+
+
+
+<a name="unit-test-ci"></a>
+<details>
+<summary>📅 Unit Testing and Continuous Integration (CI)</summary>
+
+{ci_tools}
 
 </details>
 
@@ -830,51 +841,57 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
         file_descriptions = {
 
-                # Directories
-                "data": "Directory containing scripts to download or generate data.",
-                "01_interim": "Intermediate data transformed during the workflow.",
-                "02_processed": "The final, clean data used for analysis or modeling.",
-                "00_raw": "Original, immutable raw data.",
-                "src": "Directory containing source code for use in this project.",
-                "R": "Directory containing source code for use in this project.",
-                "stata": "Directory containing source code for use in this project.",
-                "docs": "Directory for documentation files, reports, or rendered markdown.",
-                "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",
-                "results": "Directory for generated results from the project, such as models, logs, or summaries.",
-                "setup": "Directory containing the local Python package used for configuring and initializing the project environment.",
-                "DCAS template": "Directory containing a 'replication package' template for the DCAS (Data and Code Sharing) standard.",
-                "utils": "Python module within the setup package containing utility scripts and functions used by CLI tools.",
-                "renv": "Directory automatically managed by the R `renv` package, containing the project-local R library and metadata files used to restore the environment.",
+            # Directories
+            "data": "Directory containing scripts to download or generate data.",
+            "01_interim": "Intermediate data transformed during the workflow.",
+            "02_processed": "The final, clean data used for analysis or modeling.",
+            "00_raw": "Original, immutable raw data.",
+            "src": "Directory containing source code for use in this project.",
+            "R": "Directory containing source code for use in this project.",
+            "stata": "Directory containing source code for use in this project.",
+            "docs": "Directory for documentation files, reports, or rendered markdown.",
+            "notebooks": "Directory for Jupyter or R notebooks for exploratory and explanatory work.",
+            "results": "Directory for generated results from the project, such as models, logs, or summaries.",
+            "setup": "Directory containing the local Python package used for configuring and initializing the project environment.",
+            "DCAS template": "Directory containing a 'replication package' template for the DCAS (Data and Code Sharing) standard.",
+            "utils": "Python module within the setup package containing utility scripts and functions used by CLI tools.",
+            "renv": "Directory automatically managed by the R `renv` package, containing the project-local R library and metadata files used to restore the environment.",
 
-                # Setup and configuration files
-                ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
-                ".gitignore": "Specifies files and directories that should be ignored by Git.",
-                ".rcloneignore": "Specifies files and directories that should be excluded from remote sync via Rclone.",
-                ".treeignore": "Defines files or folders to exclude from file tree utilities or visualizations.",
-                ".gitlog": "Git log output file for tracking changes to the repository over time.",
-                ".env": "Environment-specific variables such as paths, tokens, or secrets. Typically excluded from version control.",
-                ".Rprofile": "Startup file for R sessions. Used by `renv` to automatically load the correct project-local R environment when the project is opened.",
-                "CITATION.cff": "Citation metadata file for academic attribution and scholarly reference.",
-                "file_descriptions.json": "Structured JSON file used to describe and annotate the project directory tree.",
-                "LICENSE.txt": "The project's license file, outlining terms and conditions for usage and distribution.",
-                "README.md": "The project README for this project.",
-                #"README.md": "Template README file aligned with DCAS guidelines for social science replication packages.",
-                "requirements.txt": "The requirements file for installing Python dependencies via pip.",
-                "environment.yml": "Conda environment definition file for installing R and Python dependencies.",
-                "renv.lock": "Snapshot file generated by the R `renv` package. Records the exact versions and sources of R packages used in the project to enable precise environment restoration.",
+            # Setup and configuration files
+            ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
+            ".gitignore": "Specifies files and directories that should be ignored by Git.",
+            ".rcloneignore": "Specifies files and directories that should be excluded from remote sync via Rclone.",
+            ".treeignore": "Defines files or folders to exclude from file tree utilities or visualizations.",
+            ".gitlog": "Git log output file for tracking changes to the repository over time.",
+            ".env": "Environment-specific variables such as paths, tokens, or secrets. Typically excluded from version control.",
+            ".Rprofile": "Startup file for R sessions. Used by `renv` to automatically load the correct project-local R environment when the project is opened.",
+            "CITATION.cff": "Citation metadata file for academic attribution and scholarly reference.",
+            "file_descriptions.json": "Structured JSON file used to describe and annotate the project directory tree.",
+            "platform_rules.json": "Maps Python packages to platform-specific tags (win32, darwin, linux) to conditionally include them in requirements.txt or environment.yml.",
+            "LICENSE.txt": "The project's license file, outlining terms and conditions for usage and distribution.",
+            "README.md": "The project README for this project.",
+            "requirements.txt": "The requirements file for installing Python dependencies via pip.",
+            "environment.yml": "Conda environment definition file for installing R and Python dependencies.",
+            "renv.lock": "Snapshot file generated by the R `renv` package. Records the exact versions and sources of R packages used in the project to enable precise environment restoration.",
 
-                # Setup package scripts
-                "deic_storage_download.py": "Script to download data from DEIC storage for the project.",
-                "dependencies.txt": "Plain text list of external Python dependencies for installation.",
-                "get_dependencies.py": "Retrieves and checks required dependencies for the project environment.",
-                "install_dependencies.py": "Installs any missing dependencies listed in `dependencies.txt` or detected dynamically.",
-                "readme_templates.py": "Generates README templates for various environments or publication formats.",
-                "set_raw_data.py": "Script to prepare and stage raw data for initial project use.",
-                "setup.ps1": "PowerShell script to initialize environment setup on Windows systems.",
-                "setup.py": "Defines the setup package and registers CLI tools; enables pip installation (`pip install -e .`).",
-                "setup.sh": "Bash script to initialize environment setup on Linux/macOS systems.",
-                "utils.py": "Contains shared utility functions used throughout the `setup` package and CLI tools."
+            # Continuous Integration config files
+            ".github/workflows/ci.yml": "Defines a GitHub Actions workflow for automated testing across platforms on push and pull requests.",
+            ".gitlab-ci.yml": "Specifies a GitLab CI/CD pipeline for running tests on one or more custom or shared runners.",
+            ".woodpecker.yml": "Configures a Woodpecker CI pipeline used on Codeberg to run test jobs in a Linux environment.",
+
+            # Setup package scripts
+            "deic_storage_download.py": "Script to download data from DEIC storage for the project.",
+            "dependencies.txt": "Plain text list of external Python dependencies for installation.",
+            "get_dependencies.py": "Retrieves and checks required dependencies for the project environment.",
+            "install_dependencies.py": "Installs any missing dependencies listed in `dependencies.txt` or detected dynamically.",
+            "readme_templates.py": "Generates README templates for various environments or publication formats.",
+            "set_raw_data.py": "Script to prepare and stage raw data for initial project use.",
+            "setup.ps1": "PowerShell script to initialize environment setup on Windows systems.",
+            "setup.py": "Defines the setup package and registers CLI tools; enables pip installation (`pip install -e .`).",
+            "setup.sh": "Bash script to initialize environment setup on Linux/macOS systems.",
+            "utils.py": "Contains shared utility functions used throughout the `setup` package and CLI tools."
         }
+
 
 
         if programming_language:
