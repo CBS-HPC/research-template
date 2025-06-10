@@ -99,54 +99,6 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
     except subprocess.CalledProcessError as e:
         print(f"Failed to install with pip: {e}")
 
-package_installer(required_libraries = ['python-dotenv','psutil'])
-
-from dotenv import dotenv_values, load_dotenv
-
-@contextmanager
-def change_dir(destination):
-    cur_dir = os.getcwd()
-    destination = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(destination))
-    try:
-        os.chdir(destination)
-        yield
-    finally:
-        os.chdir(cur_dir)
-
-def get_relative_path(target_path):
-
-    if target_path:
-        current_dir = os.getcwd()
-        absolute_target_path = os.path.abspath(target_path)
-        
-        # Check if target_path is a subpath of current_dir
-        if os.path.commonpath([current_dir, absolute_target_path]) == current_dir:
-            # Create a relative path if it is a subpath
-            relative_path = os.path.relpath(absolute_target_path, current_dir)
-
-            if relative_path:
-                return relative_path
-    return target_path
-
-def ask_yes_no(question):
-    """
-    Prompt the user with a yes/no question and validate the input.
-
-    Args:
-        question (str): The question to display to the user.
-
-    Returns:
-        bool: True if the user confirms (yes/y), False if the user declines (no/n).
-    """
-    while True:
-        response = input(question).strip().lower()
-        if response in {"yes", "y"}:
-            return True
-        elif response in {"no", "n"}:
-            return False
-        else:
-            print("Invalid response. Please answer with 'yes' or 'no'.")
-
 def check_path_format(path, project_root=None):
     if not path:
         return path
@@ -439,6 +391,60 @@ def is_installed(executable: str = None, name: str = None):
     else:
         print(f"{name} is not on Path")
         return False
+
+package_installer(required_libraries = ['python-dotenv'])
+
+from dotenv import dotenv_values, load_dotenv
+
+pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
+print("dre!!")
+print(pip_packages)
+package_installer(required_libraries = pip_packages)
+
+@contextmanager
+def change_dir(destination):
+    cur_dir = os.getcwd()
+    destination = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(destination))
+    try:
+        os.chdir(destination)
+        yield
+    finally:
+        os.chdir(cur_dir)
+
+def get_relative_path(target_path):
+
+    if target_path:
+        current_dir = os.getcwd()
+        absolute_target_path = os.path.abspath(target_path)
+        
+        # Check if target_path is a subpath of current_dir
+        if os.path.commonpath([current_dir, absolute_target_path]) == current_dir:
+            # Create a relative path if it is a subpath
+            relative_path = os.path.relpath(absolute_target_path, current_dir)
+
+            if relative_path:
+                return relative_path
+    return target_path
+
+def ask_yes_no(question):
+    """
+    Prompt the user with a yes/no question and validate the input.
+
+    Args:
+        question (str): The question to display to the user.
+
+    Returns:
+        bool: True if the user confirms (yes/y), False if the user declines (no/n).
+    """
+    while True:
+        response = input(question).strip().lower()
+        if response in {"yes", "y"}:
+            return True
+        elif response in {"no", "n"}:
+            return False
+        else:
+            print("Invalid response. Please answer with 'yes' or 'no'.")
+
 
 # Setting Options
 def git_user_info(version_control):
