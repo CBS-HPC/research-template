@@ -161,6 +161,7 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
 
         if venv_path:
             try:
+                print("dre3")
                 subprocess.run(
                     #["uv", "pip", "install", "--venv", str(venv_path)] + missing_libraries,
                     ["uv", "pip", "install"] + missing_libraries,
@@ -174,6 +175,7 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
             print("⚠️ No active venv detected. uv will install into system environment.")
 
         try:
+            print("dre4")
             subprocess.run(
                 ["uv", "pip", "install", "--system"] + missing_libraries,
                 check=True,
