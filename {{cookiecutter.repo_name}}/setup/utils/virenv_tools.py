@@ -424,12 +424,8 @@ def create_requirements_txt(requirements_file:str="requirements.txt"):
 
     requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
 
-    # Get the Python executable path from sys.executable
-    python_executable = sys.executable
-    
-    print(python_executable)
     # Use subprocess to run pip freeze and capture the output
-    result = subprocess.run([python_executable, "-m", "pip", "freeze"], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
     
     # Check if the pip freeze command was successful
     if result.returncode == 0:
