@@ -39,7 +39,7 @@ def generate_ci_configs(programming_language: str, code_repo: str, project_root:
 
     def _ci_for_python(version: str):
         return {
-          "github": f"""\
+          "github": f"""{% raw %}\
 name: Python CI
 
 on: [push, pull_request]
@@ -57,8 +57,8 @@ jobs:
           python-version: '{version}'
       - run: pip install -r requirements.txt
       - run: pytest
-""",
-            "gitlab": f"""\
+{% endraw %}""",
+            "gitlab": f"""{% raw %}\
 image: python:{version}
 
 stages:
@@ -69,20 +69,20 @@ run-tests:
   script:
     - pip install -r requirements.txt
     - pytest
-""",
-            "codeberg": f"""\
+{% endraw %}""",
+            "codeberg": f"""{% raw %}\
 pipeline:
   test:
     image: python:{version}
     commands:
       - pip install -r requirements.txt
       - pytest
-"""
+{% endraw %}"""
         }
 
     def _ci_for_r(version: str):
         return {
-          "github": f"""\
+          "github": f"""{% raw %}\
 name: R CI
 
 on: [push, pull_request]
@@ -109,8 +109,8 @@ jobs:
           }}
       - name: Run tests
         run: Rscript -e 'testthat::test_dir("tests/testthat")'
-""",
-            "gitlab": f"""\
+{% endraw %}""",
+            "gitlab": f"""{% raw %}\
 image: rocker/r-ver:{version}
 
 stages:
@@ -127,8 +127,8 @@ run-tests:
         Rscript -e 'install.packages("testthat")'
       fi
     - Rscript -e 'testthat::test_dir("tests/testthat")'
-""",
-            "codeberg": f"""\
+{% endraw %}""",
+            "codeberg": f"""{% raw %}\
 pipeline:
   test:
     image: rocker/r-ver:{version}
@@ -141,12 +141,12 @@ pipeline:
           Rscript -e 'install.packages("testthat")'
         fi
       - Rscript -e 'testthat::test_dir("tests/testthat")'
-"""
+{% endraw %}"""
         }
     
     def _ci_for_matlab(version: str):
         return {
-            "github": f"""\
+            "github": f"""{% raw %}\
     name: MATLAB CI
 
     on: [push, pull_request]
@@ -166,8 +166,8 @@ pipeline:
             with:
               source-folder: src
               test-folder: tests
-    """,
-            "gitlab": f"""\
+    {% endraw %}""",
+            "gitlab": f"""{% raw %}\
     # GitLab CI configuration for MATLAB using official guidance
 
     .matlab_defaults:
@@ -182,9 +182,9 @@ pipeline:
       stage: test
       script:
         - matlab -batch "results = runtests('IncludeSubfolders', true); assertSuccess(results);"
-    """,
-            "codeberg": f"""\
-    """
+    {% endraw %}""",
+            "codeberg": f"""{% raw %}\
+    {% endraw %}"""
         }
 
     programming_language = programming_language.lower()
