@@ -18,8 +18,8 @@ def set_packages(version_control,programming_language):
 
     install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil',"py-cpuinfo"]
     if programming_language.lower()  == 'python':
-        install_packages.extend(['jupyterlab'])
-        #install_packages.extend(['jupyterlab','pytest'])
+        #install_packages.extend(['jupyterlab'])
+        install_packages.extend(['jupyterlab','pytest'])
     elif programming_language.lower()  == 'stata':
         install_packages.extend(['jupyterlab','stata_setup'])
     elif programming_language.lower()  == 'matlab':
@@ -81,28 +81,25 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
 
     print(f"Installing missing libraries: {missing_libraries}")
 
-    if not pip_install:
-        
-        install_uv()
+    install_uv()
 
+    for lib in missing_libraries:
         try:
             subprocess.run(
-                [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
+                [sys.executable, "-m", "uv", "pip", "install", lib],
                 check=True,
                 stderr=subprocess.DEVNULL
             )
-            return
         except subprocess.CalledProcessError:
-            print("uv failed. Trying fallback...")
-
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install"] + missing_libraries,
-            check=True,
-            stderr=subprocess.DEVNULL
-        )
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install with pip: {e}")
+            print(f"uv failed to install {lib}. Trying pip fallback...")
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "install", lib],
+                    check=True,
+                    stderr=subprocess.DEVNULL
+                )
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install {lib} with pip: {e}")
 
 def check_path_format(path, project_root=None):
     if not path:
