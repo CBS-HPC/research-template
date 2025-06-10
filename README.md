@@ -613,22 +613,21 @@ TDD encourages writing tests **before** implementation. This is especially effec
 
 The template supports CI pipelines on all major platforms:
 
-- **GitHub Actions** – supports **Python**, **R**, and **MATLAB**  
-  ✅ Automatically tests across **Linux**, **Windows**, and **macOS** runners by default.
+- **GitHub Actions** – supports **Python**, **R**, and **MATLAB** - ✅ tests across **Linux**, **Windows**, and **macOS** runners by default.
 
-- **GitLab CI/CD** – supports **Python**, **R**, and **MATLAB**  
-  ✅ Automatically tests on **Linux** runners by default.
+- **GitLab CI/CD** – supports **Python**, **R**, and **MATLAB** - ✅ tests on **Linux** runners by default.
 
-- **Codeberg CI** (via Woodpecker) – supports **Python** and **R** only  
-  ✅ Automatically tests on **Linux** runners by default.  
+- **Codeberg CI** (via Woodpecker) – supports **Python** and **R** only - ✅ tests on **Linux** runners by default.  
   ⚠️ No support for MATLAB or cross-platform testing.
 
-> ❌ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.  
-> ⚠️ **MATLAB CI is only configured as a starting template** – it is unlikely to work out of the box on either GitHub or GitLab without a licensed MATLAB installation and toolboxes pre-installed on a self-hosted runner or Docker image.  
+❌ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.  
+
+⚠️ **MATLAB CI is only configured as a starting template** – it is unlikely to work out of the box on either GitHub or GitLab without a licensed MATLAB installation and toolboxes pre-installed on a self-hosted runner or Docker image. 
+
 > You can read more about MATLAB CI support in the official documentation:  
-> - [MathWorks GitHub Actions for MATLAB](https://github.com/mathworks-actions/setup-matlab)  
-> - [MathWorks GitLab CI Template](https://github.com/mathworks/matlab-gitlab-ci-template)  
-> - [Running Tests in CI with MATLAB](https://www.mathworks.com/help/matlab/matlab_prog/run-tests-in-continuous-integration-systems.html)
+- [MathWorks GitHub Actions for MATLAB](https://github.com/mathworks-actions/setup-matlab)  
+- [MathWorks GitLab CI Template](https://github.com/mathworks/matlab-gitlab-ci-template)  
+- [Running Tests in CI with MATLAB](https://www.mathworks.com/help/matlab/matlab_prog/run-tests-in-continuous-integration-systems.html)
 
 CI configurations are **auto-generated** based on your selected programming language and code hosting platform, and are written to the appropriate file:
 
