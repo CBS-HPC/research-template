@@ -164,7 +164,8 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
                 print("dre3")
                 subprocess.run(
                     #["uv", "pip", "install", "--venv", str(venv_path)] + missing_libraries,
-                    ["uv", "pip", "install"] + missing_libraries,
+                    [sys.executable, "-m", "uv", "pip", "install"] + missing_libraries,
+                    #["uv", "pip", "install"] + missing_libraries,
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
@@ -177,7 +178,8 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
         try:
             print("dre4")
             subprocess.run(
-                ["uv", "pip", "install", "--system"] + missing_libraries,
+                [sys.executable, "uv", "pip", "install", "--system"] + missing_libraries,
+                #["uv", "pip", "install", "--system"] + missing_libraries,
                 check=True,
                 stderr=subprocess.DEVNULL
             )
