@@ -359,8 +359,6 @@ A Personal Access Token (PAT) is needed to:
 | **Codeberg** | Create repo (CI enabled manually)  | `repo` *(if using API)*   |
 
 
-
-
 </details>
 
 ---
@@ -620,9 +618,11 @@ The template supports CI pipelines on all major platforms:
 - **GitLab CI/CD** – supports **Python**, **R**, and **MATLAB**
   - ✅ tests on **Linux** runners by default.
 
-- **Codeberg CI** (via Woodpecker) – supports **Python** and **R** only
+- **Codeberg CI** (via Woodpecker) – supports **Python** and **R** only  
   - ✅ tests on **Linux** runners by default.  
-  - ⚠️ No support for MATLAB or cross-platform testing.
+  - ⚠️ No support for MATLAB or cross-platform testing.  
+  - 📝 **CI is not enabled by default** – to activate CI for your repository, you must [submit a request](https://codeberg.org/Codeberg-e.V./requests/issues/new?template=ISSUE_TEMPLATE%2fWoodpecker-CI.yaml) to the Codeberg team.  
+    More information is available in the [Codeberg CI documentation](https://docs.codeberg.org/ci/).
 
 ❌ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.  
 

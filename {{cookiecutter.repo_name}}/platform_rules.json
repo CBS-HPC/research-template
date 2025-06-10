@@ -1,6 +1,7 @@
 {
   "pywin32": "win32",
   "pypiwin32": "win32",
+  "pywinpty": "win32",
   "wmi": "win32",
   "pync": "darwin",
   "pyobjc": "darwin",
