@@ -202,6 +202,12 @@ pipeline:
     if programming_language not in template_map:
         raise ValueError(f"Unsupported language: {programming_language}")
   
+    file_map = {
+        "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",
+        "gitlab": pathlib.Path(project_root) / ".gitlab-ci.yml",
+        "codeberg": pathlib.Path(project_root) / ".woodpecker.yml",
+      }
+    
     if code_repo not in file_map:
         print(f"Unsupported code_repo: {code_repo}")
         return 
@@ -212,12 +218,6 @@ pipeline:
         print(f"CI for {programming_language} is not supported on {code_repo}")
         return 
 
-    file_map = {
-        "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",
-        "gitlab": pathlib.Path(project_root) / ".gitlab-ci.yml",
-        "codeberg": pathlib.Path(project_root) / ".woodpecker.yml",
-      }
-    
     path = file_map[code_repo]
     path.parent.mkdir(parents=True, exist_ok=True)
 
