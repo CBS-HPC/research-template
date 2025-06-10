@@ -772,11 +772,15 @@ renv_init <- function(folder_path) {
   } else {
     message("renv infrastructure already exists.")
   }
-  #renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat"))
-  renv::install("jsonlite")
-  renv::install("rmarkdown")
-  renv::install("rstudioapi")
-  renv::install("testthat")  
+  
+  renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat"))
+
+  # Load to make sure they are added to .lock file
+  library(testthat)
+  library(jsonlite)
+  library(rmarkdown)
+  library(rstudioapi)
+  
 }
 
 safely_snapshot <- function(folder_path) {
