@@ -769,10 +769,14 @@ renv_init <- function(folder_path) {
   if (!file.exists(lockfile)) {
     renv::init(project = folder_path, bare = TRUE, force = TRUE)
     message("renv infrastructure created.")
-    renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat"))
   } else {
     message("renv infrastructure already exists.")
   }
+  #renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat"))
+  renv::install("jsonlite")
+  renv::install("rmarkdown")
+  renv::install("rstudioapi")
+  renv::install("testthat")  
 }
 
 safely_snapshot <- function(folder_path) {

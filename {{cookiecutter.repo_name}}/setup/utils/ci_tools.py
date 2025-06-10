@@ -101,12 +101,7 @@ jobs:
       - name: Install renv
         run: Rscript -e 'install.packages("renv")'
       - name: Restore or install dependencies
-        run: |
-          if (file.exists("R/renv.lock")) {{
-            renv::restore(project = "R")
-          }} else {{
-            install.packages("testthat")
-          }}
+        run: Rscript -e 'if (file.exists("R/renv.lock")) renv::restore(project = "R") else install.packages("testthat")'
       - name: Run tests
         run: Rscript -e 'testthat::test_dir("tests/testthat")'
 {% endraw %}""",
