@@ -15,13 +15,6 @@ except subprocess.CalledProcessError as e:
     print(f"Warning: pip upgrade failed: {e}")
 
 from utils.general_tools import *
-
-pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
-print("dre!!")
-print(pip_packages)
-
-package_installer(required_libraries = pip_packages)
-
 from utils.backup_tools import *
 from utils.readme_templates import *
 from utils.code_templates import *
