@@ -33,20 +33,6 @@ def package_installer_old(required_libraries: list = None,pip_install: bool = Fa
     if not required_libraries:
         return
 
-    def install_uv():
-        """Ensure 'uv' is installed via pip in the current Python environment."""
-        try:
-            print("Installing 'uv' package into current Python environment...")
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
-                check=True,
-                stderr=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-            )
-            print("'uv' installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to install 'uv' via pip: {e}")
-
     try:
         installed_pkgs = {
             dist.metadata["Name"].lower()
@@ -111,11 +97,12 @@ def package_installer_old(required_libraries: list = None,pip_install: bool = Fa
     except subprocess.CalledProcessError as e:
         print(f"Failed to install with pip: {e}")
 
-def package_installer(required_libraries: list = None, pip_install: bool = False):
-    if not required_libraries:
-        return
-
-    def install_uv():
+def install_uv():
+    try:
+        import uv  # noqa: F401
+        print("dre1")
+    except ImportError:
+        print("dre2")
         try:
             print("Installing 'uv' package into current Python environment...")
             subprocess.run(
@@ -127,6 +114,10 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
             print("'uv' installed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Failed to install 'uv' via pip: {e}")
+
+def package_installer(required_libraries: list = None, pip_install: bool = False):
+    if not required_libraries:
+        return
 
     def get_current_venv_path():
         # sys.prefix points to the venv if active
@@ -165,15 +156,14 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
     venv_path = get_current_venv_path()
 
     if not pip_install:
-        try:
-            import uv  # noqa: F401
-        except ImportError:
-            install_uv()
+        
+        install_uv()
 
         if venv_path:
             try:
                 subprocess.run(
-                    ["uv", "pip", "install", "--venv", str(venv_path)] + missing_libraries,
+                    #["uv", "pip", "install", "--venv", str(venv_path)] + missing_libraries,
+                    ["uv", "pip", "install"] + missing_libraries,
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
