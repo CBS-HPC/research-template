@@ -39,14 +39,17 @@ def generate_ci_configs(programming_language: str, code_repo: str, project_root:
 
     def _ci_for_python(version: str):
         return {
-            "github": f"""\
+          "github": f"""\
 name: Python CI
 
 on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -79,14 +82,17 @@ pipeline:
 
     def _ci_for_r(version: str):
         return {
-            "github": f"""\
+          "github": f"""\
 name: R CI
 
 on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
     steps:
       - uses: actions/checkout@v3
       - uses: r-lib/actions/setup-r@v2
@@ -96,11 +102,11 @@ jobs:
         run: Rscript -e 'install.packages("renv")'
       - name: Restore or install dependencies
         run: |
-          if [ -f "R/renv.lock" ]; then
-            Rscript -e 'renv::restore(project = "R")'
-          else
-            Rscript -e 'install.packages("testthat")'
-          fi
+          if (file.exists("R/renv.lock")) {{
+            renv::restore(project = "R")
+          }} else {{
+            install.packages("testthat")
+          }}
       - name: Run tests
         run: Rscript -e 'testthat::test_dir("tests/testthat")'
 """,
@@ -137,41 +143,48 @@ pipeline:
       - Rscript -e 'testthat::test_dir("tests/testthat")'
 """
         }
-
+    
     def _ci_for_matlab(version: str):
         return {
             "github": f"""\
-name: MATLAB CI
+    name: MATLAB CI
 
-on: [push, pull_request]
+    on: [push, pull_request]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: matlab-actions/setup-matlab@v2
-      - uses: matlab-actions/run-tests@v2
-        with:
-          source-folder: src
-          test-folder: tests
-""",
+    jobs:
+      test:
+        strategy:
+          matrix:
+            os: [ubuntu-latest, windows-latest, macos-latest]
+        runs-on: ${{{{ matrix.os }}}}
+        steps:
+          - uses: actions/checkout@v3
+          - uses: matlab-actions/setup-matlab@v2
+            with:
+              matlab-token: ${{{{ secrets.MATLAB_TOKEN }}}}
+          - uses: matlab-actions/run-tests@v2
+            with:
+              source-folder: src
+              test-folder: tests
+    """,
             "gitlab": f"""\
-stages:
-  - test
+    # GitLab CI configuration for MATLAB using official guidance
 
-run-tests:
-  stage: test
-  script:
-    - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
-""",
+    .matlab_defaults:
+      image:
+        name: mathworks/matlab:{version}
+        entrypoint: [""]
+      variables:
+        MLM_LICENSE_FILE: 27000@MyLicenseServer  # Update with your actual license server
+
+    run-tests:
+      extends: .matlab_defaults
+      stage: test
+      script:
+        - matlab -batch "results = runtests('IncludeSubfolders', true); assertSuccess(results);"
+    """,
             "codeberg": f"""\
-pipeline:
-  test:
-    image: mathworks/matlab:{version}
-    commands:
-      - matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Tests failed')"
-"""
+    """
         }
 
     programming_language = programming_language.lower()
@@ -188,23 +201,28 @@ pipeline:
 
     if programming_language not in template_map:
         raise ValueError(f"Unsupported language: {programming_language}")
+  
+    if code_repo not in file_map:
+        print(f"Unsupported code_repo: {code_repo}")
+        return 
+    templates = template_map[programming_language](version)  
+    template = templates[code_repo]
 
-    templates = template_map[programming_language](version)
+    if not template:
+        print(f"CI for {programming_language} is not supported on {code_repo}")
+        return 
 
     file_map = {
         "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",
         "gitlab": pathlib.Path(project_root) / ".gitlab-ci.yml",
         "codeberg": pathlib.Path(project_root) / ".woodpecker.yml",
-    }
-
-    if code_repo not in file_map:
-        raise ValueError(f"Unsupported code_repo: {code_repo}")
-
+      }
+    
     path = file_map[code_repo]
     path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(path, "w") as f:
-        f.write(templates[code_repo])
+        f.write(template)
 
     print(f"✅ CI config created for {programming_language} on {code_repo} using version {version}")
 
@@ -333,7 +351,6 @@ def ci_control():
         action="store_true",
         help="Disable CI by renaming .yml → .yml.disabled",
     )
-
 
     args = parser.parse_args()
 

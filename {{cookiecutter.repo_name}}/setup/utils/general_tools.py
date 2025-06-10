@@ -18,7 +18,6 @@ def set_packages(version_control,programming_language):
 
     install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil',"py-cpuinfo"]
     if programming_language.lower()  == 'python':
-        #install_packages.extend(['jupyterlab'])
         install_packages.extend(['jupyterlab','pytest'])
     elif programming_language.lower()  == 'stata':
         install_packages.extend(['jupyterlab','stata_setup'])
