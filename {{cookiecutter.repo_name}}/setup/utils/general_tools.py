@@ -15,10 +15,11 @@ def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
         return []
-        
+
     install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil',"py-cpuinfo"]
     if programming_language.lower()  == 'python':
-        install_packages.extend(['jupyterlab','pytest'])
+        install_packages.extend(['jupyterlab'])
+        #install_packages.extend(['jupyterlab','pytest'])
     elif programming_language.lower()  == 'stata':
         install_packages.extend(['jupyterlab','stata_setup'])
     elif programming_language.lower()  == 'matlab':
@@ -113,20 +114,7 @@ def check_path_format(path, project_root=None):
             project_root = pathlib.Path(__file__).resolve().parents[2]
 
         # Resolve both paths fully
-        #path = pathlib.Path(path).resolve()
         project_root = pathlib.Path(project_root).resolve()
-
-        #if not path.exists():
-        #    return str(path)  # Return as-is if it doesn't exist
-
-        #try:
-            # If path is within the project, return as relative (e.g. ./bin/venv/...)
-            #relative_path = path.relative_to(project_root)
-    
-            #path = f"./{relative_path.as_posix()}"
-        #except ValueError:
-            # Path is outside project, use absolute form
-            #path = str(path)
 
         # Now adjust slashes depending on platform
         system_name = platform.system()
@@ -400,10 +388,7 @@ package_installer(required_libraries = ['python-dotenv'])
 
 from dotenv import dotenv_values, load_dotenv
 
-pip_packages = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
-print("dre!!")
-print(pip_packages)
-package_installer(required_libraries = pip_packages)
+package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
 
 @contextmanager
 def change_dir(destination):
