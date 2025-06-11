@@ -312,12 +312,8 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
         else:
             md.append("_No orchestration script (`00_…`) found._")
 
-        #if notebook:
-        #    md.append(f"**B. Step-through execution using the notebook:** `{os.path.basename(notebook)}`")
-        #else:
-        #    md.append("_No notebook (`00_…`) found._")
-
         return "\n".join(md)
+
 
     def set_config_table(programming_language):
 
@@ -539,26 +535,26 @@ stata -b do tests/test_s00_main.do
 
         section = f"""This template includes built-in support for **unit testing** and **CI automation** in {programming_language.capitalize()} to promote research reliability and reproducibility.
 
-    ### 🧪 Unit Testing
+### 🧪 Unit Testing
 
-    | Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
-    | -------- | ------------------ | ----------- | ----------------- | ---------------- |
-    | {programming_language.capitalize()}   | {lang['test_framework']} | {lang['code_folder']} | {lang['test_folder']} | {lang['test_format']} |
+| Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
+| -------- | ------------------ | ----------- | ----------------- | ---------------- |
+| {programming_language.capitalize()}   | {lang['test_framework']} | {lang['code_folder']} | {lang['test_folder']} | {lang['test_format']} |
 
-    Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
+Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
 
-    {lang['example']}
+{lang['example']}
 
-    ### ⚙️ Continuous Integration (CI)
+### ⚙️ Continuous Integration (CI)
 
-    CI is configured for **{code_repo.capitalize()}** with **{programming_language.capitalize()}** support.
+CI is configured for **{code_repo.capitalize()}** with **{programming_language.capitalize()}** support.
 
-    Config file: `{ci['config_file']}`
-    
-    {pipeline}
+Config file: `{ci['config_file']}`
 
-    {ci['note']}
-    """
+{pipeline}
+
+{ci['note']}
+"""
         return section.strip()
 
     def set_dcas():
