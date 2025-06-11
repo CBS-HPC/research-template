@@ -641,7 +641,7 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     dcas = set_dcas()
     code_path = language_dirs.get(programming_language.lower())
     system_spec = get_system_specs()
-    ci_tools = set_ci_tools()
+    ci_tools = set_ci_tools(programming_language,code_repo)
     
     # Project header
     header = f"""# {project_name}
