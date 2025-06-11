@@ -388,6 +388,200 @@ update-requirements
 """
         return cli_tools
     
+    def set_ci_tools(programming_language: str, code_repo: str):
+        pl = programming_language.lower()
+        repo = code_repo.lower()
+
+        lang_info = {
+            "python": {
+                "test_framework": "`pytest`",
+                "code_folder": "`src/`",
+                "test_folder": "`tests/`",
+                "test_format": "`test_*.py`",
+                "package_file": "`requirements.txt`",
+                "example": """<details>
+<summary>Python</summary>
+
+Project structure:
+
+```
+src/s00_main.py
+tests/test_s00_main.py
+```
+
+Run tests:
+
+```
+pytest
+```
+
+</details>"""
+    },
+            "r": {
+                "test_framework": "`testthat`",
+                "code_folder": "`R/`",
+                "test_folder": "`tests/testthat/`",
+                "test_format": "`test-*.R`",
+                "package_file": "`renv.lock`",
+                "example": """<details>
+<summary>R</summary>
+
+Project structure:
+
+```
+R/s00_main.R
+tests/testthat/test-s00_main.R
+```
+
+Run tests:
+
+```
+testthat::test_dir("tests/testthat")
+```
+
+From command line:
+
+```
+Rscript -e 'testthat::test_dir("tests/testthat")'
+```
+
+</details>"""
+        },
+            "matlab": {
+                "test_framework": "`matlab.unittest`",
+                "code_folder": "`src/`",
+                "test_folder": "`tests/`",
+                "test_format": "`test_*.m`",
+                "package_file": "",
+                "example": """<details>
+<summary>Matlab</summary>
+
+Project structure:
+
+```
+src/s00_main.m
+tests/test_s00_main.m
+```
+
+Run tests in MATLAB:
+
+```
+results = runtests('tests');
+assert(all([results.Passed]), 'Some tests failed')
+```
+
+From command line:
+
+```
+matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some tests failed')"
+```
+
+</details>"""
+        },
+            "stata": {
+                "test_framework": "`.do` script-based",
+                "code_folder": "`stata/do/`",
+                "test_folder": "`tests/`",
+                "test_format": "`test_*.do`",
+                "package_file": "",
+                "example": """<details>
+<summary>Stata</summary>
+
+Project structure:
+
+```
+stata/do/s00_main.do
+tests/test_s00_main.do
+```
+
+Run tests in Stata:
+
+```
+do tests/test_s00_main.do
+```
+
+Or in batch mode:
+
+```
+stata -b do tests/test_s00_main.do
+```
+
+</details>"""
+            }
+        }
+
+        ci_matrix = {
+            "github": {
+                "supports": ["python", "r", "matlab"],
+                "config_file": ".github/workflows/ci.yml",
+                "note": ""
+            },
+            "gitlab": {
+                "supports": ["python", "r", "matlab"],
+                "config_file": ".gitlab-ci.yml",
+                "note": ""
+            },
+            "codeberg": {
+                "supports": ["python", "r"],
+                "config_file": ".woodpecker.yml",
+                "note": """⚠️ No support for MATLAB or cross-platform testing.  
+    📝 CI is not enabled by default – to activate CI for your repository, you must [submit a request](https://codeberg.org/Codeberg-e.V./requests/issues/new?template=ISSUE_TEMPLATE%2fWoodpecker-CI.yaml).  
+    More information: [Codeberg CI docs](https://docs.codeberg.org/ci/)"""
+            }
+        }
+
+        if pl not in lang_info:
+            return f"Unsupported language: {programming_language}"
+        if repo not in ci_matrix:
+            return f"Unsupported code repository: {code_repo}"
+        if pl not in ci_matrix[repo]["supports"]:
+            return f"{programming_language.capitalize()} is not supported on {code_repo.capitalize()}."
+
+        lang = lang_info[pl]
+        ci = ci_matrix[repo]
+
+        if lang['package_file']:
+            pipeline = f"""Each pipeline:
+    1. Installs language runtime and dependencies
+    2. Installs project packages using {lang['package_file']}
+    3. Runs tests in `tests/`
+    4. Outputs results and logs"""
+        else:
+            pipeline = f"""Each pipeline:
+    1. Installs language runtime and dependencies
+    2. Runs tests in `tests/`
+    3. Outputs results and logs"""
+
+
+        section = f"""This template includes built-in support for **unit testing** and **CI automation** in {programming_language.capitalize()} to promote research reliability and reproducibility.
+
+        
+    ---
+
+    ### 🧪 Unit Testing
+
+    | Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
+    | -------- | ------------------ | ----------- | ----------------- | ---------------- |
+    | {programming_language.capitalize()}   | {lang['test_framework']} | {lang['code_folder']} | {lang['test_folder']} | {lang['test_format']} |
+
+    Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
+
+    {lang['example']}
+
+    ---
+
+    ### ⚙️ Continuous Integration (CI)
+
+    CI is configured for **{code_repo.capitalize()}** with **{programming_language.capitalize()}** support.
+
+    Config file: `{ci['config_file']}`
+    
+    {pipeline}
+
+    {ci['note']}
+    """
+        return section.strip()
+
     def set_dcas():
         dcas = """To create a replication package that adheres to the [DCAS (Data and Code Sharing) standard](https://datacodestandard.org/), follow the guidelines ([AEA Data Editor's guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)) provided by the Social Science Data Editors. This ensures your research code and data are shared in a clear, reproducible format.
 
@@ -447,6 +641,7 @@ Individual journal policies may differ slightly. To ensure full compliance, chec
     dcas = set_dcas()
     code_path = language_dirs.get(programming_language.lower())
     system_spec = get_system_specs()
+    ci_tools = set_ci_tools()
     
     # Project header
     header = f"""# {project_name}
