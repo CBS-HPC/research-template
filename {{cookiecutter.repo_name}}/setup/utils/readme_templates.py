@@ -399,10 +399,7 @@ update-requirements
                 "test_folder": "`tests/`",
                 "test_format": "`test_*.py`",
                 "package_file": "`requirements.txt`",
-                "example": """<details>
-<summary>Python</summary>
-
-Project structure:
+                "example": """Project structure:
 
 ```
 src/s00_main.py
@@ -414,8 +411,7 @@ Run tests:
 ```
 pytest
 ```
-
-</details>"""
+"""
     },
             "r": {
                 "test_framework": "`testthat`",
@@ -423,10 +419,7 @@ pytest
                 "test_folder": "`tests/testthat/`",
                 "test_format": "`test-*.R`",
                 "package_file": "`renv.lock`",
-                "example": """<details>
-<summary>R</summary>
-
-Project structure:
+                "example": """Project structure:
 
 ```
 R/s00_main.R
@@ -444,8 +437,7 @@ From command line:
 ```
 Rscript -e 'testthat::test_dir("tests/testthat")'
 ```
-
-</details>"""
+"""
         },
             "matlab": {
                 "test_framework": "`matlab.unittest`",
@@ -453,10 +445,7 @@ Rscript -e 'testthat::test_dir("tests/testthat")'
                 "test_folder": "`tests/`",
                 "test_format": "`test_*.m`",
                 "package_file": "",
-                "example": """<details>
-<summary>Matlab</summary>
-
-Project structure:
+                "example": """Project structure:
 
 ```
 src/s00_main.m
@@ -475,8 +464,7 @@ From command line:
 ```
 matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some tests failed')"
 ```
-
-</details>"""
+"""
         },
             "stata": {
                 "test_framework": "`.do` script-based",
@@ -484,10 +472,7 @@ matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some 
                 "test_folder": "`tests/`",
                 "test_format": "`test_*.do`",
                 "package_file": "",
-                "example": """<details>
-<summary>Stata</summary>
-
-Project structure:
+                "example": """Project structure:
 
 ```
 stata/do/s00_main.do
@@ -505,8 +490,7 @@ Or in batch mode:
 ```
 stata -b do tests/test_s00_main.do
 ```
-
-</details>"""
+"""
             }
         }
 
@@ -555,9 +539,6 @@ stata -b do tests/test_s00_main.do
 
         section = f"""This template includes built-in support for **unit testing** and **CI automation** in {programming_language.capitalize()} to promote research reliability and reproducibility.
 
-        
-    ---
-
     ### 🧪 Unit Testing
 
     | Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
@@ -567,8 +548,6 @@ stata -b do tests/test_s00_main.do
     Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
 
     {lang['example']}
-
-    ---
 
     ### ⚙️ Continuous Integration (CI)
 
