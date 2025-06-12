@@ -20,26 +20,8 @@ def ci_config():
             remove_ci_configs()
 
 
-# -------- CI Generator Dispatcher --------
-
-def generate_ci_configs(programming_language: str, code_repo: str, project_root: str = "."):
-    """
-    Generate a CI configuration file for a given language and code hosting platform.
-    """
-    def parse_version(version_string: str, programming_language: str) -> str:
-        programming_language = programming_language.lower()
-        if programming_language == "python":
-            return version_string.lower().replace("python", "").strip()
-        elif programming_language == "r":
-            return version_string.lower().replace("r version", "").strip()
-        elif programming_language == "matlab":
-            return version_string.split()[1]  # e.g., "9.11.0.2022996"
-        else:
-            raise ValueError("Unsupported programming_language.")
-
-    def _ci_for_python(version: str):
-        return {
-          "github": f"""{% raw %}\
+def _ci_for_python(version: str):
+        return {"github": f"""{% raw %}\
 name: Python CI
 
 on: [push, pull_request]
@@ -80,9 +62,8 @@ pipeline:
 {% endraw %}"""
         }
 
-    def _ci_for_r(version: str):
-        return {
-          "github": f"""{% raw %}\
+def _ci_for_r(version: str):
+  return {"github": f"""{% raw %}\
 name: R CI
 
 on: [push, pull_request]
@@ -137,11 +118,10 @@ pipeline:
         fi
       - Rscript -e 'testthat::test_dir("tests/testthat")'
 {% endraw %}"""
-        }
+  }
     
-    def _ci_for_matlab(version: str):
-        return {
-            "github": f"""{% raw %}\
+def _ci_for_matlab(version: str):
+        return {"github": f"""{% raw %}\
     name: MATLAB CI
 
     on: [push, pull_request]
@@ -181,6 +161,84 @@ pipeline:
             "codeberg": f"""{% raw %}\
     {% endraw %}"""
         }
+
+
+def generate_ci_configs(programming_language: str, code_repo: str, project_root: str = "."):
+    """
+    Generate a CI configuration file for a given language and code hosting platform.
+    Skips generation if the file or its disabled version already exists.
+    """
+
+    def parse_version(version_string: str, programming_language: str) -> str:
+        programming_language = programming_language.lower()
+        if programming_language == "python":
+            return version_string.lower().replace("python", "").strip()
+        elif programming_language == "r":
+            return version_string.lower().replace("r version", "").strip()
+        elif programming_language == "matlab":
+            return version_string.split()[1]
+        else:
+            raise ValueError("Unsupported programming_language.")
+
+    # Assume template generation functions (_ci_for_python, _ci_for_r, _ci_for_matlab) are already defined above
+
+    programming_language = programming_language.lower()
+    code_repo = code_repo.lower()
+    version = parse_version(get_version(programming_language), programming_language)
+
+    template_map = {
+        "python": _ci_for_python,
+        "r": _ci_for_r,
+        "matlab": _ci_for_matlab
+    }
+
+    if programming_language not in template_map:
+        raise ValueError(f"Unsupported language: {programming_language}")
+
+    file_map = {
+        "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",
+        "gitlab": pathlib.Path(project_root) / ".gitlab-ci.yml",
+        "codeberg": pathlib.Path(project_root) / ".woodpecker.yml",
+    }
+
+    if code_repo not in file_map:
+        print(f"Unsupported code_repo: {code_repo}")
+        return
+
+    path = file_map[code_repo]
+    path_disabled = path.with_suffix(path.suffix + ".disabled")
+
+    if path.exists() or path_disabled.exists():
+        return
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    templates = template_map[programming_language](version)
+    template = templates.get(code_repo)
+
+    if not template:
+        print(f"CI for {programming_language} is not supported on {code_repo}")
+        return
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(template)
+
+    print(f"✅ CI config created for {programming_language} on {code_repo} using version {version}")
+
+def generate_ci_configs_old(programming_language: str, code_repo: str, project_root: str = "."):
+    """
+    Generate a CI configuration file for a given language and code hosting platform.
+    """
+    def parse_version(version_string: str, programming_language: str) -> str:
+        programming_language = programming_language.lower()
+        if programming_language == "python":
+            return version_string.lower().replace("python", "").strip()
+        elif programming_language == "r":
+            return version_string.lower().replace("r version", "").strip()
+        elif programming_language == "matlab":
+            return version_string.split()[1]  # e.g., "9.11.0.2022996"
+        else:
+            raise ValueError("Unsupported programming_language.")
+
 
     programming_language = programming_language.lower()
     code_repo = code_repo.lower()
@@ -337,28 +395,31 @@ def ci_control():
 
     parser = argparse.ArgumentParser(description="Enable or disable CI config files.")
     parser.add_argument(
-        "--enable",
+        "--on",
         action="store_true",
         help="Enable CI by renaming .yml.disabled → .yml",
     )
     parser.add_argument(
-        "--disable",
+        "--off",
         action="store_true",
         help="Disable CI by renaming .yml → .yml.disabled",
     )
 
     args = parser.parse_args()
 
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
 
-    if args.enable and args.disable:
-        print("❌ You can't use --enable and --disable together.")
-    elif args.enable:
+    generate_ci_configs(programming_language, code_repo, project_root)
+
+    if args.on and args.off:
+        print("❌ You can't use --on and --off together.")
+    elif args.on:
         toggle_ci_files(enable=True, code_repo=code_repo, project_root=project_root)
-    elif args.disable:
+    elif args.off:
         toggle_ci_files(enable=False, code_repo=code_repo, project_root=project_root)
     else:
-        print("ℹ️ Use --enable or --disable to toggle CI.")
+        print("ℹ️ Use --on or --off to toggle CI.")
 
 
 if __name__ == "__main__":

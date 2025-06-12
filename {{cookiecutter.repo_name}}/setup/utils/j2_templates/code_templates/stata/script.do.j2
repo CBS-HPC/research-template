@@ -1,0 +1,12 @@
+* {{ purpose }} code
+
+global base_path ".."
+global raw_data "$base_path/data/00_raw"
+global interim_data "$base_path/data/01_interim"
+global processed_data "$base_path/data/02_processed"
+
+program define {{ script_name }}_main
+    display "Running {{ script_name }}..."
+end
+
+main

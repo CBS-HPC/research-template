@@ -1,0 +1,93 @@
+{% raw %}
+function get_dependencies(folder_path, file_name)
+    % Initializes a MATLAB project and tracks dependencies for all .m and .mlx files in the src/ folder and its subfolders.
+    %
+    % Usage:
+    %   get_dependencies()                 - Uses current script folder
+    %   get_dependencies(folder_path)      - Uses specified folder path
+    %   get_dependencies(folder_path,file) - Uses specified folder and file name for dependencies.txt
+
+    if nargin < 1
+        folder_path = mfilename('fullpath');
+    end
+
+    if nargin < 2
+        file_name = "dependencies.txt";
+    end
+
+    % --- Determine project directory and name ---
+    folder_path = fileparts(folder_path);
+
+    % --- File paths ---
+    depFile = fullfile(folder_path, file_name);
+
+    % --- Recursively find all .m and .mlx files in src and subfolders ---
+    mFiles = dir(fullfile(folder_path, '**', '*.m'));
+    mlxFiles = dir(fullfile(folder_path, '**', '*.mlx'));
+    allCodeFiles = [mFiles; mlxFiles];
+
+    % --- Analyze dependencies ---
+    allFiles = {};
+    allProducts = [];
+    fileReports = cell(size(allCodeFiles));
+
+    for i = 1:length(allCodeFiles)
+        filePath = fullfile(allCodeFiles(i).folder, allCodeFiles(i).name);
+        try
+            fprintf("Analyzing dependencies for: %s\n", filePath);
+            [files, products] = matlab.codetools.requiredFilesAndProducts(filePath);
+
+            allFiles = [allFiles, files];
+            allProducts = [allProducts, products];
+            fileReports{i} = struct('path', filePath, 'status', 'OK', 'message', '');
+        catch ME
+            fprintf("Skipping due to syntax error: %s\n", filePath);
+            fprintf("%s\n", ME.message);
+            fileReports{i} = struct('path', filePath, 'status', 'ERROR', 'message', ME.message);
+        end
+    end
+
+    % --- Unique products ---
+    productNames = string({allProducts.Name});
+    productVersions = string({allProducts.Version});
+    [~, ia] = unique(productNames);
+    uniqueProducts = containers.Map(productNames(ia), productVersions(ia));
+
+    % --- Write to depFile ---
+    fid = fopen(depFile, 'w');
+    if fid == -1
+        error("Unable to create %s in the specified folder.", file_name);
+    end
+
+    % Header info
+    fprintf(fid, "Software version:\n");
+    fprintf(fid, "MATLAB version: %s\n\n", version);
+    fprintf(fid, "Timestamp: %s\n\n", datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+
+    % Files checked
+    fprintf(fid, "Files checked:\n");
+    for i = 1:length(fileReports)
+        % Relative path with normalized separators
+        relPath = erase(fileReports{i}.path, folder_path);
+        relPath = strrep(relPath, filesep, '/');
+        relPath = regexprep(relPath, '^/', '');
+
+        if strcmp(fileReports{i}.status, 'OK')
+            fprintf(fid, "%s\n", relPath);
+        else
+            fprintf(fid, "%s ERROR:\n %s\n", relPath, fileReports{i}.message);
+        end
+    end
+    fprintf(fid, "\n");
+
+    % Toolboxes
+    fprintf(fid, "Dependencies:\n");
+    productKeys = keys(uniqueProducts);
+    for i = 1:length(productKeys)
+        fprintf(fid, "%s==%s\n", productKeys{i}, uniqueProducts(productKeys{i}));
+    end
+
+    fclose(fid);
+    fprintf("%s successfully written in %s\n", file_name, depFile);
+end
+{% endraw %}

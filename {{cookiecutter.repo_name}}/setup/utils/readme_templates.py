@@ -314,7 +314,6 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
 
         return "\n".join(md)
 
-
     def set_config_table(programming_language):
 
         if programming_language.lower() != "r":

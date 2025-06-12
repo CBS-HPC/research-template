@@ -1,0 +1,16 @@
+%% Workflow: Running All Steps in Order
+% MATLAB Setup
+addpath(fullfile(pwd, 'src'));
+run('s01_install_dependencies.m');
+
+%% Run Data Collection
+data_collection_main();
+
+%% Run Preprocessing
+preprocessing_main();
+
+%% Run Modeling
+modeling_main();
+
+%% Run Visualization
+visualization_main();

@@ -1,0 +1,98 @@
+{% raw %}
+capture program drop get_dependencies
+program define get_dependencies
+    version 14
+
+    * Accept optional folder path and output file name
+    syntax [anything(name=folder_path)] [anything(name=file_name)]
+
+    * Set defaults
+    if "`folder_path'" == "" {
+        local folder_path "`c(pwd)'"
+    }
+    if "`file_name'" == "" {
+        local file_name "dependencies.txt"
+    }
+
+    * Ensure folder exists
+    if (fileexists("`folder_path'") == 0) {
+        di as error "The specified folder does not exist."
+        exit 198
+    }
+
+    * Initialize
+    local folders "`folder_path'"
+    local do_files
+    local datasets
+    local includes
+    local packages
+    local checked_files
+
+    * Recursively collect .do files
+    while "`folders'" != "" {
+        gettoken current_folder folders : folders
+
+        local found_files : dir "`current_folder'" files "*.do", respectcase
+        foreach file of local found_files {
+            local fullpath "`current_folder'/`file'"
+            local do_files `"`do_files' `fullpath'"'
+            local checked_files `"`checked_files' `fullpath'"'
+        }
+
+        local subdirs : dir "`current_folder'" dirs "*", respectcase
+        foreach sub of local subdirs {
+            local folders `"`folders' `current_folder'/`sub'"'
+        }
+    }
+
+    * Parse .do files
+    foreach do_file of local do_files {
+        quietly {
+            file open myfile using "`do_file'", read
+            file read myfile line
+            while (r(eof) == 0) {
+                local lcline = lower("`line'")
+                if strpos("`lcline'", "use ") > 0 {
+                    local datasets `"`datasets'`line'' _n'
+                }
+                if strpos("`lcline'", "include ") > 0 | strpos("`lcline'", "do ") > 0 {
+                    local includes `"`includes'`line'' _n'
+                }
+                if strpos("`lcline'", "ssc install") > 0 | strpos("`lcline'", "net install") > 0 {
+                    local packages `"`packages'`line'' _n'
+                }
+                file read myfile line
+            }
+            file close myfile
+        }
+    }
+
+    * Prepare metadata
+    local timestamp : display %tcCCYY-NN-DD_HH:MM:SS clock("`c(current_date)' `c(current_time)'", "DMY hms")
+    local version = c(version)
+
+    * Write output file
+    local output_file "`folder_path'/`file_name'"
+    capture file delete "`output_file'"
+    file open out using "`output_file'", write text
+
+    file write out "Software version:" _n
+    file write out "Stata version `version'" _n _n
+
+    file write out "Timestamp: `timestamp'" _n _n
+
+    file write out "Files checked:" _n
+    foreach f of local checked_files {
+        file write out "`f'" _n
+    }
+    file write out _n
+
+    file write out "Dependencies:" _n
+    file write out "`packages'" 
+    file write out "`includes'"
+    file write out "`datasets'"
+
+    file close out
+    display as result `"Dependency report saved to: `output_file'"'
+end
+{% endraw %}

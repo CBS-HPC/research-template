@@ -1,0 +1,56 @@
+{% raw %}    
+install_dependencies <- function(file_path = NULL) {
+  # If no file_path is specified, look for dependencies.txt in the script folder
+  if (is.null(file_path)) {
+    file_path <- file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "dependencies.txt")
+  }
+  
+  # Define a function to read dependencies from a text file and return them as a list
+  get_txt_dependencies <- function(file_path) {
+    # Check if the file exists
+    if (!file.exists(file_path)) {
+      stop("Dependency file not found at: ", file_path)
+    }
+    
+    # Read the file
+    lines <- readLines(file_path)
+    
+    # Find the lines that contain package dependencies (they will have '==')
+    dependency_lines <- grep("==", lines, value = TRUE)
+    
+    # Split the lines into package names and versions
+    dependencies <- sapply(dependency_lines, function(line) {
+      parts <- strsplit(line, "==")[[1]]
+      package_name <- trimws(parts[1])
+      package_version <- trimws(parts[2])
+      list(name = package_name, version = package_version)
+    }, simplify = FALSE)
+    
+    return(dependencies)
+  }
+
+  # Get the dependencies from the file
+  dependencies <- get_txt_dependencies(file_path)
+  
+  # Extract package names and versions into vectors
+  required_packages <- sapply(dependencies, function(dep) dep$name)
+  package_versions <- sapply(dependencies, function(dep) dep$version)
+
+  # Install packages if they are not already installed or if the installed version is different
+  for (i in 1:length(required_packages)) {
+    pkg <- required_packages[i]
+    version <- package_versions[i]
+    
+    # Check if package is installed
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg)
+    }
+    
+    # Check if the installed version is correct, and reinstall if needed
+    current_version <- packageVersion(pkg)
+    if (as.character(current_version) != version) {
+      install.packages(pkg)
+    }
+  }
+}
+{% endraw %}

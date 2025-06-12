@@ -1,0 +1,27 @@
+{% raw %}
+# Main: Running all steps in order
+
+# Install dependencies
+source('s01_install_dependencies.R')
+
+# Load utilities
+source("s02_utils.R")  # <- shared functions, not a step
+
+# Load Scripts
+source('s03_data_collection.R')
+source('s04_preprocessing.R')
+source('s05_modeling.R')
+source('s06_visualization.R')
+
+## Run data collection
+s03_data_collection$main()
+
+## Run preprocessing
+s04_preprocessing$main()
+
+## Run modeling
+s05_modeling$main()
+
+## Run visualization
+s06_visualization$main()
+{% endraw %}
