@@ -4,52 +4,6 @@ import pathlib
 
 from .general_tools import *
 
-package_installer(required_libraries = ['nbformat'])
-#package_installer(required_libraries = ['rpds-py==0.21.0','nbformat'])
-
-import nbformat as nbf  # For creating Jupyter notebooks
-
-# Determine file extension based on programming language
-ext_map = {
-    "r": "R",
-    "python": "py",
-    "matlab": "m",
-    "stata": "do",
-    "sas": "sas"
-}
-
-language_dirs = {
-    "r": "./R",
-    "stata": "./stata",
-    "python": "./src",
-    "matlab": "./src",
-    "sas": "./src"
-}
-
-def write_script(folder_path, script_name, extension, content):
-    """
-    Writes the content to a script file in the specified folder path.
-    
-    Parameters:
-    folder_path (str): The folder where the script will be saved.
-    script_name (str): The name of the script.
-    extension (str): The file extension (e.g., ".py", ".R").
-    content (str): The content to be written to the script.
-    """
-    # Create the folder if it doesn't exist
-    full_folder_path = pathlib.Path(__file__).resolve().parent.parent.parent / folder_path
-    full_folder_path.mkdir(parents=True, exist_ok=True)
-
-
-    file_name = f"{script_name}{extension}"
-    file_path = os.path.join(folder_path, file_name)
-    file_path= str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(file_path))
-
-    with open(file_path, "w") as file:
-        if isinstance(content,str):
-            file.write(content)
-        else:
-            nbf.write(content, file)
 
 def create_scripts(programming_language):
     """

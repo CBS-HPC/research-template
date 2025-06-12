@@ -14,23 +14,6 @@ package_installer(required_libraries =  ['nbformat'])
 
 import nbformat
 
-# Determine file extension based on programming language
-ext_map = {
-    "r": "R",
-    "python": "py",
-    "matlab": "m",
-    "stata": "do",
-    "sas": "sas"
-}
-
-language_dirs = {
-    "r": "./R",
-    "stata": "./stata",
-    "python": "./src",
-    "matlab": "./src",
-    "sas": "./src"
-}
-
 def run_get_dependencies(programming_language):
     """
     Runs the get_dependencies.* script for the specified programming language.

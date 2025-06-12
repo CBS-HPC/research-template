@@ -1,0 +1,16 @@
+% Preprocessing code
+base_path = fullfile(fileparts(mfilename('fullpath')), '..');
+raw_data = fullfile(base_path, 'data', '00_raw');
+interim_data = fullfile(base_path, 'data', '01_interim');
+
+function s04_preprocessing_main()
+    if ~exist(interim_data, 'dir')
+        mkdir(interim_data);
+    end
+    load(fullfile(raw_data, 'mtcars_raw.mat'));
+    mpg_z = mpg - mean(mpg);
+    save(fullfile(interim_data, 'mtcars_interim.mat'), 'mpg', 'wt', 'hp', 'mpg_z');
+    disp('Preprocessing done');
+end
+
+s04_preprocessing_main();
