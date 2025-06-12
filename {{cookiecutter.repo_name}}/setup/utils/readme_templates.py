@@ -1054,7 +1054,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             "readme_templates.py": "Generates README templates for various environments or publication formats.",
             "set_raw_data.py": "Script to prepare and stage raw data for initial project use.",
             "setup.ps1": "PowerShell script to initialize environment setup on Windows systems.",
-            "setup.py": "Defines the setup package and registers CLI tools; enables pip installation (`pip install -e .`).",
+            "pyproject.toml": "Defines the setup package and registers CLI tools; enables pip installation (`pip install -e .`).",
             "setup.sh": "Bash script to initialize environment setup on Linux/macOS systems.",
             "utils.py": "Contains shared utility functions used throughout the `setup` package and CLI tools."
         }
