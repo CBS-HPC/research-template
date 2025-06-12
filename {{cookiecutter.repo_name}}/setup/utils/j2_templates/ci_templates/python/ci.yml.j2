@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: '{{ version }}'
+          python-version: "{{ version }}"
       - run: pip install -r requirements.txt
       - run: pytest
 {% endraw %}

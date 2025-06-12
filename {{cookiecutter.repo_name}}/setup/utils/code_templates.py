@@ -12,11 +12,11 @@ package_installer(required_libraries = ['nbformat','jinja2'])
 template_env = set_jinja_templates("j2_templates/code_templates")
 
 
-def create_script_from_template(language, template_name, script_name, context, subdir=None):
-    template = template_env.get_template(f"{language}/{template_name}")
+def create_script_from_template(programming_language, template_name, script_name, context, subdir=None):
+    template = template_env.get_template(f"{programming_language}/{template_name}")
     rendered = template.render(**context)
     extension = template_name.split(".")[-2]
-    folder_path = language_dirs.get(language.lower())
+    folder_path = language_dirs.get(programming_language.lower())
     if subdir:
         folder_path = os.path.join(folder_path, subdir)
     write_script(folder_path, script_name, extension, rendered)

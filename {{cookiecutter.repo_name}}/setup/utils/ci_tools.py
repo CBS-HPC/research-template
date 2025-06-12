@@ -51,9 +51,7 @@ def generate_ci_configs(programming_language, code_repo, project_root="."):
     if output_path.exists() or output_path.with_suffix(output_path.suffix + ".disabled").exists():
         return
 
-    suffix = output_path.suffix
-    template_name = f"{code_repo}{suffix}.j2"
-
+    template_name = output_path.name + ".j2"
     try:
         template = template_env.get_template(f"{programming_language}/{template_name}")
     except Exception:
