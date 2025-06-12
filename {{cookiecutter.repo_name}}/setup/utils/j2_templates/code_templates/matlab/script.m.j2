@@ -1,3 +1,4 @@
+{% raw %}
 % {{ purpose }} code
 
 base_path = fullfile(fileparts(mfilename('fullpath')), '..');
@@ -13,3 +14,4 @@ end
 if ~isdeployed
     {{ script_name }}_main();
 end
+{% endraw %}

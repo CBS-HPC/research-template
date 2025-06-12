@@ -1,4 +1,5 @@
-{% raw %}install_renv <- function() {
+{% raw %}
+install_renv <- function() {
   if (!requireNamespace("renv", quietly = TRUE))
     install.packages("renv")
   library(renv)
