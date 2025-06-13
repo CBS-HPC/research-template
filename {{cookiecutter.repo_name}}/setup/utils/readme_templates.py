@@ -40,7 +40,6 @@ def creating_readme(programming_language = "None"):
     generate_readme(programming_language,readme_file,code_path,file_descriptions,)
 
     ignore_list = read_treeignore()
-    #ignore_list = ["bin",".git",".datalad",".gitkeep",".env","__pycache__","utils"]
    
     create_tree(readme_file,ignore_list ,file_descriptions)
     
@@ -1006,6 +1005,10 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             "DCAS template": "Directory containing a 'replication package' template for the DCAS (Data and Code Sharing) standard.",
             "utils": "Python module within the setup package containing utility scripts and functions used by CLI tools.",
             "renv": "Directory automatically managed by the R `renv` package, containing the project-local R library and metadata files used to restore the environment.",
+            "bin": "Directory for executable scripts or binaries used in the project.",
+            ".venv": "Project-local Python virtual environment directory created using `python -m venv` or similar tools.",
+            ".conda": "Project-local Conda environment directory created using `conda create --prefix` for isolated dependency management.",
+
 
             # Setup and configuration files
             ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",

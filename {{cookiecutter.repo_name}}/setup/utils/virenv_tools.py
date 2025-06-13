@@ -29,7 +29,7 @@ def setup_virtual_environment(version_control, python_env_manager, r_env_manager
         conda_packages = set_conda_packages(version_control,python_env_manager,r_env_manager,conda_python_version,conda_r_version)
         env_name = setup_conda(install_path=install_path, repo_name=repo_name, conda_packages=conda_packages, env_file=None, conda_r_version=conda_r_version, conda_python_version=conda_python_version)
     elif python_env_manager.lower() == "venv":
-        env_name = create_venv_env(repo_name)
+        env_name = create_venv_env()
 
     if env_name:
         env_name = env_name.replace("\\", "/")
@@ -94,7 +94,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], env_fi
             return False
 
     # Get the absolute path to the environment
-    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/conda/{repo_name}"))
+    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./.conda"))
 
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
@@ -398,11 +398,41 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
     print(f"Updated {env_file} with new environment name '{repo_name}', added Conda packages, and additional packages.")
 
 # Venv and Virtualenv Functions
-def create_venv_env(env_name):
+
+def create_venv_env():
+    """
+    Create a Python virtual environment using uv if available; otherwise, use venv.
+    """
+    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./.venv"))
+
+    try:
+        install_uv()
+        # Attempt to create virtual environment using uv via sys.executable
+        subprocess.run([sys.executable, "-m", "uv", "venv", env_path], check=True)
+        print(f'Virtual environment created at "{env_path}" using uv.')
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("uv is not available or failed to create the virtual environment. Falling back to venv.")
+        try:
+            # Create the virtual environment using venv
+            subprocess.run([sys.executable, "-m", "venv", env_path], check=True)
+            print(f'Virtual environment created at "{env_path}" using venv.')
+        except subprocess.CalledProcessError as e:
+            print(f"Error: Failed to create virtual environment using venv: {e}")
+            return None
+        except Exception as e:
+            print(f"Error: An unexpected error occurred while creating the virtual environment: {e}")
+            return None
+
+    save_to_env(env_path,"VENV_ENV_PATH")
+
+    return env_path
+
+
+def create_venv_env_old():
     """Create a Python virtual environment using venv and install packages."""
     try:
         # Get the absolute path to the environment
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./bin/venv/{env_name}"))
+        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./.venv"))
 
         # Create the virtual environment
         subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
