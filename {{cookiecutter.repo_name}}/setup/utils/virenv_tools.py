@@ -399,7 +399,7 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
 
 # Venv and Virtualenv Functions
 
-def create_venv_env_new():
+def create_venv_env():
     """
     Create a Python virtual environment using uv if available; otherwise, use venv.
     """
@@ -428,7 +428,7 @@ def create_venv_env_new():
     return env_path
 
 
-def create_venv_env():
+def create_venv_env_old():
     """Create a Python virtual environment using venv and install packages."""
     try:
         # Get the absolute path to the environment
