@@ -13,9 +13,8 @@ def upgrade_pip():
 
     # Step 2: Try using uv pip install
     try:
-        install_uv()
-        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
-                    check=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], check=True)
         print("✅ Upgraded pip, setuptools, wheel using uv.")
     except subprocess.CalledProcessError:
         print("⚠️ uv failed, falling back to pip...")
