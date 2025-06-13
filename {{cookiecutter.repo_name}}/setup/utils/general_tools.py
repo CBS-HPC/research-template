@@ -965,8 +965,8 @@ def edit_jinja_templates(template_folder: str):
                     content = f.read()
 
                 # Replace unescaped GitHub Actions expressions
-                content = content.replace("${{ matrix.os }}", "{% raw %}${{ matrix.os }}{% endraw %}")
-                content = content.replace("${{ secrets.MATLAB_TOKEN }}", "{% raw %}${{ secrets.MATLAB_TOKEN }}{% endraw %}")
+                content = content.replace("{% raw %}${{ matrix.os }}", "{% raw %}${{ matrix.os }}{% endraw %}{% endraw %}")
+                content = content.replace("{% raw %}${{ secrets.MATLAB_TOKEN }}", "{% raw %}${{ secrets.MATLAB_TOKEN }}{% endraw %}{% endraw %}")
 
                 # Write updated content back to file
                 with open(file_path, "w", encoding="utf-8") as f:
