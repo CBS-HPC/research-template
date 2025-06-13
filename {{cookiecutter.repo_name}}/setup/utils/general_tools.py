@@ -971,10 +971,10 @@ def path_jinja_templates(template_folder: str):
         original = content
 
         # Escape GitHub CI expressions
-        content = github_expr_pattern.sub(lambda m: f"{{% raw %}}{m.group(0)}{{% endraw %}}", content)
+        content = github_expr_pattern.sub(lambda m: "{% raw %}" + m.group(0) + "{% endraw %}", content)
 
         # Escape {{ version }} only if not already inside a raw
-        #content = jinja_expr_pattern.sub(f"{% raw %}{{ version }}{% endraw %}", content)
+        content = jinja_expr_pattern.sub("{% raw %}{{{{ version }}}}{% endraw %}", content)
 
         if content != original:
             print(f"✅ Patched: {file}")
