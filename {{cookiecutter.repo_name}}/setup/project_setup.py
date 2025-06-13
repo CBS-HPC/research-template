@@ -5,24 +5,7 @@ import platform
 import re
 import pathlib
 
-
 from utils.general_tools import *
-
-ext_map = {
-    "r": "Rscript",
-    "python": "python",
-    "matlab": "matlab -batch",
-    "stata": "stata -b do",
-    "sas": "sas"
-}
-
-file_ext_map = {
-    "r": "R",
-    "python": "py",
-    "matlab": "m",
-    "stata": "do",
-    "sas": "sas"
-}
 
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
     if not env_path:

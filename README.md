@@ -648,26 +648,13 @@ Each CI pipeline performs the following:
 4. Outputs test results and logs
 ---
 
-### 🔄 CI Config via CLI
-
-CI can be configured to the selected platform using the built-in CLI command:
-
-```
-ci_config 
-```
-
-This works by renaming .yml files to .yml.disabled and back. It's useful for disabling CI during development
-  
-  🚪 CI is disabled by default after project generation. Use ci-config --enable when you're ready to activate it.
-
-
 ### 🔄 CI Control via CLI
 
 CI can be toggled on or off using the built-in CLI command:
 
 ```
-ci_control --enable 
-ci_control --disable 
+ci-control --on
+ci-control --off 
 ```
 
 ### 🧷 Git Shortcut for Skipping CI

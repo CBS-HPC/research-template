@@ -16,7 +16,6 @@ setup(
             'reset-templates=utils.code_templates:main',
             'code-examples=utils.example_templates:main',
             'git-config=utils.repo_tools:main',
-            'ci-config=utils.ci_tools:ci_config',
             'ci-control=utils.ci_tools:ci_control'
 
 
