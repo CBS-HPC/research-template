@@ -10,7 +10,6 @@ import pathlib
 import getpass
 import importlib.metadata
 
-
 def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
@@ -953,6 +952,25 @@ def set_jinja_templates(template_folder:str):
     )
 
     return template_env
+
+def edit_jinja_templates(template_folder: str):
+    template_dir = pathlib.Path(__file__).resolve().parent / template_folder
+
+    # Walk through all .j2 files and patch GitHub Actions syntax
+    for root, _, files in os.walk(template_dir):
+        for fname in files:
+            if fname.endswith(".j2"):
+                file_path = pathlib.Path(root) / fname
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+                # Replace unescaped GitHub Actions expressions
+                content = content.replace("${{ matrix.os }}", "{% raw %}${{ matrix.os }}{% endraw %}")
+                content = content.replace("${{ secrets.MATLAB_TOKEN }}", "{% raw %}${{ secrets.MATLAB_TOKEN }}{% endraw %}")
+
+                # Write updated content back to file
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
 
 def write_script(folder_path, script_name, extension, content):
     """

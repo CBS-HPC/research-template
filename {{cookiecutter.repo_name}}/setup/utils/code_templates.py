@@ -77,7 +77,7 @@ def create_scripts(programming_language):
     template_name = f"test_template.{extension}.j2"
 
     for base in scripts.keys():
-        create_script_from_template(programming_language, folder_path,  template_name, f"test_{base}", {"base": {base}})    
+        create_script_from_template(programming_language, folder_path,  template_name, f"test_{base}", {"base": base})    
 
 
 

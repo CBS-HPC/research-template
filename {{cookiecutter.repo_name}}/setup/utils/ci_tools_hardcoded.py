@@ -31,7 +31,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{{{ matrix.os }}}}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -73,7 +73,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{{{ matrix.os }}}}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - uses: r-lib/actions/setup-r@v2
@@ -131,12 +131,12 @@ def _ci_for_matlab(version: str):
         strategy:
           matrix:
             os: [ubuntu-latest, windows-latest, macos-latest]
-        runs-on: ${{{{ matrix.os }}}}
+        runs-on: ${{ matrix.os }}
         steps:
           - uses: actions/checkout@v3
           - uses: matlab-actions/setup-matlab@v2
             with:
-              matlab-token: ${{{{ secrets.MATLAB_TOKEN }}}}
+              matlab-token: ${{ secrets.MATLAB_TOKEN }}
           - uses: matlab-actions/run-tests@v2
             with:
               source-folder: src

@@ -5,8 +5,6 @@ import subprocess
 
 from .versioning_tools import *
 
-template_env = set_jinja_templates("j2_templates/ci_templates")
-
 #@ensure_correct_kernel
 def ci_config():
      # Ensure the working directory is the project root
@@ -37,6 +35,9 @@ def generate_ci_configs(programming_language, code_repo, project_root="."):
     programming_language = programming_language.lower()
     code_repo = code_repo.lower()
     version = parse_version(get_version(programming_language), programming_language)
+
+    edit_jinja_templates("j2_templates/ci_templates")
+    template_env = set_jinja_templates("j2_templates/ci_templates")
 
     file_map = {
         "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",
