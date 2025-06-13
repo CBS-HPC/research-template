@@ -962,7 +962,7 @@ def patch_jinja_templates(template_folder: str):
             content = f.read()
 
         original = content
-        content = content.replace("RAW_MARKER", "raw").replace("END_RAW_MARKER", "endraw")
+        content = content.replace("END_RAW_MARKER", "endraw").replace("RAW_MARKER", "raw")
 
         if content != original:
             print(f"✅ Patched: {file}")
