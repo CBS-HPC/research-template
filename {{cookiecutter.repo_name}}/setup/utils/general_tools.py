@@ -9,6 +9,7 @@ from functools import wraps
 import pathlib
 import getpass
 import importlib.metadata
+import re
 
 def set_packages(version_control,programming_language):
 
@@ -953,7 +954,34 @@ def set_jinja_templates(template_folder:str):
 
     return template_env
 
-def edit_jinja_templates(template_folder: str):
+
+
+def path_jinja_templates(template_folder: str):
+    template_dir = pathlib.Path(__file__).resolve().parent / template_folder
+
+
+    # Matches GitHub expressions like ${{ matrix.os }} and ${{ secrets.X }}
+    github_expr_pattern = re.compile(r"\$\{\{\s*[^}]+\s*\}\}")
+    jinja_expr_pattern = re.compile(r"\{\{\s*version\s*\}\}")
+
+    for file in template_dir.rglob("*.j2"):
+        with open(file, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        original = content
+
+        # Escape GitHub CI expressions
+        content = github_expr_pattern.sub(lambda m: f"{{% raw %}}{m.group(0)}{{% endraw %}}", content)
+
+        # Escape {{ version }} only if not already inside a raw
+        content = jinja_expr_pattern.sub("{% raw %}{{ version }}{% endraw %}", content)
+
+        if content != original:
+            print(f"✅ Patched: {file}")
+            with open(file, "w", encoding="utf-8") as f:
+                f.write(content)
+
+def path_jinja_templates_old(template_folder: str):
     template_dir = pathlib.Path(__file__).resolve().parent / template_folder
 
     # Walk through all .j2 files and patch GitHub Actions syntax
@@ -965,8 +993,8 @@ def edit_jinja_templates(template_folder: str):
                     content = f.read()
 
                 # Replace unescaped GitHub Actions expressions
-                content = content.replace("{% raw %}${{ matrix.os }}", "{% raw %}${{ matrix.os }}{% endraw %}{% endraw %}")
-                content = content.replace("{% raw %}${{ secrets.MATLAB_TOKEN }}", "{% raw %}${{ secrets.MATLAB_TOKEN }}{% endraw %}{% endraw %}")
+                content = content.replace("${{ matrix.os }}", "{% raw %}${{ matrix.os }}{% endraw %}")
+                content = content.replace("${{ secrets.MATLAB_TOKEN }}", "{% raw %}${{ secrets.MATLAB_TOKEN }}{% endraw %}")
 
                 # Write updated content back to file
                 with open(file_path, "w", encoding="utf-8") as f:
