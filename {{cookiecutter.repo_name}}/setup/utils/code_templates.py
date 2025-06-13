@@ -65,7 +65,7 @@ def create_scripts(programming_language):
     if nb_template:
         create_script_from_template(programming_language, folder_path,  nb_template, "s00_workflow", {"script_name": "s00_workflow"})
 
-    ext_map = {
+    tests_map = {
         "python": ("./tests", "py"),
         "r": ("./tests/testthat", "R"),
         "matlab": ("./tests", "m"),
@@ -74,7 +74,7 @@ def create_scripts(programming_language):
 
 
     # unit test templates
-    folder_path, extension = ext_map[programming_language]
+    folder_path, extension = tests_map[programming_language]
     template_name = f"test_template.{extension}.j2"
 
     for base in scripts.keys():
