@@ -6,8 +6,8 @@ import platform
 
 # Upgrade Pip:
 try:
-    subprocess.run([
-        sys.executable, "-m", "pip", "install", "--upgrade", "pip"], 
+    subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
+    subprocess.run([sys.executable, "-m","pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
         check=True,
         stderr=subprocess.DEVNULL)
     
