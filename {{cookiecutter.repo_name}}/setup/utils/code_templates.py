@@ -16,7 +16,6 @@ def create_script_from_template(programming_language, folder_path, template_name
     template = template_env.get_template(f"{programming_language}/{template_name}")
     rendered = template.render(**context)
     extension = template_name.split(".")[-2]
-    folder_path = language_dirs.get(programming_language.lower())
     if subdir:
         folder_path = os.path.join(folder_path, subdir)
     write_script(folder_path, script_name, extension, rendered)
