@@ -974,31 +974,12 @@ def path_jinja_templates(template_folder: str):
         content = github_expr_pattern.sub(lambda m: f"{{% raw %}}{m.group(0)}{{% endraw %}}", content)
 
         # Escape {{ version }} only if not already inside a raw
-        content = jinja_expr_pattern.sub("{% raw %}{{ version }}{% endraw %}", content)
+        #content = jinja_expr_pattern.sub(f"{% raw %}{{ version }}{% endraw %}", content)
 
         if content != original:
             print(f"✅ Patched: {file}")
             with open(file, "w", encoding="utf-8") as f:
                 f.write(content)
-
-def path_jinja_templates_old(template_folder: str):
-    template_dir = pathlib.Path(__file__).resolve().parent / template_folder
-
-    # Walk through all .j2 files and patch GitHub Actions syntax
-    for root, _, files in os.walk(template_dir):
-        for fname in files:
-            if fname.endswith(".j2"):
-                file_path = pathlib.Path(root) / fname
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-
-                # Replace unescaped GitHub Actions expressions
-                content = content.replace("${{ matrix.os }}", "{% raw %}${{ matrix.os }}{% endraw %}")
-                content = content.replace("${{ secrets.MATLAB_TOKEN }}", "{% raw %}${{ secrets.MATLAB_TOKEN }}{% endraw %}")
-
-                # Write updated content back to file
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(content)
 
 def write_script(folder_path, script_name, extension, content):
     """
