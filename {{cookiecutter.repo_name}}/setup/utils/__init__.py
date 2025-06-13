@@ -8,6 +8,7 @@ from .ci_tools import *
 
 from .code_templates import *
 from .readme_templates import *
+from .readme_sections import *
 from .example_templates import *
 from .ci_tools import *
 
