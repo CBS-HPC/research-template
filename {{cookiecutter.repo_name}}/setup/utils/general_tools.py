@@ -954,27 +954,15 @@ def set_jinja_templates(template_folder:str):
 
     return template_env
 
-
-
-def path_jinja_templates(template_folder: str):
+def patch_jinja_templates(template_folder: str):
     template_dir = pathlib.Path(__file__).resolve().parent / template_folder
-
-
-    # Matches GitHub expressions like ${{ matrix.os }} and ${{ secrets.X }}
-    github_expr_pattern = re.compile(r"\$\{\{\s*[^}]+\s*\}\}")
-    jinja_expr_pattern = re.compile(r"\{\{\s*version\s*\}\}")
 
     for file in template_dir.rglob("*.j2"):
         with open(file, "r", encoding="utf-8") as f:
             content = f.read()
 
         original = content
-
-        # Escape GitHub CI expressions
-        content = github_expr_pattern.sub(lambda m: "{% raw %}" + m.group(0) + "{% endraw %}", content)
-
-        # Escape {{ version }} only if not already inside a raw
-        content = jinja_expr_pattern.sub("{% raw %}{{{{ version }}}}{% endraw %}", content)
+        content = content.replace("RAW_MARKER", "raw").replace("END_RAW_MARKER", "endraw")
 
         if content != original:
             print(f"✅ Patched: {file}")
