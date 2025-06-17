@@ -13,6 +13,8 @@ dependencies = [
     "beautifulsoup4"
 ]
 
+py-modules = ["main_setup"]
+
 [project.scripts]
 push-backup = "utils.backup_tools:push_backup"
 set-dataset = "utils.set_dataset:main"
@@ -24,6 +26,3 @@ reset-templates = "utils.code_templates:main"
 code-examples = "utils.example_templates:main"
 git-config = "utils.repo_tools:main"
 ci-control = "utils.ci_tools:ci_control"
-
-
-py-modules = ["main_setup"]
