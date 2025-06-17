@@ -3,82 +3,23 @@ import subprocess
 import getpass
 import pathlib
 import argparse
-import json
 
 from .general_tools import *
 from .versioning_tools import *
 
-
-import json
-import os
-
-def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
-    """
-    Load the full rclone repo path for a given remote from JSON.
-    
-    Args:
-        remote_name (str): Name of the rclone remote (e.g., "deic storage")
-        json_path (str): Path to the local JSON file that stores remote mappings
-    
-    Returns:
-        str or None: The rclone repo path (e.g., "deic storage:/backup_folder"), or None if not found
-    """
-    if not os.path.exists(json_path):
-        print(f"No rclone registry found at {json_path}")
-        return None
-    
-    try:
-        with open(json_path, 'r') as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        print("Could not parse rclone registry file — it may be corrupted.")
-        return None
-
-    repo = data.get(remote_name)
-    if repo:
-        print(f"Loaded rclone path for '{remote_name}': {repo}")
-    else:
-        print(f"No rclone path found for '{remote_name}' in {json_path}")
-    
-    return repo
-
-def save_rclone_json(remote_name: str, folder_path: str, json_path="./bin/rclone_remote.json"):
-    """Save or update rclone remote folder path in a project-local JSON registry."""
-    os.makedirs(os.path.dirname(json_path), exist_ok=True)
-
-    data = {}
-    if os.path.exists(json_path):
-        with open(json_path, 'r') as f:
-            try:
-                data = json.load(f)
-            except json.JSONDecodeError:
-                print("Warning: JSON file was corrupted or empty, reinitializing.")
-
-    data[remote_name] = f"{remote_name}:{folder_path}"
-
-    with open(json_path, 'w') as f:
-        json.dump(data, f, indent=2)
-        print(f"Saved rclone path for '{remote_name}' to {json_path}")
-
-def load_all_rclone_json(json_path="./bin/rclone_remote.json"):
-    if not os.path.exists(json_path):
-        return {}
-    try:
-        with open(json_path, 'r') as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
 # RClone:
-def setup_remote_backup(remote_backup,repo_name):
+def setup_remote_backup(remote_backups,repo_name):
     
-    if remote_backup.lower() != "none":
-        email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
-        if install_rclone("./bin"):
-            add_remote(remote_backup.lower(),email, password)
-            _= add_folder(remote_backup.lower(), base_folder)
+    if remote_backups.lower() != "none":
+        remote_backups= [item.strip() for item in remote_backups.split(",")]
+        for remote_backup in remote_backups:
 
-def add_remote(remote_name: str = "deic storage",email:str = None, password:str = None ):
+            email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
+            if install_rclone("./bin"):
+                rclone_remote(remote_backup.lower(),email, password)
+                _= rclone_folder(remote_backup.lower(), base_folder)
+
+def rclone_remote(remote_name: str = "deic storage",email:str = None, password:str = None ):
     """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
 
     if remote_name == "deic storage":
@@ -117,9 +58,7 @@ def add_remote(remote_name: str = "deic storage",email:str = None, password:str 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-
-def add_folder(remote_name, base_folder):
-
+def rclone_folder(remote_name, base_folder):
     while True:
         # Check if folder exists
         check_command = ['rclone', 'lsf', f"{remote_name}:/{base_folder}"]
@@ -150,8 +89,7 @@ def add_folder(remote_name, base_folder):
     try:
         subprocess.run(command, check=True, capture_output=True, text=True)
         print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
-        #save_to_env(rclone_repo, "RCLODE_REPO")
-        save_rclone_json(remote_name, base_folder)
+        save_to_env(rclone_repo, "RCLODE_REPO")
         return rclone_repo
 
     except subprocess.CalledProcessError as e:
@@ -216,45 +154,6 @@ def rclone_sync(rclone_repo: str = None, folder_to_backup: str = None):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-def list_remotes():
-    print("\n🔌 Rclone Remotes:")
-    try:
-        result = subprocess.run(['rclone', 'listremotes'], check=True, stdout=subprocess.PIPE)
-        remotes = [r.rstrip(':') for r in result.stdout.decode().splitlines()]
-        if not remotes:
-            print("  No remotes configured.")
-        else:
-            for r in remotes:
-                print(f"  - {r}")
-    except Exception as e:
-        print(f"Failed to list remotes: {e}")
-    print("\n📁 Mapped Backup Folders:")
-    paths = load_all_rclone_json()
-    if not paths:
-        print("  No folders registered.")
-    else:
-        for k, v in paths.items():
-            print(f"  - {k}: {v}")
-
-def delete_remote(remote_name, json_path="./bin/rclone_remote.json"):
-    try:
-        subprocess.run(['rclone', 'config', 'delete', remote_name], check=True)
-        print(f"Deleted rclone remote: {remote_name}")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to delete remote: {e.stderr.decode().strip()}")
-    if os.path.exists(json_path):
-        try:
-            with open(json_path, 'r+') as f:
-                data = json.load(f)
-                if remote_name in data:
-                    del data[remote_name]
-                    f.seek(0)
-                    f.truncate()
-                    json.dump(data, f, indent=2)
-                    print(f"Removed '{remote_name}' from {json_path}")
-        except Exception as e:
-            print(f"Could not update {json_path}: {e}")           
-
 def check_rclone_remote(remote_name):
     """Check if a specific remote repository is configured in rclone."""
     try:
@@ -279,60 +178,47 @@ def check_rclone_remote(remote_name):
         print(f"An unexpected error occurred: {e}")
         return False
 
-@ensure_correct_kernel
-def run_backup(remote_backup,repo_name):
+def push_backup():
+
+    @ensure_correct_kernel
+    def run_backup(remote_backups,repo_name):
         
         # Change to project root directory
         project_root = pathlib.Path(__file__).resolve().parent.parent.parent
         os.chdir(project_root)
         
-        if remote_backup.lower() != "none": 
+        if remote_backups.lower() != "none": 
             if install_rclone("./bin"):
-        
-                rclone_repo = None
-                if check_rclone_remote(remote_backup.lower()):
-                    rclone_repo = load_rclone_json(remote_backup.lower())
-            
-                if not rclone_repo:
-                    email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
-                    add_remote(remote_backup.lower(),email, password)
-                    rclone_repo = add_folder(remote_backup.lower(), base_folder)
-            
-                if rclone_repo:
-                    rclone_sync(rclone_repo, folder_to_backup=None)
-                else: 
-                    print(f"Failed to backup to {remote_backup}")
+                remote_backups= [item.strip() for item in remote_backups.split(",")]
+                for remote_backup in remote_backups:
+                    rclone_repo = None
+                    if check_rclone_remote(remote_backup.lower()):
+                        rclone_repo = load_from_env("RCLODE_REPO")
+                
+                    if not rclone_repo:
+                        email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
+                        rclone_remote(remote_backup.lower(),email, password)
+                        rclone_repo = rclone_folder(remote_backup.lower(), base_folder)
+                
+                    if rclone_repo:
+                        rclone_sync(rclone_repo, folder_to_backup=None)
+                    else: 
+                        print(f"Failed to backup to {remote_backup}")
 
-
-def main():
-    parser = argparse.ArgumentParser(description="Backup manager CLI using rclone")
-    subparsers = parser.add_subparsers(dest="command")
-
-    subparsers.add_parser("list", help="List rclone remotes and mapped folders")
-    add = subparsers.add_parser("add", help="Add a remote and folder mapping")
-    add.add_argument("--remote", required=True)
-    add.add_argument("--repo", required=True)
-    push = subparsers.add_parser("push", help="Push local folder to a remote")
-    push.add_argument("--remote", required=True)
-    push.add_argument("--repo", required=True)
-    delete = subparsers.add_parser("delete", help="Delete a remote and its mapping")
-    delete.add_argument("--remote", required=True)
-
+    # Add command-line argument parsing
+    parser = argparse.ArgumentParser(description="Run backup process")
+    parser.add_argument('--repo_name', type=str, default=None, help="Repository name")
+    parser.add_argument('--remote_backup', type=str, default=None, help="Comma separated remote backups")
     args = parser.parse_args()
 
-    if args.command == "list":
-        list_remotes()
-    elif args.command == "add":
-        setup_remote_backup(args.remote, args.repo)
-    elif args.command == "push":
-        run_backup(args.remote,args.repo)
-    elif args.command == "delete":
-        delete_remote(args.remote)
-    else:
-        parser.print_help()
+    repo_name = args.repo_name or load_from_env("REPO_NAME", ".cookiecutter")
+    remote_backup = args.remote_backup or load_from_env("REMOTE_BACKUP", ".cookiecutter")
+    run_backup(remote_backup, repo_name)
 
 if __name__ == "__main__":
+    
     # Ensure the working directory is the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
-    main()
+
+    push_backup()

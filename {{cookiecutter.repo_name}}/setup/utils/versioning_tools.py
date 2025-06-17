@@ -713,7 +713,7 @@ def datalad_deic_storage(repo_name):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-    rclone_remote()
+    #rclone_remote()
     git_annex_remote("deic storage","deic storage",repo_name)
 
 def datalad_local_storage(repo_name):
