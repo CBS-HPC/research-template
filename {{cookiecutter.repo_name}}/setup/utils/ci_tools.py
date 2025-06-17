@@ -173,7 +173,7 @@ def set_git_alis(project_root: str = "."):
         print("ℹ️ Skipped Git alias setup: .git folder not found in project root.")
         return False
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def ci_control():
     print(sys.executable)
   # Ensure we're in the project root
@@ -196,6 +196,10 @@ def ci_control():
 
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
+
+    if not code_repo:
+        print("No code repository has been setup.")
+        return 
 
     generate_ci_configs(programming_language, code_repo, project_root)
 
