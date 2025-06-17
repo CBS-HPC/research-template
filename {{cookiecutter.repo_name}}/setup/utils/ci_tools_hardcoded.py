@@ -4,7 +4,7 @@ import subprocess
 
 from .versioning_tools import *
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def ci_config():
      # Ensure the working directory is the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -386,7 +386,7 @@ def set_git_alis(project_root: str = "."):
         print("ℹ️ Skipped Git alias setup: .git folder not found in project root.")
         return False
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def ci_control():
  
   # Ensure we're in the project root
@@ -409,7 +409,11 @@ def ci_control():
 
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
-
+    
+    if code_repo.lower() == "none":
+        print("No code repository has been setup.")
+        return 
+    
     generate_ci_configs(programming_language, code_repo, project_root)
 
     if args.on and args.off:

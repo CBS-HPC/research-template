@@ -5,7 +5,7 @@ import subprocess
 
 from .versioning_tools import *
 
-#@ensure_correct_kernel
+@ensure_correct_kernel
 def ci_config():
      # Ensure the working directory is the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -197,7 +197,7 @@ def ci_control():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
 
-    if not code_repo:
+    if code_repo.lower() == "none":
         print("No code repository has been setup.")
         return 
 
