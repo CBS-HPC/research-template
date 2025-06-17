@@ -175,7 +175,7 @@ def set_git_alis(project_root: str = "."):
 
 #@ensure_correct_kernel
 def ci_control():
- 
+    print(sys.executable)
   # Ensure we're in the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
