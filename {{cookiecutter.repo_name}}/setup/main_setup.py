@@ -132,7 +132,11 @@ def remote_repo_setup():
         os.chdir(setup_path)
     
         # Run "pip install -e ."
-        result = subprocess.run(['pip', 'install', '-e', '.'], capture_output=True, text=True)
+        result = subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', '-e', '.'],
+                capture_output=True,
+                text=True
+            )
 
         if result.returncode == 0:
             print("Installation successful.")

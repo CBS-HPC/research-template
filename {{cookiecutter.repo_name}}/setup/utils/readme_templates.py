@@ -164,8 +164,7 @@ def get_system_specs():
     
     # Basic OS and Python
     info["OS"] = f"{platform.system()} {platform.release()} ({platform.version()})"
-    info["Architecture"] = platform.machine()
-
+   
     # CPU
     cpu = cpuinfo.get_cpu_info()
     info["CPU"] = cpu.get("brand_raw", platform.processor() or "Unknown")

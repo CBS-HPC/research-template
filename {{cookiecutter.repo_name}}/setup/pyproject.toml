@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "setup"
-version = "1.0"
+version = "0.1"
 dependencies = [
     "python-dotenv",
     "pyyaml",
@@ -22,5 +22,5 @@ deic-storage-download = "utils.deic_storage_download:main"
 update-readme = "utils.readme_templates:main"
 reset-templates = "utils.code_templates:main"
 code-examples = "utils.example_templates:main"
-git-config="utils.repo_tools:main"
-ci-control="utils.ci_tools:ci_control"
+git-config = "utils.repo_tools:main"
+ci-control = "utils.ci_tools:ci_control"
