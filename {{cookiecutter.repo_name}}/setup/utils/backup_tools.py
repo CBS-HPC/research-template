@@ -232,10 +232,8 @@ def add_folder(remote_name, base_folder):
     try:
         subprocess.run(['rclone', 'mkdir', f"{remote_name}:{base_folder}"], check=True)
         save_rclone_json(remote_name, base_folder)
-        return f"{remote_name}:{base_folder}"
     except Exception as e:
         print(f"Error creating folder: {e}")
-        return None
 
 def read_rcloneignore(folder):
     path = os.path.join(folder, '.rcloneignore')
@@ -251,8 +249,9 @@ def setup_remote_backup(remote_name):
     if remote_name.lower() != "none":
         email, password, base_folder = remote_user_info(remote_name.lower())
         if install_rclone("./bin"):
+            print("dre")
             add_remote(remote_name.lower(), email, password)
-            _ = add_folder(remote_name.lower(), base_folder)
+            add_folder(remote_name.lower(), base_folder)
 
 def list_supported_remote_types():
     try:
@@ -314,12 +313,9 @@ def push_backup(remote_name):
         if not rclone_repo:
             email, password, base_folder = remote_user_info(remote_name.lower())
             add_remote(remote_name.lower(), email, password)
-            rclone_repo = add_folder(remote_name.lower(), base_folder)
+            add_folder(remote_name.lower(), base_folder)
         
-        if rclone_repo:
-            rclone_sync(rclone_repo)
-        else:
-            print(f"Failed to backup to {remote_name}")
+        rclone_sync(remote_name.lower())
 
 def generate_diff_report(remote_name):
 
