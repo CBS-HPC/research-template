@@ -347,6 +347,42 @@ def generate_diff_report(remote_name):
     else:
         run_diff(remote_name)
 
+def pull_backup(remote_name: str = None, destination_folder: str = None):
+    import subprocess
+
+    if remote_name is None:
+        print("Error: No remote specified for pulling backup.")
+        return
+
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
+    rclone_repo = load_rclone_json(remote_name)
+    if not rclone_repo:
+        print("Remote has not been configured or not found in registry.")
+        return
+
+    if destination_folder is None:
+        destination_folder = os.getcwd()
+
+    if not os.path.exists(destination_folder):
+        os.makedirs(destination_folder)
+
+    exclude_patterns = read_rcloneignore(destination_folder)
+    exclude_args = []
+    for pattern in exclude_patterns:
+        exclude_args.extend(["--exclude", pattern])
+
+    command_pull = ['rclone', 'sync', rclone_repo, destination_folder, '--verbose'] + exclude_args
+
+    try:
+        subprocess.run(command_pull, check=True)
+        print(f"Backup pulled from '{rclone_repo}' to '{destination_folder}' successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to pull backup from remote: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred while pulling backup: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="Backup manager CLI using rclone")
     subparsers = parser.add_subparsers(dest="command")
@@ -367,6 +403,11 @@ def main():
 
     types = subparsers.add_parser("types", help="List supported rclone remote types")
 
+    pull = subparsers.add_parser("pull", help="Pull backup from a remote")
+    pull.add_argument("--remote", required=True)
+    pull.add_argument("--dest", default=None)
+
+
     args = parser.parse_args()
 
     if args.command == "list":
@@ -381,6 +422,8 @@ def main():
         generate_diff_report(args.remote)
     elif args.command == "types":
         list_supported_remote_types()
+    elif args.command == "pull":
+        pull_backup(args.remote, args.dest)
     else:
         parser.print_help()
 
