@@ -14,15 +14,13 @@ def setup_remote_backup(remote_backups,repo_name):
         remote_backups= [item.strip() for item in remote_backups.split(",")]
         for remote_backup in remote_backups:
 
-            email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
+            email, password,base_folder = remote_user_info(remote_backup.lower())
             if install_rclone("./bin"):
                 rclone_remote(remote_backup.lower(),email, password)
                 _= rclone_folder(remote_backup.lower(), base_folder)
 
-def rclone_remote(remote_name: str = "deic storage",email:str = None, password:str = None ):
-    """Create an rclone remote configuration for Deic Storage (SFTP) or Dropbox based on remote_name."""
-
-    if remote_name == "deic storage":
+def rclone_remote(remote_name: str = "deic-storage",email:str = None, password:str = None ):
+    """Create an rclone remote configuration for Deic-Storage (SFTP) or Dropbox based on remote_name."""-torage":
         command = [
             'rclone', 'config', 'create', remote_name, 'sftp',
             'host', 'sftp.storage.deic.dk',
@@ -47,7 +45,7 @@ def rclone_remote(remote_name: str = "deic storage",email:str = None, password:s
         command = ['rclone', 'config', 'create', remote_name, 'local', '--local-root', local_path]
 
     else:
-        print("Unsupported remote name. Choose 'deic storage', 'dropbox', 'onedrive', or 'local'.")
+        print("Unsupported remote name. Choose 'deic-storage', 'dropbox', 'onedrive', or 'local'.")
         return
 
     try:
@@ -90,12 +88,12 @@ def rclone_folder(remote_name, base_folder):
         subprocess.run(command, check=True, capture_output=True, text=True)
         print(f"Backup folder '{base_folder}' created successfully on remote '{remote_name}'.")
         save_to_env(rclone_repo, "RCLODE_REPO")
-        return rclone_repo
+        return rclone_repo-
 
     except subprocess.CalledProcessError as e:
         if "couldn't connect SSH: ssh: handshake failed" in e.stderr:
-            if remote_name == "deic storage":
-                print('Connection to "Deic Storage" failed. Please log in to https://storage.deic.dk/ with MFA.')
+            if remote_name == "deic-storage":
+                print('Connection to "Deic-Storage" failed. Please log in to https://storage.deic.dk/ with MFA.')
         else:
             print(f"Failed to create backup folder: {e.stderr.strip()}")
 
@@ -196,7 +194,7 @@ def push_backup():
                         rclone_repo = load_from_env("RCLODE_REPO")
                 
                     if not rclone_repo:
-                        email, password,base_folder = remote_user_info(remote_backup.lower(),repo_name)
+                        email, password,base_folder = remote_user_info(remote_backup.lower())
                         rclone_remote(remote_backup.lower(),email, password)
                         rclone_repo = rclone_folder(remote_backup.lower(), base_folder)
                 

@@ -158,7 +158,7 @@ def set_options(programming_language,version_control):
         code_repo = "None"
 
     if version_control in ["Datalad","DVC"]:
-        remote_storage = prompt_user(f"Do you want to setup remote storage for your {version_control} repo:", ["Dropbox","Deic Storage","Local Path","None"])
+        remote_storage = prompt_user(f"Do you want to setup remote storage for your {version_control} repo:", ["Deic-Storage","Dropbox","Local Path","None"])
     else:
         remote_storage = "None"
 
@@ -178,7 +178,7 @@ def multiple_backups(remote_backup):
     if remote_backup == "Multiple":
         package_installer(required_libraries = ['questionary'])
         import questionary
-        options = ["Deic Storage", "Dropbox", "Onedrive", "Local"]
+        options = ["Deic-Storage", "Dropbox", "Onedrive", "Local"]
         remote_backup = questionary.checkbox(
             "Select remote backups:",
             choices=options
@@ -237,7 +237,7 @@ git_user_info(version_control)
 repo_user,_,_,_= repo_user_info(version_control,repo_name,code_repo)
 
 # RClone remote login info
-remote_user_info(remote_backup,repo_name)
+remote_user_info(remote_backup)
 
 # Create Virtual Environment
 from utils.virenv_tools import *

@@ -226,7 +226,7 @@ def outro():
     
 if __name__ == "__main__":
 
-    setup_remote_backup(load_from_env("REMOTE_BACKUP", ".cookiecutter"), load_from_env("REPO_NAME", ".cookiecutter"))
+    setup_remote_backup(load_from_env("REMOTE_BACKUP", ".cookiecutter"))
     
     intro()
 

@@ -525,10 +525,12 @@ def repo_user_info(version_control, repo_name, code_repo):
     else:
         return None, None, None, None
 
-def remote_user_info(remote_name,repo_name):
+def remote_user_info(remote_name):
     """Prompt for remote login credentials and base folder path."""
+    
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
 
-    if remote_name.lower() == "deic storage":
+    if remote_name.lower() == "deic-storage":
         
         email = load_from_env("DEIC_EMAIL")
         password = load_from_env("DEIC_PASS")
@@ -544,8 +546,8 @@ def remote_user_info(remote_name,repo_name):
         email = password = None
 
         while not email or not password:
-            email = input(f"Please enter email to Deic Storage [{default_email}]: ").strip() or default_email
-            password = getpass.getpass("Please enter password to Deic Storage: ").strip()
+            email = input(f"Please enter email to Deic-Storage [{default_email}]: ").strip() or default_email
+            password = getpass.getpass("Please enter password to Deic-Storage: ").strip()
 
             if not email or not password:
                 print("Both email and password are required.\n")

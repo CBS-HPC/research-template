@@ -410,7 +410,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             ".woodpecker.yml": "Configures a Woodpecker CI pipeline used on Codeberg to run test jobs in a Linux environment.",
 
             # Setup package scripts
-            "deic_storage_download.py": "Script to download data from DEIC storage for the project.",
+            "deic_storage_download.py": "Script to download data from Deic-Storage for the project.",
             "dependencies.txt": "Plain text list of external Python dependencies for installation.",
             "get_dependencies.py": "Retrieves and checks required dependencies for the project environment.",
             "install_dependencies.py": "Installs any missing dependencies listed in `dependencies.txt` or detected dynamically.",

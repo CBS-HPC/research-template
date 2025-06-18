@@ -443,7 +443,7 @@ def dvc_init(remote_storage,code_repo,repo_name):
     # Add dvc remote storage
     if remote_storage == "Local Path":
         dvc_local_storage(repo_name)
-    elif remote_storage in ["Dropbox","Deic Storage"]:
+    elif remote_storage in ["Dropbox","Deic-Storage"]:
         dvc_deic_storage(repo_name)
 
     folders = ["data","reports","docs"]
@@ -455,8 +455,8 @@ def dvc_init(remote_storage,code_repo,repo_name):
 
 def dvc_deic_storage(remote_directory =None):
 
-    email = input("Please enter email to Deic Storage: ").strip()
-    password = input("Please enter password to Deic Storage: ").strip()
+    email = input("Please enter email to Deic-Storage: ").strip()
+    password = input("Please enter password to Deic-Storage: ").strip()
 
     # Use root directory if no path is provided
     remote_directory = remote_directory if remote_directory else ''
@@ -561,7 +561,7 @@ def setup_datalad(version_control,remote_storage,code_repo,repo_name):
 
     if remote_storage == "Local Path":
         datalad_local_storage(repo_name)
-    elif remote_storage in ["Dropbox", "Deic Storage"]:
+    elif remote_storage in ["Dropbox", "Deic-Storage"]:
         datalad_deic_storage(repo_name)
 
 def install_datalad():   
@@ -690,9 +690,9 @@ def datalad_deic_storage(repo_name):
 
     def git_annex_remote(remote_name,target,prefix):
         """
-        Creates a git annex remote configuration for 'deic storage' using rclone.
+        Creates a git annex remote configuration for 'deic-storage' using rclone.
         """
-        remote_name = "deic storage"
+        remote_name = "deic-storage"
         target = "dropbox-for-friends"  # Change this to your actual target as needed
         prefix = "my_awesome_dataset"  # Change this to your desired prefix
 
@@ -714,7 +714,7 @@ def datalad_deic_storage(repo_name):
             print(f"An unexpected error occurred: {e}")
 
     #rclone_remote()
-    git_annex_remote("deic storage","deic storage",repo_name)
+    git_annex_remote("deic-storage","deic-storage",repo_name)
 
 def datalad_local_storage(repo_name):
 
