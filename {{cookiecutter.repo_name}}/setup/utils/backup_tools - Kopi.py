@@ -20,7 +20,8 @@ def setup_remote_backup(remote_backups,repo_name):
                 _= rclone_folder(remote_backup.lower(), base_folder)
 
 def rclone_remote(remote_name: str = "deic-storage",email:str = None, password:str = None ):
-    """Create an rclone remote configuration for Deic-Storage (SFTP) or Dropbox based on remote_name."""-torage":
+    """Create an rclone remote configuration for Deic-Storage (SFTP) or Dropbox based on remote_name."""
+    if remote_name =="deic-storage":
         command = [
             'rclone', 'config', 'create', remote_name, 'sftp',
             'host', 'sftp.storage.deic.dk',
