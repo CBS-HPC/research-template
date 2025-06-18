@@ -10,6 +10,10 @@ from .general_tools import *
 from .versioning_tools import *
 
 def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
+    
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+    
     if not os.path.exists(json_path):
         print(f"No rclone registry found at {json_path}")
         return None
@@ -25,6 +29,10 @@ def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> 
     return entry
 
 def save_rclone_json(remote_name: str, folder_path: str, json_path="./bin/rclone_remote.json"):
+    
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     data = {}
     if os.path.exists(json_path):
@@ -52,6 +60,10 @@ def load_all_rclone_json(json_path="./bin/rclone_remote.json"):
         return {}
 
 def update_last_sync(remote_name: str, success=True, json_path="./bin/rclone_remote.json"):
+    
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     if not os.path.exists(json_path):
         return
     try:
@@ -68,7 +80,10 @@ def update_last_sync(remote_name: str, success=True, json_path="./bin/rclone_rem
         print(f"Failed to update sync status: {e}")
 
 def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
- 
+    
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     rclone_repo = load_rclone_json(remote_name)
 
     if not rclone_repo:
@@ -123,6 +138,9 @@ def list_remotes():
             print(f"  - {remote}: {path} | Last Sync: {last_sync} | Status: {status} {status_note}")
 
 def check_rclone_remote(remote_name):
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     try:
         result = subprocess.run(['rclone', 'listremotes'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         remotes = result.stdout.decode('utf-8').splitlines()
@@ -135,6 +153,10 @@ def check_rclone_remote(remote_name):
         return False
 
 def add_remote(remote_name: str = "deic-storage", email: str = None, password: str = None):
+    
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     if remote_name == "deic-storage":
         command = [
             'rclone', 'config', 'create', remote_name, 'sftp',
@@ -166,7 +188,9 @@ def add_remote(remote_name: str = "deic-storage", email: str = None, password: s
         print(f"Failed to create rclone remote: {e}")
 
 def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
-    import subprocess
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     try:
         subprocess.run(['rclone', 'config', 'delete', remote_name], check=True)
         print(f"Rclone remote '{remote_name}' deleted from rclone configuration.")
@@ -187,6 +211,10 @@ def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
             print(f"Error updating JSON config: {e}")
 
 def add_folder(remote_name, base_folder):
+    
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     while True:
         check_command = ['rclone', 'lsf', f"{remote_name}:/{base_folder}"]
         result = subprocess.run(check_command, capture_output=True, text=True)
@@ -216,6 +244,10 @@ def read_rcloneignore(folder):
         return [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
 def setup_remote_backup(remote_name):
+    
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+    
     if remote_name.lower() != "none":
         email, password, base_folder = remote_user_info(remote_name.lower())
         if install_rclone("./bin"):
@@ -255,6 +287,9 @@ def generate_diff_report(remote_name):
             except subprocess.CalledProcessError as e:
                 print(f"Failed to generate diff report for '{remote}': {e}")
 
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     if remote_name.lower() == "all":
         for remote in load_all_rclone_json().keys():
             run_diff(remote)
@@ -263,6 +298,9 @@ def generate_diff_report(remote_name):
 
 @ensure_correct_kernel
 def push_backup(remote_name):
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
     if not install_rclone("./bin"):
@@ -304,6 +342,9 @@ def generate_diff_report(remote_name):
             except subprocess.CalledProcessError as e:
                 print(f"Failed to generate diff report for '{remote}': {e}")
 
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+        
     if remote_name.lower() == "all":
         for remote in load_all_rclone_json().keys():
             run_diff(remote)
