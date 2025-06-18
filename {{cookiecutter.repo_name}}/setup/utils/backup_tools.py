@@ -295,7 +295,6 @@ def generate_diff_report(remote_name):
     else:
         run_diff(remote_name)
 
-@ensure_correct_kernel
 def push_backup(remote_name):
     if remote_name.strip().lower() == "deic storage":
         remote_name = "deic-storage"
@@ -382,7 +381,7 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
         print(f"Failed to pull backup from remote: {e}")
     except Exception as e:
         print(f"An unexpected error occurred while pulling backup: {e}")
-
+@ensure_correct_kernel
 def main():
     parser = argparse.ArgumentParser(description="Backup manager CLI using rclone")
     subparsers = parser.add_subparsers(dest="command")
