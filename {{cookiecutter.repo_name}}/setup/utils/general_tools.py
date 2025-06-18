@@ -560,6 +560,13 @@ def remote_user_info(remote_name):
         save_to_env(base_folder,"DEIC_BASE")
 
         return email, password, base_folder
+    elif remote_name.lower() == "local":
+        base_folder = input("Please enter the local path for rclone: ").strip().replace("'", "").replace('"', '')
+        base_folder = check_path_format(base_folder)
+        if not os.path.isdir(base_folder):
+            print("Error: The specified local path does not exist.")
+            return None, None, None
+        return None, None, base_folder
     elif remote_name.lower() != "none":
         # Handle base folder input (default from input value or fallback to home dir)
         default_base = 'RClone_backup/' + repo_name

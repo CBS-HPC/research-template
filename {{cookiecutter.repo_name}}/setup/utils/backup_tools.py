@@ -144,14 +144,9 @@ def add_remote(remote_name: str = "deic-storage", email: str = None, password: s
     elif remote_name in ["dropbox", "onedrive"]:
         print(f"You will need to authorize rclone with {remote_name}")
         command = ['rclone', 'config', 'create', remote_name, remote_name]
+
     elif remote_name == "local":
-        local_path = input("Please enter the local path for rclone: ").strip().replace("'", "").replace('"', '')
-        local_path = check_path_format(local_path)
-        if not os.path.isdir(local_path):
-            print("Error: The specified local path does not exist.")
-            return
-        print(f"Setting up local path as rclone remote: {local_path}")
-        command = ['rclone', 'config', 'create', remote_name, 'local', '--local-root', local_path]
+        command = ['rclone', 'config', 'create', remote_name, 'local']
     else:
             # Fetch all backend types from rclone
         output = list_supported_remote_types()
