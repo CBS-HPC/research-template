@@ -173,22 +173,6 @@ def set_options(programming_language,version_control):
 
     return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, conda_r_version, conda_python_version 
 
-def multiple_backups(remote_backup):
-
-    if remote_backup == "Multiple":
-        package_installer(required_libraries = ['questionary'])
-        import questionary
-        options = ["Deic-Storage", "Dropbox", "Onedrive", "Local"]
-        remote_backup = questionary.checkbox(
-            "Select remote backups:",
-            choices=options
-        ).ask()
-        if remote_backup:
-            remote_backup = ", ".join(remote_backup)
-        else:
-            remote_backup = "None"
-    return remote_backup
-
 main_setup = "./setup/main_setup.py"
 setup_bash = "./run_setup.sh"
 setup_powershell = "./run_setup.ps1"
@@ -207,8 +191,10 @@ repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
 remote_backup = "{{cookiecutter.remote_backup}}"
+if remote_backup.strip().lower() == "deic storage":
+    remote_backup = "Deic-Storage"
 
-remote_backup = multiple_backups(remote_backup)
+
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager, r_env_manager, code_repo, remote_storage, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
 
