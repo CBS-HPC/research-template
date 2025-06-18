@@ -19,5 +19,5 @@
   ],
 
   "version_control": ["Git", "Datalad", "DVC", "None"],
-  "remote_backup": ["Deic Storage", "Dropbox", "Onedrive", "Local", "None"]
+  "remote_backup": ["Deic-Storage", "Dropbox", "Onedrive", "Local", "None"]
 }

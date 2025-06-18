@@ -29,7 +29,7 @@ Whether you're preparing a replication package for publication, submitting data 
 - 🗃️ Version control via Git, Datalad, or DVC  
 - 📦 Automated script scaffolding for analysis, modeling, and visualization  
 - 🔐 Environment management via Conda or venv  
-- ☁️ Backup integration with DeiC Storage, Dropbox, and OneDrive  
+- ☁️ Backup integration with DeiC-Storage, Dropbox, and OneDrive  
 - 🚀 Remote repository setup with GitHub, GitLab, or Codeberg
 - 🧪 Built-in unit testing, test scaffolds, TDD support, and CI integration across all languages  
 - 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`  
@@ -308,7 +308,7 @@ This template supports automated backup to **CBS-approved storage solutions** us
 
 Supported backup targets include:
 
-- [**DeIC Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA** (see instructions under “Setup → SFTP”)  
+- [**DeIC-Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA** (see instructions under “Setup → SFTP”)  
 - [**Dropbox**](https://www.dropbox.com/)  
 - [**OneDrive**](https://onedrive.live.com/)  
 - **Local** storage – backup to a folder on your own system  
