@@ -57,9 +57,11 @@ def install_uv():
             print(f"Failed to install 'uv' via pip: {e}")
 
 def package_installer(required_libraries: list = None, pip_install: bool = False):
+    
     if not required_libraries:
         return
 
+    print(required_libraries)
     try:
         installed_pkgs = {
             dist.metadata["Name"].lower()
