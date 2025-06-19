@@ -1097,7 +1097,7 @@ def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str 
     if os.path.exists(toml_path):
         try:
             try:
-                with open(toml_path, "rb") as f:
+                with open(toml_path, "r", encoding="utf-8") as f:    
                     config = toml.load(f)
             except Exception as e:
                 print(f"Failed to parse TOML file {toml_path}: {e}")
@@ -1156,7 +1156,7 @@ def toml_json(folder: str = None, json_filename: str = None, tool_name: str = No
     if os.path.exists(toml_path):
         try:
             try:
-                with open(toml_path, "rb") as f:
+                with open(toml_path, "r", encoding="utf-8") as f:
                     config = toml.load(f)
             except Exception as e:
                 print(f"Failed to parse TOML file {toml_path}: {e}")
