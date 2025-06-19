@@ -648,7 +648,6 @@ def install_git_annex_remote_rclone(install_path):
 
         # Create the bin folder if it doesn't exist
         install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
-        #install_path = os.path.abspath(install_path or os.getcwd())
         os.makedirs(install_path, exist_ok=True)
 
         # Check if the repository already exists

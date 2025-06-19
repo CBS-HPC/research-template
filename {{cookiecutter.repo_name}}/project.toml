@@ -1,0 +1,31 @@
+[tool.rcloneignore]
+patterns = [
+"bin/",
+#".venv/",
+#".conda/",
+]
+
+[tool.treeignore]
+patterns = [
+"bin/",
+"utils/",
+".conda/",
+".venv/",
+"renv/",
+".git/",
+".datalad/",
+".gitkeep",
+".env",
+"__pycache__"
+]
+
+[tool.platform_rules]
+pywin32 = "win32"
+pypiwin32 = "win32"
+pywinpty = "win32"
+wmi = "win32"
+pync = "darwin"
+pyobjc = "darwin"
+dbus-python = "linux"
+pygobject = "linux"
+pyudev = "linux"

@@ -10,6 +10,8 @@ import pathlib
 import getpass
 import importlib.metadata
 import re
+import json
+
 
 def set_packages(version_control,programming_language):
 
@@ -17,6 +19,11 @@ def set_packages(version_control,programming_language):
         return []
 
     install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil',"py-cpuinfo","jinja2"]
+
+      # Add toml package if Python version < 3.11
+    if sys.version_info < (3, 11):
+        install_packages.append('toml')
+        
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab','pytest'])
     elif programming_language.lower()  == 'stata':
@@ -528,6 +535,10 @@ def repo_user_info(version_control, repo_name, code_repo):
 def remote_user_info(remote_name):
     """Prompt for remote login credentials and base folder path."""
     
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
+
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
 
     if remote_name.lower() == "deic-storage":
@@ -979,6 +990,7 @@ def patch_jinja_templates(template_folder: str):
                 f.write(content)
 
 def write_script(folder_path, script_name, extension, content):
+    
     """
     Writes the content to a script file in the specified folder path.
     
@@ -1002,3 +1014,125 @@ def write_script(folder_path, script_name, extension, content):
             file.write(content)
         else:
             nbf.write(content, file)
+
+
+
+def toml_ignore(
+    folder: str,
+    ignore_filename: str,
+    tool_name: str,
+    toml_path: str = "project.toml",
+    toml_key: str = "patterns"
+) -> list[str]:
+    """
+    Read ignore patterns from a file (e.g. '.rcloneignore'), or fall back to
+    a TOML config file (e.g. 'pyproject.toml', 'project_config.toml').
+
+    Args:
+        folder (str): Directory where ignore file or TOML file is located.
+        ignore_filename (str): e.g. '.rcloneignore'
+        tool_name (str): Section name in TOML (e.g. 'rclone')
+        toml_path (str): Name of TOML file (e.g. 'pyproject.toml', 'project_config.toml')
+        toml_key (str): Subkey within the section (default: 'patterns')
+
+    Returns:
+        List[str]: Cleaned list of ignore patterns
+    """
+    if sys.version_info < (3, 11):
+        import toml
+    else:
+        import tomllib as toml
+
+    if not folder:
+        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+
+    ignore_path = os.path.join(folder, ignore_filename)
+    if os.path.exists(ignore_path):
+        with open(ignore_path) as f:
+            return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+    toml_path = os.path.join(folder, toml_path)
+    if os.path.exists(toml_path):
+        try:
+            with open(toml_path, "rb") as f:
+                config = toml.load(f)
+
+            # Try [tool.<tool_name>].[toml_key]
+            patterns = (
+                config.get("tool", {})
+                      .get(tool_name, {})
+                      .get(toml_key, None)
+            )
+            if patterns is None:
+                # Fallback to [<tool_name>].[toml_key]
+                patterns = (
+                    config.get(tool_name, {})
+                          .get(toml_key, [])
+                )
+            return [p.strip() for p in patterns if isinstance(p, str)]
+        except Exception as e:
+            print(f"Error reading [{tool_name}].{toml_key} from {toml_path}: {e}")
+            return []
+
+    return []
+
+
+
+import os
+import sys
+import json
+import pathlib
+
+def toml_json(
+    folder: str,
+    json_filename: str,
+    tool_name: str,
+    toml_path: str = "project.toml"
+) -> dict | None:
+    """
+    Load a dictionary from a JSON file, or fall back to a tool-specific section
+    in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
+
+    Args:
+        folder (str): Directory containing config files.
+        json_filename (str): Name of the JSON file to load (e.g., 'platform_rules.json').
+        tool_name (str): Tool name to look for in TOML (e.g., 'platform_rules').
+        toml_path (str): Name of the TOML file to read from.
+
+    Returns:
+        dict | None: Dictionary loaded from JSON or TOML, or None if both fail.
+    """
+    if sys.version_info < (3, 11):
+        import toml
+    else:
+        import tomllib as toml
+
+    if not folder:
+        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+
+    json_path = os.path.join(folder, json_filename)
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error reading {json_filename}: {e}")
+
+    toml_full_path = os.path.join(folder, toml_path)
+    if os.path.exists(toml_full_path):
+        try:
+            with open(toml_full_path, "rb") as f:
+                config = toml.load(f)
+
+            # Try [tool.<tool_name>] first
+            section = config.get("tool", {}).get(tool_name)
+            if section is None:
+                # Fallback to [<tool_name>] top-level
+                section = config.get(tool_name)
+
+            if isinstance(section, dict):
+                return section
+        except Exception as e:
+            print(f"Error reading [{tool_name}] from {toml_path}: {e}")
+
+    return None

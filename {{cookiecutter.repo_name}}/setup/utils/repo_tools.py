@@ -220,7 +220,6 @@ def install_glab(install_path=None):
     os_type = platform.system().lower()
     
     install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
-    #install_path = os.path.abspath(install_path) or os.getcwd()  # Default to current directory if no install_path is provided
 
     os.makedirs(install_path, exist_ok=True)
     version = get_glab_version()
@@ -288,7 +287,6 @@ def install_gh(install_path=None):
     os_type = platform.system().lower()
 
     install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
-    #install_path = os.path.abspath(install_path or os.getcwd())
 
     os.makedirs(install_path, exist_ok=True)
 

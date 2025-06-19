@@ -91,11 +91,14 @@ def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
         return
 
     if folder_to_backup is None:
-        folder_to_backup = os.getcwd()
+        folder_to_backup = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        #folder_to_backup = os.getcwd()
+
     if not os.path.exists(folder_to_backup):
         print(f"Error: The folder '{folder_to_backup}' does not exist.")
         return
-    exclude_patterns = read_rcloneignore(folder_to_backup)
+    exclude_patterns = toml_ignore(folder = folder_to_backup, pyproject_path = "project.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
+    #exclude_patterns = read_rcloneignore(folder_to_backup)
     exclude_args = []
     for pattern in exclude_patterns:
         exclude_args.extend(["--exclude", pattern])
@@ -235,7 +238,7 @@ def add_folder(remote_name, base_folder):
     except Exception as e:
         print(f"Error creating folder: {e}")
 
-def read_rcloneignore(folder):
+def read_rcloneignore_old(folder):
     path = os.path.join(folder, '.rcloneignore')
     if not os.path.exists(path): return []
     with open(path) as f:
@@ -362,12 +365,14 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
         return
 
     if destination_folder is None:
-        destination_folder = os.getcwd()
-
+        #destination_folder = os.getcwd()
+        destination_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+ 
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
 
-    exclude_patterns = read_rcloneignore(destination_folder)
+    exclude_patterns = toml_ignore(folder = destination_folder, pyproject_path = "project.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
+    #exclude_patterns = read_rcloneignore(destination_folder)
     exclude_args = []
     for pattern in exclude_patterns:
         exclude_args.extend(["--exclude", pattern])
@@ -381,6 +386,7 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
         print(f"Failed to pull backup from remote: {e}")
     except Exception as e:
         print(f"An unexpected error occurred while pulling backup: {e}")
+
 @ensure_correct_kernel
 def main():
     parser = argparse.ArgumentParser(description="Backup manager CLI using rclone")
