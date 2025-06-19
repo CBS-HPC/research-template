@@ -1065,105 +1065,106 @@ def write_script(folder_path, script_name, extension, content):
             nbf.write(content, file)
 
 # Configs functions
+if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
+    
+    def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
+        """
+        Load ignore patterns from a file or from a TOML tool config section.
 
-def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
-    """
-    Load ignore patterns from a file or from a TOML tool config section.
+        Returns:
+            Tuple[PathSpec | None, List[str]]: A PathSpec matcher and raw pattern list
+        """
+        # Import appropriate TOML parser
+        if sys.version_info < (3, 11):
+            import toml
+        else:
+            import tomllib as toml
 
-    Returns:
-        Tuple[PathSpec | None, List[str]]: A PathSpec matcher and raw pattern list
-    """
-    # Import appropriate TOML parser
-    if sys.version_info < (3, 11):
-        import toml
-    else:
-        import tomllib as toml
+        # Default folder fallback
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
 
-    # Default folder fallback
-    if not folder:
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-
-    # Try ignore file
-    if ignore_filename:
-        ignore_path = os.path.join(folder, ignore_filename)
-        if os.path.exists(ignore_path):
-            with open(ignore_path, "r", encoding="utf-8") as f:
-                patterns = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-            spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
-            return spec, patterns
-
-    # Try TOML
-    toml_full_path = os.path.join(folder, toml_path)
-    if os.path.exists(toml_full_path):
-        try:
-            with open(toml_full_path, "r", encoding="utf-8") as f:
-                config = toml.load(f)
-            # Try [tool.<tool_name>] first
-            patterns = config.get("tool", {}).get(tool_name)
-            if patterns is None:
-                patterns = config.get(tool_name)
-            if isinstance(patterns, dict):
-                patterns = patterns.get(toml_key, [])
-            if isinstance(patterns, list):
-                patterns = [p.strip() for p in patterns if isinstance(p, str)]
+        # Try ignore file
+        if ignore_filename:
+            ignore_path = os.path.join(folder, ignore_filename)
+            if os.path.exists(ignore_path):
+                with open(ignore_path, "r", encoding="utf-8") as f:
+                    patterns = [line.strip() for line in f if line.strip() and not line.startswith("#")]
                 spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
                 return spec, patterns
-            else:
-                print(f"⚠️ Patterns under [{tool_name}] are not a list.")
-        except Exception as e:
-            print(f"❌ Error reading [{tool_name}] from {toml_full_path}: {e}")
 
-    return None, []
-
-def toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
-    """
-    Load a dictionary from a JSON file, or fall back to a tool-specific section
-    in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
-
-    Args:
-        folder (str): Directory containing config files.
-        json_filename (str): Name of the JSON file to load (e.g., 'platform_rules.json').
-        tool_name (str): Tool name to look for in TOML (e.g., 'platform_rules').
-        toml_path (str): Name of the TOML file to read from.
-
-    Returns:
-        dict | None: Dictionary loaded from JSON or TOML, or None if both fail.
-    """
-    if sys.version_info < (3, 11):
-        import toml
-    else:
-        import tomllib as toml
-
-    if not folder:
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-
-    json_path = str(os.path.join(folder, json_filename))
-    if os.path.exists(json_path):
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error reading {json_filename}: {e}")
-
-    toml_path = str(os.path.join(folder, toml_path))
-    if os.path.exists(toml_path):
-        try:
+        # Try TOML
+        toml_full_path = os.path.join(folder, toml_path)
+        if os.path.exists(toml_full_path):
             try:
-                with open(toml_path, "r", encoding="utf-8") as f:
+                with open(toml_full_path, "r", encoding="utf-8") as f:
                     config = toml.load(f)
+                # Try [tool.<tool_name>] first
+                patterns = config.get("tool", {}).get(tool_name)
+                if patterns is None:
+                    patterns = config.get(tool_name)
+                if isinstance(patterns, dict):
+                    patterns = patterns.get(toml_key, [])
+                if isinstance(patterns, list):
+                    patterns = [p.strip() for p in patterns if isinstance(p, str)]
+                    spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+                    return spec, patterns
+                else:
+                    print(f"⚠️ Patterns under [{tool_name}] are not a list.")
             except Exception as e:
-                print(f"Failed to parse TOML file {toml_path}: {e}")
-                return None
+                print(f"❌ Error reading [{tool_name}] from {toml_full_path}: {e}")
 
-            # Try [tool.<tool_name>] first
-            section = config.get("tool", {}).get(tool_name)
-            if section is None:
-                # Fallback to [<tool_name>] top-level
-                section = config.get(tool_name)
+        return None, []
 
-            if isinstance(section, dict):
-                return section
-        except Exception as e:
-            print(f"Error reading [{tool_name}] from {toml_path}: {e}")
+    def toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+        """
+        Load a dictionary from a JSON file, or fall back to a tool-specific section
+        in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
 
-    return None
+        Args:
+            folder (str): Directory containing config files.
+            json_filename (str): Name of the JSON file to load (e.g., 'platform_rules.json').
+            tool_name (str): Tool name to look for in TOML (e.g., 'platform_rules').
+            toml_path (str): Name of the TOML file to read from.
+
+        Returns:
+            dict | None: Dictionary loaded from JSON or TOML, or None if both fail.
+        """
+        if sys.version_info < (3, 11):
+            import toml
+        else:
+            import tomllib as toml
+
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+
+        json_path = str(os.path.join(folder, json_filename))
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error reading {json_filename}: {e}")
+
+        toml_path = str(os.path.join(folder, toml_path))
+        if os.path.exists(toml_path):
+            try:
+                try:
+                    with open(toml_path, "r", encoding="utf-8") as f:
+                        config = toml.load(f)
+                except Exception as e:
+                    print(f"Failed to parse TOML file {toml_path}: {e}")
+                    return None
+
+                # Try [tool.<tool_name>] first
+                section = config.get("tool", {}).get(tool_name)
+                if section is None:
+                    # Fallback to [<tool_name>] top-level
+                    section = config.get(tool_name)
+
+                if isinstance(section, dict):
+                    return section
+            except Exception as e:
+                print(f"Error reading [{tool_name}] from {toml_path}: {e}")
+
+        return None
