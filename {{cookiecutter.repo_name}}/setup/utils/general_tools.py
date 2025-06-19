@@ -12,9 +12,6 @@ import importlib.metadata
 import re
 import json
 
-
-
-
 def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
@@ -61,8 +58,6 @@ def install_uv():
 def package_installer(required_libraries: list = None, pip_install: bool = False):
     if not required_libraries:
         return
-
-    print(required_libraries)
 
     try:
         installed_pkgs = {
@@ -506,7 +501,6 @@ from dotenv import dotenv_values, load_dotenv
 
 package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
 
-
 @contextmanager
 def change_dir(destination):
     cur_dir = os.getcwd()
@@ -516,7 +510,6 @@ def change_dir(destination):
         yield
     finally:
         os.chdir(cur_dir)
-
 
 def ask_yes_no(question):
     """
@@ -1072,6 +1065,8 @@ def write_script(folder_path, script_name, extension, content):
         else:
             nbf.write(content, file)
 
+
+# Configs functions
 def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
     """
     Read ignore patterns from a file (e.g. '.rcloneignore'), or fall back to
