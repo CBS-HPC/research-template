@@ -11,7 +11,6 @@ import getpass
 import importlib.metadata
 import re
 import json
-import pathspec
 
 def set_packages(version_control,programming_language):
 
@@ -1066,7 +1065,8 @@ def write_script(folder_path, script_name, extension, content):
 
 # Configs functions
 if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
-    
+    import pathspec
+
     def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
         """
         Load ignore patterns from a file or from a TOML tool config section.
