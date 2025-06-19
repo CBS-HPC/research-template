@@ -97,7 +97,7 @@ def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
     if not os.path.exists(folder_to_backup):
         print(f"Error: The folder '{folder_to_backup}' does not exist.")
         return
-    exclude_patterns = toml_ignore(folder = folder_to_backup, pyproject_path = "project.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
+    exclude_patterns = toml_ignore(folder = folder_to_backup, toml_path = "project.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
     #exclude_patterns = read_rcloneignore(folder_to_backup)
     exclude_args = []
     for pattern in exclude_patterns:
@@ -371,7 +371,7 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
 
-    exclude_patterns = toml_ignore(folder = destination_folder, pyproject_path = "project.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
+    exclude_patterns = toml_ignore(folder = destination_folder, toml_path = "project.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
     #exclude_patterns = read_rcloneignore(destination_folder)
     exclude_args = []
     for pattern in exclude_patterns:
