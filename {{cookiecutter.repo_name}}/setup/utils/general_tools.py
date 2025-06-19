@@ -1066,13 +1066,7 @@ def write_script(folder_path, script_name, extension, content):
 
 # Configs functions
 
-def toml_ignore(
-    folder: str = None,
-    ignore_filename: str = None,
-    tool_name: str = None,
-    toml_path: str = "project.toml",
-    toml_key: str = "patterns"
-) -> tuple[pathspec.PathSpec | None, list[str]]:
+def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
     """
     Load ignore patterns from a file or from a TOML tool config section.
 
