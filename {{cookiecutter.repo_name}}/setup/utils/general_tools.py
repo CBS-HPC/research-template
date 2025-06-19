@@ -1087,12 +1087,12 @@ def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str 
     if not folder:
         folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
 
-    ignore_path = os.path.join(folder, ignore_filename)
+    ignore_path = str(os.path.join(folder, ignore_filename))
     if os.path.exists(ignore_path):
         with open(ignore_path) as f:
             return [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
-    toml_path = os.path.join(folder, toml_path)
+    toml_path = str(os.path.join(folder, toml_path))
 
     if os.path.exists(toml_path):
         try:
@@ -1144,7 +1144,7 @@ def toml_json(folder: str = None, json_filename: str = None, tool_name: str = No
     if not folder:
         folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
 
-    json_path = os.path.join(folder, json_filename)
+    json_path = str(os.path.join(folder, json_filename))
     if os.path.exists(json_path):
         try:
             with open(json_path, "r", encoding="utf-8") as f:
@@ -1152,7 +1152,7 @@ def toml_json(folder: str = None, json_filename: str = None, tool_name: str = No
         except Exception as e:
             print(f"Error reading {json_filename}: {e}")
 
-    toml_path = os.path.join(folder, toml_path)
+    toml_path = str(os.path.join(folder, toml_path))
     if os.path.exists(toml_path):
         try:
             try:
