@@ -990,7 +990,6 @@ def set_program_path(programming_language):
         save_to_env(sys.executable, "PYTHON")
         save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
 
-
 # Maps
 ext_map = {
     "r": "R",
@@ -1007,7 +1006,6 @@ language_dirs = {
     "matlab": "./src",
     "sas": "./src"
 }
-
 
 # Jinja template functions
 from jinja2 import Environment, FileSystemLoader
@@ -1065,7 +1063,6 @@ def write_script(folder_path, script_name, extension, content):
         else:
             nbf.write(content, file)
 
-
 # Configs functions
 def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
     """
@@ -1096,11 +1093,16 @@ def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str 
             return [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
     toml_path = os.path.join(folder, toml_path)
+
     if os.path.exists(toml_path):
         try:
-            with open(toml_path, "rb") as f:
-                config = toml.load(f)
-
+            try:
+                with open(toml_path, "rb") as f:
+                    config = toml.load(f)
+            except Exception as e:
+                print(f"Failed to parse TOML file {toml_path}: {e}")
+                return None
+    
             # Try [tool.<tool_name>].[toml_key]
             patterns = (
                 config.get("tool", {})
@@ -1150,11 +1152,15 @@ def toml_json(folder: str = None, json_filename: str = None, tool_name: str = No
         except Exception as e:
             print(f"Error reading {json_filename}: {e}")
 
-    toml_full_path = os.path.join(folder, toml_path)
-    if os.path.exists(toml_full_path):
+    toml_path = os.path.join(folder, toml_path)
+    if os.path.exists(toml_path):
         try:
-            with open(toml_full_path, "rb") as f:
-                config = toml.load(f)
+            try:
+                with open(toml_path, "rb") as f:
+                    config = toml.load(f)
+            except Exception as e:
+                print(f"Failed to parse TOML file {toml_path}: {e}")
+                return None
 
             # Try [tool.<tool_name>] first
             section = config.get("tool", {}).get(tool_name)
