@@ -39,7 +39,6 @@ def creating_readme(programming_language = "None"):
 
     generate_readme(programming_language,readme_file,code_path,file_descriptions,)
 
-    #ignore_list = read_treeignore()
     ignore_list, _  = toml_ignore(toml_path = "project.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
     
     create_tree(readme_file,ignore_list ,file_descriptions)
@@ -188,16 +187,6 @@ def get_system_specs():
 
     return section_text 
 
-# Project Tree
-def read_treeignore(file_path="./.treeignore"):
-    """Load ignore rules from a .gitignore-style file."""
-    file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(file_path))
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        patterns = f.read().splitlines()
-    spec = pathspec.PathSpec.from_lines('gitwildmatch', patterns)
-    return spec
-
 def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptions.json", root_folder=None):
     """
     Updates the "Project Tree" section in a README.md file with the project structure.
@@ -298,13 +287,9 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
 
         print("✅ README updated with new project directory tree.")
 
-    #json_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
-
     if not readme_file:
         readme_file = "README.md"
     
-    #readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
-
     if not os.path.exists(readme_file):
         print(f"README file '{readme_file}' does not exist. Exiting.")
         return
@@ -317,12 +302,13 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
     if ignore_list is None:
         ignore_list = []  # Default to an empty list if not provided
 
+    file_descriptions = toml_json(folder = root_folder, json_filename =  json_file ,tool_name = file_descriptions, toml_path = "project.toml")
 
-    if isinstance(json_file, str) and json_file.endswith(".json") and os.path.exists(json_file): 
-        with open(json_file, "r", encoding="utf-8") as json_file:
-            file_descriptions = json.load(json_file)
-    else:
-        file_descriptions = None
+    #if isinstance(json_file, str) and json_file.endswith(".json") and os.path.exists(json_file): 
+    #    with open(json_file, "r", encoding="utf-8") as json_file:
+    #        file_descriptions = json.load(json_file)
+    #else:
+    #    file_descriptions = None
     
     update_readme_tree_section(readme_file, root_folder, file_descriptions, ignore_list)
     
@@ -445,7 +431,6 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
 
         # Extract the project tree section using regex
-        #tree_match = re.search(r"##\s*Project Directory Structure\s*\n+([\s\S]+?)```", readme_content)
         tree_match = re.search(r"<summary>\s*📁\s*Project Directory Structure\s*</summary>\s*([\s\S]+?)```", readme_content)
         if not tree_match:
             print("'📁 Project Directory Structure' section not found in README.md")
@@ -473,9 +458,6 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
 
         print(f"File descriptions updated in {json_file}")
 
-    #json_file   = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file))
-    #readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
-
     if os.path.exists(json_file):
         with open(json_file, "r", encoding="utf-8") as f:
             file_descriptions = json.load(f)
@@ -499,8 +481,6 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
         release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
     """
     # Split authors and ORCIDs into lists
-    #author_names = authors.split(";") if authors else []
-    #orcid_list = orcids.split(";") if orcids else []
     author_names = re.split(r'[;,]', authors) if authors else []
     orcid_list = re.split(r'[;,]', orcids) if orcids else []
 

@@ -385,14 +385,11 @@ def set_config_table(programming_language):
 | File                    | Purpose                                                                                         |
 |-------------------------|-------------------------------------------------------------------------------------------------|
 | `.gitignore`            | Excludes unnecessary files from Git version control                                             |
-| `.rcloneignore`         | Excludes files from syncing when using Rclone                                                   |
-| `.treeignore`           | Filters out files/folders from project tree utilities                                           |
 | `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
 | `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
 | `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
 | `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
 | `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
-| `platform_rules.json`| Maps Python packages to platform-specific tags (win32, darwin, linux) to conditionally include them in requirements.txt or environment.yml. |
 """ 
     else:
         config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
@@ -400,14 +397,11 @@ def set_config_table(programming_language):
 | File                    | Purpose                                                                                         |
 |-------------------------|-------------------------------------------------------------------------------------------------|
 | `.gitignore`            | Excludes unnecessary files from Git version control                                             |
-| `.rcloneignore`         | Excludes files from syncing when using Rclone                                                   |
-| `.treeignore`           | Filters out files/folders from project tree utilities                                           |
 | `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
 | `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
 | `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
 | `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
 | `renv.lock`             | Records the exact versions of R packages used in the project                                    |
-| `platform_rules.json`| maps Python packages to platform-specific tags (win32, darwin, linux) to conditionally include them in requirements.txt or environment.yml. |
 """ 
     return config
 

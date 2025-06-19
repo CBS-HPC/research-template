@@ -519,34 +519,20 @@ def create_conda_environment_yml(r_version=None,requirements_file:str="requireme
 
     print(f"✅ Conda environment file created: {output_file}")
 
-def tag_env_file(env_file: str = "environment.yml", platform_rules_file: str = "platform_rules.json"):
+def tag_env_file(env_file: str = "environment.yml"):
     # Paths
     root = pathlib.Path(__file__).resolve().parent.parent.parent
     env_path = root / env_file
-    #rules_path = root / platform_rules_file
 
     if not env_path.exists():
         print(f"❌ {env_file} not found.")
         return
 
-
     raw_rules = toml_json(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "project.toml")
 
     if not raw_rules:
-        print(f"❌ 'platform_files' not found in project.toml or as 'platform_rules.json'")
-        return
-    
-    if not raw_rules:
         print("ℹ️ No platform rules found. Skipping tagging.")
         return
-
-    #if not rules_path.exists():
-    #    print(f"❌ {platform_rules_file} not found.")
-    #    return
-
-    # Load platform rules (sys_platform -> conda selector map)
-    #with open(rules_path, "r", encoding="utf-8") as f:
-    #    raw_rules = json.load(f)
 
     sys_to_conda = {
         "win32": "win",
@@ -597,25 +583,12 @@ def tag_env_file(env_file: str = "environment.yml", platform_rules_file: str = "
 
     print(f"✅ Updated {env_file} with Conda-style platform tags")
 
-def tag_requirements_txt(requirements_file: str = "requirements.txt",platform_rules_file: str = "platform_rules.json"):
+def tag_requirements_txt(requirements_file: str = "requirements.txt"):
     # Resolve paths
     root = pathlib.Path(__file__).resolve().parent.parent.parent
     requirements_path = root / requirements_file
     
     platform_rules = toml_json(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "project.toml")
-
-    #if not raw_rules:
-    #    print(f"❌ 'platform_files' not found in project.toml or as 'platform_rules.json'")
-    #    return
-    
-    #rules_path = root / platform_rules_file
-
-    # Load platform-specific rules
-    #if rules_path.exists():
-    #    with open(rules_path, "r", encoding="utf-8") as f:
-    #        platform_rules = json.load(f)
-    #else:
-    #    platform_rules = {}
 
     if not platform_rules:
         print("ℹ️ No platform rules found. Skipping tagging.")

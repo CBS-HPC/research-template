@@ -9,8 +9,8 @@ from functools import wraps
 import pathlib
 import getpass
 import importlib.metadata
-import re
 import json
+
 
 def set_packages(version_control,programming_language):
 
@@ -1168,3 +1168,70 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
                 print(f"Error reading [{tool_name}] from {toml_path}: {e}")
 
         return None
+
+
+import os
+import sys
+import json
+import pathlib
+
+    def write_json_to_toml(
+        data: dict,
+        folder: str = None,
+        tool_name: str = None,
+        toml_path: str = "project.toml"
+    ):
+        """
+        Write a dictionary to a TOML file under [tool.<tool_name>].
+
+        Args:
+            data (dict): The data to write.
+            folder (str): Base folder containing the TOML file.
+            tool_name (str): The tool section under [tool] to write to.
+            toml_path (str): The TOML filename (default: project.toml).
+        """
+        if not isinstance(data, dict):
+            raise ValueError("Data must be a dictionary")
+
+        if not tool_name:
+            raise ValueError("tool_name is required")
+
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+
+        full_toml_path = os.path.join(folder, toml_path)
+
+        # Load existing TOML
+        if sys.version_info < (3, 11):
+            import toml
+            load_toml = toml.load
+            dump_toml = toml.dump
+        else:
+            import tomllib
+            import tomli_w
+            load_toml = lambda f: tomllib.load(f)
+            dump_toml = lambda data, f: f.write(tomli_w.dumps(data))
+
+        toml_data = {}
+
+        if os.path.exists(full_toml_path):
+            with open(full_toml_path, "rb") as f:
+                try:
+                    toml_data = load_toml(f)
+                except Exception as e:
+                    print(f"⚠️ Failed to parse TOML file {toml_path}: {e}")
+                    return
+
+        # Insert or update section
+        if "tool" not in toml_data:
+            toml_data["tool"] = {}
+
+        toml_data["tool"][tool_name] = data
+
+        # Write updated TOML
+        with open(full_toml_path, "w", encoding="utf-8") as f:
+            try:
+                dump_toml(toml_data, f)
+                print(f"✅ Successfully wrote to [tool.{tool_name}] in {toml_path}")
+            except Exception as e:
+                print(f"❌ Failed to write TOML: {e}")
