@@ -1023,7 +1023,7 @@ def toml_ignore(
     tool_name: str,
     toml_path: str = "project.toml",
     toml_key: str = "patterns"
-) -> list[str]:
+):
     """
     Read ignore patterns from a file (e.g. '.rcloneignore'), or fall back to
     a TOML config file (e.g. 'pyproject.toml', 'project_config.toml').
@@ -1076,19 +1076,12 @@ def toml_ignore(
 
     return []
 
-
-
-import os
-import sys
-import json
-import pathlib
-
 def toml_json(
     folder: str,
     json_filename: str,
     tool_name: str,
     toml_path: str = "project.toml"
-) -> dict | None:
+):
     """
     Load a dictionary from a JSON file, or fall back to a tool-specific section
     in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
