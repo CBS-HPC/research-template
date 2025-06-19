@@ -40,8 +40,8 @@ def creating_readme(programming_language = "None"):
     generate_readme(programming_language,readme_file,code_path,file_descriptions,)
 
     #ignore_list = read_treeignore()
-    ignore_list = toml_ignore(toml_path = "project.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
-
+    ignore_list, _  = toml_ignore(toml_path = "project.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
+    
     create_tree(readme_file,ignore_list ,file_descriptions)
     
 def generate_readme(programming_language,readme_file = "./README.md",code_path = None,json_file="./file_descriptions.json"):
