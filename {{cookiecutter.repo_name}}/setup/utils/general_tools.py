@@ -13,6 +13,8 @@ import re
 import json
 
 
+
+
 def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
@@ -20,9 +22,9 @@ def set_packages(version_control,programming_language):
 
     install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil',"py-cpuinfo","jinja2"]
 
-      # Add toml package if Python version < 3.11
-    #if sys.version_info < (3, 11):
-    #    install_packages.append('toml')
+    # Add toml package if Python version < 3.11
+    if sys.version_info < (3, 11):
+        install_packages.append('toml')
         
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab','pytest'])
@@ -57,11 +59,64 @@ def install_uv():
             print(f"Failed to install 'uv' via pip: {e}")
 
 def package_installer(required_libraries: list = None, pip_install: bool = False):
-    
     if not required_libraries:
         return
 
     print(required_libraries)
+
+    try:
+        installed_pkgs = {
+            name.lower()
+            for dist in importlib.metadata.distributions()
+            if (name := dist.metadata.get("Name")) is not None
+        }
+    except Exception as e:
+        print(f"Error checking installed packages: {e}")
+        return
+
+    missing_libraries = []
+    for lib in required_libraries:
+        norm_name = (
+            lib.split("==")[0]
+               .split(">=")[0]
+               .split("<=")[0]
+               .split("~=")[0]
+               .strip()
+               .lower()
+        )
+        if norm_name not in installed_pkgs:
+            missing_libraries.append(lib)
+
+    if not missing_libraries:
+        return
+
+    print(f"Installing missing libraries: {missing_libraries}")
+
+    install_uv()
+
+    for lib in missing_libraries:
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "uv", "pip", "install", lib],
+                check=True,
+                stderr=subprocess.DEVNULL
+            )
+        except subprocess.CalledProcessError:
+            print(f"uv failed to install {lib}. Trying pip fallback...")
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "install", lib],
+                    check=True,
+                    stderr=subprocess.DEVNULL
+                )
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to install {lib} with pip: {e}")
+
+def package_installer_old(required_libraries: list = None, pip_install: bool = False):
+    
+    if not required_libraries:
+        return
+
     try:
         installed_pkgs = {
             dist.metadata["Name"].lower()
