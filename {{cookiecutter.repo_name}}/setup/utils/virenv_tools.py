@@ -5,6 +5,7 @@ import platform
 import urllib.request
 import pathlib
 import json
+import shutil
 
 from .general_tools import *
 
@@ -410,6 +411,9 @@ def create_venv_env():
         # Attempt to create virtual environment using uv via sys.executable
         subprocess.run([sys.executable, "-m", "uv", "venv", env_path], check=True)
         print(f'Virtual environment created at "{env_path}" using uv.')
+        subprocess.run(["uv", "lock"], check=True)
+        print("Successfully created uv.lock.")
+
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("uv is not available or failed to create the virtual environment. Falling back to venv.")
         try:

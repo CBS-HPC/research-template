@@ -56,7 +56,20 @@ def install_uv():
         except subprocess.CalledProcessError as e:
             print(f"Failed to install 'uv' via pip: {e}")
 
-def package_installer(required_libraries: list = None, pip_install: bool = False):
+def package_installer(required_libraries: list = None):
+    def safe_uv_add(lib):
+        try:
+            # Only try uv add if pyproject.toml exists
+            if pathlib.Path("pyproject.toml").exists():
+                subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
+                print(f"Installed and locked {lib} using uv add.")
+                return True
+            else:
+                print("pyproject.toml not found — skipping uv add.")
+                return False
+        except subprocess.CalledProcessError:
+            return False
+        
     if not required_libraries:
         return
 
@@ -87,79 +100,31 @@ def package_installer(required_libraries: list = None, pip_install: bool = False
         return
 
     print(f"Installing missing libraries: {missing_libraries}")
-
     install_uv()
 
     for lib in missing_libraries:
+        if safe_uv_add(lib):
+            continue
+
+        print(f"uv add failed or skipped for {lib}. Trying uv pip install...")
         try:
             subprocess.run(
                 [sys.executable, "-m", "uv", "pip", "install", lib],
                 check=True,
                 stderr=subprocess.DEVNULL
             )
+            print(f"Installed {lib} using uv pip install.")
         except subprocess.CalledProcessError:
-            print(f"uv failed to install {lib}. Trying pip fallback...")
+            print(f"uv pip install failed for {lib}. Trying pip fallback...")
             try:
                 subprocess.run(
                     [sys.executable, "-m", "pip", "install", lib],
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
+                print(f"Installed {lib} using pip.")
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install {lib} with pip: {e}")
-
-def package_installer_old(required_libraries: list = None, pip_install: bool = False):
-    
-    if not required_libraries:
-        return
-
-    try:
-        installed_pkgs = {
-            dist.metadata["Name"].lower()
-            for dist in importlib.metadata.distributions()
-        }
-    except Exception as e:
-        print(f"Error checking installed packages: {e}")
-        return
-
-    missing_libraries = []
-    for lib in required_libraries:
-        norm_name = (
-            lib.split("==")[0]
-               .split(">=")[0]
-               .split("<=")[0]
-               .split("~=")[0]
-               .strip()
-               .lower()
-        )
-        if norm_name not in installed_pkgs:
-            missing_libraries.append(lib)
-
-    if not missing_libraries:
-        return
-
-    print(f"Installing missing libraries: {missing_libraries}")
-
-    install_uv()
-
-    for lib in missing_libraries:
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "uv", "pip", "install", lib],
-                check=True,
-                stderr=subprocess.DEVNULL
-            )
-        except subprocess.CalledProcessError:
-            print(f"uv failed to install {lib}. Trying pip fallback...")
-            try:
-                subprocess.run(
-                    [sys.executable, "-m", "pip", "install", lib],
-                    check=True,
-                    stderr=subprocess.DEVNULL
-                )
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install {lib} with pip: {e}")
-
 def check_path_format(path, project_root=None):
     if not path:
         return path
@@ -182,55 +147,6 @@ def check_path_format(path, project_root=None):
             path = r"{}".format(path.replace("\\", "/"))
 
     return path
-
-def load_from_env_old(env_var: str, env_file: str = ".env", toml_file: str = "project.toml"):
-    """
-    Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
-    """
-
-    # Import appropriate TOML parser
-    if sys.version_info < (3, 11):
-        import toml
-    else:
-        import tomllib as toml
-
-    env_var_upper = env_var.upper()
-    env_file_path = pathlib.Path(env_file)
-    if not env_file_path.is_absolute():
-        env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
-
-    # Try reading .env first
-    if env_file_path.exists():
-        env_values = dotenv_values(env_file_path)
-        if env_var_upper in env_values:
-            return check_path_format(env_values[env_var_upper])
-        load_dotenv(env_file_path, override=True)
-        value = os.getenv(env_var_upper)
-        if value:
-            return check_path_format(value)
-
-    # If explicitly .env, DO NOT fallback
-    if env_file_path.name == ".env":
-        return None
-
-    # Derive TOML section name from env_file (e.g., ".cookiecutter" → "cookiecutter")
-    toml_section = env_file_path.stem.lstrip(".")
-
-    # Read from TOML fallback
-    toml_path = pathlib.Path(toml_file)
-    if not toml_path.is_absolute():
-        toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
-
-    if toml_path.exists():
-        try:
-            with open(toml_path, "r", encoding="utf-8") as f:  
-                config = toml.load(f)
-
-            return check_path_format(config.get("tool", {}).get(toml_section, {}).get(env_var_upper))
-        except Exception as e:
-            print(f"⚠️ Could not read {toml_path}: {e}")
-
-    return None
 
 def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "project.toml"):
     """
@@ -284,79 +200,6 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "projec
             print(f"⚠️ Could not read {toml_path}: {e}")
 
     return None
-
-def save_to_env_old(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "project.toml"):
-    """
-    Saves or updates a single environment variable.
-    Writes to .env if used; otherwise updates [tool.<section>] in TOML without overwriting other fields.
-    """
-
-    if sys.version_info < (3, 11):
-        import toml
-        load_toml = toml.load
-        dump_toml = toml.dump
-    else:
-        import tomllib
-        import tomli_w
-        def load_toml(f): return tomllib.load(f)
-        def dump_toml(d, f): f.write(tomli_w.dumps(d))
-
-    if env_var is None:
-        return
-
-    env_name_upper = env_name.strip().upper()
-    env_var = check_path_format(env_var)
-
-    env_file_path = pathlib.Path(env_file)
-    if not env_file_path.is_absolute():
-        env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
-
-    # Always write to .env if explicitly requested
-    if env_file_path.name == ".env" or env_file_path.exists():
-        lines = []
-        if env_file_path.exists():
-            with open(env_file_path, "r") as f:
-                lines = f.readlines()
-
-        updated = False
-        for i, line in enumerate(lines):
-            if "=" in line:
-                name, _ = line.split("=", 1)
-                if name.strip().upper() == env_name_upper:
-                    lines[i] = f"{env_name_upper}={env_var}\n"
-                    updated = True
-                    break
-        if not updated:
-            lines.append(f"{env_name_upper}={env_var}\n")
-
-        with open(env_file_path, "w") as f:
-            f.writelines(lines)
-
-        return
-
-    # Fallback: write to TOML without overwriting other fields
-    toml_section = env_file_path.stem.lstrip(".")
-    toml_path = pathlib.Path(toml_file)
-    if not toml_path.is_absolute():
-        toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
-
-    config = {}
-    if toml_path.exists():
-        with open(toml_path, "r", encoding="utf-8") as f:    
-            try:
-                config = load_toml(f)
-            except Exception as e:
-                print(f"⚠️ Could not parse TOML: {e}")
-
-    # Preserve existing content
-    config.setdefault("tool", {})
-    config["tool"].setdefault(toml_section, {})
-
-    # Only update the target variable
-    config["tool"][toml_section][env_name_upper] = env_var
-
-    with open(toml_path, "w", encoding="utf-8") as f:
-        dump_toml(config, f)
 
 def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "project.toml"):
     """
@@ -1173,6 +1016,7 @@ def set_program_path(programming_language):
     if not load_from_env("PYTHON"):
         save_to_env(sys.executable, "PYTHON")
         save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
+        save_to_env(get_version("python"), "python","uv")
 
 # Maps
 ext_map = {

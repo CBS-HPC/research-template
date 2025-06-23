@@ -1,4 +1,19 @@
 # ============================================================
+# Environment configuration for uv
+# ============================================================
+
+[project]
+name = {{cookiecutter.project_name}}
+version = "{{cookiecutter.version}}"
+description = "Insert project description here"
+dependencies = [
+]
+
+[tool.uv]
+python = "None"
+
+
+# ============================================================
 # Project template metadata
 # Replaces: .cookiecutter
 # Used for documentation, reproducibility, and scaffolding
@@ -21,7 +36,7 @@ VERSION_CONTROL = "None"
 REMOTE_BACKUP = "None"
 REMOTE_STORAGE = "None"
 CODE_REPO = "None"
-PYTHON_VERSION = "Python 3.9.13"
+PYTHON_VERSION = "None"
 
 # ============================================================
 # Ignore patterns for remote sync tools like Rclone
