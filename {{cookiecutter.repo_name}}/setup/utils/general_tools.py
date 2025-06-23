@@ -222,8 +222,13 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "projec
     """
     Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
     """
-    import pathlib
-    from dotenv import dotenv_values, load_dotenv
+   
+
+            # Import appropriate TOML parser
+    if sys.version_info < (3, 11):
+        import toml
+    else:
+        import tomllib as toml
 
     env_var_upper = env_var.upper()
     env_file_path = pathlib.Path(env_file)
@@ -254,14 +259,9 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "projec
 
     if toml_path.exists():
         try:
-            if sys.version_info < (3, 11):
-                import toml
-                with open(toml_path, "r", encoding="utf-8") as f:
-                    config = toml.load(f)
-            else:
-                import tomllib
-                with open(toml_path, "rb") as f:
-                    config = tomllib.load(f)
+            with open(toml_path, "r", encoding="utf-8") as f:  
+                config = toml.load(f)
+
             return check_path_format(config.get("tool", {}).get(toml_section, {}).get(env_var_upper))
         except Exception as e:
             print(f"⚠️ Could not read {toml_path}: {e}")
@@ -319,7 +319,18 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
     Saves or updates a single environment variable.
     Writes to .env if used; otherwise updates [tool.<section>] in TOML without overwriting other fields.
     """
-    import pathlib
+ 
+
+    if sys.version_info < (3, 11):
+        import toml
+        load_toml = toml.load
+        dump_toml = toml.dump
+    else:
+        import tomllib
+        import tomli_w
+        def load_toml(f): return tomllib.load(f)
+        def dump_toml(d, f): f.write(tomli_w.dumps(d))
+
 
     if env_var is None:
         return
@@ -361,19 +372,9 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
     if not toml_path.is_absolute():
         toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
 
-    if sys.version_info < (3, 11):
-        import toml
-        load_toml = toml.load
-        dump_toml = toml.dump
-    else:
-        import tomllib
-        import tomli_w
-        def load_toml(f): return tomllib.load(f)
-        def dump_toml(d, f): f.write(tomli_w.dumps(d))
-
     config = {}
     if toml_path.exists():
-        with open(toml_path, "rb") as f:
+        with open(toml_path, "r", encoding="utf-8") as f:    
             try:
                 config = load_toml(f)
             except Exception as e:
