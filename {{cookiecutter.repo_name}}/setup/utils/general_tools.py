@@ -1519,7 +1519,7 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
             try:
                 if sys.version_info < (3, 11):
                     import toml
-                with open(toml_file_path, "r", encoding="utf-8") as f:
+                    with open(toml_file_path, "r", encoding="utf-8") as f:
                         config = toml.load(f)
                 else:
                     import tomllib
