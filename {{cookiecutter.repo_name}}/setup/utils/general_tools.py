@@ -316,7 +316,8 @@ def save_to_env_old(env_var: str, env_name: str, env_file: str = ".env"):
 
 def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "project.toml"):
     """
-    Saves or updates a variable in .env, or [tool.<env_file_name>] in TOML fallback.
+    Saves or updates a single environment variable.
+    Writes to .env if used; otherwise updates [tool.<section>] in TOML without overwriting other fields.
     """
     import pathlib
 
@@ -325,6 +326,7 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
 
     env_name_upper = env_name.strip().upper()
     env_var = check_path_format(env_var)
+
     env_file_path = pathlib.Path(env_file)
     if not env_file_path.is_absolute():
         env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
@@ -333,7 +335,7 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
     if env_file_path.name == ".env" or env_file_path.exists():
         lines = []
         if env_file_path.exists():
-            with open(env_file_path, 'r') as f:
+            with open(env_file_path, "r") as f:
                 lines = f.readlines()
 
         updated = False
@@ -349,10 +351,11 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
 
         with open(env_file_path, "w") as f:
             f.writelines(lines)
+
         print(f"✅ Saved {env_name_upper} to {env_file_path}")
         return
 
-    # Fallback: Write to [tool.<section>] in TOML
+    # Fallback: write to TOML without overwriting other fields
     toml_section = env_file_path.stem.lstrip(".")
     toml_path = pathlib.Path(toml_file)
     if not toml_path.is_absolute():
@@ -376,15 +379,16 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
             except Exception as e:
                 print(f"⚠️ Could not parse TOML: {e}")
 
-    if "tool" not in config:
-        config["tool"] = {}
-    if toml_section not in config["tool"]:
-        config["tool"][toml_section] = {}
+    # Preserve existing content
+    config.setdefault("tool", {})
+    config["tool"].setdefault(toml_section, {})
 
+    # Only update the target variable
     config["tool"][toml_section][env_name_upper] = env_var
 
     with open(toml_path, "w", encoding="utf-8") as f:
         dump_toml(config, f)
+
     print(f"✅ Saved {env_name_upper} to [tool.{toml_section}] in {toml_file}")
 
 def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"):
