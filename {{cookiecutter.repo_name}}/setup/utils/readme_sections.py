@@ -117,7 +117,7 @@ set-dataset
 <details>
 <summary>📁 Project Directory Structure</summary>
 
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./file_descriptions.json` file.
+The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./project.toml` file.
 
 ```
 
@@ -305,7 +305,7 @@ def set_script_structure(programming_language, software_version, folder_path, js
 
             # Load descriptions JSON
     
-    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_description", toml_path = "project.toml")  
+    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_descriptions", toml_path = "project.toml")  
 
     if not file_descriptions:
         file_descriptions = {}
@@ -389,11 +389,9 @@ def set_config_table(programming_language):
 | File                    | Purpose                                                                                         |
 |-------------------------|-------------------------------------------------------------------------------------------------|
 | `.gitignore`            | Excludes unnecessary files from Git version control                                             |
-| `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
 | `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
 | `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
 | `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
-| `file_descriptions.json`| Stores structured metadata used to describe and annotate the project directory tree; consumed by setup and documentation tools |
 """ 
     else:
         config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
@@ -401,7 +399,6 @@ def set_config_table(programming_language):
 | File                    | Purpose                                                                                         |
 |-------------------------|-------------------------------------------------------------------------------------------------|
 | `.gitignore`            | Excludes unnecessary files from Git version control                                             |
-| `.cookiecutter`         | Contains metadata for cookiecutter project templates                                            |
 | `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
 | `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
 | `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |

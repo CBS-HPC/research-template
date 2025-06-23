@@ -65,7 +65,6 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
     project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
     py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
-
         # Generate URL based on version control
     if code_repo.lower() == "github":
         repo_user = load_from_env("GITHUB_USER")
@@ -80,7 +79,6 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
     else:
         repo_user = None
         hostname = None
-
 
     py_version = get_version("python")
     software_version = get_version(programming_language)
@@ -304,12 +302,6 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
 
     file_descriptions = read_toml_json(folder = root_folder, json_filename =  json_file , tool_name = "file_descriptions", toml_path = "project.toml")
 
-    #if isinstance(json_file, str) and json_file.endswith(".json") and os.path.exists(json_file): 
-    #    with open(json_file, "r", encoding="utf-8") as json_file:
-    #        file_descriptions = json.load(json_file)
-    #else:
-    #    file_descriptions = None
-    
     update_readme_tree_section(readme_file, root_folder, file_descriptions, ignore_list)
     
 def update_file_descriptions(programming_language, readme_file = "README.md", json_file="./file_descriptions.json"):
@@ -412,11 +404,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             # Update the existing dictionary with the new descriptions
             file_descriptions.update(code_file_descriptions(programming_language))
 
-        write_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_description", toml_path = "project.toml")
-
-        # Save to JSON file
-        #with open(json_file, "w", encoding="utf-8") as file:
-        #    json.dump(file_descriptions, file, indent=4, ensure_ascii=False)
+        write_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "project.toml")
 
         return file_descriptions
 
@@ -450,24 +438,12 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
                 if description:
                     file_descriptions[filename] = description
 
-        write_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_description", toml_path = "project.toml")
+        write_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "project.toml")
         
-        # Write the updated descriptions to the JSON file
-        #with open(json_file, "w", encoding="utf-8") as f:
-        #    json.dump(file_descriptions, f, indent=4, ensure_ascii=False)
-
-        #print(f"File descriptions updated in {json_file}")
-
-    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_description", toml_path = "project.toml")    
+    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_descriptions", toml_path = "project.toml")    
 
     if not file_descriptions:
         file_descriptions = create_file_descriptions(programming_language,json_file)
-
-    #if os.path.exists(json_file):
-    #    with open(json_file, "r", encoding="utf-8") as f:
-    #        file_descriptions = json.load(f)
-    #else:
-    #    file_descriptions = create_file_descriptions(programming_language,json_file)
 
     update_descriptions(json_file,readme_file)
 

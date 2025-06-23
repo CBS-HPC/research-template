@@ -183,41 +183,6 @@ def check_path_format(path, project_root=None):
 
     return path
 
-def load_from_env_old(env_var: str, env_file: str = ".env"):
-    """
-    Loads an environment variable's value from a .env file.
-    
-    Args:
-        env_var (str): The name of the environment variable to load.
-        env_file (str): The path to the .env file (default is ".env").
-        
-    Returns:
-        str or None: The value of the environment variable if found, otherwise None.
-    """
-
-    env_file = pathlib.Path(env_file)
-    if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
-
-    # Attempt to read directly from the .env file
-    if env_file.exists():
-        env_values = dotenv_values(env_file)
-        if env_var.upper() in env_values:
-            env_value = env_values[env_var.upper()]
-            env_value = check_path_format(env_value) 
-            return env_value
-    
-
-    # If not found directly, load the .env file into the environment
-    load_dotenv(env_file, override=True)
-    env_value = os.getenv(env_var.upper())
-    if env_value:
-        env_value = check_path_format(env_value) 
-    else:
-        env_value = None 
-
-    return env_value
-
 def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "project.toml"):
     """
     Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
@@ -266,52 +231,6 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "projec
             print(f"⚠️ Could not read {toml_path}: {e}")
 
     return None
-
-def save_to_env_old(env_var: str, env_name: str, env_file: str = ".env"):
-    """
-    Saves or updates an environment variable in a .env file (case-insensitive for variable names).
-    
-    Args:
-        env_var (str): The value of the environment variable to save.
-        env_name (str): The name of the environment variable (case-insensitive).
-        env_file (str): The path to the .env file. Defaults to ".env".
-    """
-    if env_var is None:
-        return
-    
-    # Standardize the variable name for comparison
-    env_name_upper = env_name.strip().upper()
-
-    env_var = check_path_format(env_var) 
-
-    env_file = pathlib.Path(env_file)
-    if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
-
-    # Read the existing .env file if it exists
-    env_lines = []
-    if env_file.exists():
-        with open(env_file, 'r') as file:
-            env_lines = file.readlines()
-
-    # Check if the variable exists (case-insensitive) and update it
-    variable_exists = False
-    for i, line in enumerate(env_lines):
-        # Split each line to isolate the variable name
-        if "=" in line:
-            existing_name, _ = line.split("=", 1)
-            if existing_name.strip().upper() == env_name_upper:
-                env_lines[i] = f"{env_name_upper}={env_var}\n"  # Preserve original case in name
-                variable_exists = True
-                break
-
-    # If the variable does not exist, append it
-    if not variable_exists:
-        env_lines.append(f"{env_name_upper}={env_var}\n")
-    
-    # Write the updated lines back to the file
-    with open(env_file, 'w') as file:
-        file.writelines(env_lines)
 
 def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "project.toml"):
     """
