@@ -360,7 +360,6 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
         with open(env_file_path, "w") as f:
             f.writelines(lines)
 
-        print(f"✅ Saved {env_name_upper} to {env_file_path}")
         return
 
     # Fallback: write to TOML without overwriting other fields

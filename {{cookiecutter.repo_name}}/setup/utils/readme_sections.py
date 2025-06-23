@@ -304,7 +304,8 @@ def set_script_structure(programming_language, software_version, folder_path, js
         return [(kind, path) for _, kind, path in found]
 
             # Load descriptions JSON
-    file_descriptions = read_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_description", toml_path = "project.toml")   
+    
+    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_description", toml_path = "project.toml")  
 
     if not file_descriptions:
         file_descriptions = {}
