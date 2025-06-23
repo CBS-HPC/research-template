@@ -62,10 +62,8 @@ def package_installer(required_libraries: list = None):
             # Only try uv add if pyproject.toml exists
             if pathlib.Path("pyproject.toml").exists():
                 subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
-                print(f"Installed and locked {lib} using uv add.")
                 return True
             else:
-                print("pyproject.toml not found — skipping uv add.")
                 return False
         except subprocess.CalledProcessError:
             return False
