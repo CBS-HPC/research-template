@@ -7,7 +7,7 @@ import pathlib
 
 from .general_tools import *
 
-package_installer(required_libraries = ['beautifulsoup4'],pip_install=True)
+package_installer(required_libraries = ['beautifulsoup4'])
 
 from bs4 import BeautifulSoup
 

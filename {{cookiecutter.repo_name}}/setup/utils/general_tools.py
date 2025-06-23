@@ -125,6 +125,7 @@ def package_installer(required_libraries: list = None):
                 print(f"Installed {lib} using pip.")
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install {lib} with pip: {e}")
+
 def check_path_format(path, project_root=None):
     if not path:
         return path
