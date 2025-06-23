@@ -1472,7 +1472,7 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
         except Exception as e:
             print(f"❌ Failed to write TOML: {e}")
 
-    def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+    def write_toml_json_notworking(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
         """
         Write a dictionary to [tool.<tool_name>] in a TOML file.
 
@@ -1488,7 +1488,17 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
             tool_name (str): Name of the section to write in TOML (under [tool]).
             toml_path (str): The TOML file to write to.
         """
-                
+        
+        if sys.version_info < (3, 11):
+            import toml
+            load_toml = toml.load
+            dump_toml = toml.dump
+        else:
+            import tomllib
+            import tomli_w
+            def load_toml(f): return tomllib.load(f)
+            def dump_toml(d, f): f.write(tomli_w.dumps(d))
+             
         if not folder:
             folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
         if not tool_name:
@@ -1509,7 +1519,7 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
             try:
                 if sys.version_info < (3, 11):
                     import toml
-                    with open(toml_file_path, "r", encoding="utf-8") as f:
+                with open(toml_file_path, "r", encoding="utf-8") as f:
                         config = toml.load(f)
                 else:
                     import tomllib
@@ -1525,19 +1535,10 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
             print("❌ No valid dictionary to write.")
             return
 
-        if sys.version_info < (3, 11):
-            import toml
-            load_toml = toml.load
-            dump_toml = toml.dump
-        else:
-            import tomllib
-            import tomli_w
-            def load_toml(f): return tomllib.load(f)
-            def dump_toml(d, f): f.write(tomli_w.dumps(d))
 
         toml_data = {}
         if os.path.exists(toml_file_path):
-            with open(toml_file_path, "rb") as f:
+            with open(toml_file_path, "r", encoding="utf-8") as f:
                 try:
                     toml_data = load_toml(f)
                 except Exception as e:
@@ -1552,5 +1553,74 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
             with open(toml_file_path, "w", encoding="utf-8") as f:
                 dump_toml(toml_data, f)
             print(f"✅ Wrote [tool.{tool_name}] to {toml_path}")
+        except Exception as e:
+            print(f"❌ Failed to write TOML: {e}")
+
+    def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+        """
+        Merge a dictionary into [tool.<tool_name>] in a TOML file,
+        preserving all existing TOML content across tool sections and top-level keys.
+        """
+
+        if sys.version_info < (3, 11):
+            import toml
+            load_toml = toml.load
+            dump_toml = toml.dump
+        else:
+            import tomllib
+            import tomli_w
+            def load_toml(f): return tomllib.load(f)
+            def dump_toml(d, f): f.write(tomli_w.dumps(d))
+
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        if not tool_name:
+            raise ValueError("tool_name is required")
+
+        # Resolve paths
+        toml_file_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
+        json_file_path = json_filename if json_filename and os.path.isabs(json_filename) else os.path.join(folder, json_filename) if json_filename else None
+
+        # Step 1: Load from JSON if given
+        if data is None and json_file_path and os.path.exists(json_file_path):
+            try:
+                with open(json_file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                print(f"✅ Loaded data from {json_filename}")
+            except Exception as e:
+                print(f"❌ Failed to read {json_filename}: {e}")
+
+        # Step 2: Validate data
+        if not isinstance(data, dict):
+            print("❌ No valid dictionary to write.")
+            return
+
+        # Step 3: Load the full TOML file
+        toml_data = {}
+        if os.path.exists(toml_file_path):
+            with open(toml_file_path, "rb") as f:
+                try:
+                    toml_data = load_toml(f)
+                except Exception as e:
+                    print(f"❌ Failed to parse existing TOML: {e}")
+                    return  # Do NOT overwrite!
+
+        # Step 4: Merge data into tool.<tool_name>
+        if "tool" not in toml_data:
+            toml_data["tool"] = {}
+        if not isinstance(toml_data["tool"], dict):
+            print("❌ Invalid [tool] structure in TOML.")
+            return
+        if tool_name not in toml_data["tool"] or not isinstance(toml_data["tool"].get(tool_name), dict):
+            toml_data["tool"][tool_name] = {}
+
+        for key, value in data.items():
+            toml_data["tool"][tool_name][key] = value
+
+        # Step 5: Write it back
+        try:
+            with open(toml_file_path, "w", encoding="utf-8") as f:
+                dump_toml(toml_data, f)
+            print(f"✅ Updated [tool.{tool_name}] in {toml_path} without affecting other sections.")
         except Exception as e:
             print(f"❌ Failed to write TOML: {e}")
