@@ -110,7 +110,7 @@ Provide core metadata for your project—used for naming, documentation, citatio
 ├── repo_name                 → Folder and repository name
 ├── description               → Short summary of the project
 ├── author_name               → Your full name
-├── email                     → Your CBS email
+├── email                     → Your email
 ├── orcid                     → Your ORCID researcher ID
 ├── version                   → Initial version number (e.g., 0.0.1)
 ├── code_license              → [MIT | BSD-3-Clause | Apache-2.0 | None]
@@ -295,7 +295,7 @@ This template supports automated backup to **CBS-approved storage solutions** us
 ```
 ├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
 │   ├── DeIC:
-│   │   ├── Prompt for CBS email
+│   │   ├── Prompt for email
 │   │   └── Prompt for password (encrypted)
 │   ├── Dropbox / OneDrive:
 │   │   ├── Prompt for email

@@ -3,7 +3,7 @@
   "repo_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
   "author_name": "Your Name",
   "orcid": "Provide your ORCID",
-  "email": "Provide your CBS email",
+  "email": "Provide your email",
   "version": "0.0.1",
   
   "code_license": ["MIT", "BSD-3-Clause", "Apache-2.0", "None"],

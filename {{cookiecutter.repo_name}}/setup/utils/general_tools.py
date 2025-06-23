@@ -222,9 +222,8 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "projec
     """
     Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
     """
-   
 
-            # Import appropriate TOML parser
+    # Import appropriate TOML parser
     if sys.version_info < (3, 11):
         import toml
     else:
@@ -319,7 +318,6 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
     Saves or updates a single environment variable.
     Writes to .env if used; otherwise updates [tool.<section>] in TOML without overwriting other fields.
     """
- 
 
     if sys.version_info < (3, 11):
         import toml
@@ -330,7 +328,6 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
         import tomli_w
         def load_toml(f): return tomllib.load(f)
         def dump_toml(d, f): f.write(tomli_w.dumps(d))
-
 
     if env_var is None:
         return
@@ -389,8 +386,6 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
 
     with open(toml_path, "w", encoding="utf-8") as f:
         dump_toml(config, f)
-
-    print(f"✅ Saved {env_name_upper} to [tool.{toml_section}] in {toml_file}")
 
 def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"):
     """
@@ -623,7 +618,14 @@ def ensure_correct_kernel(func):
 
     return wrapper
 
-package_installer(required_libraries = ['python-dotenv'])
+install_packages = ['python-dotenv']
+
+if sys.version_info < (3, 11):
+    install_packages.append('toml')
+else:
+    install_packages.append('tomli-w')
+
+package_installer(required_libraries = install_packages)
 
 from dotenv import dotenv_values, load_dotenv
 
