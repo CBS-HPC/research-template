@@ -267,7 +267,6 @@ def set_script_structure(programming_language, software_version, folder_path, js
         str: Formatted markdown for inclusion in your README
     """
 
-
     def find_scripts(folder_path, source_ext, notebook_ext):
         """
         Recursively find and return ordered scripts in folder_path matching the given
@@ -305,12 +304,16 @@ def set_script_structure(programming_language, software_version, folder_path, js
         return [(kind, path) for _, kind, path in found]
 
             # Load descriptions JSON
-    
-    if os.path.exists(json_file):
-        with open(json_file, "r", encoding="utf-8") as jf:
-            file_descriptions = json.load(jf)
-    else:
+    file_descriptions = read_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_description", toml_path = "project.toml")   
+
+    if not file_descriptions:
         file_descriptions = {}
+
+    #if os.path.exists(json_file):
+    #    with open(json_file, "r", encoding="utf-8") as jf:
+    #        file_descriptions = json.load(jf)
+    #else:
+    #    file_descriptions = {}
 
     programming_language = programming_language.lower()
     if programming_language not in ["r", "python", "stata", "matlab", "sas"]:

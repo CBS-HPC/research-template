@@ -11,7 +11,6 @@ import getpass
 import importlib.metadata
 import json
 
-
 def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
@@ -22,7 +21,9 @@ def set_packages(version_control,programming_language):
     # Add toml package if Python version < 3.11
     if sys.version_info < (3, 11):
         install_packages.append('toml')
-        
+    else:
+        install_packages.append('tomli-w')
+     
     if programming_language.lower()  == 'python':
         install_packages.extend(['jupyterlab','pytest'])
     elif programming_language.lower()  == 'stata':
@@ -182,7 +183,7 @@ def check_path_format(path, project_root=None):
 
     return path
 
-def load_from_env(env_var: str, env_file: str = ".env"):
+def load_from_env_old(env_var: str, env_file: str = ".env"):
     """
     Loads an environment variable's value from a .env file.
     
@@ -217,7 +218,56 @@ def load_from_env(env_var: str, env_file: str = ".env"):
 
     return env_value
 
-def save_to_env(env_var: str, env_name: str, env_file: str = ".env"):
+def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "project.toml"):
+    """
+    Loads an environment variable's value from a .env file or from a TOML fallback.
+    Args:
+        env_var (str): Environment variable name (case-insensitive).
+        env_file (str): Path to the .env file.
+        toml_file (str): Path to the TOML file for fallback.
+
+    Returns:
+        str or None
+    """
+    import pathlib
+    from dotenv import dotenv_values, load_dotenv
+
+    env_var_upper = env_var.upper()
+    env_file = pathlib.Path(env_file)
+    if not env_file.is_absolute():
+        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
+
+    # Load from .env if it exists
+    if env_file.exists():
+        env_values = dotenv_values(env_file)
+        if env_var_upper in env_values:
+            return check_path_format(env_values[env_var_upper])
+        load_dotenv(env_file, override=True)
+        env_value = os.getenv(env_var_upper)
+        if env_value:
+            return check_path_format(env_value)
+
+    # Fallback: load from TOML
+    toml_path = pathlib.Path(toml_file)
+    if not toml_path.is_absolute():
+        toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
+
+    if toml_path.exists():
+        try:
+            if sys.version_info < (3, 11):
+                import toml
+                with open(toml_path, "r", encoding="utf-8") as f:
+                    config = toml.load(f)
+            else:
+                import tomllib
+                with open(toml_path, "rb") as f:
+                    config = tomllib.load(f)
+            return check_path_format(config.get("tool", {}).get("env", {}).get(env_var_upper))
+        except Exception as e:
+            print(f"⚠️ Could not read {toml_path}: {e}")
+    return None
+
+def save_to_env_old(env_var: str, env_name: str, env_file: str = ".env"):
     """
     Saves or updates an environment variable in a .env file (case-insensitive for variable names).
     
@@ -262,6 +312,73 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env"):
     # Write the updated lines back to the file
     with open(env_file, 'w') as file:
         file.writelines(env_lines)
+
+def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "project.toml"):
+    """
+    Saves or updates an environment variable in .env, or falls back to [tool.env] in a TOML file.
+    """
+    import pathlib
+    env_name_upper = env_name.strip().upper()
+    env_var = check_path_format(env_var)
+    env_file = pathlib.Path(env_file)
+    if not env_file.is_absolute():
+        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
+
+    # If .env exists, update or append there
+    if env_file.exists():
+        env_lines = []
+        if env_file.exists():
+            with open(env_file, 'r') as file:
+                env_lines = file.readlines()
+
+        updated = False
+        for i, line in enumerate(env_lines):
+            if "=" in line:
+                existing_name, _ = line.split("=", 1)
+                if existing_name.strip().upper() == env_name_upper:
+                    env_lines[i] = f"{env_name_upper}={env_var}\n"
+                    updated = True
+                    break
+        if not updated:
+            env_lines.append(f"{env_name_upper}={env_var}\n")
+
+        with open(env_file, 'w') as file:
+            file.writelines(env_lines)
+        return
+
+    # Fallback: write to TOML
+    toml_path = pathlib.Path(toml_file)
+    if not toml_path.is_absolute():
+        toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
+
+    if sys.version_info < (3, 11):
+        import toml
+        load_toml = toml.load
+        dump_toml = toml.dump
+    else:
+        import tomllib
+        import tomli_w
+        def load_toml(f): return tomllib.load(f)
+        def dump_toml(d, f): f.write(tomli_w.dumps(d))
+
+    config = {}
+    if toml_path.exists():
+        with open(toml_path, "rb") as f:
+            try:
+                config = load_toml(f)
+            except Exception as e:
+                print(f"⚠️ Could not parse TOML: {e}")
+
+    if "tool" not in config:
+        config["tool"] = {}
+    if "env" not in config["tool"]:
+        config["tool"]["env"] = {}
+
+    config["tool"]["env"][env_name_upper] = env_var
+
+    with open(toml_path, "w", encoding="utf-8") as f:
+        dump_toml(config, f)
+        print(f"✅ Saved {env_name_upper} to [tool.env] in {toml_file}")
 
 def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"):
     """
@@ -493,7 +610,6 @@ def ensure_correct_kernel(func):
         return func(*args, **kwargs)
 
     return wrapper
-
 
 package_installer(required_libraries = ['python-dotenv'])
 
@@ -1067,7 +1183,7 @@ def write_script(folder_path, script_name, extension, content):
 if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
     import pathspec
 
-    def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
+    def read_toml_ignore_old(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
         """
         Load ignore patterns from a file or from a TOML tool config section.
 
@@ -1116,7 +1232,52 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
 
         return None, []
 
-    def toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+    def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
+        """
+        Load ignore patterns from a file or from a TOML tool config section.
+
+        Returns:
+            Tuple[PathSpec | None, List[str]]: A PathSpec matcher and raw pattern list
+        """
+
+        # Import appropriate TOML parser
+        if sys.version_info < (3, 11):
+            import toml
+        else:
+            import tomllib as toml
+
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+
+        # Use absolute or relative ignore file path
+        ignore_path = ignore_filename if os.path.isabs(ignore_filename or "") else os.path.join(folder, ignore_filename or "")
+
+        if ignore_filename and os.path.exists(ignore_path):
+            with open(ignore_path, "r", encoding="utf-8") as f:
+                patterns = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+            return spec, patterns
+
+        toml_full_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
+        if os.path.exists(toml_full_path):
+            try:
+                with open(toml_full_path, "r", encoding="utf-8") as f:
+                    config = toml.load(f)
+                patterns = config.get("tool", {}).get(tool_name)
+                if patterns is None:
+                    patterns = config.get(tool_name)
+                if isinstance(patterns, dict):
+                    patterns = patterns.get(toml_key, [])
+                if isinstance(patterns, list):
+                    patterns = [p.strip() for p in patterns if isinstance(p, str)]
+                    spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+                    return spec, patterns
+            except Exception as e:
+                print(f"❌ Error reading [{tool_name}] from {toml_full_path}: {e}")
+
+        return None, []
+
+    def read_toml_json_old(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
         """
         Load a dictionary from a JSON file, or fall back to a tool-specific section
         in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
@@ -1169,39 +1330,105 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
 
         return None
 
-
-import os
-import sys
-import json
-import pathlib
-
-    def write_json_to_toml(
-        data: dict,
-        folder: str = None,
-        tool_name: str = None,
-        toml_path: str = "project.toml"
-    ):
+    def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
         """
-        Write a dictionary to a TOML file under [tool.<tool_name>].
+        Load a dictionary from a JSON file, or fall back to a tool-specific section
+        in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
 
         Args:
-            data (dict): The data to write.
-            folder (str): Base folder containing the TOML file.
-            tool_name (str): The tool section under [tool] to write to.
-            toml_path (str): The TOML filename (default: project.toml).
-        """
-        if not isinstance(data, dict):
-            raise ValueError("Data must be a dictionary")
+            folder (str): Directory containing config files.
+            json_filename (str): Name of the JSON file to load (e.g., 'platform_rules.json').
+            tool_name (str): Tool name to look for in TOML (e.g., 'platform_rules').
+            toml_path (str): Name of the TOML file to read from.
 
-        if not tool_name:
-            raise ValueError("tool_name is required")
+        Returns:
+            dict | None: Dictionary loaded from JSON or TOML, or None if both fail.
+        """
+        
+        if sys.version_info < (3, 11):
+            import toml
+        else:
+            import tomllib as toml
 
         if not folder:
             folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
 
-        full_toml_path = os.path.join(folder, toml_path)
+        json_path = json_filename if os.path.isabs(json_filename or "") else os.path.join(folder, json_filename or "")
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error reading {json_filename}: {e}")
 
-        # Load existing TOML
+        toml_path_full = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
+        if os.path.exists(toml_path_full):
+            try:
+                with open(toml_path_full, "r", encoding="utf-8") as f:
+                    config = toml.load(f)
+                section = config.get("tool", {}).get(tool_name) or config.get(tool_name)
+                if isinstance(section, dict):
+                    return section
+            except Exception as e:
+                print(f"Error reading [{tool_name}] from {toml_path_full}: {e}")
+
+        return None
+
+    def write_toml_json_old(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+        """
+        Write a dictionary to [tool.<tool_name>] in a TOML file.
+
+        Priority:
+            1. Use `data` if provided
+            2. Else load from JSON if it exists
+            3. Else load from existing TOML section [tool.<tool_name>]
+
+        Args:
+            data (dict, optional): The data to write. If None, fallback logic is used.
+            folder (str): Path to directory containing files.
+            json_filename (str): Name of the JSON file to load from if `data` is not provided.
+            tool_name (str): Name of the section to write in TOML (under [tool]).
+            toml_path (str): The TOML file to write to.
+        """
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        if not tool_name:
+            raise ValueError("tool_name is required")
+
+        toml_file_path = os.path.join(folder, toml_path)
+        json_file_path = os.path.join(folder, json_filename) if json_filename else None
+
+        # Try loading from JSON if data not provided
+        if data is None and json_file_path and os.path.exists(json_file_path):
+            try:
+                with open(json_file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                print(f"✅ Loaded data from {json_filename}")
+            except Exception as e:
+                print(f"❌ Failed to read {json_filename}: {e}")
+
+        # Fallback to loading from TOML
+        if data is None:
+            try:
+                if sys.version_info < (3, 11):
+                    import toml
+                    with open(toml_file_path, "r", encoding="utf-8") as f:
+                        config = toml.load(f)
+                else:
+                    import tomllib
+                    with open(toml_file_path, "rb") as f:
+                        config = tomllib.load(f)
+                data = config.get("tool", {}).get(tool_name)
+                if data:
+                    print(f"ℹ️ Fallback: loaded data from [tool.{tool_name}] in {toml_path}")
+            except Exception as e:
+                print(f"❌ Failed to parse {toml_path}: {e}")
+
+        if not isinstance(data, dict):
+            print("❌ No valid dictionary to write.")
+            return
+
+        # Load existing TOML to preserve other content
         if sys.version_info < (3, 11):
             import toml
             load_toml = toml.load
@@ -1209,29 +1436,108 @@ import pathlib
         else:
             import tomllib
             import tomli_w
-            load_toml = lambda f: tomllib.load(f)
-            dump_toml = lambda data, f: f.write(tomli_w.dumps(data))
+            def load_toml(f): return tomllib.load(f)
+            def dump_toml(d, f): f.write(tomli_w.dumps(d))
 
         toml_data = {}
-
-        if os.path.exists(full_toml_path):
-            with open(full_toml_path, "rb") as f:
+        if os.path.exists(toml_file_path):
+            with open(toml_file_path, "rb") as f:
                 try:
                     toml_data = load_toml(f)
                 except Exception as e:
-                    print(f"⚠️ Failed to parse TOML file {toml_path}: {e}")
-                    return
+                    print(f"⚠️ Failed to load TOML: {e}")
 
-        # Insert or update section
         if "tool" not in toml_data:
             toml_data["tool"] = {}
 
         toml_data["tool"][tool_name] = data
 
-        # Write updated TOML
-        with open(full_toml_path, "w", encoding="utf-8") as f:
-            try:
+        try:
+            with open(toml_file_path, "w", encoding="utf-8") as f:
                 dump_toml(toml_data, f)
-                print(f"✅ Successfully wrote to [tool.{tool_name}] in {toml_path}")
+            print(f"✅ Wrote [tool.{tool_name}] to {toml_path}")
+        except Exception as e:
+            print(f"❌ Failed to write TOML: {e}")
+
+    def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+        """
+        Write a dictionary to [tool.<tool_name>] in a TOML file.
+
+        Priority:
+            1. Use `data` if provided
+            2. Else load from JSON if it exists
+            3. Else load from existing TOML section [tool.<tool_name>]
+
+        Args:
+            data (dict, optional): The data to write. If None, fallback logic is used.
+            folder (str): Path to directory containing files.
+            json_filename (str): Name of the JSON file to load from if `data` is not provided.
+            tool_name (str): Name of the section to write in TOML (under [tool]).
+            toml_path (str): The TOML file to write to.
+        """
+                
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        if not tool_name:
+            raise ValueError("tool_name is required")
+
+        toml_file_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
+        json_file_path = json_filename if json_filename and os.path.isabs(json_filename) else os.path.join(folder, json_filename) if json_filename else None
+
+        if data is None and json_file_path and os.path.exists(json_file_path):
+            try:
+                with open(json_file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                print(f"✅ Loaded data from {json_filename}")
             except Exception as e:
-                print(f"❌ Failed to write TOML: {e}")
+                print(f"❌ Failed to read {json_filename}: {e}")
+
+        if data is None:
+            try:
+                if sys.version_info < (3, 11):
+                    import toml
+                    with open(toml_file_path, "r", encoding="utf-8") as f:
+                        config = toml.load(f)
+                else:
+                    import tomllib
+                    with open(toml_file_path, "rb") as f:
+                        config = tomllib.load(f)
+                data = config.get("tool", {}).get(tool_name)
+                if data:
+                    print(f"ℹ️ Fallback: loaded data from [tool.{tool_name}] in {toml_path}")
+            except Exception as e:
+                print(f"❌ Failed to parse {toml_path}: {e}")
+
+        if not isinstance(data, dict):
+            print("❌ No valid dictionary to write.")
+            return
+
+        if sys.version_info < (3, 11):
+            import toml
+            load_toml = toml.load
+            dump_toml = toml.dump
+        else:
+            import tomllib
+            import tomli_w
+            def load_toml(f): return tomllib.load(f)
+            def dump_toml(d, f): f.write(tomli_w.dumps(d))
+
+        toml_data = {}
+        if os.path.exists(toml_file_path):
+            with open(toml_file_path, "rb") as f:
+                try:
+                    toml_data = load_toml(f)
+                except Exception as e:
+                    print(f"⚠️ Failed to load TOML: {e}")
+
+        if "tool" not in toml_data:
+            toml_data["tool"] = {}
+
+        toml_data["tool"][tool_name] = data
+
+        try:
+            with open(toml_file_path, "w", encoding="utf-8") as f:
+                dump_toml(toml_data, f)
+            print(f"✅ Wrote [tool.{tool_name}] to {toml_path}")
+        except Exception as e:
+            print(f"❌ Failed to write TOML: {e}")
