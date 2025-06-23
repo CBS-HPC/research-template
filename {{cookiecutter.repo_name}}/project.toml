@@ -1,19 +1,4 @@
 # ============================================================
-# Environment configuration for uv
-# ============================================================
-
-[project]
-name = {{cookiecutter.project_name}}
-version = "{{cookiecutter.version}}"
-description = "Insert project description here"
-dependencies = [
-]
-
-[tool.uv]
-python = "None"
-
-
-# ============================================================
 # Project template metadata
 # Replaces: .cookiecutter
 # Used for documentation, reproducibility, and scaffolding
@@ -36,7 +21,7 @@ VERSION_CONTROL = "None"
 REMOTE_BACKUP = "None"
 REMOTE_STORAGE = "None"
 CODE_REPO = "None"
-PYTHON_VERSION = "None"
+PYTHON_VERSION = "Python 3.9.13"
 
 # ============================================================
 # Ignore patterns for remote sync tools like Rclone
@@ -113,8 +98,8 @@ pyudev = "linux"
 ".env" = "Environment variables (paths, tokens, secrets)."
 ".Rprofile" = "Startup file for R sessions with renv."
 "CITATION.cff" = "Machine-readable citation metadata."
-"file_descriptions.json" = "Deprecated: now merged into project.toml."
-"platform_rules.json" = "Deprecated: now merged into project.toml."
+"file_descriptions.json" = "Deprecated: now merged into pyproject.toml."
+"platform_rules.json" = "Deprecated: now merged into pyproject.toml."
 "LICENSE.txt" = "Project license."
 "README.md" = "Main project documentation."
 "requirements.txt" = "Python dependency list for pip."

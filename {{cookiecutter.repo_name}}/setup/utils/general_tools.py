@@ -148,7 +148,7 @@ def check_path_format(path, project_root=None):
 
     return path
 
-def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "project.toml"):
+def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "pyproject.toml"):
     """
     Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
     """
@@ -201,7 +201,7 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "projec
 
     return None
 
-def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "project.toml"):
+def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "pyproject.toml"):
     """
     Saves or updates a single environment variable.
     Writes to .env if used; otherwise updates [tool.<section>] in TOML without overwriting other fields.
@@ -1095,7 +1095,7 @@ def write_script(folder_path, script_name, extension, content):
 if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
     import pathspec
 
-    def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "project.toml", toml_key: str = "patterns"):
+    def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml", toml_key: str = "patterns"):
         """
         Load ignore patterns from a file or from a TOML tool config section.
 
@@ -1139,7 +1139,7 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
 
         return None, []
 
-    def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+    def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
         """
         Load a dictionary from a JSON file, or fall back to a tool-specific section
         in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
@@ -1183,7 +1183,7 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
 
         return None
 
-    def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "project.toml"):
+    def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
         if sys.version_info < (3, 11):
             import toml
             load_toml = toml.load

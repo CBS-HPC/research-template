@@ -39,7 +39,7 @@ def creating_readme(programming_language = "None"):
 
     generate_readme(programming_language,readme_file,code_path,file_descriptions,)
 
-    ignore_list, _  = read_toml_ignore(toml_path = "project.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
+    ignore_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
     
     create_tree(readme_file,ignore_list ,file_descriptions)
     
@@ -302,7 +302,7 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
     if ignore_list is None:
         ignore_list = []  # Default to an empty list if not provided
 
-    file_descriptions = read_toml_json(folder = root_folder, json_filename =  json_file ,tool_name = file_descriptions, toml_path = "project.toml")
+    file_descriptions = read_toml_json(folder = root_folder, json_filename =  json_file ,tool_name = file_descriptions, toml_path = "pyproject.toml")
 
     #if isinstance(json_file, str) and json_file.endswith(".json") and os.path.exists(json_file): 
     #    with open(json_file, "r", encoding="utf-8") as json_file:

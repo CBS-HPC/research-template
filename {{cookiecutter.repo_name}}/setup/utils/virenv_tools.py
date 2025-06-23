@@ -532,7 +532,7 @@ def tag_env_file(env_file: str = "environment.yml"):
         print(f"❌ {env_file} not found.")
         return
 
-    raw_rules = read_toml_json(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "project.toml")
+    raw_rules = read_toml_json(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "pyproject.toml")
 
     if not raw_rules:
         print("ℹ️ No platform rules found. Skipping tagging.")
@@ -592,7 +592,7 @@ def tag_requirements_txt(requirements_file: str = "requirements.txt"):
     root = pathlib.Path(__file__).resolve().parent.parent.parent
     requirements_path = root / requirements_file
     
-    platform_rules = read_toml_json(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "project.toml")
+    platform_rules = read_toml_json(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "pyproject.toml")
 
     if not platform_rules:
         print("ℹ️ No platform rules found. Skipping tagging.")

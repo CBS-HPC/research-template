@@ -369,7 +369,7 @@ This template generates a standardized, reproducible project layout. It separate
 <details>
 <summary>📁 Directory Structure</summary>
 
-You can find or update human-readable file descriptions in `project.toml` under `file_descriptions` .
+You can find or update human-readable file descriptions in `pyproject.toml` under `file_descriptions` .
 
 ```
 ├── .git                      # Git repository metadata

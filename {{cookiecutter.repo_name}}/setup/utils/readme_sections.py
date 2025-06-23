@@ -117,7 +117,7 @@ set-dataset
 <details>
 <summary>📁 Project Directory Structure</summary>
 
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./project.toml` file.
+The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./pyproject.toml` file.
 
 ```
 
@@ -305,7 +305,7 @@ def set_script_structure(programming_language, software_version, folder_path, js
 
             # Load descriptions JSON
     
-    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_descriptions", toml_path = "project.toml")  
+    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")  
 
     if not file_descriptions:
         file_descriptions = {}
