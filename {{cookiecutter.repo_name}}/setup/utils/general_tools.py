@@ -1489,7 +1489,6 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
         # Step 5: Write it back
         try:
             with open(toml_file_path, "w", encoding="utf-8") as f:
-            with open(toml_file_path, "w", encoding="utf-8") as f:    
                 dump_toml(toml_data, f)
            # print(f"✅ Updated [tool.{tool_name}] in {toml_path} without affecting other sections.")
         except Exception as e:
