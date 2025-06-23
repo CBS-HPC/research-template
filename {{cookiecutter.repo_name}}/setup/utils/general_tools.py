@@ -220,32 +220,34 @@ def load_from_env_old(env_var: str, env_file: str = ".env"):
 
 def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "project.toml"):
     """
-    Loads an environment variable's value from a .env file.
-    Falls back to [tool.env] in TOML only if env_file != ".env".
+    Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
     """
     import pathlib
     from dotenv import dotenv_values, load_dotenv
 
     env_var_upper = env_var.upper()
-    env_file = pathlib.Path(env_file)
-    if not env_file.is_absolute():
-        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
+    env_file_path = pathlib.Path(env_file)
+    if not env_file_path.is_absolute():
+        env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
 
-    # Try .env file first
-    if env_file.exists():
-        env_values = dotenv_values(env_file)
+    # Try reading .env first
+    if env_file_path.exists():
+        env_values = dotenv_values(env_file_path)
         if env_var_upper in env_values:
             return check_path_format(env_values[env_var_upper])
-        load_dotenv(env_file, override=True)
-        env_value = os.getenv(env_var_upper)
-        if env_value:
-            return check_path_format(env_value)
+        load_dotenv(env_file_path, override=True)
+        value = os.getenv(env_var_upper)
+        if value:
+            return check_path_format(value)
 
-    # If .env is explicitly used, do NOT fallback
-    if env_file.name == ".env":
+    # If explicitly .env, DO NOT fallback
+    if env_file_path.name == ".env":
         return None
 
-    # Fallback: load from TOML
+    # Derive TOML section name from env_file (e.g., ".cookiecutter" → "cookiecutter")
+    toml_section = env_file_path.stem.lstrip(".")
+
+    # Read from TOML fallback
     toml_path = pathlib.Path(toml_file)
     if not toml_path.is_absolute():
         toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
@@ -260,12 +262,11 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "projec
                 import tomllib
                 with open(toml_path, "rb") as f:
                     config = tomllib.load(f)
-            return check_path_format(config.get("tool", {}).get("env", {}).get(env_var_upper))
+            return check_path_format(config.get("tool", {}).get(toml_section, {}).get(env_var_upper))
         except Exception as e:
             print(f"⚠️ Could not read {toml_path}: {e}")
 
     return None
-
 
 def save_to_env_old(env_var: str, env_name: str, env_file: str = ".env"):
     """
@@ -315,9 +316,7 @@ def save_to_env_old(env_var: str, env_name: str, env_file: str = ".env"):
 
 def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: str = "project.toml"):
     """
-    Saves or updates an environment variable in .env.
-    If .env is missing and explicitly requested, it will be created.
-    Only falls back to TOML if env_file != ".env".
+    Saves or updates a variable in .env, or [tool.<env_file_name>] in TOML fallback.
     """
     import pathlib
 
@@ -326,34 +325,35 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
 
     env_name_upper = env_name.strip().upper()
     env_var = check_path_format(env_var)
-    env_file = pathlib.Path(env_file)
-    if not env_file.is_absolute():
-        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
+    env_file_path = pathlib.Path(env_file)
+    if not env_file_path.is_absolute():
+        env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
 
-    # Always write to .env if it's explicitly requested
-    if env_file.name == ".env" or env_file.exists():
-        env_lines = []
-        if env_file.exists():
-            with open(env_file, 'r') as file:
-                env_lines = file.readlines()
+    # Always write to .env if explicitly requested
+    if env_file_path.name == ".env" or env_file_path.exists():
+        lines = []
+        if env_file_path.exists():
+            with open(env_file_path, 'r') as f:
+                lines = f.readlines()
 
         updated = False
-        for i, line in enumerate(env_lines):
+        for i, line in enumerate(lines):
             if "=" in line:
                 name, _ = line.split("=", 1)
                 if name.strip().upper() == env_name_upper:
-                    env_lines[i] = f"{env_name_upper}={env_var}\n"
+                    lines[i] = f"{env_name_upper}={env_var}\n"
                     updated = True
                     break
         if not updated:
-            env_lines.append(f"{env_name_upper}={env_var}\n")
+            lines.append(f"{env_name_upper}={env_var}\n")
 
-        with open(env_file, 'w') as file:
-            file.writelines(env_lines)
-        print(f"✅ Saved {env_name_upper} to {env_file}")
+        with open(env_file_path, "w") as f:
+            f.writelines(lines)
+        print(f"✅ Saved {env_name_upper} to {env_file_path}")
         return
 
-    # Fallback: write to TOML
+    # Fallback: Write to [tool.<section>] in TOML
+    toml_section = env_file_path.stem.lstrip(".")
     toml_path = pathlib.Path(toml_file)
     if not toml_path.is_absolute():
         toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
@@ -378,15 +378,14 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
 
     if "tool" not in config:
         config["tool"] = {}
-    if "env" not in config["tool"]:
-        config["tool"]["env"] = {}
+    if toml_section not in config["tool"]:
+        config["tool"][toml_section] = {}
 
-    config["tool"]["env"][env_name_upper] = env_var
+    config["tool"][toml_section][env_name_upper] = env_var
 
     with open(toml_path, "w", encoding="utf-8") as f:
         dump_toml(config, f)
-    print(f"✅ Saved {env_name_upper} to [tool.env] in {toml_file}")
-
+    print(f"✅ Saved {env_name_upper} to [tool.{toml_section}] in {toml_file}")
 
 def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"):
     """
