@@ -124,7 +124,6 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], env_fi
     if flag:
         export_conda_env(env_path)
         
-       # env_path = os.path.relpath(env_path)
         save_to_env(env_path,"CONDA_ENV_PATH")
         return env_path
     else:

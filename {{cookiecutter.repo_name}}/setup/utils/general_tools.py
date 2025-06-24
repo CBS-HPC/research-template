@@ -42,7 +42,7 @@ def write_uv_requires(toml_file: str = "pyproject.toml"):
 
     config.setdefault("project", {})
     config["project"]["requires-python"] = requires
-    config["tool"]["uv"]["python"] = version_str
+    #config["tool"]["uv"]["python"] = version_str
 
     with open(path, write_mode[0], encoding=write_mode[1]) as f:
             dump_toml(config, f)
@@ -579,7 +579,7 @@ package_installer(required_libraries = install_packages)
 
 from dotenv import dotenv_values, load_dotenv
 
-if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
+if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
     write_uv_requires()
     create_uv_project()
     package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
