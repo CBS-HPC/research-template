@@ -5,7 +5,6 @@ import os
 import json
 import pathlib
 import platform
-import psutil
 import subprocess
 import shutil
 from datetime import datetime
@@ -17,6 +16,7 @@ package_installer(required_libraries =  ['pyyaml','requests','pathspec','psutil'
 import yaml
 import requests
 import pathspec
+import psutil
 import cpuinfo
 
 # README.md
