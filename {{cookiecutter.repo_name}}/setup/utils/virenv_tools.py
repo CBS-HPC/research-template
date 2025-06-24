@@ -141,8 +141,6 @@ def set_conda_packages(version_control,python_env_manager,r_env_manager,conda_py
         else:
             install_packages.extend(['python'])
 
-        install_packages.extend(['uv'])
-
     if r_env_manager.lower() == "conda":
         if conda_r_version:
             install_packages.extend([f'r-base={conda_r_version}'])
