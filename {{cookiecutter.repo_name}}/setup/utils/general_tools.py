@@ -70,7 +70,6 @@ def package_installer(required_libraries: list = None):
         try:
             if pathlib.Path("uv.lock").exists():
                 subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
-                print(f"✅ Installed {lib} using `uv add`.")
                 return True
         except subprocess.CalledProcessError:
             pass
@@ -115,14 +114,12 @@ def package_installer(required_libraries: list = None):
             continue
 
         if uv_available:
-            print(f"⚠️ `uv add` failed or skipped for {lib}. Trying `uv pip install`...")
             try:
                 subprocess.run(
                     [sys.executable, "-m", "uv", "pip", "install", lib],
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
-                print(f"✅ Installed {lib} using `uv pip install`.")
                 continue
             except subprocess.CalledProcessError:
                 print(f"⚠️ `uv pip install` failed for {lib}. Trying pip fallback...")
@@ -133,79 +130,8 @@ def package_installer(required_libraries: list = None):
                 check=True,
                 stderr=subprocess.DEVNULL
             )
-            print(f"✅ Installed {lib} using `pip`.")
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to install {lib} with pip: {e}")
-
-def package_installer_old(required_libraries: list = None):
-    
-    def safe_uv_add(lib):
-        try:
-            # Only try uv add if pyproject.toml exists
-            if pathlib.Path("uv.lock").exists():
-                subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
-                return True
-            else:
-                return False
-        except subprocess.CalledProcessError:
-            return False
-        
-    if not required_libraries:
-        return
-
-    try:
-        installed_pkgs = {
-            name.lower()
-            for dist in importlib.metadata.distributions()
-            if (name := dist.metadata.get("Name")) is not None
-        }
-    except Exception as e:
-        print(f"Error checking installed packages: {e}")
-        return
-
-    missing_libraries = []
-    for lib in required_libraries:
-        norm_name = (
-            lib.split("==")[0]
-               .split(">=")[0]
-               .split("<=")[0]
-               .split("~=")[0]
-               .strip()
-               .lower()
-        )
-        if norm_name not in installed_pkgs:
-            missing_libraries.append(lib)
-
-    if not missing_libraries:
-        return
-
-    print(f"Installing missing libraries: {missing_libraries}")
-    
-    install_uv()
-
-    for lib in missing_libraries:
-        if safe_uv_add(lib):
-            continue
-
-        print(f"uv add failed or skipped for {lib}. Trying uv pip install...")
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "uv", "pip", "install", lib],
-                check=True,
-                stderr=subprocess.DEVNULL
-            )
-            print(f"Installed {lib} using uv pip install.")
-        except subprocess.CalledProcessError:
-            print(f"uv pip install failed for {lib}. Trying pip fallback...")
-            try:
-                subprocess.run(
-                    [sys.executable, "-m", "pip", "install", lib],
-                    check=True,
-                    stderr=subprocess.DEVNULL
-                )
-                print(f"Installed {lib} using pip.")
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to install {lib} with pip: {e}")
 
 install_packages = ['python-dotenv','pathspec']
 
@@ -279,28 +205,6 @@ def create_uv_project():
             subprocess.run(["uv", "init"], check=True, cwd=project_path)
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed: {e}")
-
-def create_uv_project_old():
-    """
-    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
-    Assumes `uv` is available in PATH.
-    """
-    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
-    pyproject_path = project_path / "pyproject.toml"
-
-    try:
-        install_uv()
-
-        if pyproject_path.exists():
-            print("✅ pyproject.toml found — running `uv lock`...")
-            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
-        else:
-            print("ℹ️  No pyproject.toml found — running `uv init`...")
-            subprocess.run(["uv", "init"], check=True, cwd=project_path)
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Command failed: {e}")
-    except FileNotFoundError:
-        print("❌ 'uv' is not installed or not in PATH.")
 
 def check_path_format(path, project_root=None):
     if not path:

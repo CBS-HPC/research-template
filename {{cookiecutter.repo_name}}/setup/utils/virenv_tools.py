@@ -432,37 +432,58 @@ def create_venv_env():
 
     return env_path
 
-def create_venv_env_old():
+def create_requirements_txt(requirements_file: str = "requirements.txt"):
     """
-    Create a Python virtual environment using uv if available; otherwise, use venv.
+    Writes pip freeze output to requirements.txt and ensures all installed packages
+    are tracked in uv.lock (by running `uv add` on any missing).
     """
-    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./.venv"))
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    requirements_file = str(project_root / requirements_file)
+    uv_lock_path = project_root / "uv.lock"
 
-    
-    try:
-        install_uv()
-        # Attempt to create virtual environment using uv via sys.executable
-        subprocess.run([sys.executable, "-m", "uv", "venv", env_path], check=True)
-        print(f'Virtual environment created at "{env_path}" using uv.')
+    # Step 1: Get pip freeze output
+    result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
+    if result.returncode != 0:
+        print("❌ Error running pip freeze:", result.stderr)
+        return
 
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print("uv is not available or failed to create the virtual environment. Falling back to venv.")
-        try:
-            # Create the virtual environment using venv
-            subprocess.run([sys.executable, "-m", "venv", env_path], check=True)
-            print(f'Virtual environment created at "{env_path}" using venv.')
-        except subprocess.CalledProcessError as e:
-            print(f"Error: Failed to create virtual environment using venv: {e}")
-            return None
-        except Exception as e:
-            print(f"Error: An unexpected error occurred while creating the virtual environment: {e}")
-            return None
+    # Step 2: Extract installed packages
+    frozen_lines = result.stdout.strip().splitlines()
+    installed_pkgs = {
+        line.split("==")[0].lower(): line for line in frozen_lines
+        if "==" in line
+    }
 
-    save_to_env(env_path,"VENV_ENV_PATH")
+    # Step 3: Load packages listed in uv.lock (if it exists)
+    locked_pkgs = set()
+    if uv_lock_path.exists():
+        with open(uv_lock_path, "r", encoding="utf-8") as f:
+            try:
+                uv_data = json.load(f)
+                for pkg in uv_data.get("packages", []):
+                    if isinstance(pkg, dict) and "name" in pkg:
+                        locked_pkgs.add(pkg["name"].lower())
+            except Exception as e:
+                print(f"⚠️ Failed to read uv.lock: {e}")
 
-    return env_path
+    # Step 4: Find missing packages and add them via uv
+    missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
 
-def create_requirements_txt(requirements_file:str="requirements.txt"):
+    if missing_from_lock:
+        print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
+        for pkg in missing_from_lock:
+            try:
+                subprocess.run(["uv", "add", pkg], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print(f"✅ Added {pkg} to uv.lock")
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Failed to add {pkg} via uv: {e}")
+
+    # Step 5: Write final pip freeze to requirements.txt
+    with open(requirements_file, "w", encoding="utf-8") as f:
+        f.write("\n".join(frozen_lines) + "\n")
+    print("📄 requirements.txt has been created successfully.")
+
+def create_requirements_txt_old(requirements_file:str="requirements.txt"):
 
     requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
 
@@ -477,6 +498,7 @@ def create_requirements_txt(requirements_file:str="requirements.txt"):
         print("requirements.txt has been created successfully.")
     else:
         print("Error running pip freeze:", result.stderr)
+
 
 def create_conda_environment_yml(r_version=None,requirements_file:str="requirements.txt", output_file:str="environment.yml"):
     """
