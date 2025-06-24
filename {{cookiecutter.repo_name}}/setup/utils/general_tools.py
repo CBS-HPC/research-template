@@ -40,6 +40,14 @@ def set_packages(version_control,programming_language):
     
     return install_packages
 
+def find_uv_executable():
+    bin_dir = pathlib.Path(sys.executable).parent
+    uv_exe = bin_dir / ("uv.exe" if sys.platform == "win32" else "uv")
+    if uv_exe.exists() and uv_exe.is_file():
+        return str(uv_exe)
+
+
+
 def install_uv_old():
     try:
         import uv  # noqa: F401
@@ -66,7 +74,7 @@ def install_uv_old():
 
 def install_uv():
      # Try finding uv relative to sys.executable
-    uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+    uv_path = find_uv_executable()
     if not uv_path:
         try:
             print("Installing 'uv' package into current Python environment...")
@@ -79,7 +87,7 @@ def install_uv():
             )
 
             print("'uv' installed successfully.")
-            uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+            uv_path = find_uv_executable()
             print("hello")
             print(uv_path)
             print("hello")
@@ -99,13 +107,9 @@ def package_installer(required_libraries: list = None):
         try:
             if pathlib.Path("uv.lock").exists():
                 # Try finding uv relative to sys.executable
-                uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+                uv_path = find_uv_executable()
                 if not uv_path:
-                    uv_path = shutil.which("uv")  # fallback to system path
-                    print("DRE")
-
-                if not uv_path:
-                    raise FileNotFoundError("uv not found in current Python environment")
+                    return False
 
                 subprocess.run([uv_path, "add", lib], check=True, stderr=subprocess.DEVNULL)
                 return True
@@ -262,9 +266,8 @@ def create_uv_project():
     pyproject_path = project_path / "pyproject.toml"
 
     # Look for 'uv' in the same env as sys.executable
-    uv_path = shutil.which("uv", path=str(pathlib.Path(sys.executable).parent))
-    if not uv_path:
-        uv_path = shutil.which("uv")  # fallback
+    uv_path = find_uv_executable()
+    
     if not uv_path:
         print("❌ 'uv' is not installed or not available in PATH.")
         return
