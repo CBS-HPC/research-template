@@ -117,6 +117,8 @@ def package_installer(required_libraries: list = None):
             continue
 
         if uv_available:
+            create_uv_project()
+
             try:
                 subprocess.run(
                     [sys.executable, "-m", "uv", "pip", "install", lib],
@@ -190,10 +192,15 @@ def write_uv_requires(toml_file: str = "pyproject.toml"):
 def create_uv_project():
     """
     Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
-    Uses install_uv() to ensure uv is installed.
+    Skips both if uv.lock already exists.
     """
     project_path = pathlib.Path(__file__).resolve().parent.parent.parent
     pyproject_path = project_path / "pyproject.toml"
+    uv_lock_path = project_path / "uv.lock"
+
+    if uv_lock_path.exists():
+        print("✔️  uv.lock already exists — skipping `uv init` or `uv lock`.")
+        return
 
     if not install_uv():
         print("❌ 'uv' is not installed or not available in PATH.")
@@ -204,7 +211,7 @@ def create_uv_project():
             print("✅ pyproject.toml found — running `uv lock`...")
             subprocess.run(["uv", "lock"], check=True, cwd=project_path)
         else:
-            print("ℹ️  No pyproject.toml found — running `uv init`...")
+            print("No pyproject.toml found — running `uv init`...")
             subprocess.run(["uv", "init"], check=True, cwd=project_path)
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed: {e}")
@@ -593,8 +600,8 @@ def ensure_correct_kernel(func):
 
 
 if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
-    write_uv_requires()
-    create_uv_project()
+    #write_uv_requires()
+    #create_uv_project()
     package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
 
 @contextmanager
