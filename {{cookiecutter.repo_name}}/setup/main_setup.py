@@ -4,6 +4,28 @@ import pathlib
 import subprocess
 import platform
 
+def create_uv_project():
+    """
+    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
+    Assumes `uv` is available in PATH.
+    """
+    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
+    pyproject_path = project_path / "pyproject.toml"
+
+    try:
+        install_uv()
+
+        if pyproject_path.exists():
+            print("✅ pyproject.toml found — running `uv lock`...")
+            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
+        else:
+            print("ℹ️  No pyproject.toml found — running `uv init`...")
+            subprocess.run(["uv", "init"], check=True, cwd=project_path)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Command failed: {e}")
+    except FileNotFoundError:
+        print("❌ 'uv' is not installed or not in PATH.")
+
 def upgrade_pip():
     # Step 1: Ensure pip is installed (required for fallback or pip-only setups)
     try:
@@ -36,6 +58,8 @@ def upgrade_pip():
         
     except subprocess.CalledProcessError as e:
         print(f"Warning: pip upgrade failed: {e}")
+
+create_uv_project()
 
 upgrade_pip()
 

@@ -140,6 +140,8 @@ def set_conda_packages(version_control,python_env_manager,r_env_manager,conda_py
         else:
             install_packages.extend(['python'])
 
+        install_packages.extend(['uv'])
+
     if r_env_manager.lower() == "conda":
         if conda_r_version:
             install_packages.extend([f'r-base={conda_r_version}'])
@@ -411,8 +413,6 @@ def create_venv_env():
         # Attempt to create virtual environment using uv via sys.executable
         subprocess.run([sys.executable, "-m", "uv", "venv", env_path], check=True)
         print(f'Virtual environment created at "{env_path}" using uv.')
-        subprocess.run(["uv", "lock"], check=True)
-        print("Successfully created uv.lock.")
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("uv is not available or failed to create the virtual environment. Falling back to venv.")
@@ -431,28 +431,6 @@ def create_venv_env():
 
     return env_path
 
-
-def create_venv_env_old():
-    """Create a Python virtual environment using venv and install packages."""
-    try:
-        # Get the absolute path to the environment
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./.venv"))
-
-        # Create the virtual environment
-        subprocess.run([sys.executable, '-m', 'venv', env_path], check=True)
-        print(f'Venv environment "{env_path}" for Python created successfully.')
-        
-        save_to_env(env_path,"VENV_ENV_PATH")
-
-        # Return the path to the virtual environment
-        return env_path
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error: A subprocess error occurred while creating the virtual environment or installing packages: {e}")
-        return None
-    except Exception as e:
-        print(f"Error: An unexpected error occurred: {e}")
-        return None
 
 def create_requirements_txt(requirements_file:str="requirements.txt"):
 
