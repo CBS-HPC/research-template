@@ -225,75 +225,6 @@ else:
     import tomllib as toml
     import tomli_w
 
-def upgrade_pip_new():
-    packages = ["pip", "setuptools", "wheel"]
-
-    # Step 1: Ensure pip is installed for fallback
-    try:
-        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ Warning: ensurepip failed: {e}")
-
-    # Step 2: Try using uv add (preferred for locked environments)
-    try:
-        subprocess.run(["uv", "add", *packages], check=True)
-        print("✅ Upgraded pip, setuptools, wheel using `uv add` (with lock).")
-        return
-    except subprocess.CalledProcessError:
-        print("⚠️ `uv add` failed, trying `uv pip install --upgrade`...")
-
-    # Step 3: Try uv pip install --upgrade
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
-                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", *packages], check=True)
-        print("✅ Upgraded pip, setuptools, wheel using `uv pip install`.")
-        return
-    except subprocess.CalledProcessError:
-        print("⚠️ `uv pip install` failed, falling back to regular pip...")
-
-    # Step 4: Fallback to pip
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", *packages],
-                       check=True, stderr=subprocess.DEVNULL)
-        print("✅ Upgraded pip, setuptools, wheel using `pip`.")
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Final fallback failed: pip upgrade error: {e}")
-
-def upgrade_pip_old():
-    # Step 1: Ensure pip is installed (required for fallback or pip-only setups)
-    try:
-        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: ensurepip failed: {e}")
-
-    # Step 2: Try using uv pip install
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], check=True)
-        print("✅ Upgraded pip, setuptools, wheel using uv.")
-    except subprocess.CalledProcessError:
-        print("⚠️ uv failed, falling back to pip...")
-
-        try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
-                        check=True, stderr=subprocess.DEVNULL)
-            print("✅ Upgraded pip, setuptools, wheel using pip.")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Warning: pip upgrade failed: {e}")
-
-
-    # Upgrade Pip:
-    try:
-        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
-        subprocess.run([sys.executable, "-m","pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
-            check=True,
-            stderr=subprocess.DEVNULL)
-        
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: pip upgrade failed: {e}")
-
 def write_uv_requires(toml_file: str = "pyproject.toml"):
     """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
     version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
@@ -756,7 +687,6 @@ def ensure_correct_kernel(func):
 if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
     write_uv_requires()
     create_uv_project()
-    #upgrade_pip()
     package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
 
 @contextmanager
