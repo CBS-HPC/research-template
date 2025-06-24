@@ -438,7 +438,6 @@ def create_venv_env_old():
     """
     env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./.venv"))
 
-    if install_uv():
     
     try:
         if install_uv():
