@@ -77,6 +77,7 @@ def package_installer(required_libraries: list = None):
                 uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
                 if not uv_path:
                     uv_path = shutil.which("uv")  # fallback to system path
+                    print("DRE")
 
                 if not uv_path:
                     raise FileNotFoundError("uv not found in current Python environment")
