@@ -32,17 +32,14 @@ if ($env_manager -ne "base Installation") {
 }
 
 # Install and upgrade tools
-Write-Output ""
-Write-Output "Upgrading wheel"
-pip install --upgrade wheel
 
 Write-Output ""
 Write-Output "Installing or upgrading 'uv'..."
 pip install --upgrade uv
 
 Write-Output ""
-Write-Output "Upgrading pip and setuptools using uv..."
-uv pip install --upgrade pip setuptools
+Write-Output "Upgrading pip, setuptools and wheel using uv..."
+uv pip install --upgrade pip setuptools wheel
 
 # Run the main Python script
 function Run-PythonScript {
