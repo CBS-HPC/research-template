@@ -440,7 +440,7 @@ def create_venv_env_old():
 
     
     try:
-        if install_uv():
+        install_uv()
         # Attempt to create virtual environment using uv via sys.executable
         subprocess.run([sys.executable, "-m", "uv", "venv", env_path], check=True)
         print(f'Virtual environment created at "{env_path}" using uv.')
