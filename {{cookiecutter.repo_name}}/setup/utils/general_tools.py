@@ -11,8 +11,6 @@ import getpass
 import importlib.metadata
 import json
 
-from .general_tools import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv
-
 def ask_yes_no(question):
     """
     Prompt the user with a yes/no question and validate the input.
