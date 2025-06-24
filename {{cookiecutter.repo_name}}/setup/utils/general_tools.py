@@ -741,7 +741,7 @@ def ensure_correct_kernel(func):
 
     return wrapper
 
- install_packages = ['python-dotenv']
+install_packages = ['python-dotenv']
 
 if sys.version_info < (3, 11):
     install_packages.append('toml')
