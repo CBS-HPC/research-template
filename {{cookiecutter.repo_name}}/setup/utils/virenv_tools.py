@@ -432,56 +432,6 @@ def create_venv_env():
 
     return env_path
 
-def create_requirements_txt_new(requirements_file: str = "requirements.txt"):
-    """
-    Writes pip freeze output to requirements.txt and ensures all installed packages
-    are tracked in uv.lock (by running `uv add` on any missing).
-    """
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    requirements_file = str(project_root / requirements_file)
-    uv_lock_path = project_root / "uv.lock"
-
-    # Step 1: Get pip freeze output
-    result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
-    if result.returncode != 0:
-        print("❌ Error running pip freeze:", result.stderr)
-        return
-
-    # Step 2: Extract installed packages
-    frozen_lines = result.stdout.strip().splitlines()
-    installed_pkgs = {
-        line.split("==")[0].lower(): line for line in frozen_lines
-        if "==" in line
-    }
-
-    # Step 3: Load packages listed in uv.lock (if it exists)
-    locked_pkgs = set()
-    if uv_lock_path.exists():
-        with open(uv_lock_path, "r", encoding="utf-8") as f:
-            try:
-                uv_data = json.load(f)
-                for pkg in uv_data.get("packages", []):
-                    if isinstance(pkg, dict) and "name" in pkg:
-                        locked_pkgs.add(pkg["name"].lower())
-            except Exception as e:
-                print(f"⚠️ Failed to read uv.lock: {e}")
-
-    # Step 4: Find missing packages and add them via uv
-    missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
-
-    if missing_from_lock:
-        print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
-        for pkg in missing_from_lock:
-            try:
-                subprocess.run(["uv", "add", pkg], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except subprocess.CalledProcessError as e:
-                print(f"❌ Failed to add {pkg} via uv: {e}")
-
-    # Step 5: Write final pip freeze to requirements.txt
-    with open(requirements_file, "w", encoding="utf-8") as f:
-        f.write("\n".join(frozen_lines) + "\n")
-    print("📄 requirements.txt has been created successfully.")
-
 def create_requirements_txt(requirements_file: str = "requirements.txt"):
     """
     Writes pip freeze output to requirements.txt and ensures all installed packages
@@ -540,7 +490,6 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
             try:
                 subprocess.run(["uv", "add", pkg], check=True,
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                print(f"✅ Added {pkg} to uv.lock")
             except subprocess.CalledProcessError as e:
                 print(f"❌ Failed to add {pkg} via uv: {e}")
 
@@ -549,25 +498,7 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         f.write("\n".join(frozen_lines) + "\n")
     print("📄 requirements.txt has been created successfully.")
 
-
-def create_requirements_txt_old(requirements_file:str="requirements.txt"):
-
-    requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
-
-    # Use subprocess to run pip freeze and capture the output
-    result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
-    
-    # Check if the pip freeze command was successful
-    if result.returncode == 0:
-        # Write the output of pip freeze to a requirements.txt file
-        with open(requirements_file, "w") as f:
-            f.write(result.stdout)
-        print("requirements.txt has been created successfully.")
-    else:
-        print("Error running pip freeze:", result.stderr)
-
-
-def create_conda_environment_yml(r_version=None,requirements_file:str="requirements.txt", output_file:str="environment.yml"):
+def create_conda_environment_yml(env_name,r_version=None,requirements_file:str="requirements.txt", output_file:str="environment.yml"):
     """
     Creates a Conda environment.yml based on a pip requirements.txt file, 
     the current Python version, and optionally an R version.
@@ -609,7 +540,7 @@ def create_conda_environment_yml(r_version=None,requirements_file:str="requireme
 
     # Create environment.yml structure
     conda_env = {
-        'name': 'auto_env',
+        'name': {env_name},
         'dependencies': conda_dependencies
     }
 

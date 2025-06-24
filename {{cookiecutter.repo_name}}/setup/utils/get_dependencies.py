@@ -202,7 +202,7 @@ def update_env_files():
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     create_requirements_txt("requirements.txt")
     if requirements_file == "requirements.txt":
-        create_conda_environment_yml(r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
+        create_conda_environment_yml(repo_name, r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
     elif requirements_file == "environment.yml": 
         export_conda_env(repo_name)
 
