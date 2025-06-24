@@ -11,111 +11,6 @@ import getpass
 import importlib.metadata
 import json
 
-def upgrade_pip():
-    packages = ["pip", "setuptools", "wheel"]
-
-    # Step 1: Ensure pip is installed for fallback
-    try:
-        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ Warning: ensurepip failed: {e}")
-
-    # Step 2: Try using uv add (preferred for locked environments)
-    try:
-        subprocess.run(["uv", "add", *packages], check=True)
-        print("✅ Upgraded pip, setuptools, wheel using `uv add` (with lock).")
-        return
-    except subprocess.CalledProcessError:
-        print("⚠️ `uv add` failed, trying `uv pip install --upgrade`...")
-
-    # Step 3: Try uv pip install --upgrade
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
-                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", *packages], check=True)
-        print("✅ Upgraded pip, setuptools, wheel using `uv pip install`.")
-        return
-    except subprocess.CalledProcessError:
-        print("⚠️ `uv pip install` failed, falling back to regular pip...")
-
-    # Step 4: Fallback to pip
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", *packages],
-                       check=True, stderr=subprocess.DEVNULL)
-        print("✅ Upgraded pip, setuptools, wheel using `pip`.")
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Final fallback failed: pip upgrade error: {e}")
-
-def upgrade_pip_old():
-    # Step 1: Ensure pip is installed (required for fallback or pip-only setups)
-    try:
-        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: ensurepip failed: {e}")
-
-    # Step 2: Try using uv pip install
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], check=True)
-        print("✅ Upgraded pip, setuptools, wheel using uv.")
-    except subprocess.CalledProcessError:
-        print("⚠️ uv failed, falling back to pip...")
-
-        try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
-                        check=True, stderr=subprocess.DEVNULL)
-            print("✅ Upgraded pip, setuptools, wheel using pip.")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Warning: pip upgrade failed: {e}")
-
-
-    # Upgrade Pip:
-    try:
-        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
-        subprocess.run([sys.executable, "-m","pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
-            check=True,
-            stderr=subprocess.DEVNULL)
-        
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: pip upgrade failed: {e}")
-
-def write_uv_requires(toml_file: str = "pyproject.toml"):
-    """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
-    version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
-    requires = f">= {version_str}"
-
-    # TOML loading/dumping
-    if sys.version_info < (3, 11):
-        import toml
-        load_toml = toml.load
-        dump_toml = toml.dump
-        read_mode = ("r", "utf-8")
-        write_mode = ("w", "utf-8")
-    else:
-        import tomllib
-        import tomli_w
-        def load_toml(f): return tomllib.load(f)
-        def dump_toml(d, f): f.write(tomli_w.dumps(d))
-        read_mode = ("rb", None)
-        write_mode = ("w", "utf-8")
-
-    path = pathlib.Path(toml_file)
-    if not path.is_absolute():
-        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
-
-    config = {}
-    if path.exists():
-        with open(path, read_mode[0], encoding=read_mode[1]) as f:
-            config = load_toml(f)
-
-    config.setdefault("project", {})
-    config["project"]["requires-python"] = requires
-    #config["tool"]["uv"]["python"] = version_str
-
-    with open(path, write_mode[0], encoding=write_mode[1]) as f:
-            dump_toml(config, f)
-
 def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
@@ -165,50 +60,6 @@ def install_uv():
         except subprocess.CalledProcessError as e:
             print(f"Failed to install 'uv' via pip: {e}")
             return False
-
-def create_uv_project():
-    """
-    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
-    Uses install_uv() to ensure uv is installed.
-    """
-    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
-    pyproject_path = project_path / "pyproject.toml"
-
-    if not install_uv():
-        print("❌ 'uv' is not installed or not available in PATH.")
-        return
-
-    try:
-        if pyproject_path.exists():
-            print("✅ pyproject.toml found — running `uv lock`...")
-            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
-        else:
-            print("ℹ️  No pyproject.toml found — running `uv init`...")
-            subprocess.run(["uv", "init"], check=True, cwd=project_path)
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Command failed: {e}")
-
-def create_uv_project_old():
-    """
-    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
-    Assumes `uv` is available in PATH.
-    """
-    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
-    pyproject_path = project_path / "pyproject.toml"
-
-    try:
-        install_uv()
-
-        if pyproject_path.exists():
-            print("✅ pyproject.toml found — running `uv lock`...")
-            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
-        else:
-            print("ℹ️  No pyproject.toml found — running `uv init`...")
-            subprocess.run(["uv", "init"], check=True, cwd=project_path)
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Command failed: {e}")
-    except FileNotFoundError:
-        print("❌ 'uv' is not installed or not in PATH.")
 
 def package_installer(required_libraries: list = None):
     """
@@ -367,6 +218,158 @@ package_installer(required_libraries = install_packages)
 
 from dotenv import dotenv_values, load_dotenv
 
+if sys.version_info < (3, 11):
+    import toml
+else:
+    import tomllib as toml
+    import tomli_w
+
+def upgrade_pip():
+    packages = ["pip", "setuptools", "wheel"]
+
+    # Step 1: Ensure pip is installed for fallback
+    try:
+        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️ Warning: ensurepip failed: {e}")
+
+    # Step 2: Try using uv add (preferred for locked environments)
+    try:
+        subprocess.run(["uv", "add", *packages], check=True)
+        print("✅ Upgraded pip, setuptools, wheel using `uv add` (with lock).")
+        return
+    except subprocess.CalledProcessError:
+        print("⚠️ `uv add` failed, trying `uv pip install --upgrade`...")
+
+    # Step 3: Try uv pip install --upgrade
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", *packages], check=True)
+        print("✅ Upgraded pip, setuptools, wheel using `uv pip install`.")
+        return
+    except subprocess.CalledProcessError:
+        print("⚠️ `uv pip install` failed, falling back to regular pip...")
+
+    # Step 4: Fallback to pip
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", *packages],
+                       check=True, stderr=subprocess.DEVNULL)
+        print("✅ Upgraded pip, setuptools, wheel using `pip`.")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Final fallback failed: pip upgrade error: {e}")
+
+def upgrade_pip_old():
+    # Step 1: Ensure pip is installed (required for fallback or pip-only setups)
+    try:
+        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: ensurepip failed: {e}")
+
+    # Step 2: Try using uv pip install
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], check=True)
+        print("✅ Upgraded pip, setuptools, wheel using uv.")
+    except subprocess.CalledProcessError:
+        print("⚠️ uv failed, falling back to pip...")
+
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
+                        check=True, stderr=subprocess.DEVNULL)
+            print("✅ Upgraded pip, setuptools, wheel using pip.")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Warning: pip upgrade failed: {e}")
+
+
+    # Upgrade Pip:
+    try:
+        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
+        subprocess.run([sys.executable, "-m","pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
+            check=True,
+            stderr=subprocess.DEVNULL)
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: pip upgrade failed: {e}")
+
+def write_uv_requires(toml_file: str = "pyproject.toml"):
+    """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
+    version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
+    requires = f">= {version_str}"
+
+    # TOML loading/dumping
+    if sys.version_info < (3, 11):
+        load_toml = toml.load
+        dump_toml = toml.dump
+        read_mode = ("r", "utf-8")
+        write_mode = ("w", "utf-8")
+    else:
+        def load_toml(f): return toml.load(f)
+        def dump_toml(d, f): f.write(tomli_w.dumps(d))
+        read_mode = ("rb", None)
+        write_mode = ("w", "utf-8")
+
+    path = pathlib.Path(toml_file)
+    if not path.is_absolute():
+        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
+
+    config = {}
+    if path.exists():
+        with open(path, read_mode[0], encoding=read_mode[1]) as f:
+            config = load_toml(f)
+
+    config.setdefault("project", {})
+    config["project"]["requires-python"] = requires
+    #config["tool"]["uv"]["python"] = version_str
+
+    with open(path, write_mode[0], encoding=write_mode[1]) as f:
+            dump_toml(config, f)
+
+def create_uv_project():
+    """
+    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
+    Uses install_uv() to ensure uv is installed.
+    """
+    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
+    pyproject_path = project_path / "pyproject.toml"
+
+    if not install_uv():
+        print("❌ 'uv' is not installed or not available in PATH.")
+        return
+
+    try:
+        if pyproject_path.exists():
+            print("✅ pyproject.toml found — running `uv lock`...")
+            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
+        else:
+            print("ℹ️  No pyproject.toml found — running `uv init`...")
+            subprocess.run(["uv", "init"], check=True, cwd=project_path)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Command failed: {e}")
+
+def create_uv_project_old():
+    """
+    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
+    Assumes `uv` is available in PATH.
+    """
+    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
+    pyproject_path = project_path / "pyproject.toml"
+
+    try:
+        install_uv()
+
+        if pyproject_path.exists():
+            print("✅ pyproject.toml found — running `uv lock`...")
+            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
+        else:
+            print("ℹ️  No pyproject.toml found — running `uv init`...")
+            subprocess.run(["uv", "init"], check=True, cwd=project_path)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Command failed: {e}")
+    except FileNotFoundError:
+        print("❌ 'uv' is not installed or not in PATH.")
+
 def check_path_format(path, project_root=None):
     if not path:
         return path
@@ -395,10 +398,8 @@ def load_from_env(env_name: str, env_file: str = ".env", toml_file: str = "pypro
     Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
     """
     if sys.version_info < (3, 11):
-        import toml
         open_mode = ("r", "utf-8")
     else:
-        import tomllib as toml
         open_mode = ("rb", None)
 
     env_name_strip = env_name.strip()
@@ -452,15 +453,12 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
         return s.encode("utf-8", errors="surrogatepass").decode("utf-8", errors="ignore")
 
     if sys.version_info < (3, 11):
-        import toml
         load_toml = toml.load
         dump_toml = toml.dump
         read_mode = ("r", "utf-8")
         write_mode = ("w", "utf-8")
     else:
-        import tomllib
-        import tomli_w
-        def load_toml(f): return tomllib.load(f)
+        def load_toml(f): return toml.load(f)
         def dump_toml(d, f): f.write(tomli_w.dumps(d))
         read_mode = ("rb", None)
         write_mode = ("w", "utf-8")
@@ -1332,13 +1330,9 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
         Returns:
             Tuple[PathSpec | None, List[str]]: A PathSpec matcher and raw pattern list
         """
-
-
         if sys.version_info < (3, 11):
-            import toml
             open_mode = ("r", "utf-8")
         else:
-            import tomllib as toml
             open_mode = ("rb", None)
 
         if not folder:
@@ -1385,10 +1379,8 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
         """
         
         if sys.version_info < (3, 11):
-            import toml
             open_mode = ("r", "utf-8")
         else:
-            import tomllib as toml
             open_mode = ("rb", None)
 
         if not folder:
@@ -1415,15 +1407,12 @@ if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
 
     def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
         if sys.version_info < (3, 11):
-            import toml
             load_toml = toml.load
             dump_toml = toml.dump
             open_read = ("r", "utf-8")
             open_write = ("w", "utf-8")
         else:
-            import tomllib
-            import tomli_w
-            def load_toml(f): return tomllib.load(f)
+            def load_toml(f): return toml.load(f)
             def dump_toml(d, f): f.write(tomli_w.dumps(d))
             open_read = ("rb", None)
             open_write = ("w", "utf-8")
