@@ -6,7 +6,6 @@ dependencies = []
 
 [tool.uv]
 
-
 # ============================================================
 # Project template metadata
 # Replaces: .cookiecutter

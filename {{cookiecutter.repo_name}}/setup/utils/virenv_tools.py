@@ -432,7 +432,7 @@ def create_venv_env():
 
     return env_path
 
-def create_requirements_txt(requirements_file: str = "requirements.txt"):
+def create_requirements_txt_new(requirements_file: str = "requirements.txt"):
     """
     Writes pip freeze output to requirements.txt and ensures all installed packages
     are tracked in uv.lock (by running `uv add` on any missing).
@@ -481,6 +481,74 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
     with open(requirements_file, "w", encoding="utf-8") as f:
         f.write("\n".join(frozen_lines) + "\n")
     print("📄 requirements.txt has been created successfully.")
+
+def create_requirements_txt(requirements_file: str = "requirements.txt"):
+    """
+    Writes pip freeze output to requirements.txt and ensures all installed packages
+    are tracked in uv.lock (by running `uv add` on any missing).
+    """
+
+    # Conditional TOML support for Python 3.11+
+    if sys.version_info >= (3, 11):
+        import tomllib as toml
+    else:
+        try:
+            import tomli as toml
+        except ImportError:
+            print("❌ Missing 'tomli'. Run `pip install tomli` for Python < 3.11.")
+            raise
+
+
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    requirements_path = project_root / requirements_file
+    uv_lock_path = project_root / "uv.lock"
+
+    # Step 1: Get pip freeze output
+    result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
+    if result.returncode != 0:
+        print("❌ Error running pip freeze:", result.stderr)
+        return
+
+    # Step 2: Parse pip freeze output
+    frozen_lines = result.stdout.strip().splitlines()
+    installed_pkgs = {
+        line.split("==")[0].lower(): line for line in frozen_lines if "==" in line
+    }
+
+    # Step 3: Parse uv.lock to get already-locked packages
+    locked_pkgs = set()
+    if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
+
+        if sys.version_info >= (3, 11):
+            import tomllib as toml
+        else:
+            import tomli as toml
+        try:
+            with open(uv_lock_path, "rb") as f:
+                uv_data = toml.load(f)
+                for pkg in uv_data.get("package", []):
+                    if isinstance(pkg, dict) and "name" in pkg:
+                        locked_pkgs.add(pkg["name"].lower())
+        except Exception as e:
+            print(f"⚠️ Failed to parse uv.lock: {e}")
+
+    # Step 4: Add missing packages to uv.lock
+    missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
+    if missing_from_lock:
+        print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
+        for pkg in missing_from_lock:
+            try:
+                subprocess.run(["uv", "add", pkg], check=True,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print(f"✅ Added {pkg} to uv.lock")
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Failed to add {pkg} via uv: {e}")
+
+    # Step 5: Write pip freeze output to requirements.txt
+    with open(requirements_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(frozen_lines) + "\n")
+    print("📄 requirements.txt has been created successfully.")
+
 
 def create_requirements_txt_old(requirements_file:str="requirements.txt"):
 
