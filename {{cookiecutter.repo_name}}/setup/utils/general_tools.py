@@ -182,6 +182,16 @@ def package_installer(required_libraries: list = None):
                 check=True,
                 stderr=subprocess.DEVNULL
             )
+            
+            # Optional: re-check installation
+            norm_name = lib.split("==")[0].split(">=")[0].split("<=")[0].split("~=")[0].strip().lower()
+            if norm_name not in {
+                name.lower() for name in importlib.metadata.distributions()
+                if (name := name.metadata.get("Name")) is not None
+            }:
+                print(f"⚠️ pip claims to have installed {lib}, but it's still missing.")
+
+            
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to install {lib} with pip: {e}")
 
