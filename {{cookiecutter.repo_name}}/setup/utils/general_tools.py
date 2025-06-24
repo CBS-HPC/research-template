@@ -16,7 +16,7 @@ def set_packages(version_control,programming_language):
     if not programming_language or not version_control:
         return []
 
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil',"py-cpuinfo","jinja2"]
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil','py-cpuinfo','jinja2']
 
     # Add toml package if Python version < 3.11
     if sys.version_info < (3, 11):
@@ -133,7 +133,7 @@ def package_installer(required_libraries: list = None):
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to install {lib} with pip: {e}")
 
-install_packages = ['python-dotenv','pathspec','jinja2','nbformat']
+install_packages = ['python-dotenv','pathspec','nbformat','psutil','py-cpuinfo','jinja2']
 
 if sys.version_info < (3, 11):
     install_packages.append('toml')
