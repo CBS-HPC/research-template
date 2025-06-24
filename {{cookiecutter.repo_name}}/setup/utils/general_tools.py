@@ -54,7 +54,11 @@ def install_uv():
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
+
             print("'uv' installed successfully.")
+            uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+            save_to_env(uv_path, 'UV')
+            
             import uv  # noqa: F401
             return True
         except subprocess.CalledProcessError as e:
@@ -67,6 +71,23 @@ def package_installer(required_libraries: list = None):
     Preference order: uv add → uv pip install → pip install
     """
     def safe_uv_add(lib):
+        try:
+            if pathlib.Path("uv.lock").exists():
+                # Try finding uv relative to sys.executable
+                uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+                if not uv_path:
+                    uv_path = shutil.which("uv")  # fallback to system path
+
+                if not uv_path:
+                    raise FileNotFoundError("uv not found in current Python environment")
+
+                subprocess.run([uv_path, "add", lib], check=True, stderr=subprocess.DEVNULL)
+                return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+        return False
+
+    def safe_uv_add_old(lib):
         try:
             if pathlib.Path("uv.lock").exists():
                 subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
@@ -184,7 +205,7 @@ def write_uv_requires(toml_file: str = "pyproject.toml"):
     with open(path, write_mode[0], encoding=write_mode[1]) as f:
             dump_toml(config, f)
 
-def create_uv_project():
+def create_uv_project_old():
     """
     Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
     Uses install_uv() to ensure uv is installed.
@@ -203,6 +224,32 @@ def create_uv_project():
         else:
             print("ℹ️  No pyproject.toml found — running `uv init`...")
             subprocess.run(["uv", "init"], check=True, cwd=project_path)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Command failed: {e}")
+
+def create_uv_project():
+    """
+    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
+    Uses install_uv() to ensure uv is installed in the current Python interpreter.
+    """
+    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
+    pyproject_path = project_path / "pyproject.toml"
+
+    # Look for 'uv' in the same env as sys.executable
+    uv_path = shutil.which("uv", path=str(pathlib.Path(sys.executable).parent))
+    if not uv_path:
+        uv_path = shutil.which("uv")  # fallback
+    if not uv_path:
+        print("❌ 'uv' is not installed or not available in PATH.")
+        return
+
+    try:
+        if pyproject_path.exists():
+            print("✅ pyproject.toml found — running `uv lock`...")
+            subprocess.run([uv_path, "lock"], check=True, cwd=project_path)
+        else:
+            print("ℹ️  No pyproject.toml found — running `uv init`...")
+            subprocess.run([uv_path, "init"], check=True, cwd=project_path)
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed: {e}")
 

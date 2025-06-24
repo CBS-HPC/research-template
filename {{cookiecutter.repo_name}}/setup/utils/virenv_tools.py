@@ -164,6 +164,47 @@ def set_conda_packages(version_control,python_env_manager,r_env_manager,conda_py
 
 def export_conda_env(env_path, output_file="environment.yml"):
     """
+    Export the details of a conda environment to a YAML file using its path.
+    
+    Parameters:
+    - env_path: str or Path, full path to the conda environment directory.
+    - output_file: str or Path, output YAML file path (default 'environment.yml').
+    """
+    env_path = os.path.abspath(env_path)
+    output_file = os.path.abspath(output_file)
+
+    def update_conda_env_file(file_path):
+        with open(file_path, 'r') as f:
+            env_data = yaml.safe_load(f)
+
+        if env_data is None:
+            print(f"Failed to parse environment YAML at {file_path}")
+            return
+
+        if 'prefix' in env_data:
+            prefix_path = env_data['prefix']
+            env_data['name'] = os.path.basename(prefix_path)
+            # Optional: remove 'prefix' to avoid hard-coding paths
+            del env_data['prefix']
+
+            with open(file_path, 'w') as f:
+                yaml.dump(env_data, f, default_flow_style=False)
+
+    try:
+        with open(output_file, 'w') as f:
+            subprocess.run(['conda', 'env', 'export', '--prefix', env_path], stdout=f, check=True)
+        
+        update_conda_env_file(output_file)
+        print(f"Environment exported to: {output_file}")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to export conda environment: {e}")
+    except FileNotFoundError:
+        print("Conda is not installed or not found in PATH.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def export_conda_en_old(env_path, output_file="environment.yml"):
+    """
     Export the details of a conda environment to a YAML file.
     
     Parameters:
@@ -435,6 +476,75 @@ def create_venv_env():
 def create_requirements_txt(requirements_file: str = "requirements.txt"):
     """
     Writes pip freeze output to requirements.txt and ensures all installed packages
+    are tracked in uv.lock (by running `uv add` on any missing), using uv from the
+    same environment as sys.executable.
+    """
+
+    # TOML support
+    if sys.version_info >= (3, 11):
+        import tomllib as toml
+    else:
+        try:
+            import tomli as toml
+        except ImportError:
+            print("❌ Missing 'tomli'. Run `pip install tomli` for Python < 3.11.")
+            raise
+
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    requirements_path = project_root / requirements_file
+    uv_lock_path = project_root / "uv.lock"
+
+    # Locate `uv` relative to sys.executable
+    uv_path = shutil.which("uv", path=str(pathlib.Path(sys.executable).parent))
+    if not uv_path:
+        uv_path = shutil.which("uv")
+    if not uv_path:
+        print("❌ 'uv' is not installed or not available in the current Python environment.")
+        return
+
+    # Step 1: Get pip freeze output
+    result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
+    if result.returncode != 0:
+        print("❌ Error running pip freeze:", result.stderr)
+        return
+
+    # Step 2: Parse pip freeze output
+    frozen_lines = result.stdout.strip().splitlines()
+    installed_pkgs = {
+        line.split("==")[0].lower(): line for line in frozen_lines if "==" in line
+    }
+
+    # Step 3: Parse uv.lock to get already-locked packages
+    locked_pkgs = set()
+    if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
+        try:
+            with open(uv_lock_path, "rb") as f:
+                uv_data = toml.load(f)
+                for pkg in uv_data.get("package", []):
+                    if isinstance(pkg, dict) and "name" in pkg:
+                        locked_pkgs.add(pkg["name"].lower())
+        except Exception as e:
+            print(f"⚠️ Failed to parse uv.lock: {e}")
+
+    # Step 4: Add missing packages to uv.lock
+    missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
+    if missing_from_lock:
+        print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
+        for pkg in missing_from_lock:
+            try:
+                subprocess.run([uv_path, "add", pkg], check=True,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Failed to add {pkg} via uv: {e}")
+
+    # Step 5: Write pip freeze output to requirements.txt
+    with open(requirements_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(frozen_lines) + "\n")
+    print("📄 requirements.txt has been created successfully.")
+
+def create_requirements_txt_old(requirements_file: str = "requirements.txt"):
+    """
+    Writes pip freeze output to requirements.txt and ensures all installed packages
     are tracked in uv.lock (by running `uv add` on any missing).
     """
 
@@ -447,7 +557,6 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         except ImportError:
             print("❌ Missing 'tomli'. Run `pip install tomli` for Python < 3.11.")
             raise
-
 
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     requirements_path = project_root / requirements_file
