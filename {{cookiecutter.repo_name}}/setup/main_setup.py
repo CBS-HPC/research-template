@@ -4,6 +4,41 @@ import pathlib
 import subprocess
 import platform
 
+def upgrade_pip():
+    # Step 1: Ensure pip is installed (required for fallback or pip-only setups)
+    try:
+        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: ensurepip failed: {e}")
+
+    # Step 2: Try using uv pip install
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        subprocess.run([sys.executable, "-m", "uv", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], check=True)
+        print("✅ Upgraded pip, setuptools, wheel using uv.")
+    except subprocess.CalledProcessError:
+        print("⚠️ uv failed, falling back to pip...")
+
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
+                        check=True, stderr=subprocess.DEVNULL)
+            print("✅ Upgraded pip, setuptools, wheel using pip.")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Warning: pip upgrade failed: {e}")
+
+
+    # Upgrade Pip:
+    try:
+        subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
+        subprocess.run([sys.executable, "-m","pip", "install", "--upgrade", "pip", "setuptools", "wheel"], 
+            check=True,
+            stderr=subprocess.DEVNULL)
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: pip upgrade failed: {e}")
+
+upgrade_pip()
+
 from utils.general_tools import *
 from utils.backup_tools import *
 from utils.readme_templates import *

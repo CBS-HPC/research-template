@@ -225,7 +225,7 @@ else:
     import tomllib as toml
     import tomli_w
 
-def upgrade_pip():
+def upgrade_pip_new():
     packages = ["pip", "setuptools", "wheel"]
 
     # Step 1: Ensure pip is installed for fallback
