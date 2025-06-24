@@ -108,7 +108,7 @@ def install_uv():
             print(f"Failed to install 'uv' via pip: {e}")
             return False
 
-def package_installer(required_libraries: list = None,uv_available:bool = True):
+def package_installer(required_libraries: list = None):
     """
     Install missing libraries using uv if available, otherwise fallback to pip.
     Preference order: uv add → uv pip install → pip install
@@ -155,11 +155,9 @@ def package_installer(required_libraries: list = None,uv_available:bool = True):
 
     print(f"📦 Installing missing libraries: {missing_libraries}")
 
-    if uv_available:
-        uv_available = install_uv()
+    
+    uv_available = install_uv()
     print(shutil.which("uv"))
-    if uv_available:
-            create_uv_project()
 
     for lib in missing_libraries:
         if uv_available and safe_uv_add(lib):
@@ -201,7 +199,7 @@ if sys.version_info < (3, 11):
 else:
     install_packages.append('tomli-w')
 
-package_installer(required_libraries = install_packages,uv_available = False)
+package_installer(required_libraries = install_packages)
 
 from dotenv import dotenv_values, load_dotenv
 
@@ -1113,8 +1111,8 @@ def change_dir(destination):
         os.chdir(cur_dir)
 
 if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
-    #write_uv_requires()
-    #create_uv_project()
+    write_uv_requires()
+    create_uv_project()
     package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
 
 # Jinja template functions (MOVE to own file)
