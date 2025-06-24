@@ -494,14 +494,6 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
     requirements_path = project_root / requirements_file
     uv_lock_path = project_root / "uv.lock"
 
-    # Locate `uv` relative to sys.executable
-    uv_path = shutil.which("uv", path=str(pathlib.Path(sys.executable).parent))
-    if not uv_path:
-        uv_path = shutil.which("uv")
-    if not uv_path:
-        print("❌ 'uv' is not installed or not available in the current Python environment.")
-        return
-
     # Step 1: Get pip freeze output
     result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
     if result.returncode != 0:
@@ -532,7 +524,7 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
         for pkg in missing_from_lock:
             try:
-                subprocess.run([uv_path, "add", pkg], check=True,
+                subprocess.run(["uv", "add", pkg], check=True,
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as e:
                 print(f"❌ Failed to add {pkg} via uv: {e}")
