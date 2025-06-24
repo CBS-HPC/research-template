@@ -37,7 +37,7 @@ def upgrade_pip():
     except subprocess.CalledProcessError as e:
         print(f"Warning: pip upgrade failed: {e}")
 
-upgrade_pip()
+#upgrade_pip()
 
 from utils.general_tools import *
 from utils.backup_tools import *

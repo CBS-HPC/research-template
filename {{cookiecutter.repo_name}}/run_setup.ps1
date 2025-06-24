@@ -1,52 +1,63 @@
-# PowerShell script to set up environment and run specified Python scripts
-
 param (
     [string]$env_path,
-    [string]$env_manager,  # Environment manager: Conda, venv
-    [string]$main_setup
+    [string]$env_manager,  # "conda", "venv", or "base Installation"
+    [string]$main_setup    # Path to the main Python script
 )
 
 $env_path = $env_path -replace '\\', '/'
 
-# Default to system Python
-$pythonExe = "python"
-
-# Resolve Python executable based on environment manager
+# -------------------------------
+# 🧪 Activate the Python Environment
+# -------------------------------
 if ($env_manager -ne "base Installation") {
     switch ($env_manager.ToLower()) {
         "conda" {
             Write-Output "Activating Conda environment: $env_path"
             conda activate $env_path
-            # Let conda handle the path — assume global python updated
         }
         "venv" {
-            Write-Output "Using Python from venv: $env_path"
-            $pythonExe = Join-Path $env_path "Scripts\python.exe"
+            Write-Output "Activating venv: $env_path"
+            $activateScript = Join-Path $env_path "Scripts\Activate.ps1"
+            if (Test-Path $activateScript) {
+                & $activateScript
+            } else {
+                Write-Output "❌ Cannot find activate script at $activateScript"
+                exit 1
+            }
         }
         default {
-            Write-Output "No valid env_path or env_manager provided. Using system Python.2"
+            Write-Output "⚠️ Unknown env_manager. Proceeding without activation."
         }
     }
 } else {
-    Write-Output "No valid env_path or env_manager provided. Using system Python."
+    Write-Output "Using system Python (no environment activation)."
 }
 
-# Helper function to run Python scripts
+# -------------------------------
+# 📦 Install and Upgrade Tools
+# -------------------------------
+Write-Output "`n📦 Installing or upgrading 'uv'..."
+pip install --upgrade uv
+
+Write-Output "`n🚀 Upgrading pip, setuptools, and wheel using uv..."
+uv pip install --upgrade pip setuptools wheel
+
+# -------------------------------
+# ▶️ Run the Main Python Script
+# -------------------------------
 function Run-PythonScript {
     param (
         [string]$script_path,
         [string]$label
     )
     if (Test-Path $script_path) {
-        Write-Output "Running $label from $script_path..."
-        & "$pythonExe" "$script_path"
+        Write-Output "`n▶️ Running $label from $script_path..."
+        python "$script_path"
     } else {
-        Write-Output "Error: $label not found at $script_path"
+        Write-Output "❌ Error: $label not found at $script_path"
     }
 }
 
-# Run Python scripts
 Run-PythonScript -script_path $main_setup -label "main setup script"
 
-
-Write-Output "Environment setup completed successfully."
+Write-Output "`n✅ Environment setup completed successfully."
