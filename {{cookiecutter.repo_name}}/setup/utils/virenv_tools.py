@@ -401,7 +401,7 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
 
 # Venv and Virtualenv Functions
 
-def create_venv_env():
+def create_venv_env_new():
     """
     Create a Python virtual environment using uv if available; otherwise, use venv.
     """
@@ -432,7 +432,7 @@ def create_venv_env():
 
     return env_path
 
-def create_venv_env_old():
+def create_venv_env():
     """
     Create a Python virtual environment using uv if available; otherwise, use venv.
     """
