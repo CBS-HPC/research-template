@@ -11,6 +11,33 @@ import getpass
 import importlib.metadata
 import json
 
+def create_uv_project():
+    """
+    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
+    Skips both if uv.lock already exists.
+    """
+    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
+    pyproject_path = project_path / "pyproject.toml"
+    uv_lock_path = project_path / "uv.lock"
+
+    if uv_lock_path.exists():
+        print("✔️  uv.lock already exists — skipping `uv init` or `uv lock`.")
+        return
+
+    if not install_uv():
+        print("❌ 'uv' is not installed or not available in PATH.")
+        return
+
+    try:
+        if pyproject_path.exists():
+            print("✅ pyproject.toml found — running `uv lock`...")
+            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
+        else:
+            print("No pyproject.toml found — running `uv init`...")
+            subprocess.run(["uv", "init"], check=True, cwd=project_path)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Command failed: {e}")
+
 def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
@@ -155,66 +182,6 @@ if sys.version_info < (3, 11):
 else:
     import tomllib as toml
     import tomli_w
-
-def write_uv_requires(toml_file: str = "pyproject.toml"):
-    """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
-    version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
-    requires = f">= {version_str}"
-
-    # TOML loading/dumping
-    if sys.version_info < (3, 11):
-        load_toml = toml.load
-        dump_toml = toml.dump
-        read_mode = ("r", "utf-8")
-        write_mode = ("w", "utf-8")
-    else:
-        def load_toml(f): return toml.load(f)
-        def dump_toml(d, f): f.write(tomli_w.dumps(d))
-        read_mode = ("rb", None)
-        write_mode = ("w", "utf-8")
-
-    path = pathlib.Path(toml_file)
-    if not path.is_absolute():
-        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
-
-    config = {}
-    if path.exists():
-        with open(path, read_mode[0], encoding=read_mode[1]) as f:
-            config = load_toml(f)
-
-    config.setdefault("project", {})
-    config["project"]["requires-python"] = requires
-    #config["tool"]["uv"]["python"] = version_str
-
-    with open(path, write_mode[0], encoding=write_mode[1]) as f:
-            dump_toml(config, f)
-
-def create_uv_project():
-    """
-    Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
-    Skips both if uv.lock already exists.
-    """
-    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
-    pyproject_path = project_path / "pyproject.toml"
-    uv_lock_path = project_path / "uv.lock"
-
-    if uv_lock_path.exists():
-        print("✔️  uv.lock already exists — skipping `uv init` or `uv lock`.")
-        return
-
-    if not install_uv():
-        print("❌ 'uv' is not installed or not available in PATH.")
-        return
-
-    try:
-        if pyproject_path.exists():
-            print("✅ pyproject.toml found — running `uv lock`...")
-            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
-        else:
-            print("No pyproject.toml found — running `uv init`...")
-            subprocess.run(["uv", "init"], check=True, cwd=project_path)
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Command failed: {e}")
 
 
 def check_path_format(path, project_root=None):
@@ -557,7 +524,8 @@ def get_relative_path(target_path):
             if relative_path:
                 return relative_path
     return target_path
-    
+
+
 #Check software
 def ensure_correct_kernel(func):
     """Decorator to ensure the function runs with the correct Python kernel."""
@@ -597,6 +565,39 @@ def ensure_correct_kernel(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+def write_uv_requires(toml_file: str = "pyproject.toml"):
+    """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
+    version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
+    requires = f">= {version_str}"
+
+    # TOML loading/dumping
+    if sys.version_info < (3, 11):
+        load_toml = toml.load
+        dump_toml = toml.dump
+        read_mode = ("r", "utf-8")
+        write_mode = ("w", "utf-8")
+    else:
+        def load_toml(f): return toml.load(f)
+        def dump_toml(d, f): f.write(tomli_w.dumps(d))
+        read_mode = ("rb", None)
+        write_mode = ("w", "utf-8")
+
+    path = pathlib.Path(toml_file)
+    if not path.is_absolute():
+        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
+
+    config = {}
+    if path.exists():
+        with open(path, read_mode[0], encoding=read_mode[1]) as f:
+            config = load_toml(f)
+
+    config.setdefault("project", {})
+    config["project"]["requires-python"] = requires
+    #config["tool"]["uv"]["python"] = version_str
+
+    with open(path, write_mode[0], encoding=write_mode[1]) as f:
+            dump_toml(config, f)
 
 
 if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
