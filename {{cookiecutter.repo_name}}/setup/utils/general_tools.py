@@ -41,10 +41,9 @@ def set_packages(version_control,programming_language):
     return install_packages
 
 def find_uv_executable():
-    bin_dir = pathlib.Path(sys.executable).parent
-    uv_exe = bin_dir / ("uv.exe" if sys.platform == "win32" else "uv")
-    if uv_exe.exists() and uv_exe.is_file():
-        return str(uv_exe)
+    uv_path = shutil.which("uv")
+    print(uv_path)
+    return uv_path
 
 
 
@@ -88,9 +87,6 @@ def install_uv():
 
             print("'uv' installed successfully.")
             uv_path = find_uv_executable()
-            print("hello")
-            print(uv_path)
-            print("hello")
             save_to_env(uv_path, 'UV')
         
             return True
@@ -267,7 +263,7 @@ def create_uv_project():
 
     # Look for 'uv' in the same env as sys.executable
     uv_path = find_uv_executable()
-    
+
     if not uv_path:
         print("❌ 'uv' is not installed or not available in PATH.")
         return
