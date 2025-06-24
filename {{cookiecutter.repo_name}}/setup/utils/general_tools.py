@@ -40,7 +40,7 @@ def set_packages(version_control,programming_language):
     
     return install_packages
 
-def install_uv():
+def install_uv_old():
     try:
         import uv  # noqa: F401
         return True
@@ -56,10 +56,32 @@ def install_uv():
             )
 
             print("'uv' installed successfully.")
-            uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
-            save_to_env(uv_path, 'UV')
+            
             
             import uv  # noqa: F401
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install 'uv' via pip: {e}")
+            return False
+def install_uv():
+     # Try finding uv relative to sys.executable
+    uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+    if not uv_path:
+        try:
+            print("Installing 'uv' package into current Python environment...")
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
+                #[sys.executable, "-m", "pip", "install", "uv"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+            print("'uv' installed successfully.")
+            uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+            save_to_env(uv_path, 'UV')
+            exe_to_path('uv', os.path.dirname(shutil.which(uv_path)))
+        
             return True
         except subprocess.CalledProcessError as e:
             print(f"Failed to install 'uv' via pip: {e}")
