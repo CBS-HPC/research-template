@@ -11,6 +11,42 @@ import getpass
 import importlib.metadata
 import json
 
+def write_uv_requires(toml_file: str = "pyproject.toml"):
+    """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
+    version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
+    requires = f">= {version_str}"
+
+    # TOML loading/dumping
+    if sys.version_info < (3, 11):
+        import toml
+        load_toml = toml.load
+        dump_toml = toml.dump
+        read_mode = ("r", "utf-8")
+        write_mode = ("w", "utf-8")
+    else:
+        import tomllib
+        import tomli_w
+        def load_toml(f): return tomllib.load(f)
+        def dump_toml(d, f): f.write(tomli_w.dumps(d))
+        read_mode = ("rb", None)
+        write_mode = ("w", "utf-8")
+
+    path = pathlib.Path(toml_file)
+    if not path.is_absolute():
+        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
+
+    config = {}
+    if path.exists():
+        with open(path, read_mode[0], encoding=read_mode[1]) as f:
+            config = load_toml(f)
+
+    config.setdefault("project", {})
+    config["project"]["requires-python"] = requires
+    config["tool"]["uv"]["python"] = version_str
+
+    with open(path, write_mode[0], encoding=write_mode[1]) as f:
+            dump_toml(config, f)
+
 def set_packages(version_control,programming_language):
 
     if not programming_language or not version_control:
@@ -169,15 +205,10 @@ def check_path_format(path, project_root=None):
 
     return path
 
-def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "pyproject.toml"):
+def load_from_env(env_name: str, env_file: str = ".env", toml_file: str = "pyproject.toml"):
     """
     Loads an environment variable from a .env file, or from [tool.<env_file_name>] in a TOML file.
     """
-    import os
-    import sys
-    import pathlib
-    from dotenv import dotenv_values, load_dotenv
-
     if sys.version_info < (3, 11):
         import toml
         open_mode = ("r", "utf-8")
@@ -185,7 +216,8 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "pyproj
         import tomllib as toml
         open_mode = ("rb", None)
 
-    env_var_upper = env_var.upper()
+    env_name_strip = env_name.strip()
+    env_name_upper = env_name_strip.strip().upper()
     env_file_path = pathlib.Path(env_file)
     if not env_file_path.is_absolute():
         env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
@@ -193,10 +225,10 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "pyproj
     # Try reading .env first
     if env_file_path.exists():
         env_values = dotenv_values(env_file_path)
-        if env_var_upper in env_values:
-            return check_path_format(env_values[env_var_upper])
+        if env_name_upper in env_values:
+            return check_path_format(env_values[env_name_upper])
         load_dotenv(env_file_path, override=True)
-        value = os.getenv(env_var_upper)
+        value = os.getenv(env_name_upper)
         if value:
             return check_path_format(value)
 
@@ -216,7 +248,7 @@ def load_from_env(env_var: str, env_file: str = ".env", toml_file: str = "pyproj
         try:
             with open(toml_path, open_mode[0], encoding=open_mode[1]) as f:
                 config = toml.load(f)
-            return check_path_format(config.get("tool", {}).get(toml_section, {}).get(env_var_upper))
+            return check_path_format(config.get("tool", {}).get(toml_section, {}).get(env_name_strip))
         except Exception as e:
             print(f"⚠️ Could not read {toml_path}: {e}")
 
@@ -250,8 +282,8 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
 
     if env_var is None:
         return
-
-    env_name_upper = env_name.strip().upper()
+    env_name_strip = env_name.strip()
+    env_name_upper = env_name_strip.strip().upper()
     env_var = check_path_format(env_var)
     env_var = sanitize_input(env_var)  # ✅ SANITIZE before writing
 
@@ -300,7 +332,7 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
     # Preserve existing content and update single key
     config.setdefault("tool", {})
     config["tool"].setdefault(toml_section, {})
-    config["tool"][toml_section][env_name_upper] = env_var
+    config["tool"][toml_section][env_name_strip] = env_var
 
     with open(toml_path, write_mode[0], encoding=write_mode[1]) as f:
         dump_toml(config, f)
@@ -548,6 +580,7 @@ package_installer(required_libraries = install_packages)
 from dotenv import dotenv_values, load_dotenv
 
 if load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"):
+    write_uv_requires()
     create_uv_project()
     package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
 
@@ -1039,8 +1072,6 @@ def set_program_path(programming_language):
     if not load_from_env("PYTHON"):
         save_to_env(sys.executable, "PYTHON")
         save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
-        save_to_env(get_version("python"), "python","uv")
-
 # Maps
 ext_map = {
     "r": "R",
