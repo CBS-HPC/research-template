@@ -63,6 +63,7 @@ def install_uv_old():
         except subprocess.CalledProcessError as e:
             print(f"Failed to install 'uv' via pip: {e}")
             return False
+
 def install_uv():
      # Try finding uv relative to sys.executable
     uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
@@ -79,6 +80,9 @@ def install_uv():
 
             print("'uv' installed successfully.")
             uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
+            print("hello")
+            print(uv_path)
+            print("hello")
             save_to_env(uv_path, 'UV')
         
             return True
