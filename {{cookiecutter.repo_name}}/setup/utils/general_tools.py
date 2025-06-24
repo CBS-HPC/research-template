@@ -80,7 +80,6 @@ def install_uv():
             print("'uv' installed successfully.")
             uv_path = shutil.which("uv", path=f"{pathlib.Path(sys.executable).parent}")
             save_to_env(uv_path, 'UV')
-            exe_to_path('uv', os.path.dirname(shutil.which(uv_path)))
         
             return True
         except subprocess.CalledProcessError as e:
