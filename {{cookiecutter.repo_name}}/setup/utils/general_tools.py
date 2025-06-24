@@ -153,8 +153,8 @@ def install_uv():
         try:
             print("Installing 'uv' package into current Python environment...")
             subprocess.run(
-                [sys.executable, "-m", "pip", "install", "uv"],
-                #[sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
+                #[sys.executable, "-m", "pip", "install", "uv"],
+                [sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
