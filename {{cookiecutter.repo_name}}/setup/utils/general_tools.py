@@ -174,7 +174,15 @@ def package_installer(required_libraries: list = None,uv_available:bool = True):
                 )
                 continue
             except subprocess.CalledProcessError:
-                print(f"⚠️ `uv pip install` failed for {lib}. Trying pip fallback...")
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "uv", "pip", "install", "--system" ,lib], 
+                        check=True,
+                        stderr=subprocess.DEVNULL
+                    )
+                    continue
+                except subprocess.CalledProcessError:
+                    print(f"⚠️ `uv pip install` failed for {lib}. Trying pip fallback...")
 
         try:
             subprocess.run(
