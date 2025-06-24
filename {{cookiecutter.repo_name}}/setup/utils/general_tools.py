@@ -11,6 +11,27 @@ import getpass
 import importlib.metadata
 import json
 
+from .general_tools import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv
+
+def ask_yes_no(question):
+    """
+    Prompt the user with a yes/no question and validate the input.
+
+    Args:
+        question (str): The question to display to the user.
+
+    Returns:
+        bool: True if the user confirms (yes/y), False if the user declines (no/n).
+    """
+    while True:
+        response = input(question).strip().lower()
+        if response in {"yes", "y"}:
+            return True
+        elif response in {"no", "n"}:
+            return False
+        else:
+            print("Invalid response. Please answer with 'yes' or 'no'.")
+
 def create_uv_project():
     """
     Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
@@ -138,14 +159,15 @@ def package_installer(required_libraries: list = None):
 
     uv_available = install_uv()
     print(shutil.which("uv"))
+    if uv_available:
+            create_uv_project()
+
 
     for lib in missing_libraries:
         if uv_available and safe_uv_add(lib):
             continue
 
         if uv_available:
-            create_uv_project()
-
             try:
                 subprocess.run(
                     [sys.executable, "-m", "uv", "pip", "install", lib],
@@ -165,7 +187,7 @@ def package_installer(required_libraries: list = None):
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to install {lib} with pip: {e}")
 
-install_packages = ['python-dotenv','pathspec','nbformat','psutil','py-cpuinfo','jinja2']
+install_packages = ['python-dotenv']
 
 if sys.version_info < (3, 11):
     install_packages.append('toml')
@@ -175,7 +197,6 @@ else:
 package_installer(required_libraries = install_packages)
 
 from dotenv import dotenv_values, load_dotenv
-import pathspec
 
 if sys.version_info < (3, 11):
     import toml
@@ -524,115 +545,6 @@ def get_relative_path(target_path):
             if relative_path:
                 return relative_path
     return target_path
-
-
-#Check software
-def ensure_correct_kernel(func):
-    """Decorator to ensure the function runs with the correct Python kernel."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from the environment
-        
-        # If no specific kernel is set, just run the function normally
-        if not python_kernel:
-            return func(*args, **kwargs)
-        
-        os_type = platform.system().lower()
-        if os_type == "windows":
-            py_exe = "python.exe"
-        elif os_type == "darwin" or os_type == "linux":
-            py_exe = "python"
-
-        # If the kernel path doesn't contain "python.exe", append it
-        if not python_kernel.endswith(py_exe):
-            python_kernel = os.path.join(python_kernel, py_exe)
-
-        # Get the current executable and its base folder
-        current_executable = sys.executable
-        current_base = os.path.dirname(current_executable)
-        kernel_base = os.path.dirname(python_kernel)
-
-        # If the current Python executable does not match the required kernel, restart
-        if current_executable != python_kernel and current_base != kernel_base:
-            print(f"Restarting with the correct Python kernel: {python_kernel}")
-
-            # Re-run the script with the correct Python interpreter
-            script_path = os.path.abspath(__file__)
-            subprocess.run([python_kernel, script_path] + sys.argv[1:], check=True)
-            sys.exit()  # Terminate the current process after restarting
-
-        # If the kernel is correct, execute the function normally
-        return func(*args, **kwargs)
-
-    return wrapper
-
-def write_uv_requires(toml_file: str = "pyproject.toml"):
-    """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
-    version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
-    requires = f">= {version_str}"
-
-    # TOML loading/dumping
-    if sys.version_info < (3, 11):
-        load_toml = toml.load
-        dump_toml = toml.dump
-        read_mode = ("r", "utf-8")
-        write_mode = ("w", "utf-8")
-    else:
-        def load_toml(f): return toml.load(f)
-        def dump_toml(d, f): f.write(tomli_w.dumps(d))
-        read_mode = ("rb", None)
-        write_mode = ("w", "utf-8")
-
-    path = pathlib.Path(toml_file)
-    if not path.is_absolute():
-        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
-
-    config = {}
-    if path.exists():
-        with open(path, read_mode[0], encoding=read_mode[1]) as f:
-            config = load_toml(f)
-
-    config.setdefault("project", {})
-    config["project"]["requires-python"] = requires
-    #config["tool"]["uv"]["python"] = version_str
-
-    with open(path, write_mode[0], encoding=write_mode[1]) as f:
-            dump_toml(config, f)
-
-
-if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
-    #write_uv_requires()
-    #create_uv_project()
-    package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
-
-@contextmanager
-def change_dir(destination):
-    cur_dir = os.getcwd()
-    destination = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(destination))
-    try:
-        os.chdir(destination)
-        yield
-    finally:
-        os.chdir(cur_dir)
-
-def ask_yes_no(question):
-    """
-    Prompt the user with a yes/no question and validate the input.
-
-    Args:
-        question (str): The question to display to the user.
-
-    Returns:
-        bool: True if the user confirms (yes/y), False if the user declines (no/n).
-    """
-    while True:
-        response = input(question).strip().lower()
-        if response in {"yes", "y"}:
-            return True
-        elif response in {"no", "n"}:
-            return False
-        else:
-            print("Invalid response. Please answer with 'yes' or 'no'.")
 
 # Setting Options
 def git_user_info(version_control):
@@ -1093,6 +1005,7 @@ def set_program_path(programming_language):
     if not load_from_env("PYTHON"):
         save_to_env(sys.executable, "PYTHON")
         save_to_env(get_version("python"), "PYTHON_VERSION",".cookiecutter")
+
 # Maps
 ext_map = {
     "r": "R",
@@ -1110,191 +1023,283 @@ language_dirs = {
     "sas": "./src"
 }
 
-# Jinja template functions
-from jinja2 import Environment, FileSystemLoader
 
-import nbformat as nbf  # For creating Jupyter notebooks
+#Check software
+def ensure_correct_kernel(func):
+    """Decorator to ensure the function runs with the correct Python kernel."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        python_kernel = load_from_env("PYTHON")  # Load the desired kernel path from the environment
+        
+        # If no specific kernel is set, just run the function normally
+        if not python_kernel:
+            return func(*args, **kwargs)
+        
+        os_type = platform.system().lower()
+        if os_type == "windows":
+            py_exe = "python.exe"
+        elif os_type == "darwin" or os_type == "linux":
+            py_exe = "python"
 
-def set_jinja_templates(template_folder:str):
-    
-    template_env = Environment(
-    loader=FileSystemLoader(str(pathlib.Path(__file__).resolve().parent / template_folder)),
-    trim_blocks=True,
-    lstrip_blocks=True
-    )
+        # If the kernel path doesn't contain "python.exe", append it
+        if not python_kernel.endswith(py_exe):
+            python_kernel = os.path.join(python_kernel, py_exe)
 
-    return template_env
+        # Get the current executable and its base folder
+        current_executable = sys.executable
+        current_base = os.path.dirname(current_executable)
+        kernel_base = os.path.dirname(python_kernel)
 
-def patch_jinja_templates(template_folder: str):
-    template_dir = pathlib.Path(__file__).resolve().parent / template_folder
+        # If the current Python executable does not match the required kernel, restart
+        if current_executable != python_kernel and current_base != kernel_base:
+            print(f"Restarting with the correct Python kernel: {python_kernel}")
 
-    for file in template_dir.rglob("*.j2"):
-        with open(file, "r", encoding="utf-8") as f:
-            content = f.read()
+            # Re-run the script with the correct Python interpreter
+            script_path = os.path.abspath(__file__)
+            subprocess.run([python_kernel, script_path] + sys.argv[1:], check=True)
+            sys.exit()  # Terminate the current process after restarting
 
-        original = content
-        content = content.replace("END_RAW_MARKER", "endraw").replace("RAW_MARKER", "raw")
+        # If the kernel is correct, execute the function normally
+        return func(*args, **kwargs)
 
-        if content != original:
-            print(f"✅ Patched: {file}")
-            with open(file, "w", encoding="utf-8") as f:
-                f.write(content)
+    return wrapper
 
-def write_script(folder_path, script_name, extension, content):
-    
-    """
-    Writes the content to a script file in the specified folder path.
-    
-    Parameters:
-    folder_path (str): The folder where the script will be saved.
-    script_name (str): The name of the script.
-    extension (str): The file extension (e.g., ".py", ".R").
-    content (str): The content to be written to the script.
-    """
-    # Create the folder if it doesn't exist
-    full_folder_path = pathlib.Path(__file__).resolve().parent.parent.parent / folder_path
-    full_folder_path.mkdir(parents=True, exist_ok=True)
+def write_uv_requires(toml_file: str = "pyproject.toml"):
+    """Writes 'project.requires-python = >=<version>' to the given pyproject.toml."""
+    version_str = subprocess.check_output([sys.executable, "--version"]).decode().strip().split()[1]
+    requires = f">= {version_str}"
 
-
-    file_name = f"{script_name}.{extension}"
-    file_path = os.path.join(folder_path, file_name)
-    file_path= str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(file_path))
-
-    with open(file_path, "w") as file:
-        if isinstance(content,str):
-            file.write(content)
-        else:
-            nbf.write(content, file)
-
-# Configs functions
-def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml", toml_key: str = "patterns"):
-    """
-    Load ignore patterns from a file or from a TOML tool config section.
-
-    Returns:
-        Tuple[PathSpec | None, List[str]]: A PathSpec matcher and raw pattern list
-    """
-    if sys.version_info < (3, 11):
-        open_mode = ("r", "utf-8")
-    else:
-        open_mode = ("rb", None)
-
-    if not folder:
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-
-    ignore_path = ignore_filename if os.path.isabs(ignore_filename or "") else os.path.join(folder, ignore_filename or "")
-
-    if ignore_filename and os.path.exists(ignore_path):
-        with open(ignore_path, "r", encoding="utf-8") as f:
-            patterns = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
-        return spec, patterns
-
-    toml_full_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
-    if os.path.exists(toml_full_path):
-        try:
-            with open(toml_full_path, open_mode[0], encoding=open_mode[1]) as f:
-                config = toml.load(f)
-            patterns = config.get("tool", {}).get(tool_name) or config.get(tool_name)
-            if isinstance(patterns, dict):
-                patterns = patterns.get(toml_key, [])
-            if isinstance(patterns, list):
-                patterns = [p.strip() for p in patterns if isinstance(p, str)]
-                spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
-                return spec, patterns
-        except Exception as e:
-            print(f"❌ Error reading [{tool_name}] from {toml_full_path}: {e}")
-
-    return None, []
-
-def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
-    """
-    Load a dictionary from a JSON file, or fall back to a tool-specific section
-    in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
-
-    Args:
-        folder (str): Directory containing config files.
-        json_filename (str): Name of the JSON file to load (e.g., 'platform_rules.json').
-        tool_name (str): Tool name to look for in TOML (e.g., 'platform_rules').
-        toml_path (str): Name of the TOML file to read from.
-
-    Returns:
-        dict | None: Dictionary loaded from JSON or TOML, or None if both fail.
-    """
-    
-    if sys.version_info < (3, 11):
-        open_mode = ("r", "utf-8")
-    else:
-        open_mode = ("rb", None)
-
-    if not folder:
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-
-    json_path = json_filename if os.path.isabs(json_filename or "") else os.path.join(folder, json_filename or "")
-    if os.path.exists(json_path):
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error reading {json_filename}: {e}")
-
-    toml_path_full = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
-    if os.path.exists(toml_path_full):
-        try:
-            with open(toml_path_full, open_mode[0], encoding=open_mode[1]) as f:
-                config = toml.load(f)
-            return config.get("tool", {}).get(tool_name) or config.get(tool_name)
-        except Exception as e:
-            print(f"Error reading [{tool_name}] from {toml_path_full}: {e}")
-
-    return None
-
-def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
+    # TOML loading/dumping
     if sys.version_info < (3, 11):
         load_toml = toml.load
         dump_toml = toml.dump
-        open_read = ("r", "utf-8")
-        open_write = ("w", "utf-8")
+        read_mode = ("r", "utf-8")
+        write_mode = ("w", "utf-8")
     else:
         def load_toml(f): return toml.load(f)
         def dump_toml(d, f): f.write(tomli_w.dumps(d))
-        open_read = ("rb", None)
-        open_write = ("w", "utf-8")
+        read_mode = ("rb", None)
+        write_mode = ("w", "utf-8")
 
-    if not folder:
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-    if not tool_name:
-        raise ValueError("tool_name is required")
+    path = pathlib.Path(toml_file)
+    if not path.is_absolute():
+        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
 
-    toml_file_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
-    json_file_path = json_filename if json_filename and os.path.isabs(json_filename) else os.path.join(folder, json_filename) if json_filename else None
+    config = {}
+    if path.exists():
+        with open(path, read_mode[0], encoding=read_mode[1]) as f:
+            config = load_toml(f)
 
-    if data is None and json_file_path and os.path.exists(json_file_path):
-        try:
-            with open(json_file_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception as e:
-            print(f"❌ Failed to read {json_filename}: {e}")
+    config.setdefault("project", {})
+    config["project"]["requires-python"] = requires
+    #config["tool"]["uv"]["python"] = version_str
 
-    if not isinstance(data, dict):
-        print("❌ No valid dictionary to write.")
-        return
+    with open(path, write_mode[0], encoding=write_mode[1]) as f:
+            dump_toml(config, f)
 
-    toml_data = {}
-    if os.path.exists(toml_file_path):
-        with open(toml_file_path, open_read[0], encoding=open_read[1]) as f:
+@contextmanager
+def change_dir(destination):
+    cur_dir = os.getcwd()
+    destination = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(destination))
+    try:
+        os.chdir(destination)
+        yield
+    finally:
+        os.chdir(cur_dir)
+
+if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
+    #write_uv_requires()
+    #create_uv_project()
+    package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
+
+    # Jinja template functions
+    from jinja2 import Environment, FileSystemLoader
+
+    import nbformat as nbf  # For creating Jupyter notebooks
+
+    def set_jinja_templates(template_folder:str):
+        
+        template_env = Environment(
+        loader=FileSystemLoader(str(pathlib.Path(__file__).resolve().parent / template_folder)),
+        trim_blocks=True,
+        lstrip_blocks=True
+        )
+
+        return template_env
+
+    def patch_jinja_templates(template_folder: str):
+        template_dir = pathlib.Path(__file__).resolve().parent / template_folder
+
+        for file in template_dir.rglob("*.j2"):
+            with open(file, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            original = content
+            content = content.replace("END_RAW_MARKER", "endraw").replace("RAW_MARKER", "raw")
+
+            if content != original:
+                print(f"✅ Patched: {file}")
+                with open(file, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+    def write_script(folder_path, script_name, extension, content):
+        
+        """
+        Writes the content to a script file in the specified folder path.
+        
+        Parameters:
+        folder_path (str): The folder where the script will be saved.
+        script_name (str): The name of the script.
+        extension (str): The file extension (e.g., ".py", ".R").
+        content (str): The content to be written to the script.
+        """
+        # Create the folder if it doesn't exist
+        full_folder_path = pathlib.Path(__file__).resolve().parent.parent.parent / folder_path
+        full_folder_path.mkdir(parents=True, exist_ok=True)
+
+
+        file_name = f"{script_name}.{extension}"
+        file_path = os.path.join(folder_path, file_name)
+        file_path= str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(file_path))
+
+        with open(file_path, "w") as file:
+            if isinstance(content,str):
+                file.write(content)
+            else:
+                nbf.write(content, file)
+
+    # Configs functions
+
+    import pathspec
+
+    def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml", toml_key: str = "patterns"):
+        """
+        Load ignore patterns from a file or from a TOML tool config section.
+
+        Returns:
+            Tuple[PathSpec | None, List[str]]: A PathSpec matcher and raw pattern list
+        """
+        if sys.version_info < (3, 11):
+            open_mode = ("r", "utf-8")
+        else:
+            open_mode = ("rb", None)
+
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+
+        ignore_path = ignore_filename if os.path.isabs(ignore_filename or "") else os.path.join(folder, ignore_filename or "")
+
+        if ignore_filename and os.path.exists(ignore_path):
+            with open(ignore_path, "r", encoding="utf-8") as f:
+                patterns = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+            return spec, patterns
+
+        toml_full_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
+        if os.path.exists(toml_full_path):
             try:
-                toml_data = load_toml(f)
+                with open(toml_full_path, open_mode[0], encoding=open_mode[1]) as f:
+                    config = toml.load(f)
+                patterns = config.get("tool", {}).get(tool_name) or config.get(tool_name)
+                if isinstance(patterns, dict):
+                    patterns = patterns.get(toml_key, [])
+                if isinstance(patterns, list):
+                    patterns = [p.strip() for p in patterns if isinstance(p, str)]
+                    spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+                    return spec, patterns
             except Exception as e:
-                print(f"❌ Failed to parse existing TOML: {e}")
-                return
+                print(f"❌ Error reading [{tool_name}] from {toml_full_path}: {e}")
 
-    if "tool" not in toml_data:
-        toml_data["tool"] = {}
-    if tool_name not in toml_data["tool"] or not isinstance(toml_data["tool"][tool_name], dict):
-        toml_data["tool"][tool_name] = {}
+        return None, []
 
-    toml_data["tool"][tool_name].update(data)
+    def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
+        """
+        Load a dictionary from a JSON file, or fall back to a tool-specific section
+        in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
 
-    with open(toml_file_path, open_write[0], encoding=open_write[1]) as f:
-        dump_toml(toml_data, f)
+        Args:
+            folder (str): Directory containing config files.
+            json_filename (str): Name of the JSON file to load (e.g., 'platform_rules.json').
+            tool_name (str): Tool name to look for in TOML (e.g., 'platform_rules').
+            toml_path (str): Name of the TOML file to read from.
+
+        Returns:
+            dict | None: Dictionary loaded from JSON or TOML, or None if both fail.
+        """
+        
+        if sys.version_info < (3, 11):
+            open_mode = ("r", "utf-8")
+        else:
+            open_mode = ("rb", None)
+
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+
+        json_path = json_filename if os.path.isabs(json_filename or "") else os.path.join(folder, json_filename or "")
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error reading {json_filename}: {e}")
+
+        toml_path_full = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
+        if os.path.exists(toml_path_full):
+            try:
+                with open(toml_path_full, open_mode[0], encoding=open_mode[1]) as f:
+                    config = toml.load(f)
+                return config.get("tool", {}).get(tool_name) or config.get(tool_name)
+            except Exception as e:
+                print(f"Error reading [{tool_name}] from {toml_path_full}: {e}")
+
+        return None
+
+    def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
+        if sys.version_info < (3, 11):
+            load_toml = toml.load
+            dump_toml = toml.dump
+            open_read = ("r", "utf-8")
+            open_write = ("w", "utf-8")
+        else:
+            def load_toml(f): return toml.load(f)
+            def dump_toml(d, f): f.write(tomli_w.dumps(d))
+            open_read = ("rb", None)
+            open_write = ("w", "utf-8")
+
+        if not folder:
+            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        if not tool_name:
+            raise ValueError("tool_name is required")
+
+        toml_file_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
+        json_file_path = json_filename if json_filename and os.path.isabs(json_filename) else os.path.join(folder, json_filename) if json_filename else None
+
+        if data is None and json_file_path and os.path.exists(json_file_path):
+            try:
+                with open(json_file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception as e:
+                print(f"❌ Failed to read {json_filename}: {e}")
+
+        if not isinstance(data, dict):
+            print("❌ No valid dictionary to write.")
+            return
+
+        toml_data = {}
+        if os.path.exists(toml_file_path):
+            with open(toml_file_path, open_read[0], encoding=open_read[1]) as f:
+                try:
+                    toml_data = load_toml(f)
+                except Exception as e:
+                    print(f"❌ Failed to parse existing TOML: {e}")
+                    return
+
+        if "tool" not in toml_data:
+            toml_data["tool"] = {}
+        if tool_name not in toml_data["tool"] or not isinstance(toml_data["tool"][tool_name], dict):
+            toml_data["tool"][tool_name] = {}
+
+        toml_data["tool"][tool_name].update(data)
+
+        with open(toml_file_path, open_write[0], encoding=open_write[1]) as f:
+            dump_toml(toml_data, f)

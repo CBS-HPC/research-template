@@ -5,7 +5,8 @@ import platform
 import re
 import pathlib
 
-from utils.general_tools import *
+#from utils.general_tools import *
+from utils.general_tools import save_to_env, git_user_info, repo_user_info, remote_user_info, set_programming_language
 
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
     if not env_path:
