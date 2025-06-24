@@ -256,7 +256,7 @@ def create_uv_project_new():
     try:
         if pyproject_path.exists():
             print("✅ pyproject.toml found — running `uv lock`...")
-            subprocess.run([""uv_path, "lock"], check=True, cwd=project_path)
+            subprocess.run([uv_path, "lock"], check=True, cwd=project_path)
         else:
             print("ℹ️  No pyproject.toml found — running `uv init`...")
             subprocess.run([uv_path, "init"], check=True, cwd=project_path)
