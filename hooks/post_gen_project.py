@@ -32,7 +32,7 @@ def install_uv():
 
 def create_with_uv():
     """Create virtual environment using uv."""
-    subprocess.run(["uv", "init"], check=True)
+    #subprocess.run(["uv", "init"], check=True)
     subprocess.run(["uv", "venv"], check=True)
     subprocess.run(["uv", "lock"], check=True)
     subprocess.run(["uv", "add","uv"], check=True)
