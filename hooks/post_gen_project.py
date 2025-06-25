@@ -3,13 +3,20 @@ import pathlib
 import sys
 
 def install_uv():
-    """Check if 'uv' is installed and usable."""
+    """Ensure 'uv' is installed and usable."""
     try:
+        # Check if uv is already installed
         subprocess.run([sys.executable, "-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-
+        print("⚠️ 'uv' not found. Attempting to install it via pip...")
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+            # Verify installation
+            subprocess.run([sys.executable, "-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
+            return True
+        except subprocess.CalledProcessError:
+            return False
 def create_venv_with_uv(env_path):
     """Create virtual environment using uv."""
     subprocess.run([sys.executable, "-m", "uv", "init"], check=True)
