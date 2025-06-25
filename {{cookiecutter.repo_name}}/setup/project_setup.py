@@ -123,7 +123,7 @@ def set_options(programming_language,version_control):
         return r_version, python_version
 
     python_version = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
-    environment_opts = ["Conda",f"Venv {python_version}"]
+    environment_opts = ["Conda (choose version)",f"Venv {python_version}"]
     python_env_manager = None
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using Conda or use Base Installation:"

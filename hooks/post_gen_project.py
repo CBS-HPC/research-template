@@ -35,6 +35,7 @@ def create_with_uv():
     subprocess.run(["uv", "venv"], check=True)
     subprocess.run(["uv", "lock"], check=True)
     subprocess.run(["uv", "add","uv"], check=True)
+    subprocess.run(["uv", "add", "--upgrade", "pip", "setuptools", "wheel"], check=True)
     subprocess.run(["uv", "run","setup/project_setup.py"], check=True)
     
 def main():
