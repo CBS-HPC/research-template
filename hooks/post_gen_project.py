@@ -40,7 +40,8 @@ def create_with_uv():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # This one shows output
+    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
 
     
 def main():
