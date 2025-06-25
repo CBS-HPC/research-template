@@ -387,17 +387,28 @@ def update_env_yaml(env_file:str, repo_name:str, conda_packages:list=[], pip_pac
 
 # Venv and Virtualenv Functions
 
+import pathlib
+import subprocess
+import sys
+import os
+
 def create_venv_env():
     """
     Create a Python virtual environment using uv if available; otherwise, use venv.
+    If the virtual environment already exists, do nothing.
     """
-    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / ".venv")
+    env_path = pathlib.Path(__file__).resolve().parent.parent.parent / ".venv"
+
+    if env_path.exists():
+        print(f'ℹ️ Virtual environment already exists at "{env_path}". Skipping creation.')
+        save_to_env(str(env_path), "VENV_ENV_PATH")
+        return str(env_path)
 
     used_uv = False
 
     if install_uv():  # Only try uv if available
         try:
-            subprocess.run([sys.executable, "-m", "uv", "venv", env_path], check=True)
+            subprocess.run([sys.executable, "-m", "uv", "venv", str(env_path)], check=True)
             print(f'✅ Virtual environment created at "{env_path}" using uv.')
             used_uv = True
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -405,7 +416,7 @@ def create_venv_env():
 
     if not used_uv:
         try:
-            subprocess.run([sys.executable, "-m", "venv", env_path], check=True)
+            subprocess.run([sys.executable, "-m", "venv", str(env_path)], check=True)
             print(f'✅ Virtual environment created at "{env_path}" using venv.')
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to create virtual environment using venv: {e}")
@@ -414,6 +425,7 @@ def create_venv_env():
             print(f"❌ Unexpected error while creating the virtual environment: {e}")
             return None
 
-    save_to_env(env_path, "VENV_ENV_PATH")
+    save_to_env(str(env_path), "VENV_ENV_PATH")
 
-    return env_path
+    return str(env_path)
+

@@ -142,14 +142,6 @@ def set_options(programming_language,version_control):
     if not python_env_manager: 
         python_env_manager = prompt_user(question, environment_opts)
 
-     # Set requirements file
-    #requirements_file = "requirements.txt"
-
-    #if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
-    #    requirements_file = "environment.yml"
-       
-    #save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")     
-
     if version_control in ["Git","Datalad","DVC"]:
         code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","Codeberg","None"])
     else:
@@ -159,11 +151,6 @@ def set_options(programming_language,version_control):
         remote_storage = prompt_user(f"Do you want to setup remote storage for your {version_control} repo:", ["Deic-Storage","Dropbox","Local Path","None"])
     else:
         remote_storage = "None"
-
-    #if programming_language.lower() in ['stata','matlab','sas'] or (programming_language.lower() == 'r' and r_env_manager.lower() !='conda'):
-    #    selected_app = set_programming_language(programming_language)
-    #    if not selected_app: 
-    #        print(f"{programming_language} path has not been set")
 
     python_env_manager = python_env_manager.replace(python_version,"").strip()
 
@@ -193,7 +180,7 @@ remote_backup = "{{cookiecutter.remote_backup}}"
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager, r_env_manager, code_repo, remote_storage, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
 
-from utils.general_tools import save_to_env, git_user_info, repo_user_info, remote_user_info, set_programming_language
+from utils.general_tools import save_to_env, git_user_info, repo_user_info, remote_user_info
 
 def set_programming_language(programming_language,r_env_manager):
 
