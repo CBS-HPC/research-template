@@ -36,6 +36,7 @@ def create_with_uv():
     subprocess.run(["uv", "venv"], check=True)
     subprocess.run(["uv", "lock"], check=True)
     subprocess.run(["uv", "add","uv"], check=True)
+    subprocess.run(["uv", "run","setup/project_setup.py"], check=True)
     
 def main():
     env_path = pathlib.Path(".venv")  # Now it's a Path object
@@ -44,7 +45,7 @@ def main():
     if not env_path.exists() and install_uv():
             try:
                 create_with_uv()
-                run_in_venv()
+                #run_in_venv()
             except subprocess.CalledProcessError as e:
                 subprocess.run(["python", "setup/project_setup.py"])
     else:
