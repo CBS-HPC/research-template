@@ -115,16 +115,12 @@ def package_installer(required_libraries: list = None):
     """
 
     def safe_uv_add(lib):
-        print("dre")
         try:
            if pathlib.Path("uv.lock").exists():
-                print("dre2")
                 subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
                 return True
         except subprocess.CalledProcessError:
-            print("dre3")
             pass
-        print("dre4")
         return False
 
     if not required_libraries:
@@ -161,7 +157,6 @@ def package_installer(required_libraries: list = None):
 
     
     uv_available = install_uv()
-    print(shutil.which("uv"))
 
     for lib in missing_libraries:
         if uv_available and safe_uv_add(lib):
