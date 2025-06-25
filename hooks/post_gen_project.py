@@ -12,11 +12,11 @@ def install_uv():
 
 def create_venv_with_uv(env_path):
     """Create virtual environment using uv."""
+    subprocess.run([sys.executable, "-m", "uv", "init", str(env_path)], check=True)
     subprocess.run([sys.executable, "-m", "uv", "venv", str(env_path)], check=True)
     return env_path / ("Scripts" if sys.platform.startswith("win") else "bin") / "python"
 
 def main():
-  
     env_path = pathlib.Path(".venv")  # Now it's a Path object
 
     # Create venv only if it doesn't exist

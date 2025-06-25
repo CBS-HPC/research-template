@@ -116,9 +116,9 @@ def package_installer(required_libraries: list = None):
 
     def safe_uv_add(lib):
         try:
-            if pathlib.Path("uv.lock").exists():
-                subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
-                return True
+           # if pathlib.Path("uv.lock").exists():
+            subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
+            return True
         except subprocess.CalledProcessError:
             pass
         return False
