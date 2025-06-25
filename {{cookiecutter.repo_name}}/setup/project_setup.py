@@ -5,9 +5,6 @@ import platform
 import re
 import pathlib
 
-#from utils.general_tools import *
-from utils.general_tools import save_to_env, git_user_info, repo_user_info, remote_user_info, set_programming_language
-
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
     if not env_path:
         env_path = "Base Installation" 
@@ -163,10 +160,10 @@ def set_options(programming_language,version_control):
     else:
         remote_storage = "None"
 
-    if programming_language.lower() in ['stata','matlab','sas'] or (programming_language.lower() == 'r' and r_env_manager.lower() !='conda'):
-        selected_app = set_programming_language(programming_language)
-        if not selected_app: 
-            print(f"{programming_language} path has not been set")
+    #if programming_language.lower() in ['stata','matlab','sas'] or (programming_language.lower() == 'r' and r_env_manager.lower() !='conda'):
+    #    selected_app = set_programming_language(programming_language)
+    #    if not selected_app: 
+    #        print(f"{programming_language} path has not been set")
 
     python_env_manager = python_env_manager.replace(python_version,"").strip()
 
@@ -195,6 +192,154 @@ remote_backup = "{{cookiecutter.remote_backup}}"
 
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager, r_env_manager, code_repo, remote_storage, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
+
+from utils.general_tools import save_to_env, git_user_info, repo_user_info, remote_user_info, set_programming_language
+
+def set_programming_language(programming_language,r_env_manager):
+
+    def search_apps(app: str):
+        """
+        Search for executables matching partial app names in the system's PATH.
+
+        Args:
+            app (str): Partial name of the application to search for.
+
+        Returns:
+            list: A list of paths matching the executable pattern.
+        """
+        found_paths = []
+        system_paths = os.environ["PATH"].split(os.pathsep)  # Split PATH into directories
+
+        # Check if the app is a single letter
+        is_single_letter_app = len(app) == 1
+
+        for directory in system_paths:
+            if os.path.isdir(directory):  # Check if the PATH directory exists
+                try:
+                    for file in os.listdir(directory):
+                        # Extract the filename without extension
+                        filename_without_ext = os.path.splitext(os.path.basename(file))[0].lower()
+
+                        # Match exactly if the app is a single letter, or partially if it's longer
+                        if is_single_letter_app:
+                            if filename_without_ext == app.lower():
+                                full_path = os.path.join(directory, file)
+                                if os.access(full_path, os.X_OK):  # Check if file is executable
+                                    found_paths.append(full_path)
+                        else:
+                            if app.lower() in filename_without_ext:
+                                full_path = os.path.join(directory, file)
+                                if os.access(full_path, os.X_OK):  # Check if file is executable
+                                    found_paths.append(full_path)
+
+                except PermissionError:
+                    continue  # Skip directories with permission issues
+
+        if not found_paths:
+            print(f"No executables found for app '{app}'.")
+
+        found_paths = list(set(found_paths))
+
+        return found_paths
+
+    def choose_apps(app: str, found_apps: list):
+        """
+        Prompt the user to choose one path for each application pattern, 
+        with an option to select 'None'.
+
+        Args:
+            app (str): The application name to choose a path for.
+            found_apps (list): List of matching paths for the application.
+
+        Returns:
+            tuple: A tuple containing the filename without extension and the selected path.
+                Returns (None, None) if 'Select None' is chosen.
+        """
+        
+        if len(found_apps) == 0:
+            return None, None
+        
+        print(f"\nChoose a path for '{app}':")
+        # Add the 'Select None' option
+        print("  [0] Select None")
+        
+        for i, path in enumerate(found_apps):
+            print(f"  [{i + 1}] {path}")
+            
+        while True:
+            try:
+                choice = int(input(f"Enter your choice (0-{len(found_apps)}): "))
+                
+                if choice == 0:  # Select None option
+                    print("No path selected.")
+                    return None, None
+                elif 1 <= choice <= len(found_apps):  # Valid path selection
+                    selected_path = found_apps[choice - 1]
+                    print(f"Selected: {selected_path}")
+                    
+                    # Extract filename without extension
+                    filename_with_extension = os.path.basename(selected_path)
+                    filename = os.path.splitext(filename_with_extension)[0]
+                    
+                    return filename, selected_path
+                else:
+                    print("Invalid choice. Please enter a number within the range.")
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+                return None, None
+
+    def manual_apps():
+        """
+        Allow manual input of the executable path if no path is chosen 
+        and automatically resolve the application name. Re-prompts if the path 
+        contains single backslashes.
+
+        Returns:
+            tuple: A tuple containing the resolved application name and selected path.
+        """
+        print("\nNo path was selected. Please input the executable path manually.")
+
+        msg = "Enter the full path to the executable e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
+        # Prompt the user to input the path to the executable
+        while True:
+            selected_path = input(msg).strip()
+            selected_path = selected_path.replace("'", "").replace('"', '')     
+            selected_path = check_path_format(selected_path)
+    
+            if os.path.isfile(selected_path) and os.access(selected_path, os.X_OK):  # Validate the path
+                break  # Exit loop if the file exists and is executable
+            else:
+                answer = ask_yes_no("Invalid path. Do you want to input a new path? (yes/no)")
+                
+                if answer:
+                    msg = "Enter the full path to the executable with forward slashes('/') e.g. 'C:/Program Files/Stata18/StataSE-64.exe':"
+                    continue  # Re-prompt the user if single backslashes are detected   
+                else:
+                    return None, None
+
+        # Resolve the application name by extracting the filename without extension
+        filename_with_extension = os.path.basename(selected_path)
+        filename = os.path.splitext(filename_with_extension)[0]
+
+        return filename, selected_path
+
+    if programming_language.lower() in ['stata','matlab','sas'] or (programming_language.lower() == 'r' and r_env_manager.lower() !='conda'):
+
+        found_apps = search_apps(programming_language)
+        _, selected_path = choose_apps(programming_language,found_apps)
+
+        if not selected_path: 
+            _, selected_path =manual_apps()
+
+        if selected_path:    
+            save_to_env(selected_path,programming_language.upper())
+            save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
+        else:
+            print(f"{programming_language} path has not been set")
+
+    return programming_language
+
+programming_language = set_programming_language(programming_language,r_env_manager)
 
 # Set project info to .cookiecutter
 save_to_env(project_name,"PROJECT_NAME",".cookiecutter")
