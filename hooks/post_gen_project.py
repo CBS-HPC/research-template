@@ -6,21 +6,22 @@ def install_uv():
     """Ensure 'uv' is installed and usable."""
     try:
         # Check if uv is already installed
-        subprocess.run([sys.executable, "-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("⚠️ 'uv' not found. Attempting to install it via pip...")
         try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+            subprocess.run(["pip", "install", "--upgrade", "uv"],check=True)
+            #subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
             # Verify installation
-            subprocess.run([sys.executable, "-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL)
             return True
         except subprocess.CalledProcessError:
             return False
 def create_venv_with_uv(env_path):
     """Create virtual environment using uv."""
-    subprocess.run([sys.executable, "-m", "uv", "init"], check=True)
-    subprocess.run([sys.executable, "-m", "uv", "venv"], check=True)
+    subprocess.run(["uv", "init"], check=True)
+    subprocess.run(["uv", "venv"], check=True)
     return env_path / ("Scripts" if sys.platform.startswith("win") else "bin") / "python"
 
 def main():
