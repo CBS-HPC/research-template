@@ -22,6 +22,7 @@ def create_venv_with_uv(env_path):
     """Create virtual environment using uv."""
     subprocess.run(["uv", "init"], check=True)
     subprocess.run(["uv", "venv"], check=True)
+    subprocess.run(["uv", "lock"], check=True)
     return env_path / ("Scripts" if sys.platform.startswith("win") else "bin") / "python"
 
 def main():
