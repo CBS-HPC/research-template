@@ -16,18 +16,15 @@ def create_venv_with_uv(env_path):
     return env_path / ("Scripts" if sys.platform.startswith("win") else "bin") / "python"
 
 def main():
-    root_dir = pathlib.Path(__file__).resolve().parent
-    env_path = root_dir / ".venv"
+    env_path = ".venv"
 
     # Create venv only if it doesn't exist
     if not env_path.exists() and install_uv():
             try:
                 python_path = create_venv_with_uv(env_path)
                 subprocess.run([str(python_path), "setup/project_setup.py"])
-
             except subprocess.CalledProcessError as e:
                 subprocess.run(["python", "setup/project_setup.py"])
-              
     else:
         subprocess.run(["python", "setup/project_setup.py"])
    
