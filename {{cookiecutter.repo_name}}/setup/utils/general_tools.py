@@ -10,6 +10,7 @@ import pathlib
 import getpass
 import importlib.metadata
 import json
+import pkg_resources
 
 def ask_yes_no(question):
     """
@@ -127,18 +128,17 @@ def package_installer(required_libraries: list = None):
         return
 
     try:
-        #installed_pkgs = {
-        #    name.lower()
-        #    for dist in importlib.metadata.distributions()
-        #    if (name := dist.metadata.get("Name")) is not None
-        #}
-
         installed_pkgs = set()
         for dist in importlib.metadata.distributions():
             name = dist.metadata.get("Name") or dist.metadata.get("name") or None
             if name:
                 installed_pkgs.add(name.lower())
 
+        # Supplement with pkg_resources (in case some are missing)
+        installed_pkgs.update({
+            dist.project_name.lower()
+            for dist in pkg_resources.working_set
+        })
 
     except Exception as e:
         print(f"⚠️ Error checking installed packages: {e}")
