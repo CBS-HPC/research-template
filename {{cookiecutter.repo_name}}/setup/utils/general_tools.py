@@ -127,11 +127,19 @@ def package_installer(required_libraries: list = None):
         return
 
     try:
-        installed_pkgs = {
-            name.lower()
-            for dist in importlib.metadata.distributions()
-            if (name := dist.metadata.get("Name")) is not None
-        }
+        #installed_pkgs = {
+        #    name.lower()
+        #    for dist in importlib.metadata.distributions()
+        #    if (name := dist.metadata.get("Name")) is not None
+        #}
+
+        installed_pkgs = set()
+        for dist in importlib.metadata.distributions():
+            name = dist.metadata.get("Name") or dist.metadata.get("name") or None
+            if name:
+                installed_pkgs.add(name.lower())
+
+
     except Exception as e:
         print(f"⚠️ Error checking installed packages: {e}")
         return
@@ -169,7 +177,6 @@ def package_installer(required_libraries: list = None):
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
-                print("dre7")
                 continue
             except subprocess.CalledProcessError:
                 try:
