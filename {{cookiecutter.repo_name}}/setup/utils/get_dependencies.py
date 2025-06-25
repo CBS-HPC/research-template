@@ -10,6 +10,7 @@ import pathlib
 
 from .virenv_tools import export_conda_env
 from .general_tools import *
+from .toml_tools import *
 
 package_installer(required_libraries =  ['nbformat','pyyaml'])
 

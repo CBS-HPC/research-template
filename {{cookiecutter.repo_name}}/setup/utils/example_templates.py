@@ -4,6 +4,7 @@ import pathlib
 from .general_tools import *
 from .readme_templates import main as update_readme_main
 from .get_dependencies import main as get_setup_dependencies_main
+from .jinja_tools import *
 
 template_env = set_jinja_templates("j2_templates/example_templates")
 

@@ -3,6 +3,7 @@ from textwrap import dedent
 import pathlib
 
 from .general_tools import *
+from .jinja_tools import *
 
 
 def create_scripts(programming_language):

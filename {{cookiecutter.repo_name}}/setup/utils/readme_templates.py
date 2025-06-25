@@ -11,11 +11,11 @@ from datetime import datetime
 
 from .readme_sections import *
 
-package_installer(required_libraries =  ['pyyaml','requests','pathspec','psutil',"py-cpuinfo"])
+
+package_installer(required_libraries =  ['pyyaml','requests','psutil',"py-cpuinfo"])
 
 import yaml
 import requests
-import pathspec
 import psutil
 import cpuinfo
 

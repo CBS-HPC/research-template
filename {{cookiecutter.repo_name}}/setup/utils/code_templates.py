@@ -5,9 +5,9 @@ from textwrap import dedent
 import pathlib
 
 from .general_tools import *
+from .jinja_tools import *
 
 package_installer(required_libraries = ['nbformat','jinja2'])
-
 
 template_env = set_jinja_templates("j2_templates/code_templates")
 
@@ -78,8 +78,6 @@ def create_scripts(programming_language):
 
     for base in scripts.keys():
         create_script_from_template(programming_language, folder_path,  template_name, f"test_{base}", {"base": base})    
-
-
 
 
 @ensure_correct_kernel

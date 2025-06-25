@@ -5,6 +5,7 @@ from textwrap import dedent
 from .general_tools import *
 from .readme_templates import main as update_readme_main
 from .get_dependencies import main as get_setup_dependencies_main
+from .jinja_tools import *
 
 
 def create_example(project_language):

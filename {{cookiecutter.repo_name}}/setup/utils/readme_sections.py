@@ -6,6 +6,7 @@ import json
 import platform
 
 from .general_tools import *
+from .toml_tools import *
 
 
 def main_text(project_name,project_description,contact,system_spec,py_version,code_path,software_version,activate,ci_tools,cli_tools,config,install,usage,dcas):
