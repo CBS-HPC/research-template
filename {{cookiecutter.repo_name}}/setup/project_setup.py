@@ -4,8 +4,10 @@ import sys
 import platform
 import re
 import pathlib
+import shutil
 
 print(sys.executable)
+print(shutil.which("uv"))
 
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
     if not env_path:
