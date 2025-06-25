@@ -147,6 +147,7 @@ def set_conda_packages(version_control,python_env_manager,r_env_manager,conda_py
         else:
             install_packages.extend(['r-base'])
 
+    install_packages.extend(['uv'])
     
     os_type = platform.system().lower()    
     
@@ -423,34 +424,3 @@ def create_venv_env():
     save_to_env(str(env_path), "VENV_ENV_PATH")
 
     return str(env_path)
-
-def create_venv_env_old():
-    """
-    Create a Python virtual environment using uv if available; otherwise, use venv.
-    """
-    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / ".venv")
-
-    used_uv = False
-
-    if install_uv():  # Only try uv if available
-        try:
-            subprocess.run([sys.executable, "-m", "uv", "venv", env_path], check=True)
-            print(f'✅ Virtual environment created at "{env_path}" using uv.')
-            used_uv = True
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print("⚠️ uv failed to create the virtual environment. Falling back to venv.")
-
-    if not used_uv:
-        try:
-            subprocess.run([sys.executable, "-m", "venv", env_path], check=True)
-            print(f'✅ Virtual environment created at "{env_path}" using venv.')
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Failed to create virtual environment using venv: {e}")
-            return None
-        except Exception as e:
-            print(f"❌ Unexpected error while creating the virtual environment: {e}")
-            return None
-
-    save_to_env(env_path, "VENV_ENV_PATH")
-
-    return env_path
