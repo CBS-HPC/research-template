@@ -3,6 +3,7 @@ name = "{{cookiecutter.project_name}}"
 version = "{{cookiecutter.version}}"
 description = "Insert project description here"
 dependencies = []
+requires-python = "3.9"
 
 [tool.uv]
 
@@ -29,7 +30,7 @@ VERSION_CONTROL = "None"
 REMOTE_BACKUP = "None"
 REMOTE_STORAGE = "None"
 CODE_REPO = "None"
-PYTHON_VERSION = "Python 3.9.13"
+PYTHON_VERSION = "None"
 
 # ============================================================
 # Ignore patterns for remote sync tools like Rclone

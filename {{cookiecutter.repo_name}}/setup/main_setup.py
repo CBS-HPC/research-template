@@ -3,10 +3,6 @@ import os
 import pathlib
 import subprocess
 import platform
-import shutil
-
-print(sys.executable)
-print(shutil.which("uv"))
 
 from utils.general_tools import *
 from utils.backup_tools import *
