@@ -143,12 +143,12 @@ def set_options(programming_language,version_control):
         python_env_manager = prompt_user(question, environment_opts)
 
      # Set requirements file
-    requirements_file = "requirements.txt"
+    #requirements_file = "requirements.txt"
 
-    if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
-        requirements_file = "environment.yml"
+    #if python_env_manager.lower() == "conda" or r_env_manager.lower() == "conda":
+    #    requirements_file = "environment.yml"
        
-    save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")     
+    #save_to_env(requirements_file,"REQUIREMENT_FILE",".cookiecutter")     
 
     if version_control in ["Git","Datalad","DVC"]:
         code_repo = prompt_user("Do you want to setup a code reposity at:", ["GitHub","GitLab","Codeberg","None"])
