@@ -123,11 +123,13 @@ def set_options(programming_language,version_control):
         return r_version, python_version
 
     python_version = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
-    environment_opts = ["Conda (choose version)",f"Venv {python_version}"]
+    environment_opts = ["Conda (Choose Python Version)",f"Venv {python_version}"]
     python_env_manager = None
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using Conda or use Base Installation:"
-        r_env_manager = prompt_user(question, ["Conda","Base Installation"])
+        r_env_manager = prompt_user(question, ["Conda (Choose R Version)","Base Installation"])
+        r_env_manager = r_env_manager.replace("(Choose R Version)","").strip()
+
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
         
         if r_env_manager.lower() =='conda':
@@ -157,6 +159,7 @@ def set_options(programming_language,version_control):
         remote_storage = "None"
 
     python_env_manager = python_env_manager.replace(python_version,"").strip()
+    python_env_manager = python_env_manager.replace("(Choose Python Version)","").strip()
 
     conda_r_version, conda_python_version = select_version()
 
