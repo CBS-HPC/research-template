@@ -57,8 +57,11 @@ if [ "$env_manager" != "base Installation" ]; then
                     echo "Removing uv.lock file..."
                     rm -f uv.lock
                 fi
-                uv lock
-                uv add --upgrade uv pip setuptools wheel
+                if ! command -v uv &>/dev/null; then
+                    pip install uv
+                fi
+
+                uv pip install --upgrade uv pip setuptools wheel
             else
                 echo "Error: conda script not found."
             fi

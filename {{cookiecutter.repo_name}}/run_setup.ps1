@@ -27,9 +27,11 @@ if ($env_manager -ne "base Installation") {
                 Write-Output "Removing $uvLockFile..."
                 Remove-Item -Force $uvLockFile
             }
+            if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+                pip install uv
+            }
 
-            uv lock
-            uv add --upgrade uv pip setuptools wheel
+            uv pip install --upgrade uv pip setuptools wheel
         }
         "venv" {
             Write-Output "Activating venv: $env_path"
