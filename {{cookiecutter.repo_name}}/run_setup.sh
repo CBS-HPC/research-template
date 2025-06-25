@@ -9,7 +9,7 @@ env_manager=$2
 main_setup=$3
 
 # Allow custom .env file path as first argument
-envFile="${1:-.env}"
+envFile=".env" 
 
 load_conda() {
     local conda_path=""
@@ -57,6 +57,8 @@ if [ "$env_manager" != "base Installation" ]; then
                     echo "Removing uv.lock file..."
                     rm -f uv.lock
                 fi
+                uv lock
+                uv add --upgrade uv pip setuptools wheel
             else
                 echo "Error: conda script not found."
             fi
@@ -66,6 +68,14 @@ if [ "$env_manager" != "base Installation" ]; then
             if [ -n "$VENV_ENV_PATH" ]; then
                 echo "Activating Venv environment at $VENV_ENV_PATH"
                 source "$VENV_ENV_PATH/bin/activate"
+
+                if [ ! -d ".venv" ]; then
+                    if ! command -v uv &>/dev/null; then
+                        pip install uv
+                    fi
+                    uv lock
+                    uv add --upgrade uv pip setuptools wheel
+                fi  # <-- this was missing
             else
                 echo "Error: venv activation script not found."
             fi
@@ -77,17 +87,6 @@ if [ "$env_manager" != "base Installation" ]; then
 else
     echo "No valid env_path or env_manager provided. Using system Python."
 fi
-
-# -------------------------------
-# Install and upgrade tools
-# -------------------------------
-echo ""
-echo "Installing or upgrading 'uv'..."
-pip install --upgrade uv
-
-echo ""
-echo "Upgrading pip, setuptools, and wheel using uv..."
-uv pip install --upgrade pip setuptools wheel
 
 # -------------------------------
 # Run the main Python script
