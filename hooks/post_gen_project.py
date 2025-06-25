@@ -31,12 +31,17 @@ def install_uv():
             return False
 
 def create_with_uv():
-    """Create virtual environment using uv."""
-    subprocess.run(["uv", "venv"], check=True)
-    subprocess.run(["uv", "lock"], check=True)
-    subprocess.run(["uv", "add","uv"], check=True)
-    subprocess.run(["uv", "add", "--upgrade", "pip", "setuptools", "wheel"], check=True)
-    subprocess.run(["uv", "run","setup/project_setup.py"], check=True)
+    """Create virtual environment using uv silently."""
+    subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(
+        ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     
 def main():
     env_path = pathlib.Path(".venv")  # Now it's a Path object
