@@ -396,7 +396,6 @@ def create_venv_env():
     env_path = pathlib.Path(__file__).resolve().parent.parent.parent / ".venv"
 
     if env_path.exists():
-        print(f'ℹ️ Virtual environment already exists at "{env_path}". Skipping creation.')
         save_to_env(str(env_path), "VENV_ENV_PATH")
         return str(env_path)
 
