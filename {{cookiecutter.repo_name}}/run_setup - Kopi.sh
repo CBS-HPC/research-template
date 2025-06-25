@@ -3,7 +3,6 @@
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
-
 # Get the env_path, env_manager, and script paths passed from input
 env_path=$1
 env_manager=$2
@@ -12,13 +11,11 @@ main_setup=$3
 # Allow custom .env file path as first argument
 envFile="${1:-.env}"
 
-
 load_conda() {
     local conda_path=""
 
     if [ -f "$envFile" ]; then
         while IFS='=' read -r key value; do
-            # Skip comments and empty keys
             [[ "$key" =~ ^[[:space:]]*# ]] && continue
             [[ -z "$key" ]] && continue
 
@@ -46,7 +43,6 @@ if [ "$env_manager" != "base Installation" ]; then
         "conda")
             load_conda
             CONDA_ENV_PATH=$(realpath "$env_path")
-            
             if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then    
                 echo "Activating Conda environment at $CONDA_ENV_PATH"
                 eval "$($CONDA/conda shell.bash hook)"
@@ -54,13 +50,10 @@ if [ "$env_manager" != "base Installation" ]; then
             else
                 echo "Error: conda script not found."
             fi
-
             ;;
         "venv")           
-
             VENV_ENV_PATH=$(realpath "$env_path")    
             if [ -n "$VENV_ENV_PATH" ]; then
-                VENV_ENV_PATH=$(realpath "$env_path")
                 echo "Activating Venv environment at $VENV_ENV_PATH"
                 source "$VENV_ENV_PATH/bin/activate"
             else
@@ -68,20 +61,34 @@ if [ "$env_manager" != "base Installation" ]; then
             fi
             ;;
         *)
-            echo "No valid env_path or env_manager provided. Using system Python.2"
+            echo "No valid env_path or env_manager provided. Using system Python."
             ;;
     esac
 else
     echo "No valid env_path or env_manager provided. Using system Python."
 fi
 
-# Check if the script paths are provided and run them
+# -------------------------------
+# Install and upgrade tools
+# -------------------------------
+echo ""
+echo "Installing or upgrading 'uv'..."
+pip install --upgrade uv
 
+echo ""
+echo "Upgrading pip, setuptools, and wheel using uv..."
+uv pip install --upgrade pip setuptools wheel
+
+# -------------------------------
+# Run the main Python script
+# -------------------------------
 if [ -f "$main_setup" ]; then
+    echo ""
     echo "Running main setup script from $main_setup..."
     python "$main_setup"
 else
     echo "Error: $main_setup not found."
 fi
 
+echo ""
 echo "Environment setup completed successfully."

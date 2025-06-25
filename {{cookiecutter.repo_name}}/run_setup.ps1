@@ -12,6 +12,20 @@ if ($env_manager -ne "base Installation") {
         "conda" {
             Write-Output "Activating Conda environment: $env_path"
             conda activate $env_path
+
+            # Remove .venv folder and uv.lock file if they exist
+            $venvPath = ".venv"
+            $uvLockFile = "uv.lock"
+
+            if (Test-Path $venvPath) {
+                Write-Output "Removing $venvPath..."
+                Remove-Item -Recurse -Force $venvPath
+            }
+
+            if (Test-Path $uvLockFile) {
+                Write-Output "Removing $uvLockFile..."
+                Remove-Item -Force $uvLockFile
+            }
         }
         "venv" {
             Write-Output "Activating venv: $env_path"
