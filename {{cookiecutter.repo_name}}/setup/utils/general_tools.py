@@ -976,6 +976,6 @@ def change_dir(destination):
         os.chdir(cur_dir)
 
 if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
-    write_uv_requires()
-    create_uv_project()
+    #write_uv_requires()
+    #create_uv_project()
     package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
