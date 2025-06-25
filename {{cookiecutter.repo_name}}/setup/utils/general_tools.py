@@ -115,18 +115,12 @@ def package_installer(required_libraries: list = None):
     """
 
     def safe_uv_add(lib):
-        print("dre")
         try:
-           print("dre2")
            if pathlib.Path("uv.lock").exists():
-                print("dre3")
                 subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
-                print("dre4")
                 return True
         except subprocess.CalledProcessError:
-            print("dre5")
             pass
-        print("dre6")
         return False
 
     if not required_libraries:
@@ -175,6 +169,7 @@ def package_installer(required_libraries: list = None):
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
+                print("dre7")
                 continue
             except subprocess.CalledProcessError:
                 try:

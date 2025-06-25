@@ -51,33 +51,36 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         line.split("==")[0].lower(): line for line in frozen_lines if "==" in line
     }
 
-    # Step 3: Parse uv.lock to get already-locked packages
-    locked_pkgs = set()
-    if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
-        try:
-            with open(uv_lock_path, "rb") as f:
-                uv_data = toml.load(f)
-                for pkg in uv_data.get("package", []):
-                    if isinstance(pkg, dict) and "name" in pkg:
-                        locked_pkgs.add(pkg["name"].lower())
-        except Exception as e:
-            print(f"⚠️ Failed to parse uv.lock: {e}")
-
-    # Step 4: Add missing packages to uv.lock
-    missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
-    if missing_from_lock:
-        print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
-        for pkg in missing_from_lock:
-            try:
-                subprocess.run(["uv", "add", pkg], check=True,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except subprocess.CalledProcessError as e:
-                print(f"❌ Failed to add {pkg} via uv: {e}")
-
-    # Step 5: Write pip freeze output to requirements.txt
+    # Step 3: Write pip freeze output to requirements.txt
     with open(requirements_path, "w", encoding="utf-8") as f:
         f.write("\n".join(frozen_lines) + "\n")
     print("📄 requirements.txt has been created successfully.")
+
+    if pathlib.Path("uv.lock").exists():
+        # Step 4: Parse uv.lock to get already-locked packages
+        locked_pkgs = set()
+        if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
+            try:
+                with open(uv_lock_path, "rb") as f:
+                    uv_data = toml.load(f)
+                    for pkg in uv_data.get("package", []):
+                        if isinstance(pkg, dict) and "name" in pkg:
+                            locked_pkgs.add(pkg["name"].lower())
+            except Exception as e:
+                print(f"⚠️ Failed to parse uv.lock: {e}")
+
+        # Step 5: Add missing packages to uv.lock
+        missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
+        if missing_from_lock:
+            print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
+            for pkg in missing_from_lock:
+                try:
+                    subprocess.run(["uv", "add", pkg], check=True,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except subprocess.CalledProcessError as e:
+                    print(f"❌ Failed to add {pkg} via uv: {e}")
+
+
 
 def create_conda_environment_yml(env_name,r_version=None,requirements_file:str="requirements.txt", output_file:str="environment.yml"):
     """
