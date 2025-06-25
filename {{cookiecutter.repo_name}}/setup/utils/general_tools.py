@@ -9,8 +9,8 @@ from functools import wraps
 import pathlib
 import getpass
 import importlib.metadata
+import importlib.util
 import json
-import pkg_resources
 
 def ask_yes_no(question):
     """
@@ -128,18 +128,12 @@ def package_installer(required_libraries: list = None):
         return
 
     try:
-        installed_pkgs = set()
-        for dist in importlib.metadata.distributions():
-            name = dist.metadata.get("Name") or dist.metadata.get("name") or None
-            if name:
-                installed_pkgs.add(name.lower())
-
-        # Supplement with pkg_resources (in case some are missing)
-        installed_pkgs.update({
-            dist.project_name.lower()
-            for dist in pkg_resources.working_set
-        })
-
+        # Gather installed packages from metadata
+        installed_pkgs = {
+            name.lower()
+            for dist in importlib.metadata.distributions()
+            if (name := dist.metadata.get("Name")) is not None
+        }
     except Exception as e:
         print(f"⚠️ Error checking installed packages: {e}")
         return
@@ -156,7 +150,10 @@ def package_installer(required_libraries: list = None):
                .lower()
         )
         if norm_name not in installed_pkgs:
-            missing_libraries.append(lib)
+            # As a fallback, try to find the importable module
+            module_found = importlib.util.find_spec(norm_name) is not None
+            if not module_found:
+                missing_libraries.append(lib)
 
     if not missing_libraries:
         return
