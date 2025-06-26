@@ -1,18 +1,27 @@
-from sklearn.datasets import load_iris
-from s02_utils import save_pickle, ensure_dir_exists
 import os
+import pickle
 
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-raw_data = os.path.join(base_path, "data", "00_raw")
-ensure_dir_exists(raw_data)
+def ensure_dir_exists(path):
+    """Create directory if it doesn't exist."""
+    if not os.path.exists(path):
+        os.makedirs(path)
 
-def collect_data():
-    iris = load_iris(as_frame=True)
-    save_pickle(iris, os.path.join(raw_data, "iris_raw.pkl"))
+def save_pickle(obj, path):
+    """Save Python object to a .pkl file."""
+    with open(path, 'wb') as f:
+        pickle.dump(obj, f)
 
-def main():
-    print("Collecting Iris dataset...")
-    collect_data()
+def load_pickle(path):
+    """Load Python object from a .pkl file."""
+    with open(path, 'rb') as f:
+        return pickle.load(f)
 
-if __name__ == "__main__":
-    main()
+def compute_mean(values):
+    """Compute mean of a list of numeric values."""
+    return sum(values) / len(values) if values else 0
+
+def z_score(values):
+    """Compute z-scores for a list of values."""
+    mean = compute_mean(values)
+    std = (sum([(x - mean) ** 2 for x in values]) / len(values)) ** 0.5
+    return [(x - mean) / std for x in values] if std != 0 else [0 for _ in values]

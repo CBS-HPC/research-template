@@ -1,18 +1,11 @@
+
+library(palmerpenguins)
+source("s02_utils.R")
+
 base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
 raw_data <- file.path(base_path, "data", "00_raw")
-interim_data <- file.path(base_path, "data", "01_interim")
-processed_data <- file.path(base_path, "data", "02_processed")
 
-collect_data <- function() {
-data <- mtcars
-if (!dir.exists(raw_data)) dir.create(raw_data, recursive = TRUE)
-saveRDS(data, file.path(raw_data, "mtcars_raw.rds"))
-return(data)
-}
+ensure_dir(raw_data)
+save_rds(penguins, file.path(raw_data, "penguins_raw.rds"))
 
-main <- function() {
-print("Running data_collection...")
-collect_data()
-}
-
-main()
+cat("Data collection complete.\n")

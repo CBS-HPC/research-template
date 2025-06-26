@@ -1,21 +1,17 @@
+library(dplyr)
+source("s02_utils.R")
+
 base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
 raw_data <- file.path(base_path, "data", "00_raw")
 interim_data <- file.path(base_path, "data", "01_interim")
-processed_data <- file.path(base_path, "data", "02_processed")
 
-library(dplyr)
+ensure_dir(interim_data)
+penguins <- load_rds(file.path(raw_data, "penguins_raw.rds"))
 
-preprocess_data <- function(data) {
-data <- data %>% mutate(mpg_z = scale(mpg))
-if (!dir.exists(interim_data)) dir.create(interim_data, recursive = TRUE)
-saveRDS(data, file.path(interim_data, "mtcars_interim.rds"))
-return(data)
-}
+penguins_clean <- penguins %>%
+  filter(!is.na(body_mass_g), !is.na(flipper_length_mm), !is.na(bill_length_mm)) %>%
+  select(body_mass_g, flipper_length_mm, bill_length_mm)
 
-main <- function() {
-print("Running preprocessing...")
-data <- readRDS(file.path(raw_data, "mtcars_raw.rds"))
-preprocess_data(data)
-}
+save_rds(penguins_clean, file.path(interim_data, "penguins_clean.rds"))
 
-main()
+cat("Preprocessing complete.\n")

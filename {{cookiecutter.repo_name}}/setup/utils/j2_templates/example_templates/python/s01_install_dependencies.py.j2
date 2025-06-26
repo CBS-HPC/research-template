@@ -5,7 +5,7 @@ import sys
 import importlib
 import shutil
 
-project_root = pathlib.Path(__file__).resolve().parent.parent
+project_root = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 
 from get_dependencies import get_setup_dependencies  # adjust path as needed

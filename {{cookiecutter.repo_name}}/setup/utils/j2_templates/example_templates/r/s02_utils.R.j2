@@ -1,0 +1,11 @@
+ensure_dir <- function(path) {
+  if (!dir.exists(path)) dir.create(path, recursive = TRUE)
+}
+
+save_rds <- function(object, path) {
+  saveRDS(object, path)
+}
+
+load_rds <- function(path) {
+  readRDS(path)
+}

@@ -1,13 +1,14 @@
-# Main runner
 
-#source('s01_install_dependencies.R')
-source('s03_data_collection.R')
-source('s04_preprocessing.R')
-source('s05_modeling.R')
-source('s06_visualization.R')
+# Install dependencies and load packages
+source("s01_install_dependencies.R")
 
-s03_data_collection$main()
-s04_preprocessing$main()
-s05_modeling$main()
-s06_visualization$main()
-print("done")
+# Load utility functions
+source("s02_utils.R")
+
+# Run pipeline steps
+source("s03_data_collection.R")
+source("s04_preprocessing.R")
+source("s05_modeling.R")
+source("s06_visualization.R")
+
+cat("Pipeline complete.\n")
