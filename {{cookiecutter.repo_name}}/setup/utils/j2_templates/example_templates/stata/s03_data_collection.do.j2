@@ -1,17 +1,15 @@
-* Data collection code
-global base_path ".."
-global raw_data "$base_path/data/raw"
+* s03_data_collection.do
 
-program define data_collection
-    mkdir "$raw_data"
-    tempfile temp
+program define s03_data_collection
+    ensure_dir "$raw_data"
+
+    clear
     input mpg wt hp
     21 2.5 110
     22 2.8 105
     18 3.2 120
     end
+
     save "$raw_data/mtcars_raw.dta", replace
-    display "Data collection done"
+    display "Data collection complete."
 end
-                        
-data_collection

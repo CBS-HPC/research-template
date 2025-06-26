@@ -1,14 +1,13 @@
-* Preprocessing code
-global base_path ".."
-global raw_data "$base_path/data/00_raw"
-global interim_data "$base_path/data/01_interim"
+* s04_preprocessing.do
 
-program define preprocessing
-    mkdir "$interim_data"
+program define s04_preprocessing
+    ensure_dir "$interim_data"
+
     use "$raw_data/mtcars_raw.dta", clear
-    gen mpg_z = (mpg - mean(mpg))
-    save "$interim_data/mtcars_interim.dta", replace
-    display "s04_Preprocessing done"
-end
 
-preprocessing
+    summarize mpg
+    gen mpg_z = (mpg - r(mean)) / r(sd)
+
+    save "$interim_data/mtcars_interim.dta", replace
+    display "Preprocessing complete."
+end

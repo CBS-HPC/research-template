@@ -1,14 +1,13 @@
-* Modeling code
-global base_path ".."
-global interim_data "$base_path/data/01_interim"
-global processed_data "$base_path/data/02_processed"
+* s05_modeling.do
 
-program define modeling
-    mkdir "$processed_data"
+program define s05_modeling
+    ensure_dir "$processed_data"
+
     use "$interim_data/mtcars_interim.dta", clear
-    regress mpg wt hp
-    estimates save "$processed_data/mtcars_model", replace
-    display "Modeling done"
-end
 
-modeling
+    regress mpg wt hp
+    estimates store model1
+    estimates save "$processed_data/model1", replace
+
+    display "Modeling complete."
+end

@@ -1,13 +1,19 @@
-* Main runner
+clear all
+cls
 
-do install_dependencies.do
+do s02_utils.do
+get_paths
 
 do s03_data_collection.do
-do s04_preprocessing.do
-do s05_modeling.do
-do s06_visualization.do
+s03_data_collection
 
-data_collection
-preprocessing
-modeling
-visualization
+do s04_preprocessing.do
+s04_preprocessing
+
+do s05_modeling.do
+s05_modeling
+
+do s06_visualization.do
+s06_visualization
+
+display "✅ Pipeline complete."

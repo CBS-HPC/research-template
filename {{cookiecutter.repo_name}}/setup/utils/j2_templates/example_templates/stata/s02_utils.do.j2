@@ -1,0 +1,14 @@
+* s02_utils.do - Path and helper definitions
+
+program define get_paths
+    global base_path ".."
+    global raw_data "$base_path/data/00_raw"
+    global interim_data "$base_path/data/01_interim"
+    global processed_data "$base_path/data/02_processed"
+    global figures_path "$base_path/results/figures"
+end
+
+program define ensure_dir
+    syntax varname
+    quietly mkdir ``varlist''
+end

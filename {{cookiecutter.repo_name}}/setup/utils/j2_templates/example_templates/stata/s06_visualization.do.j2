@@ -1,15 +1,17 @@
-* Visualization code
-global base_path ".."
-global interim_data "$base_path/data/01_interim"
-global processed_data "$base_path/data/02_processed"
-global figures "$base_path/results/figures"
+* s06_visualization.do
 
-program define visualization
-    mkdir "$figures"
+program define s06_visualization
+    ensure_dir "$figures_path"
+
     use "$interim_data/mtcars_interim.dta", clear
-    scatter mpg wt
-    graph export "$figures/actual_vs_predicted.png", replace
-    display "Visualization done"
-end
 
-visualization
+    regress mpg wt hp
+    predict mpg_hat
+
+    twoway (scatter mpg wt) (line mpg_hat wt), ///
+        title("Actual vs Predicted MPG") ///
+        xtitle("Weight") ytitle("MPG")
+
+    graph export "$figures_path/mpg_prediction_plot.png", replace
+    display "Visualization complete."
+end
