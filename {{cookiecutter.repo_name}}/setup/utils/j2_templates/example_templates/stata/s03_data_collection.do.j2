@@ -2,7 +2,7 @@
 global base_path ".."
 global raw_data "$base_path/data/raw"
 
-program define data_collection_main
+program define data_collection
     mkdir "$raw_data"
     tempfile temp
     input mpg wt hp
@@ -14,4 +14,4 @@ program define data_collection_main
     display "Data collection done"
 end
                         
-data_collection_main
+data_collection

@@ -80,8 +80,6 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
                 except subprocess.CalledProcessError as e:
                     print(f"❌ Failed to add {pkg} via uv: {e}")
 
-
-
 def create_conda_environment_yml(env_name,r_version=None,requirements_file:str="requirements.txt", output_file:str="environment.yml"):
     """
     Creates a Conda environment.yml based on a pip requirements.txt file, 
@@ -234,7 +232,6 @@ def tag_requirements_txt(requirements_file: str = "requirements.txt"):
         f.write("\n".join(filtered_lines) + "\n")
 
     print(f"✅ requirements.txt updated with platform tags: {requirements_path}")
-
 
 def run_get_dependencies(programming_language):
     """
@@ -389,6 +386,8 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
     print(f"{file_name} successfully generated at {output_file}")
 
+    return installed_packages
+
 def setup_renv(programming_language,msg:str):
     if programming_language.lower() == "r":
         # Call the setup script using the function
@@ -435,7 +434,7 @@ def update_setup_dependency():
     print("Screening './setup' for dependencies")
     setup_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
     setup_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
-    get_setup_dependencies(folder_path=setup_folder,file_name =setup_file) 
+    _ = get_setup_dependencies(folder_path=setup_folder,file_name =setup_file) 
 
 def update_code_dependency():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
@@ -443,7 +442,7 @@ def update_code_dependency():
         print("Screening './src' for dependencies")
         code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
         code_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
-        get_setup_dependencies(folder_path=code_path,file_name=code_file)
+        _ = get_setup_dependencies(folder_path=code_path,file_name=code_file)
     elif programming_language.lower() == "r":
         print("Screening './R' for dependencies")
         setup_renv(programming_language,"/renv and .lock file has been updated")

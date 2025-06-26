@@ -3,7 +3,7 @@ base_path = fullfile(fileparts(mfilename('fullpath')), '..');
 interim_data = fullfile(base_path, 'data', '01_interim');
 processed_data = fullfile(base_path, 'data', '02_processed');
 
-function s05_modeling_main()
+function s05_modeling()
     if ~exist(processed_data, 'dir')
         mkdir(processed_data);
     end
@@ -13,4 +13,4 @@ function s05_modeling_main()
     disp('Modeling done');
 end
 
-s05_modeling_main();
+s05_modeling();

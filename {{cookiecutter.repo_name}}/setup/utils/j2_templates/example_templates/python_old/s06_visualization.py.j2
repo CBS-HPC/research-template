@@ -1,0 +1,29 @@
+import os, pickle
+import matplotlib.pyplot as plt
+
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+interim_data = os.path.join(base_path, "data", "01_interim")
+processed_data = os.path.join(base_path, "data", "02_processed")
+figures_path = os.path.join(base_path, "results", "figures")
+
+def visualize(data, model):
+    if not os.path.exists(figures_path):
+        os.makedirs(figures_path)
+    plt.scatter(data['wt'], data['mpg'])
+    plt.plot(data['wt'], model.predict(np.array(data['wt']).reshape(-1,1)), color='red')
+    plt.xlabel('Weight')
+    plt.ylabel('MPG')
+    plt.title('Actual vs Predicted')
+    plt.savefig(os.path.join(figures_path, 'actual_vs_predicted.png'))
+    plt.close()
+
+def main():
+    print("Running visualization...")
+    with open(os.path.join(interim_data, 'mtcars_interim.pkl'), 'rb') as f:
+        data = pickle.load(f)
+    with open(os.path.join(processed_data, 'model.pkl'), 'rb') as f:
+        model = pickle.load(f)
+    visualize(data, model)
+
+if __name__ == "__main__":
+    main()

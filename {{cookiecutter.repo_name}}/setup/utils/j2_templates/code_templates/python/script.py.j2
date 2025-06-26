@@ -9,9 +9,9 @@ interim_data = os.path.join(base_path, "data", "01_interim")
 processed_data = os.path.join(base_path, "data", "02_processed")
 setup_path = os.path.join(base_path, "setup")
 sys.path.append(setup_path)
+
 from s02_utils import *
 
-@ensure_correct_kernel
 def main():
     # {{ purpose }} code
     print("Running {{ script_name }}...")

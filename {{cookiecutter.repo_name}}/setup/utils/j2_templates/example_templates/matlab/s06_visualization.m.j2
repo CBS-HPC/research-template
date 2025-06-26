@@ -4,7 +4,7 @@ interim_data = fullfile(base_path, 'data', '01_interim');
 processed_data = fullfile(base_path, 'data', '02_processed');
 figures_path = fullfile(base_path, 'results', 'figures');
 
-function s06_vvisualization_main()
+function s06_visualization()
     if ~exist(figures_path, 'dir')
         mkdir(figures_path);
     end
@@ -21,4 +21,4 @@ function s06_vvisualization_main()
     disp('Visualization done');
     end
 
-s06_visualization_main();
+s06_visualization();

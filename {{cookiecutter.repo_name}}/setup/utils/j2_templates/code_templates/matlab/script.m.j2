@@ -6,12 +6,12 @@ raw_data = fullfile(base_path, 'data', '00_raw');
 interim_data = fullfile(base_path, 'data', '01_interim');
 processed_data = fullfile(base_path, 'data', '02_processed');
 
-function {{ script_name }}_main()
+function {{ script_name }}()
     % {{ purpose }} code
     disp('Running {{ script_name }}...');
 end
 
 if ~isdeployed
-    {{ script_name }}_main();
+    {{ script_name }}();
 end
 {% endraw %}

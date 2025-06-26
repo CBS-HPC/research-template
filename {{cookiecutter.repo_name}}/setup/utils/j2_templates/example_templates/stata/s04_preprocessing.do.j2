@@ -3,7 +3,7 @@ global base_path ".."
 global raw_data "$base_path/data/00_raw"
 global interim_data "$base_path/data/01_interim"
 
-program define preprocessing_main
+program define preprocessing
     mkdir "$interim_data"
     use "$raw_data/mtcars_raw.dta", clear
     gen mpg_z = (mpg - mean(mpg))
@@ -11,4 +11,4 @@ program define preprocessing_main
     display "s04_Preprocessing done"
 end
 
-preprocessing_main
+preprocessing

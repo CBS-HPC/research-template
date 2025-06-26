@@ -2,7 +2,7 @@
 base_path = fullfile(fileparts(mfilename('fullpath')), '..');
 raw_data = fullfile(base_path, 'data', '00_raw');
 
-function s03_data_collection_main()
+function s03_data_collection()
     if ~exist(raw_data, 'dir')
         mkdir(raw_data);
     end
@@ -13,4 +13,4 @@ function s03_data_collection_main()
     disp('Data collection done');
 end
                         
-s03_data_collection_main();
+s03_data_collection();

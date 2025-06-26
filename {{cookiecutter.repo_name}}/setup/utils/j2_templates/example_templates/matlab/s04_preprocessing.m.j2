@@ -3,7 +3,7 @@ base_path = fullfile(fileparts(mfilename('fullpath')), '..');
 raw_data = fullfile(base_path, 'data', '00_raw');
 interim_data = fullfile(base_path, 'data', '01_interim');
 
-function s04_preprocessing_main()
+function s04_preprocessing()
     if ~exist(interim_data, 'dir')
         mkdir(interim_data);
     end
@@ -13,4 +13,4 @@ function s04_preprocessing_main()
     disp('Preprocessing done');
 end
 
-s04_preprocessing_main();
+s04_preprocessing();

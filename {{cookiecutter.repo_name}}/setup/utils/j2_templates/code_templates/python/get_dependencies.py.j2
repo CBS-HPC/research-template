@@ -112,14 +112,15 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         f.write("Files checked:\n")
         f.write("\n".join(relative_python_files) + "\n\n")
         f.write("Dependencies:\n")
-        for package, version in installed_packages .items():
+        for package, version in installed_packages.items():
             f.write(f"{package}=={version}\n")
 
     print(f"{file_name} successfully generated at {output_file}")
 
-@ensure_correct_kernel
+    return installed_packages
+
 def main():
-    get_setup_dependencies()
+   _ = get_setup_dependencies()
 
 if __name__ == "__main__":
     # Ensure the working directory is the project root

@@ -1,22 +1,24 @@
-import os, pickle
+from s02_utils import load_pickle, save_pickle, ensure_dir_exists
+from sklearn.preprocessing import StandardScaler
+import os
 
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 raw_data = os.path.join(base_path, "data", "00_raw")
 interim_data = os.path.join(base_path, "data", "01_interim")
+ensure_dir_exists(interim_data)
 
-def preprocess_data(data):
-    data['mpg_z'] = [(x - sum(data['mpg'])/len(data['mpg'])) for x in data['mpg']]
-    if not os.path.exists(interim_data):
-        os.makedirs(interim_data)
-    with open(os.path.join(interim_data, 'mtcars_interim.pkl'), 'wb') as f:
-        pickle.dump(data, f)
-    return data
+def preprocess_data():
+    iris = load_pickle(os.path.join(raw_data, "iris_raw.pkl"))
+    df = iris['frame']
+    X = df[iris['feature_names']]
+    y = df["target"]
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    save_pickle({'X': X_scaled, 'y': y, 'scaler': scaler}, os.path.join(interim_data, "iris_interim.pkl"))
 
 def main():
-    print("Running preprocessing...")
-    with open(os.path.join(raw_data, 'mtcars_raw.pkl'), 'rb') as f:
-        data = pickle.load(f)
-    preprocess_data(data)
+    print("Preprocessing Iris data...")
+    preprocess_data()
 
 if __name__ == "__main__":
     main()

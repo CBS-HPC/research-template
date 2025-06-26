@@ -1,24 +1,23 @@
-import os, pickle
-from sklearn.linear_model import LinearRegression
-import numpy as np
+from s02_utils import load_pickle, save_pickle, ensure_dir_exists
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+import os
 
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 interim_data = os.path.join(base_path, "data", "01_interim")
 processed_data = os.path.join(base_path, "data", "02_processed")
+ensure_dir_exists(processed_data)
 
-def build_model(data):
-    model = LinearRegression().fit(np.array(data['wt']).reshape(-1,1), data['mpg'])
-    if not os.path.exists(processed_data):
-        os.makedirs(processed_data)
-    with open(os.path.join(processed_data, 'model.pkl'), 'wb') as f:
-        pickle.dump(model, f)
-    return model
+def build_model():
+    data = load_pickle(os.path.join(interim_data, "iris_interim.pkl"))
+    model = LogisticRegression(max_iter=200).fit(data['X'], data['y'])
+    save_pickle(model, os.path.join(processed_data, "iris_model.pkl"))
+    acc = accuracy_score(data['y'], model.predict(data['X']))
+    print(f"Training accuracy: {acc:.2f}")
 
 def main():
-    print("Running modeling...")
-    with open(os.path.join(interim_data, 'mtcars_interim.pkl'), 'rb') as f:
-        data = pickle.load(f)
-    build_model(data)
+    print("Modeling Iris data...")
+    build_model()
 
 if __name__ == "__main__":
     main()

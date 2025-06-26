@@ -1,29 +1,29 @@
-import os, pickle
+from s02_utils import load_pickle, ensure_dir_exists
+from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
+import os
 
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 interim_data = os.path.join(base_path, "data", "01_interim")
 processed_data = os.path.join(base_path, "data", "02_processed")
 figures_path = os.path.join(base_path, "results", "figures")
+ensure_dir_exists(figures_path)
 
-def visualize(data, model):
-    if not os.path.exists(figures_path):
-        os.makedirs(figures_path)
-    plt.scatter(data['wt'], data['mpg'])
-    plt.plot(data['wt'], model.predict(np.array(data['wt']).reshape(-1,1)), color='red')
-    plt.xlabel('Weight')
-    plt.ylabel('MPG')
-    plt.title('Actual vs Predicted')
-    plt.savefig(os.path.join(figures_path, 'actual_vs_predicted.png'))
+def visualize():
+    data = load_pickle(os.path.join(interim_data, "iris_interim.pkl"))
+    model = load_pickle(os.path.join(processed_data, "iris_model.pkl"))
+    X_pca = PCA(n_components=2).fit_transform(data['X'])
+    y = data['y']
+    plt.figure()
+    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap='viridis')
+    plt.legend(*scatter.legend_elements(), title="Classes")
+    plt.title("Iris dataset PCA Projection")
+    plt.savefig(os.path.join(figures_path, "iris_pca_projection.png"))
     plt.close()
 
 def main():
-    print("Running visualization...")
-    with open(os.path.join(interim_data, 'mtcars_interim.pkl'), 'rb') as f:
-        data = pickle.load(f)
-    with open(os.path.join(processed_data, 'model.pkl'), 'rb') as f:
-        model = pickle.load(f)
-    visualize(data, model)
+    print("Visualizing Iris data...")
+    visualize()
 
 if __name__ == "__main__":
     main()
