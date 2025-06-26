@@ -26,7 +26,7 @@ def create_example(project_language):
     script_keys = [
         "s00_main",
         "s01_install_dependencies",
-        "utils",
+        "s02_utils",
         "s03_data_collection",
         "s04_preprocessing",
         "s05_modeling",
