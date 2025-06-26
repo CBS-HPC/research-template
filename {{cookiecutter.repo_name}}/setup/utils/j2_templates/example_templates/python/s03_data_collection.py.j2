@@ -1,14 +1,12 @@
 from sklearn.datasets import load_iris
-from s02_utils import save_pickle, ensure_dir_exists
+from s02_utils import save_pickle, ensure_dir_exists, get_paths
 import os
 
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-raw_data = os.path.join(base_path, "data", "00_raw")
-ensure_dir_exists(raw_data)
-
 def collect_data():
+    paths = get_paths()
+    ensure_dir_exists(paths["raw"])
     iris = load_iris(as_frame=True)
-    save_pickle(iris, os.path.join(raw_data, "iris_raw.pkl"))
+    save_pickle(iris, os.path.join(paths["raw"], "iris_raw.pkl"))
 
 def main():
     print("Collecting Iris dataset...")

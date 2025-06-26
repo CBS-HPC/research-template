@@ -1,17 +1,16 @@
-from s02_utils import load_pickle, save_pickle, ensure_dir_exists
+from s02_utils import load_pickle, save_pickle, ensure_dir_exists, get_paths
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 import os
 
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-interim_data = os.path.join(base_path, "data", "01_interim")
-processed_data = os.path.join(base_path, "data", "02_processed")
-ensure_dir_exists(processed_data)
-
 def build_model():
-    data = load_pickle(os.path.join(interim_data, "iris_interim.pkl"))
+    paths = get_paths()
+    ensure_dir_exists(paths["processed"])
+
+    data = load_pickle(os.path.join(paths["interim"], "iris_interim.pkl"))
     model = LogisticRegression(max_iter=200).fit(data['X'], data['y'])
-    save_pickle(model, os.path.join(processed_data, "iris_model.pkl"))
+    save_pickle(model, os.path.join(paths["processed"], "iris_model.pkl"))
+
     acc = accuracy_score(data['y'], model.predict(data['X']))
     print(f"Training accuracy: {acc:.2f}")
 

@@ -1,22 +1,24 @@
-# s01_install_dependencies.R
+source("s02_utils.R")
+paths <- get_paths()
+base_path <- paths$base
 
-base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-
-if (file.exists(file.path(base_path, "renv.lock"))) {
-  message("Found renv.lock — restoring environment...")
-  if (!requireNamespace("renv", quietly = TRUE)) {
-    install.packages("renv")
-  }
-  renv::restore(project = base_path, prompt = FALSE)
-} else {
-  message("No renv.lock found — installing required packages manually.")
-
-  required_packages <- c("palmerpenguins", "ggplot2", "dplyr")
-
-  for (pkg in required_packages) {
-    if (!requireNamespace(pkg, quietly = TRUE)) {
-      install.packages(pkg)
+s01_install_dependencies <- function() {
+  if (file.exists(file.path(base_path, "renv.lock"))) {
+    message("Found renv.lock — restoring environment...")
+    if (!requireNamespace("renv", quietly = TRUE)) {
+      install.packages("renv")
     }
-    library(pkg, character.only = TRUE)
+    renv::restore(project = base_path, prompt = FALSE)
+  } else {
+    message("No renv.lock found — installing required packages manually.")
+
+    required_packages <- c("palmerpenguins", "ggplot2", "dplyr")
+
+    for (pkg in required_packages) {
+      if (!requireNamespace(pkg, quietly = TRUE)) {
+        install.packages(pkg)
+      }
+      library(pkg, character.only = TRUE)
+    }
   }
 }

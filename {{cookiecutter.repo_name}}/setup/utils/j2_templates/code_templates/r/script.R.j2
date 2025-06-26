@@ -1,10 +1,8 @@
 {% raw %}
 # {{ purpose }} code
 
-base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-raw_data <- file.path(base_path, "data", "00_raw")
-interim_data <- file.path(base_path, "data", "01_interim")
-processed_data <- file.path(base_path, "data", "02_processed")
+source("s02_utils.R")
+paths <- get_paths()
 
 main <- function() {
     # {{ purpose }} code

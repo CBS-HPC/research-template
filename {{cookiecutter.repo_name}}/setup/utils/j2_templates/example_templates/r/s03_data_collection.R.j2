@@ -1,11 +1,10 @@
-
 library(palmerpenguins)
 source("s02_utils.R")
 
-base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-raw_data <- file.path(base_path, "data", "00_raw")
+paths <- get_paths()
 
-ensure_dir(raw_data)
-save_rds(penguins, file.path(raw_data, "penguins_raw.rds"))
-
-cat("Data collection complete.\n")
+s03_data_collection <- function() {
+  ensure_dir(paths$raw)
+  save_rds(penguins, file.path(paths$raw, "penguins_raw.rds"))
+  cat("Data collection complete.\n")
+}

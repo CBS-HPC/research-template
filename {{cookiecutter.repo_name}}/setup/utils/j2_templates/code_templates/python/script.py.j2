@@ -3,14 +3,14 @@
 
 import os
 import sys
+
 base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-raw_data = os.path.join(base_path, "data", "00_raw")
-interim_data = os.path.join(base_path, "data", "01_interim")
-processed_data = os.path.join(base_path, "data", "02_processed")
 setup_path = os.path.join(base_path, "setup")
 sys.path.append(setup_path)
 
-from s02_utils import *
+from s02_utils import get_paths()  # includes
+
+paths = get_paths()
 
 def main():
     # {{ purpose }} code

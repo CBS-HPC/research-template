@@ -47,6 +47,8 @@ def create_scripts(programming_language):
             create_script_from_template(programming_language, folder_path,  f"get_dependencies.{ext}.j2", script_name, {"script_name": script_name})
         elif script_name == "s01_install_dependencies":
             create_script_from_template(programming_language, folder_path,  f"s01_install_dependencies.{ext}.j2", script_name, {"script_name": script_name})
+        elif script_name == "s02_utilss":
+            create_script_from_template(programming_language, folder_path,  f"s02_utils.{ext}.j2", script_name, {"script_name": script_name})    
         else:
             create_script_from_template(programming_language, folder_path,  f"script.{ext}.j2", script_name, {"script_name": script_name, "purpose": purpose})
 

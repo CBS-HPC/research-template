@@ -1,22 +1,20 @@
-
 library(ggplot2)
 source("s02_utils.R")
 
-base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-interim_data <- file.path(base_path, "data", "01_interim")
-processed_data <- file.path(base_path, "data", "02_processed")
-figures_path <- file.path(base_path, "results", "figures")
+paths <- get_paths()
 
-ensure_dir(figures_path)
-data <- load_rds(file.path(interim_data, "penguins_clean.rds"))
-model <- load_rds(file.path(processed_data, "penguins_model.rds"))
+s06_visualization <- function() {
+  ensure_dir(paths$figures)
+  data <- load_rds(file.path(paths$interim, "penguins_clean.rds"))
+  model <- load_rds(file.path(paths$processed, "penguins_model.rds"))
 
-predictions <- predict(model, newdata = data)
+  predictions <- predict(model, newdata = data)
 
-ggplot(data, aes(x = flipper_length_mm, y = body_mass_g)) +
-  geom_point() +
-  geom_line(aes(y = predictions), color = "blue") +
-  ggtitle("Predicted vs Actual Body Mass") +
-  ggsave(file.path(figures_path, "penguins_regression.png"))
+  ggplot(data, aes(x = flipper_length_mm, y = body_mass_g)) +
+    geom_point() +
+    geom_line(aes(y = predictions), color = "blue") +
+    ggtitle("Predicted vs Actual Body Mass") +
+    ggsave(file.path(paths$figures, "penguins_regression.png"))
 
-cat("Visualization complete.\n")
+  cat("Visualization complete.\n")
+}

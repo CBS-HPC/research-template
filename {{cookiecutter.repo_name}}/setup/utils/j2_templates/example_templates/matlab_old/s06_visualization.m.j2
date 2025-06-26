@@ -1,0 +1,24 @@
+% Visualization code
+base_path = fullfile(fileparts(mfilename('fullpath')), '..');
+interim_data = fullfile(base_path, 'data', '01_interim');
+processed_data = fullfile(base_path, 'data', '02_processed');
+figures_path = fullfile(base_path, 'results', 'figures');
+
+function s06_visualization()
+    if ~exist(figures_path, 'dir')
+        mkdir(figures_path);
+    end
+    load(fullfile(interim_data, 'mtcars_interim.mat'));
+    load(fullfile(processed_data, 'model.mat'));
+    scatter(wt, mpg)
+    hold on
+    plot(wt, predict(model, wt))
+    xlabel('Weight')
+    ylabel('MPG')
+    title('Actual vs Predicted MPG')
+    saveas(gcf, fullfile(figures_path, 'actual_vs_predicted.png'))
+    hold off
+    disp('Visualization done');
+    end
+
+s06_visualization();

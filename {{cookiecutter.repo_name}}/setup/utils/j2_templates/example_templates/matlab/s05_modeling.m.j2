@@ -1,16 +1,12 @@
-% Modeling code
-base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-interim_data = fullfile(base_path, 'data', '01_interim');
-processed_data = fullfile(base_path, 'data', '02_processed');
-
 function s05_modeling()
-    if ~exist(processed_data, 'dir')
-        mkdir(processed_data);
-    end
-    load(fullfile(interim_data, 'mtcars_interim.mat'));
-    model = fitlm(wt, mpg);
-    save(fullfile(processed_data, 'model.mat'), 'model');
-    disp('Modeling done');
-end
+    paths = get_paths();
+    ensureDir(paths.processed);
 
-s05_modeling();
+    data = loadData(fullfile(paths.interim, 'iris_clean.mat'));
+    X = data{:,1:4};
+    y = strcmp(data.Species, 'versicolor');
+
+    model = fitglm(X, y, 'Distribution', 'binomial');
+    save(fullfile(paths.processed, 'model.mat'), 'model');
+    disp('Modeling complete.');
+end

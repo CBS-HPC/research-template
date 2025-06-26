@@ -1,0 +1,10 @@
+function paths = get_paths()
+    % Get absolute paths to project directories
+    here = mfilename('fullpath');
+    root = fileparts(here);
+    paths.base = root;
+    paths.raw = fullfile(root, 'data', '00_raw');
+    paths.interim = fullfile(root, 'data', '01_interim');
+    paths.processed = fullfile(root, 'data', '02_processed');
+    paths.figures = fullfile(root, 'results', 'figures');
+end

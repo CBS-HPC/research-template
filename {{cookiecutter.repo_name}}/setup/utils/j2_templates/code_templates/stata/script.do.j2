@@ -1,10 +1,8 @@
 {% raw %}
 * {{ purpose }} code
 
-global base_path ".."
-global raw_data "$base_path/data/00_raw"
-global interim_data "$base_path/data/01_interim"
-global processed_data "$base_path/data/02_processed"
+do s02_utils.do
+get_paths
 
 program define {{ script_name }}
     display "Running {{ script_name }}..."

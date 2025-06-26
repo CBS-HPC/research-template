@@ -1,15 +1,3 @@
-ensure_dir <- function(path) {
-  if (!dir.exists(path)) dir.create(path, recursive = TRUE)
-}
-
-save_rds <- function(object, path) {
-  saveRDS(object, path)
-}
-
-load_rds <- function(path) {
-  readRDS(path)
-}
-
 get_paths <- function() {
   base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
   list(

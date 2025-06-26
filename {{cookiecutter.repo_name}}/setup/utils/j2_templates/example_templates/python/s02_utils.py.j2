@@ -1,6 +1,16 @@
 import os
 import pickle
 
+def get_paths():
+    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return {
+        "base": base_path,
+        "raw": os.path.join(base_path, "data", "00_raw"),
+        "interim": os.path.join(base_path, "data", "01_interim"),
+        "processed": os.path.join(base_path, "data", "02_processed"),
+        "figures": os.path.join(base_path, "results", "figures")
+    }
+
 def ensure_dir_exists(path):
     """Create directory if it doesn't exist."""
     if not os.path.exists(path):

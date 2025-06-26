@@ -1,8 +1,9 @@
-% Main runner
+% main.m - Run full pipeline in sequence
 
-run('s01_install_dependencies.m')
-
+s01_install_dependencies();
 s03_data_collection();
 s04_preprocessing();
 s05_modeling();
-s06_visualization_main();
+s06_visualization();
+
+disp('Pipeline complete.');

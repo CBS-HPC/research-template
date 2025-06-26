@@ -1,15 +1,13 @@
-# s05_modeling.R
-
 source("s02_utils.R")
 
-base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
-interim_data <- file.path(base_path, "data", "01_interim")
-processed_data <- file.path(base_path, "data", "02_processed")
+paths <- get_paths()
 
-ensure_dir(processed_data)
-data <- load_rds(file.path(interim_data, "penguins_clean.rds"))
+s05_modeling <- function() {
+  ensure_dir(paths$processed)
+  data <- load_rds(file.path(paths$interim, "penguins_clean.rds"))
 
-model <- lm(body_mass_g ~ flipper_length_mm + bill_length_mm, data = data)
-save_rds(model, file.path(processed_data, "penguins_model.rds"))
+  model <- lm(body_mass_g ~ flipper_length_mm + bill_length_mm, data = data)
+  save_rds(model, file.path(paths$processed, "penguins_model.rds"))
 
-cat("Model training complete.\n")
+  cat("Model training complete.\n")
+}

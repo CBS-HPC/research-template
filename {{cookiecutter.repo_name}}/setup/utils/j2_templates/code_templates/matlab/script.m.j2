@@ -1,13 +1,9 @@
 {% raw %}
 % {{ purpose }} code
 
-base_path = fullfile(fileparts(mfilename('fullpath')), '..');
-raw_data = fullfile(base_path, 'data', '00_raw');
-interim_data = fullfile(base_path, 'data', '01_interim');
-processed_data = fullfile(base_path, 'data', '02_processed');
-
 function {{ script_name }}()
     % {{ purpose }} code
+    paths = get_paths();
     disp('Running {{ script_name }}...');
 end
 
