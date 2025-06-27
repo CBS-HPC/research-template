@@ -17,31 +17,31 @@ def install_uv():
     """Ensure 'uv' is installed and usable."""
     try:
         # Check if uv is already installed
-        subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run([sys.executable,"-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("⚠️ 'uv' not found. Attempting to install it via pip...")
         try:
-            subprocess.run([sys.executable, "pip", "install", "--upgrade", "uv"],check=True)
+            subprocess.run([sys.executable,"-m", "pip", "install", "--upgrade", "uv"],check=True)
             #subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
             # Verify installation
-            subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL)
+            subprocess.run([sys.executable,"-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
             return True
         except subprocess.CalledProcessError:
             return False
 
 def create_with_uv():
     """Create virtual environment using uv silently."""
-    subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run([sys.executable,"-m", "uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run([sys.executable,"-m", "uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(
-        ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+        [sys.executable,"-m", "uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
         check=True,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
     # This one shows output
-    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
+    subprocess.run([sys.executable,"-m", "uv", "run", "setup/project_setup.py"], check=True)
 
     
 def main():
