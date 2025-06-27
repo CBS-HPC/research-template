@@ -43,10 +43,13 @@ def create_with_uv():
             )
         except subprocess.CalledProcessError:
             # Retry with link-mode=copy
-            subprocess.run(
-                ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
-                check=True,
-            )
+            try:
+                subprocess.run(
+                    ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
+                    check=True,
+                )
+            except subprocess.CalledProcessError:
+                subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"], check=True)
 
         subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
 
