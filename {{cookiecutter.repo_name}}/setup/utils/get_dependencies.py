@@ -75,7 +75,8 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
             print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
             for pkg in missing_from_lock:
                 try:
-                    subprocess.run(["uv", "add", pkg], check=True,
+                    #subprocess.run(["uv", "add", pkg], check=True,     
+                    subprocess.run([sys.executable, "-m","uv", "add", pkg], check=True,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except subprocess.CalledProcessError as e:
                     print(f"❌ Failed to add {pkg} via uv: {e}")

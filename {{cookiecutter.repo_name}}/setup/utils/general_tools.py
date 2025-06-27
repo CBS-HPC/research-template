@@ -12,6 +12,12 @@ import importlib.metadata
 import importlib.util
 import json
 
+import pathlib
+import subprocess
+import sys
+import importlib
+import importlib.util
+
 def ask_yes_no(question):
     """
     Prompt the user with a yes/no question and validate the input.
@@ -114,22 +120,126 @@ def package_installer(required_libraries: list = None):
     Install missing libraries using uv if available, otherwise fallback to pip.
     Preference order: uv add → uv pip install → pip install
     """
-    def safe_uv_add(lib):
-        try:
-            project_root = pathlib.Path(__file__).resolve().parents[2]
-            uv_lock_path = project_root / "uv.lock"
 
-            if uv_lock_path.exists():
-                print("dre5")
-                subprocess.run([sys.executable, "-m", "uv", "add", lib], check=True, stderr=subprocess.DEVNULL, cwd=project_root)
+    def safe_uv_add(lib, project_root):
+        uv_lock = project_root / "uv.lock"
+        if uv_lock.exists():
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "uv", "add", lib],
+                    check=True,
+                    stderr=subprocess.DEVNULL,
+                    cwd=project_root
+                )
                 return True
-        except subprocess.CalledProcessError:
-            pass
+            except subprocess.CalledProcessError:
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "uv", "add", lib, "--link-mode=copy"],
+                        check=True,
+                        stderr=subprocess.DEVNULL,
+                        cwd=project_root
+                    )
+                    return True
+                except subprocess.CalledProcessError:
+                    return False
         return False
 
-    def safe_uv_add_old(lib):
+    def safe_uv_pip_install(lib, project_root):
         try:
-           project_root = pathlib.Path(__file__).resolve().parents[2]
+            subprocess.run(
+                [sys.executable, "-m", "uv", "pip", "install", lib],
+                check=True,
+                stderr=subprocess.DEVNULL,
+                cwd=project_root
+            )
+            return True
+        except subprocess.CalledProcessError:
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "uv", "pip", "install", lib, "--link-mode=copy"],
+                    check=True,
+                    stderr=subprocess.DEVNULL,
+                    cwd=project_root
+                )
+                return True
+            except subprocess.CalledProcessError:
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "uv", "pip", "install", "--system", lib, "--link-mode=copy"],
+                        check=True,
+                        stderr=subprocess.DEVNULL,
+                        cwd=project_root
+                    )
+                    return True
+                except subprocess.CalledProcessError:
+                    return False
+
+    if not required_libraries:
+        return
+
+    try:
+        installed_pkgs = {
+            name.lower()
+            for dist in importlib.metadata.distributions()
+            if (name := dist.metadata.get("Name")) is not None
+        }
+    except Exception as e:
+        print(f"⚠️ Error checking installed packages: {e}")
+        return
+
+    # Normalize names and find missing ones
+    missing_libraries = []
+    for lib in required_libraries:
+        norm_name = (
+            lib.split("==")[0]
+               .split(">=")[0]
+               .split("<=")[0]
+               .split("~=")[0]
+               .strip()
+               .lower()
+        )
+        if norm_name not in installed_pkgs:
+            if not importlib.util.find_spec(norm_name):
+                missing_libraries.append(lib)
+
+    if not missing_libraries:
+        return
+
+    print(f"📦 Installing missing libraries: {missing_libraries}")
+
+    uv_available = install_uv()
+    try:
+        project_root = pathlib.Path(__file__).resolve().parents[2]
+    except Exception:
+        project_root = pathlib.Path.cwd()
+
+    for lib in missing_libraries:
+        if uv_available and safe_uv_add(lib, project_root):
+            continue
+
+        if uv_available and safe_uv_pip_install(lib, project_root):
+            continue
+
+        # Final fallback to pip
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", lib],
+                check=True,
+                stderr=subprocess.DEVNULL
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Failed to install {lib} with pip: {e}")
+
+
+def package_installer_old(required_libraries: list = None):
+    """
+    Install missing libraries using uv if available, otherwise fallback to pip.
+    Preference order: uv add → uv pip install → pip install
+    """
+
+    def safe_uv_add(lib):
+        try:
 
            if pathlib.Path("uv.lock").exists():
                 print("dre5")
@@ -181,7 +291,6 @@ def package_installer(required_libraries: list = None):
 
     for lib in missing_libraries:
         if uv_available and safe_uv_add(lib):
-            print("dre4")
             continue
 
         if uv_available:
@@ -191,7 +300,6 @@ def package_installer(required_libraries: list = None):
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
-                print("dre1")
                 continue
             except subprocess.CalledProcessError:
                 try:
@@ -200,7 +308,6 @@ def package_installer(required_libraries: list = None):
                         check=True,
                         stderr=subprocess.DEVNULL
                     )
-                    print("dre2")
                     continue
                 except subprocess.CalledProcessError:
                     print(f"⚠️ `uv pip install` failed for {lib}. Trying pip fallback...")
@@ -211,7 +318,6 @@ def package_installer(required_libraries: list = None):
                 check=True,
                 stderr=subprocess.DEVNULL
             )
-            print("dre3")
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to install {lib} with pip: {e}")
 
@@ -773,7 +879,9 @@ def get_version(programming_language):
             return "pip"
     elif programming_language.lower() == "uv":
         try:
-            version = subprocess.check_output(["uv", "--version"], text=True)
+            #version = subprocess.check_output(["uv", "--version"], text=True)
+            version = subprocess.check_output([sys.executable, "-m","uv", "--version"], text=True)
+        
             version = version.strip()  # Returns version info       
         except subprocess.CalledProcessError as e:
             return "uv" 

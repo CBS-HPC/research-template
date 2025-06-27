@@ -21,7 +21,7 @@ def install_package(package, version, use_uv=True):
     spec = f"{package}=={version}" if version != "Not available" else package
     try:
         if use_uv:
-            subprocess.run(["uv", "pip", "install", spec], check=True)
+            subprocess.run([sys.executable, "-m","uv", "pip", "install", spec], check=True)
         else:
             subprocess.run([sys.executable, "-m", "pip", "install", spec], check=True)
     except subprocess.CalledProcessError as e:
