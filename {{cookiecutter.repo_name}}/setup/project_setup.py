@@ -183,7 +183,7 @@ remote_backup = "{{cookiecutter.remote_backup}}"
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager, r_env_manager, code_repo, remote_storage, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
 
-from utils.general_tools import save_to_env, git_user_info, repo_user_info, remote_user_info
+from utils.general_tools import save_to_env, git_user_info, repo_user_info, remote_user_info,check_path_format
 
 def set_programming_language(programming_language,r_env_manager):
 
