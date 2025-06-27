@@ -648,6 +648,71 @@ def repo_user_info(version_control, repo_name, code_repo):
 
 def remote_user_info(remote_name):
     """Prompt for remote login credentials and base folder path."""
+
+    def ensure_repo_suffix(folder, repo):
+        folder = folder.strip().replace("\\", "/").rstrip("/")
+        if not folder.endswith(repo):
+            return os.path.join(folder, repo).replace("\\", "/")
+        return folder
+
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
+
+    if remote_name.lower() == "deic-storage":
+
+        email = load_from_env("DEIC_EMAIL")
+        password = load_from_env("DEIC_PASS")
+        base_folder = load_from_env("DEIC_BASE")
+
+        if email and password and base_folder:
+            base_folder = ensure_repo_suffix(base_folder, repo_name)
+            return email, password, base_folder
+
+        default_email = load_from_env("EMAIL", ".cookiecutter")
+        default_base = f'RClone_backup/{repo_name}'
+        base_folder = input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        base_folder = ensure_repo_suffix(base_folder, repo_name)
+
+        email = password = None
+        while not email or not password:
+            email = input(f"Please enter email to Deic-Storage [{default_email}]: ").strip() or default_email
+            password = getpass.getpass("Please enter password to Deic-Storage: ").strip()
+
+            if not email or not password:
+                print("Both email and password are required.\n")
+
+        print(f"\nUsing email: {email}")
+        print(f"Using base folder: {base_folder}\n")
+
+        save_to_env(email, "DEIC_EMAIL")
+        save_to_env(password, "DEIC_PASS")
+        save_to_env(base_folder, "DEIC_BASE")
+
+        return email, password, base_folder
+
+    elif remote_name.lower() == "local":
+        base_folder = input("Please enter the local path for rclone: ").strip().replace("'", "").replace('"', '')
+        base_folder = check_path_format(base_folder)
+        base_folder = ensure_repo_suffix(base_folder, repo_name)
+        if not os.path.isdir(base_folder):
+            print("Error: The specified local path does not exist.")
+            return None, None, None
+        return None, None, base_folder
+
+    elif remote_name.lower() != "none":
+        default_base = f'RClone_backup/{repo_name}'
+        base_folder = input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        base_folder = ensure_repo_suffix(base_folder, repo_name)
+        return None, None, base_folder
+
+    else:
+        return None, None, None
+
+
+def remote_user_info_old(remote_name):
+    """Prompt for remote login credentials and base folder path."""
     
     if remote_name.strip().lower() == "deic storage":
         remote_name = "deic-storage"

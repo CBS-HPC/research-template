@@ -247,7 +247,6 @@ def setup_remote_backup(remote_name):
     if remote_name.lower() != "none":
         email, password, base_folder = remote_user_info(remote_name.lower())
         if install_rclone("./bin"):
-            print("dre")
             add_remote(remote_name.lower(), email, password)
             add_folder(remote_name.lower(), base_folder)
 
