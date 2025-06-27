@@ -32,12 +32,21 @@ def create_with_uv():
     """Create virtual environment using uv silently."""
     subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(
-        ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    try:
+        subprocess.run(
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:    
+        subprocess.run(
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel","--link-mode=copy"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
     # This one shows output
     subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
 
