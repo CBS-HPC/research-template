@@ -18,6 +18,9 @@ import sys
 import importlib
 import importlib.util
 
+print(sys.executable)
+print(shutil.which("uv"))
+
 def ask_yes_no(question):
     """
     Prompt the user with a yes/no question and validate the input.
@@ -230,7 +233,6 @@ def package_installer(required_libraries: list = None):
             )
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to install {lib} with pip: {e}")
-
 
 def package_installer_old(required_libraries: list = None):
     """
