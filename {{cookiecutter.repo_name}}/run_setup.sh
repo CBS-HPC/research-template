@@ -95,8 +95,6 @@ fi
 # Run the main Python script
 # -------------------------------
 if [ -f "$main_setup" ]; then
-    #echo ""
-    #echo "Running main setup script from $main_setup..."
     python "$main_setup"
 else
     echo "Error: $main_setup not found."

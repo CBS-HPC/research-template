@@ -321,9 +321,16 @@ def set_programming_language(programming_language,r_env_manager):
         if not selected_path: 
             _, selected_path =manual_apps()
 
-        if selected_path:    
+        if selected_path:
+
             save_to_env(selected_path,programming_language.upper())
             save_to_env(programming_language.lower(),"PROGRAMMING_LANGUAGE",".cookiecutter")
+            
+            if programming_language.lower() == 'r':
+                r_dir = os.path.dirname(selected_path)
+                rscript_path = os.path.join(r_dir, 'Rscript.exe')
+                if os.path.isfile(rscript_path) and os.access(rscript_path, os.X_OK):
+                    save_to_env(rscript_path, "RSCRIPT")
         else:
             print(f"{programming_language} path has not been set")
 

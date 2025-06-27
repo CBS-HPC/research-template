@@ -67,8 +67,6 @@ function Run-PythonScript {
         [string]$label
     )
     if (Test-Path $script_path) {
-        #Write-Output ""
-        #Write-Output "Running $label from $script_path..."
         python "$script_path"
     } else {
         Write-Output "Error: $label not found at $script_path"

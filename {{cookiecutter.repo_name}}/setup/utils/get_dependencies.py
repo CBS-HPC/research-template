@@ -264,21 +264,12 @@ def run_get_dependencies(programming_language):
                 script_content = f.read()  
             return run_script(programming_language, script_command=script_content)
 
-        elif programming_language == "r":
-            script_path = make_safe_path(script_path,"r")
-            cmd = " -f " + script_path
-            return run_script(programming_language, script_command=cmd)
-
-        elif programming_language == "matlab":
+        elif programming_language in ["r","matlab","stata","sas"]: 
+            
+            if programming_language == "r":
+                script_path = make_safe_path(script_path,"r")
+            
             return run_script(programming_language, script_command=script_path)
-
-        elif programming_language == "sas":
-            return run_script(programming_language, script_command=script_path)
-
-        elif programming_language == "stata":
-            # Special case: Stata scripts may behave differently
-            return run_script(programming_language, script_command=script_path)
-
         else:
             return f"Unsupported language in script execution: {programming_language}"
 

@@ -195,12 +195,26 @@ def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
     if remote_name.strip().lower() == "deic storage":
         remote_name = "deic-storage"
 
+    # Step 1: Attempt to delete the actual remote directory if it exists
+    remote_path = load_rclone_json(remote_name, json_path)
+    if remote_path:
+        try:
+            print(f"Attempting to purge remote folder at: {remote_path}")
+            subprocess.run(['rclone', 'purge', remote_path], check=True)
+            print(f"Successfully purged remote folder: {remote_path}")
+        except subprocess.CalledProcessError as e:
+            print(f"⚠️ Warning: Could not purge remote folder '{remote_path}': {e}")
+        except Exception as e:
+            print(f"Unexpected error during purge: {e}")
+
+    # Step 2: Delete the remote from rclone config
     try:
         subprocess.run(['rclone', 'config', 'delete', remote_name], check=True)
         print(f"Rclone remote '{remote_name}' deleted from rclone configuration.")
     except subprocess.CalledProcessError as e:
         print(f"Error deleting remote from rclone: {e}")
 
+    # Step 3: Remove entry from local JSON registry
     if os.path.exists(json_path):
         try:
             with open(json_path, 'r+') as f:
