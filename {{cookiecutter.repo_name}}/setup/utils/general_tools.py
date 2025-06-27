@@ -18,8 +18,6 @@ import sys
 import importlib
 import importlib.util
 
-print(sys.executable)
-print(shutil.which("uv"))
 
 def ask_yes_no(question):
     """
@@ -209,7 +207,7 @@ def package_installer(required_libraries: list = None):
     if not missing_libraries:
         return
 
-    print(f"📦 Installing missing libraries: {missing_libraries}")
+    #print(f"📦 Installing missing libraries: {missing_libraries}")
 
     uv_available = install_uv()
     try:
