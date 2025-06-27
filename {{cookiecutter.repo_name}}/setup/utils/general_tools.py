@@ -242,7 +242,6 @@ def package_installer_old(required_libraries: list = None):
         try:
 
            if pathlib.Path("uv.lock").exists():
-                print("dre5")
                 #subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
                 subprocess.run([sys.executable, "-m","uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
                 return True
@@ -892,7 +891,56 @@ def get_version(programming_language):
         version = version.strip()  # e.g., "conda 24.3.0"    
     return version
 
+
+
 def run_script(programming_language, script_command=None):
+    """
+    Runs a script or fetches version info for different programming languages.
+    
+    Args:
+        programming_language (str): Programming language name (e.g., 'python', 'r', etc.)
+        script_command (str, optional): Script/command to execute. Optional for languages like Stata.
+    
+    Returns:
+        str: Output or version string.
+    """
+    programming_language = programming_language.lower()
+
+    if programming_language == "python":
+        cmd = [sys.executable, "-c", script_command]
+
+    else:
+        exe_path = check_path_format(load_from_env(programming_language))
+        if not exe_path:
+            return "Unknown executable path"
+
+        if programming_language == "r":
+            rscript = check_path_format(load_from_env("RSCRIPT"))
+            if rscript:
+                cmd = [exe_path, script_command]
+            else:
+                cmd = [exe_path, "--vanilla", "-f", script_command]
+
+        elif programming_language == "matlab":
+            cmd = [exe_path, "-batch", script_command]
+
+        elif programming_language == "stata":
+            cmd = [exe_path, "-b", script_command]
+
+        elif programming_language == "sas":
+            cmd = [exe_path, "-SYSIN", script_command]
+
+        else:
+            return f"Language {programming_language} not supported."
+
+    try:
+        result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        return f"Error running script: {e.stderr.strip() if e.stderr else str(e)}"
+
+
+def run_script_old(programming_language, script_command=None):
     """
     Runs a script or fetches version info for different programming languages.
     
@@ -914,8 +962,6 @@ def run_script(programming_language, script_command=None):
     try:
         if programming_language == "python":
             cmd = sys.executable + " -c " + script_command
-            #cmd = [sys.executable, "-c"]
-            #cmd.extend(script_command)
             
             result = subprocess.run(
                 cmd,
@@ -931,6 +977,7 @@ def run_script(programming_language, script_command=None):
                 cmd = exe_path + script_command
             else:
                 cmd = exe_path + " --vanilla" + " -f " + script_command
+
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True, check=True
@@ -939,7 +986,6 @@ def run_script(programming_language, script_command=None):
         
         elif programming_language == "matlab":
             cmd = exe_path + " -batch " + script_command
-            print(cmd)
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True, check=True
@@ -949,17 +995,14 @@ def run_script(programming_language, script_command=None):
         elif programming_language == "stata":
             # For Stata, run the executable with --version (or equivalent) to print version
             cmd = exe_path +  " -b " + script_command
-            print(cmd)
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True
             )
-            return result.stdout.strip() if result.stdout else "Stata version information not captured."
+            return result.stdout.strip() 
 
         elif programming_language == "sas":
             cmd = exe_path  + " -SYSIN " + script_command
-            #cmd = [exe_path, "-SYSIN"]
-            #cmd.extend(script_command)
             result = subprocess.run(
                 cmd,
                 capture_output=True, text=True, check=True
