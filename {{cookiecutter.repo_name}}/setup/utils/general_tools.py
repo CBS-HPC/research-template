@@ -174,6 +174,7 @@ def package_installer(required_libraries: list = None):
                     check=True,
                     stderr=subprocess.DEVNULL
                 )
+                print("dre1")
                 continue
             except subprocess.CalledProcessError:
                 try:
@@ -182,6 +183,7 @@ def package_installer(required_libraries: list = None):
                         check=True,
                         stderr=subprocess.DEVNULL
                     )
+                    print("dre2")
                     continue
                 except subprocess.CalledProcessError:
                     print(f"⚠️ `uv pip install` failed for {lib}. Trying pip fallback...")
@@ -192,7 +194,7 @@ def package_installer(required_libraries: list = None):
                 check=True,
                 stderr=subprocess.DEVNULL
             )
-            
+            print("dre3")
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to install {lib} with pip: {e}")
 
