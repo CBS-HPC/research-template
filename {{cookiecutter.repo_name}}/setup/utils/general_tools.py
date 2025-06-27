@@ -158,7 +158,7 @@ def package_installer(required_libraries: list = None):
     if not missing_libraries:
         return
 
-    #print(f"📦 Installing missing libraries: {missing_libraries}")
+    print(f"📦 Installing missing libraries: {missing_libraries}")
 
     
     uv_available = install_uv()
