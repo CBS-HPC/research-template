@@ -128,13 +128,15 @@ def set_options(programming_language,version_control):
         question = "Do you want to create a new R environment using Conda or use Base Installation:"
         r_env_manager = prompt_user(question, ["Conda (Choose R Version)","Base Installation"])
         r_env_manager = r_env_manager.replace("(Choose R Version)","").strip()
+        python_env_manager = "Venv"
+
 
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
         
         if r_env_manager.lower() =='conda':
-            environment_opts = [f"Venv {python_version}","Conda (Choose Python Version)"]
+            #environment_opts = [f"Venv {python_version}","Conda (Choose Python Version)"]
             python_env_manager = "Conda"
-            print("A new python environment will be created to facilitate the setup functionalities")
+            #print("A new python environment will be created to facilitate the setup functionalities")
 
     else:
         r_env_manager = "Base Installation"
