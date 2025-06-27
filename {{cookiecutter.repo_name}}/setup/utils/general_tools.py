@@ -114,9 +114,23 @@ def package_installer(required_libraries: list = None):
     Install missing libraries using uv if available, otherwise fallback to pip.
     Preference order: uv add → uv pip install → pip install
     """
-
     def safe_uv_add(lib):
         try:
+            project_root = pathlib.Path(__file__).resolve().parents[2]
+            uv_lock_path = project_root / "uv.lock"
+
+            if uv_lock_path.exists():
+                print("dre5")
+                subprocess.run([sys.executable, "-m", "uv", "add", lib], check=True, stderr=subprocess.DEVNULL, cwd=project_root)
+                return True
+        except subprocess.CalledProcessError:
+            pass
+        return False
+
+    def safe_uv_add_old(lib):
+        try:
+           project_root = pathlib.Path(__file__).resolve().parents[2]
+
            if pathlib.Path("uv.lock").exists():
                 print("dre5")
                 #subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
