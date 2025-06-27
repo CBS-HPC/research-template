@@ -165,6 +165,7 @@ def package_installer(required_libraries: list = None):
 
     for lib in missing_libraries:
         if uv_available and safe_uv_add(lib):
+            print("dre4")
             continue
 
         if uv_available:
