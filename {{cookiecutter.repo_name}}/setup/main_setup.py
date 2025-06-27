@@ -191,7 +191,7 @@ def outro():
     
 if __name__ == "__main__":
 
-    setup_remote_backup(load_from_env("REMOTE_BACKUP", ".cookiecutter"))
+    setup_remote_backup()
     
     intro()
 

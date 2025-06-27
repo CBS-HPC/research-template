@@ -5,9 +5,6 @@ import platform
 import re
 import pathlib
 
-
-
-
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
     if not env_path:
         env_path = "Base Installation" 
@@ -357,7 +354,6 @@ save_to_env(data_license,"DATA_LICENSE",".cookiecutter")
 save_to_env(programming_language,"PROGRAMMING_LANGUAGE",".cookiecutter")
 save_to_env(python_env_manager,"PYTHON_ENV_MANAGER",".cookiecutter")
 save_to_env(version_control,"VERSION_CONTROL",".cookiecutter")
-save_to_env(remote_backup,"REMOTE_BACKUP",".cookiecutter")
 save_to_env(remote_storage,"REMOTE_STORAGE",".cookiecutter")
 save_to_env(code_repo,"CODE_REPO",".cookiecutter")
 

@@ -253,11 +253,12 @@ def add_folder(remote_name, base_folder):
     except Exception as e:
         print(f"Error creating folder: {e}")
 
-def setup_remote_backup(remote_name):
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-    
-    if remote_name.lower() != "none":
+def setup_remote_backup(remote_name:str = None):
+
+    if remote_name:
+        if remote_name.strip().lower() == "deic storage":
+            remote_name = "deic-storage"
+        
         email, password, base_folder = remote_user_info(remote_name.lower())
         if install_rclone("./bin"):
             add_remote(remote_name.lower(), email, password)
