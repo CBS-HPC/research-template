@@ -254,7 +254,6 @@ def add_folder(remote_name, base_folder):
         print(f"Error creating folder: {e}")
 
 def setup_remote_backup(remote_name):
-    
     if remote_name.strip().lower() == "deic storage":
         remote_name = "deic-storage"
     
@@ -263,6 +262,8 @@ def setup_remote_backup(remote_name):
         if install_rclone("./bin"):
             add_remote(remote_name.lower(), email, password)
             add_folder(remote_name.lower(), base_folder)
+    else:
+        install_rclone("./bin")
 
 def list_supported_remote_types():
     try:

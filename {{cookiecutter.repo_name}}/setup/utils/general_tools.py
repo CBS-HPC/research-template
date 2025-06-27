@@ -891,8 +891,6 @@ def get_version(programming_language):
         version = version.strip()  # e.g., "conda 24.3.0"    
     return version
 
-
-
 def run_script(programming_language, script_command=None):
     """
     Runs a script or fetches version info for different programming languages.
@@ -934,7 +932,8 @@ def run_script(programming_language, script_command=None):
             return f"Language {programming_language} not supported."
 
     try:
-        result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        result = subprocess.run(cmd,capture_output=True, text=True, check=True)
+        #result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip() if e.stderr else str(e)}"
