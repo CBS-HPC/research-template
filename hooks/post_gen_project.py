@@ -12,36 +12,34 @@ def run_in_venv():
         cmd = "source .venv/bin/activate && python setup/project_setup.py"
         subprocess.run(cmd, shell=True, executable="/bin/bash")  # Uses bash
 
-
 def install_uv():
     """Ensure 'uv' is installed and usable."""
     try:
         # Check if uv is already installed
-        subprocess.run([sys.executable,"-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("⚠️ 'uv' not found. Attempting to install it via pip...")
         try:
-            subprocess.run([sys.executable,"-m", "pip", "install", "--upgrade", "uv"],check=True)
-            #subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+            subprocess.run(["pip", "install", "--upgrade", "uv"],check=True)
             # Verify installation
-            subprocess.run([sys.executable,"-m", "uv", "--version"], check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL)
             return True
         except subprocess.CalledProcessError:
             return False
 
 def create_with_uv():
     """Create virtual environment using uv silently."""
-    subprocess.run([sys.executable,"-m", "uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run([sys.executable,"-m", "uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(
-        [sys.executable,"-m", "uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+        ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
         check=True,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
     # This one shows output
-    subprocess.run([sys.executable,"-m", "uv", "run", "setup/project_setup.py"], check=True)
+    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
 
     
 def main():
@@ -51,7 +49,6 @@ def main():
     if not env_path.exists() and install_uv():
             try:
                 create_with_uv()
-                #run_in_venv()
             except subprocess.CalledProcessError as e:
                 subprocess.run(["python", "setup/project_setup.py"])
     else:
