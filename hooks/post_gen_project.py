@@ -50,8 +50,10 @@ def main():
             try:
                 create_with_uv()
             except subprocess.CalledProcessError as e:
+                print("hello1")
                 subprocess.run(["python", "setup/project_setup.py"])
     else:
+        print("hello2")
         subprocess.run(["python", "setup/project_setup.py"])
    
 if __name__ == "__main__":
