@@ -915,7 +915,7 @@ def run_script(programming_language, script_command=None):
         if programming_language == "r":
             rscript = check_path_format(load_from_env("RSCRIPT"))
             if rscript:
-                cmd = [exe_path, script_command]
+                cmd = [rscript, script_command]
             else:
                 cmd = [exe_path, "--vanilla", "-f", script_command]
 
