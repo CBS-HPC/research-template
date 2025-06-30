@@ -55,7 +55,8 @@ def create_scripts(programming_language):
     notebook_templates = {
         "python": "s00_workflow.ipynb.j2",
         "r": "s00_workflow.Rmd.j2",
-        "matlab": "s00_workflow.mlx.j2",
+        "matlab": "s00_workflow.ipynb.j2",
+        #"matlab": "s00_workflow.mlx.j2",
         "stata": "s00_workflow.ipynb.j2",
         "sas": "s00_workflow.ipynb.j2"
     }
