@@ -135,10 +135,7 @@ def set_options(programming_language,version_control):
             python_env_manager = "Conda"
             #print("A new python environment will be created to facilitate the setup functionalities")
 
-    else:
-        if programming_language.lower() in ['stata','matlab','sas']:
-            python_env_manager = "Venv"
-        
+    else:     
         r_env_manager = "Base Installation"
 
         if programming_language.lower() == 'python':
@@ -146,6 +143,9 @@ def set_options(programming_language,version_control):
         else:
             question = "Do you want to create a new python environment (used for project setup functions) using:"
     
+    if programming_language.lower() in ['stata','matlab','sas']:
+            python_env_manager = "Venv"
+
     if not python_env_manager: 
         python_env_manager = prompt_user(question, environment_opts)
 
