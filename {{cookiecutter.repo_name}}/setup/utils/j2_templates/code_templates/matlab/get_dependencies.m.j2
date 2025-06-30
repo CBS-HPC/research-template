@@ -1,5 +1,16 @@
 {% raw %}
 function requiredToolboxes = get_dependencies(folder_path, file_name)
+% GET_DEPENDENCIES
+% Scans a MATLAB project directory for .m and .mlx files, determines toolbox dependencies,
+% and writes them to a file (default: "dependencies.txt").
+% Also converts s00_main.m to s00_workflow.mlx if needed and desktop is available.
+%
+% Usage:
+%   get_dependencies()
+%   get_dependencies(folder_path)
+%   get_dependencies(folder_path, file_name)
+
+    % -------- Default inputs --------
     if nargin < 1
         folder_path = mfilename('fullpath');
     end
@@ -8,6 +19,34 @@ function requiredToolboxes = get_dependencies(folder_path, file_name)
     end
 
     folder_path = fileparts(folder_path);
+
+    % -------- Convert s00_main.m to s00_workflow.mlx if needed --------
+    mainScriptM = char(fullfile(folder_path, "s00_main.m"));
+    workflowMlx = char(fullfile(folder_path, "s00_workflow.mlx"));
+
+    fprintf("Checking workflow conversion:\n");
+    fprintf("  s00_main.m exists: %d\n", isfile(mainScriptM));
+    fprintf("  s00_workflow.mlx exists: %d\n", isfile(workflowMlx));
+
+    if ~isfile(workflowMlx) && isfile(mainScriptM)
+        if usejava('desktop')
+            fprintf("Creating s00_workflow.mlx from s00_main.m ...\n");
+            try
+                doc = matlab.desktop.editor.openDocument(mainScriptM);
+                doc.saveAs(workflowMlx);
+                doc.close;
+                fprintf("s00_workflow.mlx successfully created.\n");
+            catch ME
+                warning("Failed to convert s00_main.m to .mlx: %s", ME.message);
+            end
+        else
+            warning("MATLAB desktop is not available. Skipping .mlx conversion.");
+        end
+    else
+        fprintf("Skipping conversion.\n");
+    end
+
+    % -------- Scan for .m and .mlx files --------
     depFile = fullfile(folder_path, file_name);
 
     mFiles = dir(fullfile(folder_path, '**', '*.m'));
@@ -34,14 +73,14 @@ function requiredToolboxes = get_dependencies(folder_path, file_name)
         end
     end
 
-    % Collect unique product names and versions
+    % -------- Collect unique products --------
     productNames = string({allProducts.Name});
     productVersions = string({allProducts.Version});
     [~, ia] = unique(productNames);
     uniqueProducts = containers.Map(productNames(ia), productVersions(ia));
-    requiredToolboxes = cellstr(productNames(ia));  % <--- THIS is the new return value
+    requiredToolboxes = cellstr(productNames(ia));  % returned value
 
-    % Write dependencies to file
+    % -------- Write to dependencies.txt --------
     fid = fopen(depFile, 'w');
     if fid == -1
         error("Unable to create %s in the specified folder.", file_name);

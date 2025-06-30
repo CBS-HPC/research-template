@@ -135,6 +135,9 @@ def set_options(programming_language,version_control):
             python_env_manager = "Conda"
             #print("A new python environment will be created to facilitate the setup functionalities")
 
+    elif programming_language.lower() in ['stata','matlab','sas']:
+        python_env_manager = "Venv"
+        
     else:
         r_env_manager = "Base Installation"
 
