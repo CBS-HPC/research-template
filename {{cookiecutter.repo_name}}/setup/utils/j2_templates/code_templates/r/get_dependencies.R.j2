@@ -94,13 +94,14 @@ renv_init <- function(folder_path) {
     message("renv infrastructure already exists.")
   }
   
-  renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat"))
+  renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat","yaml"))
 
   # Load to make sure they are added to .lock file
   library(testthat)
   library(jsonlite)
   library(rmarkdown)
   library(rstudioapi)
+  library(yaml)
   
 }
 
