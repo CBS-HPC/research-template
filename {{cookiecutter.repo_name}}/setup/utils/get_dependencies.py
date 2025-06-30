@@ -14,7 +14,6 @@ from .toml_tools import *
 
 package_installer(required_libraries =  ['nbformat','pyyaml'])
 
-
 import yaml
 import nbformat
   # TOML support
@@ -23,7 +22,6 @@ if sys.version_info < (3, 11):
 else:
     import tomllib as toml
     import tomli_w
-
 
 def create_requirements_txt(requirements_file: str = "requirements.txt"):
     """
@@ -231,7 +229,6 @@ def tag_requirements_txt(requirements_file: str = "requirements.txt"):
         f.write("\n".join(filtered_lines) + "\n")
 
     print(f"✅ requirements.txt updated with platform tags: {requirements_path}")
-
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
