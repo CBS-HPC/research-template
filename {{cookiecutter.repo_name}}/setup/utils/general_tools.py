@@ -1039,7 +1039,9 @@ def make_safe_path(path: str, language: str = "python") -> str:
         return path_fixed  # ✅ No quotes
 
     elif language == "matlab":
-        return f"'{path_fixed}'"  # Wrap in single quotes
+        safe = path_fixed.replace("'", "''")  # escape single quotes
+        return f"'{safe}'"
+        #return f"'{path_fixed}'"  # Wrap in single quotes
     elif language == "stata":
         return f'"{path_fixed}"'  # Wrap in double quotes (for use in do-files)
     else:
