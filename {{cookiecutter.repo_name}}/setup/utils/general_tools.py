@@ -1015,7 +1015,25 @@ def run_script_old(programming_language, script_command=None):
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip()}"
 
+
 def make_safe_path(path: str, language: str = "python") -> str:
+    import os
+
+    path = os.path.abspath(path)
+    path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
+
+    language = language.lower()
+    if language in {"python", "r"}:
+        return path_fixed  # ✅ No quotes
+    elif language == "matlab":
+        return f"'{path_fixed}'"
+    elif language == "stata":
+        return f'"{path_fixed}"'
+    else:
+        raise ValueError(f"Unsupported language: {language}")
+
+
+def make_safe_path_old(path: str, language: str = "python") -> str:
     """
     Convert a file path to a language-safe format.
     
@@ -1034,6 +1052,7 @@ def make_safe_path(path: str, language: str = "python") -> str:
         return path_fixed  # Use as-is, Python handles forward slashes fine
     elif language == "r":
         return f"\"{path_fixed}\"" 
+    
     elif language == "matlab":
         return f"'{path_fixed}'"  # Wrap in single quotes
     elif language == "stata":
