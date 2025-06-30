@@ -17,6 +17,12 @@ package_installer(required_libraries =  ['nbformat','pyyaml'])
 
 import yaml
 import nbformat
+  # TOML support
+if sys.version_info < (3, 11):
+    import toml
+else:
+    import tomllib as toml
+    import tomli_w
 
 
 def create_requirements_txt(requirements_file: str = "requirements.txt"):
@@ -24,16 +30,6 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
     Writes pip freeze output to requirements.txt and ensures all installed packages
     are tracked in uv.lock (by running `uv add` on any missing).
     """
-
-    # TOML support
-    if sys.version_info >= (3, 11):
-        import tomllib as toml
-    else:
-        try:
-            import tomli as toml
-        except ImportError:
-            print("❌ Missing 'tomli'. Run `pip install tomli` for Python < 3.11.")
-            raise
 
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     requirements_path = project_root / requirements_file
