@@ -913,11 +913,12 @@ def run_script(programming_language, script_command=None):
             return "Unknown executable path"
 
         if programming_language == "r":
-            #rscript = check_path_format(load_from_env("RSCRIPT"))
-            #if rscript:
-            #    cmd = [rscript]
-            #else:
-            cmd = [exe_path, "--vanilla", "-f"]
+            rscript = check_path_format(load_from_env("RSCRIPT"))
+            if rscript:
+                cmd = [rscript]
+                script_command = [script_command[0], script_command[2]]
+            else:
+                cmd = [exe_path, "--vanilla", "-f"]
             
         elif programming_language == "matlab":
             cmd = [exe_path, "-batch"]
