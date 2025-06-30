@@ -917,7 +917,8 @@ def run_script(programming_language, script_command=None):
             #if rscript:
             #    cmd = [rscript, script_command]
             #else:
-            cmd = [exe_path, "--vanilla", "-f", script_command]
+            cmd = [exe_path, "--vanilla", "-f"]
+            cmd.append(script_command)
 
         elif programming_language == "matlab":
             cmd = [exe_path, "-batch", script_command]
