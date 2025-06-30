@@ -230,48 +230,6 @@ def tag_requirements_txt(requirements_file: str = "requirements.txt"):
 
     print(f"✅ requirements.txt updated with platform tags: {requirements_path}")
 
-def run_get_dependencies(programming_language):
-    """
-    Runs the get_dependencies.* script for the specified programming language.
-
-    Args:
-        programming_language (str): Programming language name ('python', 'r', etc.)
-        folder_path (str): The folder where get_dependencies.* is located (default: 'setup').
-
-    Returns:
-        str: Output from running the dependency script or error message.
-    """
-    programming_language = programming_language.lower()
-    ext = ext_map.get(programming_language)
-
-    if ext is None:
-        return f"Unsupported programming language: {programming_language}"
-
-    folder_path = language_dirs.get(programming_language)
-
-    script_filename = f"get_dependencies.{ext}"
-    script_path = os.path.join(folder_path, script_filename)
-
-    if not os.path.exists(script_path):
-        return f"Dependency script not found: {script_path}"
-
-    try:
-        if programming_language == "python":
-            with open(script_path, "r") as f:
-                script_content = f.read()  
-            return run_script(programming_language, script_command=script_content)
-
-        elif programming_language in ["r","matlab","stata","sas"]: 
-            
-            if programming_language == "r":
-                script_path = make_safe_path(script_path,"r")
-            
-            return run_script(programming_language, script_command=script_path)
-        else:
-            return f"Unsupported language in script execution: {programming_language}"
-
-    except Exception as e:
-        return f"Failed to run dependency script: {str(e)}"
 
 def resolve_parent_module(module_name):
     if '.' in module_name:
@@ -389,9 +347,9 @@ def setup_renv(programming_language,msg:str):
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
         code_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")),"matlab")
-        cmd = f"""
+        cmd = [f"""
         "addpath({code_path}); get_dependencies"
-        """
+        """]
         output = run_script("matlab", cmd)
         print(output)
         print(msg)
@@ -400,7 +358,7 @@ def setup_stata(programming_language,msg:str):
     if programming_language.lower() == "stata":
         # Call the setup script using the function
         script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./stata/do/get_dependencies.do")),"stata")
-        cmd = f"do {script_path}"
+        cmd = [f"do {script_path}"]
         output = run_script("stata", cmd)
         print(output)
         print(msg)
@@ -436,7 +394,6 @@ def update_code_dependency():
         setup_renv(programming_language,"/renv and .lock file has been updated")
     elif programming_language.lower() == "matlab":
         print("Screening './src' for dependencies")
-        #print(run_get_dependencies(programming_language))
         setup_matlab(programming_language,"Tracking Matlab dependencies")
     elif programming_language.lower() == "stata":
         print("Screening './stata' for dependencies")

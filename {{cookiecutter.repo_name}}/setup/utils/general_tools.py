@@ -914,23 +914,24 @@ def run_script(programming_language, script_command=None):
 
         if programming_language == "r":
             rscript = check_path_format(load_from_env("RSCRIPT"))
-            #if rscript:
-            #    cmd = [rscript, script_command]
-            #else:
-            cmd = [exe_path, "--vanilla", "-f"]
-            cmd.extend(script_command)
-
+            if rscript:
+                cmd = [rscript]
+            else:
+                cmd = [exe_path, "--vanilla", "-f"]
+            
         elif programming_language == "matlab":
-            cmd = [exe_path, "-batch", script_command]
+            cmd = [exe_path, "-batch"]
 
         elif programming_language == "stata":
-            cmd = [exe_path, "-b", script_command]
+            cmd = [exe_path, "-b"]
 
         elif programming_language == "sas":
-            cmd = [exe_path, "-SYSIN", script_command]
+            cmd = [exe_path, "-SYSIN"]
 
         else:
             return f"Language {programming_language} not supported."
+
+        cmd.extend(script_command)
 
     try:
         result = subprocess.run(cmd,capture_output=True, text=True, check=True)
@@ -1017,23 +1018,6 @@ def run_script_old(programming_language, script_command=None):
 
 
 def make_safe_path(path: str, language: str = "python") -> str:
-    import os
-
-    path = os.path.abspath(path)
-    path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
-
-    language = language.lower()
-    if language in {"python", "r"}:
-        return path_fixed  # ✅ No quotes
-    elif language == "matlab":
-        return f"'{path_fixed}'"
-    elif language == "stata":
-        return f'"{path_fixed}"'
-    else:
-        raise ValueError(f"Unsupported language: {language}")
-
-
-def make_safe_path_old(path: str, language: str = "python") -> str:
     """
     Convert a file path to a language-safe format.
     
@@ -1051,8 +1035,8 @@ def make_safe_path_old(path: str, language: str = "python") -> str:
     if language == "python":
         return path_fixed  # Use as-is, Python handles forward slashes fine
     elif language == "r":
-        return f"\"{path_fixed}\"" 
-    
+        return path_fixed  # ✅ No quotes
+
     elif language == "matlab":
         return f"'{path_fixed}'"  # Wrap in single quotes
     elif language == "stata":
