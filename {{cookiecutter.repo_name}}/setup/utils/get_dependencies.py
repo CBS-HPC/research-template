@@ -57,7 +57,9 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         locked_pkgs = set()
         if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
             try:
-                with open(uv_lock_path, "rb") as f:
+                #with open(uv_lock_path, "rb") as f:
+                with open(uv_lock_path, "r", encoding="utf-8") as f:          
+
                     uv_data = toml.load(f)
                     for pkg in uv_data.get("package", []):
                         if isinstance(pkg, dict) and "name" in pkg:
