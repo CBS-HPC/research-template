@@ -914,10 +914,10 @@ def run_script(programming_language, script_command=None):
 
         if programming_language == "r":
             rscript = check_path_format(load_from_env("RSCRIPT"))
-            if rscript:
-                cmd = [rscript, script_command]
-            else:
-                cmd = [exe_path, "--vanilla", "-f", script_command]
+            #if rscript:
+            #    cmd = [rscript, script_command]
+            #else:
+            cmd = [exe_path, "--vanilla", "-f", script_command]
 
         elif programming_language == "matlab":
             cmd = [exe_path, "-batch", script_command]
