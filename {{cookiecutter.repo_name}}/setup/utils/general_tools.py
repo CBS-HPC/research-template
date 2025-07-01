@@ -1030,19 +1030,23 @@ def make_safe_path(path: str, language: str = "python") -> str:
         str: Formatted path string suitable for the specified language.
     """
     path = os.path.abspath(path)
-    path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
+   
 
     language = language.lower()
     if language == "python":
+        path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
         return path_fixed  # Use as-is, Python handles forward slashes fine
     elif language == "r":
+        path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
         return path_fixed  # ✅ No quotes
-
     elif language == "matlab":
-        safe = path_fixed.replace("'", "''")  # escape single quotes
-        return f"'{safe}'"
+        path_fixed = path.replace("/","\\")  # Normalize slashes for all languages
+        path_fixed = f"'{path}'"
+        print(path_fixed)
+        return path_fixed
         #return f"'{path_fixed}'"  # Wrap in single quotes
     elif language == "stata":
+        path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
         return f'"{path_fixed}"'  # Wrap in double quotes (for use in do-files)
     else:
         raise ValueError(f"Unsupported language: {language}")
