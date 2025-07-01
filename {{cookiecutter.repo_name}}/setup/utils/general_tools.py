@@ -1052,7 +1052,6 @@ def make_safe_path(path: str, language: str = "python") -> str:
     else:
         raise ValueError(f"Unsupported language: {language}")
 
-
 def make_safe_path_old(path: str, language: str = "python") -> str:
     """
     Convert a file path to a language-safe format.
