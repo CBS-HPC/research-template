@@ -941,7 +941,6 @@ def run_script(programming_language, script_command=None):
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip() if e.stderr else str(e)}"
 
-
 def run_script_old(programming_language, script_command=None):
     """
     Runs a script or fetches version info for different programming languages.
@@ -1017,8 +1016,44 @@ def run_script_old(programming_language, script_command=None):
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip()}"
 
-
 def make_safe_path(path: str, language: str = "python") -> str:
+    """
+    Convert a file path to a language-safe format for Python, R, MATLAB, or Stata.
+    
+    Args:
+        path (str): The input file path.
+        language (str): One of 'python', 'r', 'matlab', 'stata'.
+    
+    Returns:
+        str: A properly formatted path string.
+    """
+    language = language.lower()
+    path = os.path.abspath(path)
+
+    is_windows = platform.system() == "Windows"
+
+    # Standard form: forward slashes for everything except MATLAB on Windows
+    normalized = path.replace("\\", "/") if is_windows else path
+
+    if language == "python":
+        return normalized  # Python is tolerant of forward slashes
+
+    elif language == "r":
+        return normalized  # R is happy with forward slashes even on Windows
+
+    elif language == "matlab":
+        # MATLAB prefers backslashes on Windows, forward slashes on Linux/macOS
+        matlab_path = path.replace("/", "\\") if is_windows else path
+        return f"'{matlab_path}'"  # Single quotes for MATLAB string
+
+    elif language == "stata":
+        return f'"{normalized}"'  # Stata do-files expect double-quoted paths
+
+    else:
+        raise ValueError(f"Unsupported language: {language}")
+
+
+def make_safe_path_old(path: str, language: str = "python") -> str:
     """
     Convert a file path to a language-safe format.
     
