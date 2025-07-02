@@ -158,6 +158,8 @@ def check_rclone_remote(remote_name):
 
 def add_remote(remote_name: str = "deic-storage", email: str = None, password: str = None):
     
+    remote_name = remote_name.lower()
+
     if remote_name.strip().lower() == "deic storage":
         remote_name = "deic-storage"
 
@@ -167,10 +169,15 @@ def add_remote(remote_name: str = "deic-storage", email: str = None, password: s
             'host', 'sftp.storage.deic.dk', 'port', '2222',
             'user', email, 'pass', password
         ]
+    elif remote_name == "erda":
+        command = [
+            'rclone', 'config', 'create', remote_name, 'sftp',
+            'host', 'io.erda.dk', 'port', '22',
+            'user', email, 'pass', password
+        ]
     elif remote_name in ["dropbox", "onedrive"]:
         print(f"You will need to authorize rclone with {remote_name}")
         command = ['rclone', 'config', 'create', remote_name, remote_name]
-
     elif remote_name == "local":
         command = ['rclone', 'config', 'create', remote_name, 'local']
     else:
@@ -184,7 +191,6 @@ def add_remote(remote_name: str = "deic-storage", email: str = None, password: s
         else:
             print("Unsupported remote name.")
             return
-
     try:
         subprocess.run(command, check=True)
         print(f"Rclone remote '{remote_name}' created successfully.")
@@ -270,7 +276,7 @@ def list_supported_remote_types():
     try:
         result = subprocess.run(['rclone', 'help', 'backends'], check=True, stdout=subprocess.PIPE, text=True)
         print("\n📦 Supported Rclone Remote Types:")
-        print("\nRecommended by CBS: ['Deic-Storage', 'Dropbox', 'Onedrive', 'Local']\n")
+        print("\nRecommended: ['Deic-Storage','ERDA' ,'Dropbox', 'Onedrive', 'Local']\n")
         print("\nSupported by Rclone:\n")
         print(result.stdout)
         return result.stdout
