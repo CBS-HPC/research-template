@@ -47,26 +47,23 @@ def create_with_uv():
     if not env_path.exists():
         print("dre2")
 
-    subprocess.run(
+ 
+    
+    try:  
+        subprocess.run(
             ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
-    )
-    
-    #try:  
-    #    subprocess.run(
-    #        ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
-    #        check=True,
-    #        stdout=subprocess.DEVNULL,
-    #        stderr=subprocess.DEVNULL,
-    #    )
+            #stdout=subprocess.DEVNULL,
+            #stderr=subprocess.DEVNULL,
+        )
 
-    #except subprocess.CalledProcessError:
-    #    subprocess.run(
-    #        ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
-    #        check=True,
-    #        stdout=subprocess.DEVNULL,
-    #        stderr=subprocess.DEVNULL,
-    #    )
+    except subprocess.CalledProcessError:
+        subprocess.run(
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
+            check=True,
+            #stdout=subprocess.DEVNULL,
+            #stderr=subprocess.DEVNULL,
+        )
 
     # Run the setup script and show output (so user sees progress/errors here)
     subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
