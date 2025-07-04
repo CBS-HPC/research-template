@@ -10,6 +10,38 @@ def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None
         env_path = "Base Installation" 
     if not python_env_manager:
         python_env_manager = "Base Installation"    
+
+    script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
+    env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
+    main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
+    
+    # Make sure the script is executable
+    os.chmod(script_path, 0o755)
+
+    # Run the script with the additional paths as arguments
+    subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(),main_setup])  # Pass repo_name and paths to the script
+    print(f"Script {script_path} executed successfully.")
+
+
+def run_powershell(script_path, env_path=None, python_env_manager=None, main_setup=None):
+    if not env_path:
+        env_path = "Base Installation" 
+    if not python_env_manager:
+        python_env_manager = "Base Installation"    
+ 
+    script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
+    env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
+    main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
+                                                                                    
+    subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,main_setup])
+    print(f"Script {script_path} executed successfully.")
+
+
+def run_bash_old(script_path, env_path=None, python_env_manager=None,main_setup=None):
+    if not env_path:
+        env_path = "Base Installation" 
+    if not python_env_manager:
+        python_env_manager = "Base Installation"    
     try:
         script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
         env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
@@ -24,7 +56,7 @@ def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while executing the script: {e}")
 
-def run_powershell(script_path, env_path=None, python_env_manager=None, main_setup=None):
+def run_powershell_old(script_path, env_path=None, python_env_manager=None, main_setup=None):
     if not env_path:
         env_path = "Base Installation" 
     if not python_env_manager:
@@ -379,4 +411,3 @@ elif platform.system().lower()== "darwin" or platform.system().lower() == "linux
     os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./activate.sh")), 0o755)
     os.chmod(str(pathlib.Path(__file__).resolve().parent.parent /  pathlib.Path("./deactivate.sh")), 0o755)
     run_bash(setup_bash, env_path, python_env_manager, main_setup)
-    
