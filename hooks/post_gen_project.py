@@ -31,14 +31,14 @@ def create_with_uv():
     subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:  
         subprocess.run(
-            ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
+            ["uv", "add","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         subprocess.run(
-            ["uv", "add", "--upgrade",  "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
+            ["uv", "add", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -49,7 +49,7 @@ def create_with_uv():
 
 def create_with_pip():
     subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
+                [sys.executable, "-m", "pip", "install", "uv", "setuptools", "wheel", "python-dotenv"],
                 #[sys.executable, "-m", "pip", "install", "wheel", "uv","python-dotenv"],
                 check=True,
                 stdout=subprocess.DEVNULL,
