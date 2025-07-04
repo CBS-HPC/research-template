@@ -223,6 +223,80 @@ def init_conda():
 
 
 def install_miniconda(install_path):
+    os_type = platform.system().lower()
+    download_dir = os.path.dirname(install_path)
+    installer_name = None
+    installer_path = None
+
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
+
+    if os_type == "windows":
+        installer_name = "Miniconda3-latest-Windows-x86_64.exe"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+
+        install_path_win = os.path.abspath(install_path).replace("/", "\\")
+
+        if os.path.exists(install_path_win):
+            print(f"Removing existing directory before install: {install_path_win}")
+            shutil.rmtree(install_path_win)
+
+        # IMPORTANT: Use a single string, and put /D= last
+        install_command = f'"{installer_path}" /S /InstallationType=JustMe /AddToPath=0 /RegisterPython=0 /D={install_path_win}'
+
+    elif os_type == "darwin":
+        installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        install_command = ["bash", installer_path, "-b", "-f", "-p", install_path]
+
+    elif os_type == "linux":
+        installer_name = "Miniconda3-latest-Linux-x86_64.sh"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        install_command = ["bash", installer_path, "-b", "-f", "-p", install_path]
+
+    else:
+        print("Unsupported operating system.")
+        return False
+
+    try:
+        print(f"Downloading {installer_name} from {url} to {download_dir}...")
+        urllib.request.urlretrieve(url, installer_path)
+        print("Download complete.")
+
+        print("Installing Miniconda3...")
+
+        if os_type == "windows":
+            subprocess.run(install_command, check=True, shell=True)
+        else:
+            subprocess.run(install_command, check=True)
+
+        # Remove installer after installation
+        if installer_path and os.path.exists(installer_path):
+            os.remove(installer_path)
+
+        conda_executable = os.path.join(install_path, "Scripts", "conda.exe") if os_type == "windows" else os.path.join(install_path, "bin", "conda")
+
+        if os.path.exists(conda_executable):
+            print(f"Miniconda3 installation complete at {install_path}")
+            return True
+        else:
+            print("Miniconda installation failed: conda executable not found.")
+            return False
+
+    except subprocess.CalledProcessError as e:
+        print(f"Installation failed during subprocess execution: {e}")
+    except Exception as e:
+        print(f"Installation failed: {e}")
+    finally:
+        if installer_path and os.path.exists(installer_path):
+            os.remove(installer_path)
+
+    return False
+
+def install_miniconda_notworking(install_path):
     """
     Downloads and installs Miniconda3 to a specified location based on the operating system.
 

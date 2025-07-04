@@ -6,8 +6,7 @@ import re
 import pathlib
 
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
-    if not env_path:
-        env_path = "Base Installation" 
+
     if not python_env_manager:
         python_env_manager = "Base Installation"    
 
@@ -24,8 +23,7 @@ def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None
 
 
 def run_powershell(script_path, env_path=None, python_env_manager=None, main_setup=None):
-    if not env_path:
-        env_path = "Base Installation" 
+
     if not python_env_manager:
         python_env_manager = "Base Installation"    
  
@@ -35,43 +33,6 @@ def run_powershell(script_path, env_path=None, python_env_manager=None, main_set
                                                                                     
     subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,main_setup])
     print(f"Script {script_path} executed successfully.")
-
-
-def run_bash_old(script_path, env_path=None, python_env_manager=None,main_setup=None):
-    if not env_path:
-        env_path = "Base Installation" 
-    if not python_env_manager:
-        python_env_manager = "Base Installation"    
-    try:
-        script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
-        main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
-        
-        # Make sure the script is executable
-        os.chmod(script_path, 0o755)
-
-        # Run the script with the additional paths as arguments
-        subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(),main_setup])  # Pass repo_name and paths to the script
-        print(f"Script {script_path} executed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while executing the script: {e}")
-
-def run_powershell_old(script_path, env_path=None, python_env_manager=None, main_setup=None):
-    if not env_path:
-        env_path = "Base Installation" 
-    if not python_env_manager:
-        python_env_manager = "Base Installation"    
-    
-    try:
-        script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
-        env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
-        main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
-                                                                                       
-        subprocess.check_call( ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path,env_path,python_env_manager,main_setup])
-        print(f"Script {script_path} executed successfully.")
-    
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while executing the script: {e}")
 
 def prompt_user(question, options):
     """
@@ -405,6 +366,12 @@ remote_user_info(remote_backup)
 from utils.virenv_tools import *
 env_path = setup_virtual_environment(version_control,python_env_manager,r_env_manager,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
+if not env_path:
+    if python_env_manager.lower() == "conda":
+        raise ValueError("Creating Conda Environment Failed")
+    else:
+        raise ValueError("Creating Venv Environment Failed")
+    
 if platform.system().lower() == "windows":
     run_powershell(setup_powershell, env_path, python_env_manager, main_setup)
 elif platform.system().lower()== "darwin" or platform.system().lower() == "linux":
