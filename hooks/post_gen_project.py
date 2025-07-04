@@ -3,7 +3,6 @@ import pathlib
 import sys
 import platform
 import os
-import shutil
 
 def run_in_venv():
     if platform.system() == "Windows":
@@ -28,40 +27,53 @@ def install_uv():
             return False
 
 def create_with_uv():
+    """Create virtual environment using uv with UV_LINK_MODE=copy to avoid hardlink errors."""
+
+    env = os.environ.copy()
+    env["UV_LINK_MODE"] = "copy"
+
+    # Run uv commands with environment forcing copy mode
+    subprocess.run(["uv", "venv"], check=True, env=env)
+    subprocess.run(["uv", "lock"], check=True, env=env)
+
+    try:
+        subprocess.run(
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
+            check=True,
+            env=env,
+            # Uncomment to silence output:
+            # stdout=subprocess.DEVNULL,
+            # stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
+        raise
+
+    # Run the setup script and show output so user sees progress/errors
+    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True, env=env)
+
+
+def create_with_uv_old():
     
     """Create virtual environment using uv silently."""
-    current_dir = os.getcwd()
-    print(current_dir)
-    print("dre")
-    
-    print(sys.executable)
-    print(shutil.which("uv"))
 
     #subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     #subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(["uv", "venv"], check=True)
     subprocess.run(["uv", "lock"], check=True)
 
-    
-    env_path = pathlib.Path("uv.lock")
-    if not env_path.exists():
-        print("dre2")
-
- 
-    
     try:  
         subprocess.run(
-            ["uv", "add", "--upgrade", "pip", "setuptools", "wheel", "python-dotenv"],
-            #["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
+            ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             #stdout=subprocess.DEVNULL,
             #stderr=subprocess.DEVNULL,
         )
 
     except subprocess.CalledProcessError:
+        try:  
         subprocess.run(
-            ["uv", "add", "--upgrade", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
-            #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
             check=True,
             #stdout=subprocess.DEVNULL,
             #stderr=subprocess.DEVNULL,
@@ -75,8 +87,8 @@ def create_with_pip():
                 [sys.executable, "-m", "pip", "--upgrade", "install", "uv", "setuptools", "wheel", "python-dotenv"],
 
                 check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                #stdout=subprocess.DEVNULL,
+                #stderr=subprocess.DEVNULL,
             )    
     subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
 
