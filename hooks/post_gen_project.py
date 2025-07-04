@@ -32,7 +32,7 @@ def create_with_uv():
         subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
         subprocess.run(
-            ["uv", "add","wheel", "uv", "python-dotenv"],
+            ["uv", "add", "--upgrade", "wheel", "uv", "python-dotenv"],
             #["uv", "add","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             stdout=subprocess.DEVNULL,
@@ -41,7 +41,7 @@ def create_with_uv():
     except subprocess.CalledProcessError:
         try:
             subprocess.run(
-                ["uv", "add","wheel", "uv", "python-dotenv", "--link-mode=copy"],
+                ["uv", "add", "--upgrade", "wheel", "uv", "python-dotenv", "--link-mode=copy"],
                 #["uv", "add", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
                 check=True,
                 stdout=subprocess.DEVNULL,
@@ -50,7 +50,7 @@ def create_with_uv():
         except subprocess.CalledProcessError:
             # fallback to pip install
             subprocess.run(
-                [sys.executable, "-m", "pip", "install", "wheel", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
+                [sys.executable, "-m", "pip", "install", "--upgrade", "wheel", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
                 #[sys.executable, "-m", "pip", "install","uv","python-dotenv"],
                 check=True,
                 stdout=subprocess.DEVNULL,
@@ -67,8 +67,8 @@ def main():
             return
     
     subprocess.run(
-                #[sys.executable, "-m", "pip", "install","uv", "pip", "setuptools", "wheel", "python-dotenv"],
-                [sys.executable, "-m", "pip", "install", "wheel", "uv","python-dotenv"],
+                [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
+                #[sys.executable, "-m", "pip", "install", "wheel", "uv","python-dotenv"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
