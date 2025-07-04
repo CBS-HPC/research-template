@@ -4,6 +4,7 @@ import sys
 import platform
 import re
 import pathlib
+import shutil
 
 print(sys.executable)
 print(shutil.which("uv"))
