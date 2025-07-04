@@ -57,7 +57,8 @@ def create_with_uv():
                 stderr=subprocess.DEVNULL,
             )
     # Run the setup script and show output (so user sees progress/errors here)
-    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
+    #subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
+    subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
 
 def main():
     env_path = pathlib.Path(".venv")
