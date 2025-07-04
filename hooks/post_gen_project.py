@@ -18,7 +18,7 @@ def install_uv():
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
+            subprocess.run([sys.executable, "-m", "pip", "install", "uv"],
                            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return True
@@ -32,8 +32,8 @@ def create_with_uv():
         subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
         subprocess.run(
-            #["uv", "add", "--upgrade", "uv", "wheel"],
-            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+            ["uv", "add","uv", "pip", "setuptools", "wheel"],
+            #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -41,8 +41,8 @@ def create_with_uv():
     except subprocess.CalledProcessError:
         try:
             subprocess.run(
-                #["uv", "add", "--upgrade", "uv", "wheel", "--link-mode=copy"],
-                ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
+                ["uv", "add", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
+                #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -50,15 +50,14 @@ def create_with_uv():
         except subprocess.CalledProcessError:
             # fallback to pip install
             subprocess.run(
-                #[sys.executable, "-m", "pip", "install", "--upgrade", "uv", "wheel"],
-                [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+                [sys.executable, "-m", "pip", "install","uv", "pip", "setuptools", "wheel"],
+                #[sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
     # Run the setup script and show output (so user sees progress/errors here)
     subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
-
 
 def main():
     env_path = pathlib.Path(".venv")

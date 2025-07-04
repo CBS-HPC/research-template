@@ -61,7 +61,8 @@ if [ "$env_manager" != "base Installation" ]; then
                     pip install uv
                 fi
 
-                uv pip install --upgrade uv pip setuptools wheel python-dotenv
+                uv pip install uv pip setuptools wheel python-dotenv
+                #uv pip install --upgrade uv pip setuptools wheel python-dotenv
             else
                 echo "Error: conda script not found."
             fi
@@ -77,7 +78,8 @@ if [ "$env_manager" != "base Installation" ]; then
                         pip install uv
                     fi
                     uv lock
-                    uv add --upgrade uv pip setuptools wheel python-dotenv 
+                    uv add uv pip setuptools wheel python-dotenv
+                    #uv add --upgrade uv pip setuptools wheel python-dotenv 
                 fi  # <-- this was missing
             else
                 echo "Error: venv activation script not found."
