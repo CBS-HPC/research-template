@@ -34,16 +34,21 @@ def create_with_uv():
     print("dre")
     subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    env_path = pathlib.Path("uv.lock")
+    if not env_path.exists():
+        print("dre2")
+
     try:  
         subprocess.run(
-            ["uv", "add","uv", "pip", "setuptools", "wheel", "python-dotenv"],
+            ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         subprocess.run(
-            ["uv", "add", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -54,8 +59,8 @@ def create_with_uv():
 
 def create_with_pip():
     subprocess.run(
-                [sys.executable, "-m", "pip", "install", "uv", "setuptools", "wheel", "python-dotenv"],
-                #[sys.executable, "-m", "pip", "install", "wheel", "uv","python-dotenv"],
+                [sys.executable, "-m", "pip", "--upgrade", "install", "uv", "setuptools", "wheel", "python-dotenv"],
+
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
