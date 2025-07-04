@@ -18,10 +18,10 @@ if ($env_manager -ne "base Installation") {
             conda activate $env_path
 
             # Remove .venv folder and uv.lock file if they exist
-            #if (Test-Path $venvPath) {
-            #    Write-Output "Removing $venvPath..."
-            #    Remove-Item -Recurse -Force $venvPath
-            #}
+            if (Test-Path $venvPath) {
+                Write-Output "Removing $venvPath..."
+                Remove-Item -Recurse -Force $venvPath
+            }
 
             if (Test-Path $uvLockFile) {
                 Write-Output "Removing $uvLockFile..."
