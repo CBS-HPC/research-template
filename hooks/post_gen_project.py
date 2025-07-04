@@ -33,7 +33,6 @@ def create_with_uv():
         subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
         subprocess.run(
             ["uv", "add","uv", "pip", "setuptools", "wheel"],
-            #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -42,7 +41,6 @@ def create_with_uv():
         try:
             subprocess.run(
                 ["uv", "add", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
-                #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -51,14 +49,12 @@ def create_with_uv():
             # fallback to pip install
             subprocess.run(
                 [sys.executable, "-m", "pip", "install","uv", "pip", "setuptools", "wheel"],
-                #[sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
     # Run the setup script and show output (so user sees progress/errors here)
     subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
-    #subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
 
 def main():
     env_path = pathlib.Path(".venv")
