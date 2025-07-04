@@ -27,54 +27,43 @@ def install_uv():
 
 def create_with_uv():
     """Create virtual environment using uv silently."""
+  
     try:
         subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
+        subprocess.run(
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
         try:
             subprocess.run(
-                ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+                ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
         except subprocess.CalledProcessError:
-            try:
-                subprocess.run(
-                    ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
-                    check=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            except subprocess.CalledProcessError:
-                # fallback to pip install
-                subprocess.run(
-                    [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
-                    check=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-        # Run the setup script and show output (so user sees progress/errors here)
-        subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error during uv-based environment setup: {e}")
-        raise
+            # fallback to pip install
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+    # Run the setup script and show output (so user sees progress/errors here)
+    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
+
 
 def main():
     env_path = pathlib.Path(".venv")
-
     if not env_path.exists():
         if install_uv():
-            try:
-                create_with_uv()
-            except subprocess.CalledProcessError:
-                print("⚠️ Falling back to plain Python execution.")
-                subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
-        else:
-            print("⚠️ Could not install or find 'uv'. Falling back.")
-            subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
-    else:
-        # .venv already exists — assume it's usable
-        subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
-
+            create_with_uv()
+            return
+    subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
+    return
 if __name__ == "__main__":
     main()
