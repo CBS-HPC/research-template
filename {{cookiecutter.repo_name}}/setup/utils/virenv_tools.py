@@ -234,11 +234,12 @@ def install_miniconda(install_path):
     installer_name = None
     download_dir = os.path.dirname(install_path)  # One level up from the install_path
     installer_path = None
-    
+    print(download_dir)
     if os_type == "windows":
         installer_name = "Miniconda3-latest-Windows-x86_64.exe"
         url = f"https://repo.anaconda.com/miniconda/{installer_name}"
         installer_path = os.path.join(download_dir, installer_name)
+
         install_command = [installer_path, "/InstallationType=JustMe", f"/AddToPath=0", f"/RegisterPython=0", f"/S", f"/D={install_path}"]
         
     elif os_type == "darwin":  # macOS
@@ -256,7 +257,9 @@ def install_miniconda(install_path):
     else:
         print("Unsupported operating system.")
         return False
-    
+    print("dre!!!!")
+    print(download_dir)
+    print(installer_path)
     try:
         print(f"Downloading {installer_name} from {url} to {download_dir}...")
         urllib.request.urlretrieve(url, installer_path)
