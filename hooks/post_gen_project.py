@@ -32,7 +32,7 @@ def create_with_uv():
         subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
         subprocess.run(
-            ["uv", "add","uv", "pip", "setuptools", "wheel"]," python-dotenv",
+            ["uv", "add","uv", "pip", "setuptools", "wheel"," python-dotenv"]
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
