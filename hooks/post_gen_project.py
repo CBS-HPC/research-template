@@ -32,7 +32,8 @@ def create_with_uv():
         subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
         subprocess.run(
-            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+            ["uv", "add", "--upgrade", "uv", "wheel"],
+            #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -40,7 +41,8 @@ def create_with_uv():
     except subprocess.CalledProcessError:
         try:
             subprocess.run(
-                ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
+                ["uv", "add", "--upgrade", "uv", "wheel", "--link-mode=copy"],
+                #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "--link-mode=copy"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -48,7 +50,8 @@ def create_with_uv():
         except subprocess.CalledProcessError:
             # fallback to pip install
             subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+                [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "wheel"],
+                #[sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
