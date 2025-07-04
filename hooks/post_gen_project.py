@@ -3,6 +3,7 @@ import pathlib
 import sys
 import platform
 import os
+import shutil
 
 def run_in_venv():
     if platform.system() == "Windows":
@@ -32,8 +33,15 @@ def create_with_uv():
     current_dir = os.getcwd()
     print(current_dir)
     print("dre")
-    subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    print(sys.executable)
+    print(shutil.which("uv"))
+
+    #subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    #subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["uv", "venv"], check=True)
+    subprocess.run(["uv", "lock"], check=True)
+
     
     env_path = pathlib.Path("uv.lock")
     if not env_path.exists():
