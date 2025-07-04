@@ -33,15 +33,23 @@ def create_with_uv():
     env["UV_LINK_MODE"] = "copy"
 
     # Run uv commands with environment forcing copy mode
-    subprocess.run(["uv", "venv"], check=True, env=env)
-    subprocess.run(["uv", "lock"], check=True, env=env)
+    subprocess.run(["uv", "venv"], 
+                   check=True, 
+                   env=env,
+                   stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL
+    )
+    subprocess.run(["uv", "lock"], check=True,
+                    env=env,
+                    stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL
+    )
 
     try:
         subprocess.run(
             ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             env=env,
-            # Uncomment to silence output:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
