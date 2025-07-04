@@ -221,6 +221,7 @@ def init_conda():
         print(f"Failed to initialize Conda shell: {e}")
         return False
 
+
 def install_miniconda(install_path):
     os_type = platform.system().lower()
     download_dir = os.path.dirname(install_path)
@@ -283,13 +284,22 @@ def install_miniconda(install_path):
 
         conda_executable = os.path.join(install_path, "Scripts", "conda.exe") if os_type == "windows" else os.path.join(install_path, "bin", "conda")
 
-        if os.path.exists(conda_executable):
-            print(f"Miniconda3 installation complete at {install_path}")
-            return True
-        else:
+        if not os.path.exists(conda_executable):
             print("Miniconda installation failed: conda executable not found.")
             return False
 
+        if exe_to_path("conda",os.path.dirname(conda_executable )): 
+            if not init_conda():
+                return False
+        else:
+            return False
+        
+        if is_installed('conda','Conda'):
+            print("Miniconda3 installation complete.")
+            return True
+        else:
+            return False
+        
     except subprocess.CalledProcessError as e:
         print(f"Installation failed during subprocess execution: {e}")
     except Exception as e:
@@ -299,6 +309,74 @@ def install_miniconda(install_path):
             os.remove(installer_path)
 
     return False
+
+def install_miniconda_old(install_path):
+    """
+    Downloads and installs Miniconda3 to a specified location based on the operating system.
+    
+    Parameters:
+    - install_path (str): The absolute path where Miniconda3 should be installed.
+
+    Returns:
+    - bool: True if installation is successful, False otherwise.
+    """ 
+    os_type = platform.system().lower()
+    installer_name = None
+    download_dir = os.path.dirname(install_path)  # One level up from the install_path
+    installer_path = None
+    print(download_dir)
+    if os_type == "windows":
+        installer_name = "Miniconda3-latest-Windows-x86_64.exe"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+
+        install_command = [installer_path, "/InstallationType=JustMe", f"/AddToPath=0", f"/RegisterPython=0", f"/S", f"/D={install_path}"]
+        
+    elif os_type == "darwin":  # macOS
+        installer_name = "Miniconda3-latest-MacOSX-arm64.sh" if platform.machine() == "arm64" else "Miniconda3-latest-MacOSX-x86_64.sh"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        install_command = ["bash", installer_path, "-b","-f","-p", install_path]
+        
+    elif os_type == "linux":
+        installer_name = "Miniconda3-latest-Linux-x86_64.sh"
+        url = f"https://repo.anaconda.com/miniconda/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        install_command = ["bash", installer_path, "-b","-f","-p", install_path]
+        
+    else:
+        print("Unsupported operating system.")
+        return False
+    print("dre!!!!")
+    print(download_dir)
+    print(installer_path)
+    try:
+        print(f"Downloading {installer_name} from {url} to {download_dir}...")
+        urllib.request.urlretrieve(url, installer_path)
+        print("Download complete.")
+        
+        print("Installing Miniconda3...")
+        subprocess.run(install_command, check=True)
+        if installer_path and os.path.exists(installer_path):
+            os.remove(installer_path)
+        
+        if exe_to_path("conda",os.path.join(install_path, "bin")): 
+            if not init_conda():
+                return False
+        else:
+            return False
+        
+        if is_installed('conda','Conda'):
+            print("Miniconda3 installation complete.")
+            return True
+        else:
+            return False
+    
+    except Exception as e:
+        if installer_path and os.path.exists(installer_path):
+            os.remove(installer_path)
+        print(f"Failed to install Miniconda3: {e}")
+        return False
 
 def create_conda_env(command,msg):
     """
