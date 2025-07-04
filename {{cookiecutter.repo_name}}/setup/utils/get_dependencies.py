@@ -67,11 +67,12 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         # Step 5: Add missing packages to uv.lock
         missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
         if missing_from_lock:
+            env = os.environ.copy()
+            env["UV_LINK_MODE"] = "copy"
             print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
             for pkg in missing_from_lock:
-                try:
-                    #subprocess.run(["uv", "add", pkg], check=True,     
-                    subprocess.run([sys.executable, "-m","uv", "add", pkg], check=True,
+                try:   
+                    subprocess.run([sys.executable, "-m","uv", "add", pkg], check=True, env=env,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except subprocess.CalledProcessError as e:
                     print(f"❌ Failed to add {pkg} via uv: {e}")

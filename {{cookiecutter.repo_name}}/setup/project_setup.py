@@ -4,10 +4,6 @@ import sys
 import platform
 import re
 import pathlib
-import shutil
-
-print(sys.executable)
-print(shutil.which("uv"))
 
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
 
@@ -24,7 +20,6 @@ def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None
     # Run the script with the additional paths as arguments
     subprocess.check_call(['bash', '-i', script_path, env_path, python_env_manager.lower(),main_setup])  # Pass repo_name and paths to the script
     print(f"Script {script_path} executed successfully.")
-
 
 def run_powershell(script_path, env_path=None, python_env_manager=None, main_setup=None):
 

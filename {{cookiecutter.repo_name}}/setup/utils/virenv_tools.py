@@ -650,7 +650,9 @@ def create_venv_env():
 
     if install_uv():  # Only try uv if available
         try:
-            subprocess.run([sys.executable, "-m", "uv", "venv", str(env_path)], check=True)
+            env = os.environ.copy()
+            env["UV_LINK_MODE"] = "copy"
+            subprocess.run([sys.executable, "-m", "uv", "venv", str(env_path)], check=True, env=env)
             print(f'✅ Virtual environment created at "{env_path}" using uv.')
             used_uv = True
         except (subprocess.CalledProcessError, FileNotFoundError):

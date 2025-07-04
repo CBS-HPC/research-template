@@ -42,8 +42,8 @@ def create_with_uv():
             check=True,
             env=env,
             # Uncomment to silence output:
-            # stdout=subprocess.DEVNULL,
-            # stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
@@ -52,42 +52,12 @@ def create_with_uv():
     # Run the setup script and show output so user sees progress/errors
     subprocess.run(["uv", "run", "setup/project_setup.py"], check=True, env=env)
 
-
-def create_with_uv_old():
-    
-    """Create virtual environment using uv silently."""
-
-    #subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    #subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(["uv", "venv"], check=True)
-    subprocess.run(["uv", "lock"], check=True)
-
-    try:  
-        subprocess.run(
-            ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
-            check=True,
-            #stdout=subprocess.DEVNULL,
-            #stderr=subprocess.DEVNULL,
-        )
-
-    except subprocess.CalledProcessError:
-            subprocess.run(
-            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
-            check=True,
-            #stdout=subprocess.DEVNULL,
-            #stderr=subprocess.DEVNULL,
-        )
-
-    # Run the setup script and show output (so user sees progress/errors here)
-    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
-
 def create_with_pip():
     subprocess.run(
                 [sys.executable, "-m", "pip", "--upgrade", "install", "uv", "setuptools", "wheel", "python-dotenv"],
-
                 check=True,
-                #stdout=subprocess.DEVNULL,
-                #stderr=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )    
     subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
 

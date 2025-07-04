@@ -46,6 +46,9 @@ def create_uv_project():
     project_path = pathlib.Path(__file__).resolve().parent.parent.parent
     pyproject_path = project_path / "pyproject.toml"
     uv_lock_path = project_path / "uv.lock"
+    
+    env = os.environ.copy()
+    env["UV_LINK_MODE"] = "copy"
 
     if uv_lock_path.exists():
         print("✔️  uv.lock already exists — skipping `uv init` or `uv lock`.")
@@ -58,10 +61,10 @@ def create_uv_project():
     try:
         if pyproject_path.exists():
             print("✅ pyproject.toml found — running `uv lock`...")
-            subprocess.run(["uv", "lock"], check=True, cwd=project_path)
+            subprocess.run(["uv", "lock"], check=True,env=env,cwd=project_path)
         else:
             print("No pyproject.toml found — running `uv init`...")
-            subprocess.run(["uv", "init"], check=True, cwd=project_path)
+            subprocess.run(["uv", "init"], check=True,env=env,cwd=project_path)
     except subprocess.CalledProcessError as e:
         print(f"❌ Command failed: {e}")
 
@@ -102,8 +105,7 @@ def install_uv():
         try:
             print("Installing 'uv' package into current Python environment...")
             subprocess.run(
-                [sys.executable, "-m", "pip", "install", "uv"],
-                #[sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
+                [sys.executable, "-m", "pip", "install", "--upgrade","uv"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -124,34 +126,33 @@ def package_installer(required_libraries: list = None):
     """
 
     def safe_uv_add(lib, project_root):
+        env = os.environ.copy()
+        env["UV_LINK_MODE"] = "copy"
+
         uv_lock = project_root / "uv.lock"
         if uv_lock.exists():
             try:
                 subprocess.run(
                     [sys.executable, "-m", "uv", "add", lib],
                     check=True,
+                    env=env,
                     stderr=subprocess.DEVNULL,
                     cwd=project_root
                 )
                 return True
             except subprocess.CalledProcessError:
-                try:
-                    subprocess.run(
-                        [sys.executable, "-m", "uv", "add", lib, "--link-mode=copy"],
-                        check=True,
-                        stderr=subprocess.DEVNULL,
-                        cwd=project_root
-                    )
-                    return True
-                except subprocess.CalledProcessError:
-                    return False
+                return False
         return False
 
     def safe_uv_pip_install(lib, project_root):
+        env = os.environ.copy()
+        env["UV_LINK_MODE"] = "copy"
+    
         try:
             subprocess.run(
                 [sys.executable, "-m", "uv", "pip", "install", lib],
                 check=True,
+                env=env,
                 stderr=subprocess.DEVNULL,
                 cwd=project_root
             )
@@ -159,23 +160,16 @@ def package_installer(required_libraries: list = None):
         except subprocess.CalledProcessError:
             try:
                 subprocess.run(
-                    [sys.executable, "-m", "uv", "pip", "install", lib, "--link-mode=copy"],
+                    [sys.executable, "-m", "uv", "pip", "install", "--system", lib],
                     check=True,
+                    env=env,
                     stderr=subprocess.DEVNULL,
                     cwd=project_root
                 )
                 return True
             except subprocess.CalledProcessError:
-                try:
-                    subprocess.run(
-                        [sys.executable, "-m", "uv", "pip", "install", "--system", lib, "--link-mode=copy"],
-                        check=True,
-                        stderr=subprocess.DEVNULL,
-                        cwd=project_root
-                    )
-                    return True
-                except subprocess.CalledProcessError:
-                    return False
+                return False
+      
 
     if not required_libraries:
         return
@@ -224,94 +218,6 @@ def package_installer(required_libraries: list = None):
             continue
 
         # Final fallback to pip
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", lib],
-                check=True,
-                stderr=subprocess.DEVNULL
-            )
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Failed to install {lib} with pip: {e}")
-
-def package_installer_old(required_libraries: list = None):
-    """
-    Install missing libraries using uv if available, otherwise fallback to pip.
-    Preference order: uv add → uv pip install → pip install
-    """
-
-    def safe_uv_add(lib):
-        try:
-
-           if pathlib.Path("uv.lock").exists():
-                #subprocess.run(["uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
-                subprocess.run([sys.executable, "-m","uv", "add", lib], check=True, stderr=subprocess.DEVNULL)
-                return True
-        except subprocess.CalledProcessError:
-            pass
-        return False
-
-    if not required_libraries:
-        return
-
-    try:
-        # Gather installed packages from metadata
-        installed_pkgs = {
-            name.lower()
-            for dist in importlib.metadata.distributions()
-            if (name := dist.metadata.get("Name")) is not None
-        }
-    except Exception as e:
-        print(f"⚠️ Error checking installed packages: {e}")
-        return
-
-    # Detect missing packages
-    missing_libraries = []
-    for lib in required_libraries:
-        norm_name = (
-            lib.split("==")[0]
-               .split(">=")[0]
-               .split("<=")[0]
-               .split("~=")[0]
-               .strip()
-               .lower()
-        )
-        if norm_name not in installed_pkgs:
-            # As a fallback, try to find the importable module
-            module_found = importlib.util.find_spec(norm_name) is not None
-            if not module_found:
-                missing_libraries.append(lib)
-
-    if not missing_libraries:
-        return
-
-    print(f"📦 Installing missing libraries: {missing_libraries}")
-
-    
-    uv_available = install_uv()
-
-    for lib in missing_libraries:
-        if uv_available and safe_uv_add(lib):
-            continue
-
-        if uv_available:
-            try:
-                subprocess.run(
-                    [sys.executable, "-m", "uv", "pip", "install", lib],
-                    check=True,
-                    stderr=subprocess.DEVNULL
-                )
-                continue
-            except subprocess.CalledProcessError:
-                try:
-                    subprocess.run(
-                        [sys.executable, "-m", "uv", "pip", "install", "--system" ,lib], 
-                        check=True,
-                        stderr=subprocess.DEVNULL
-                    )
-                    continue
-                except subprocess.CalledProcessError:
-                    print(f"⚠️ `uv pip install` failed for {lib}. Trying pip fallback...")
-
         try:
             subprocess.run(
                 [sys.executable, "-m", "pip", "install", lib],
@@ -879,7 +785,6 @@ def get_version(programming_language):
             return "pip"
     elif programming_language.lower() == "uv":
         try:
-            #version = subprocess.check_output(["uv", "--version"], text=True)
             version = subprocess.check_output([sys.executable, "-m","uv", "--version"], text=True)
         
             version = version.strip()  # Returns version info       
@@ -942,81 +847,6 @@ def run_script(programming_language, script_command=None):
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip() if e.stderr else str(e)}"
 
-def run_script_old(programming_language, script_command=None):
-    """
-    Runs a script or fetches version info for different programming languages.
-    
-    Args:
-        programming_language (str): Programming language name (e.g., 'python', 'r', etc.)
-        script_command (str, optional): Script/command to execute. Optional for languages like Stata.
-    
-    Returns:
-        str: Output or version string.
-    """
-    programming_language = programming_language.lower()
-
-    if programming_language != "python":
-        exe_path = load_from_env(programming_language)
-        exe_path = check_path_format(exe_path)
-        if not exe_path:
-            return "Unknown executable path"
-
-    try:
-        if programming_language == "python":
-            cmd = sys.executable + " -c " + script_command
-            
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True, check=True
-            )
-            return result.stdout.strip()
-
-        elif programming_language == "r":
-            rscript = load_from_env("RSCRIPT")
-            rscript = check_path_format(rscript)
-
-            if rscript:
-                cmd = exe_path + script_command
-            else:
-                cmd = exe_path + " --vanilla" + " -f " + script_command
-
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True, check=True
-            )
-            return result.stdout.strip()
-        
-        elif programming_language == "matlab":
-            cmd = exe_path + " -batch " + script_command
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True, check=True
-            )
-            return result.stdout.strip()
-
-        elif programming_language == "stata":
-            # For Stata, run the executable with --version (or equivalent) to print version
-            cmd = exe_path +  " -b " + script_command
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True
-            )
-            return result.stdout.strip() 
-
-        elif programming_language == "sas":
-            cmd = exe_path  + " -SYSIN " + script_command
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True, check=True
-            )
-            return result.stdout.strip()
-
-        else:
-            return f"Language {programming_language} not supported."
-
-    except subprocess.CalledProcessError as e:
-        return f"Error running script: {e.stderr.strip()}"
-
 def make_safe_path(path: str, language: str = "python") -> str:
     """
     Convert a file path to a language-safe format for Python, R, MATLAB, or Stata.
@@ -1050,39 +880,6 @@ def make_safe_path(path: str, language: str = "python") -> str:
     elif language == "stata":
         return f'"{normalized}"'  # Stata do-files expect double-quoted paths
 
-    else:
-        raise ValueError(f"Unsupported language: {language}")
-
-def make_safe_path_old(path: str, language: str = "python") -> str:
-    """
-    Convert a file path to a language-safe format.
-    
-    Args:
-        path (str): The input file path.
-        language (str): One of 'python', 'r', 'matlab', 'stata'.
-    
-    Returns:
-        str: Formatted path string suitable for the specified language.
-    """
-    path = os.path.abspath(path)
-   
-
-    language = language.lower()
-    if language == "python":
-        path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
-        return path_fixed  # Use as-is, Python handles forward slashes fine
-    elif language == "r":
-        path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
-        return path_fixed  # ✅ No quotes
-    elif language == "matlab":
-        path_fixed = path.replace("/","\\")  # Normalize slashes for all languages
-        path_fixed = f"'{path}'"
-        print(path_fixed)
-        return path_fixed
-        #return f"'{path_fixed}'"  # Wrap in single quotes
-    elif language == "stata":
-        path_fixed = path.replace("\\", "/")  # Normalize slashes for all languages
-        return f'"{path_fixed}"'  # Wrap in double quotes (for use in do-files)
     else:
         raise ValueError(f"Unsupported language: {language}")
 
