@@ -5,6 +5,8 @@ import platform
 import re
 import pathlib
 
+print(sys.executable)
+
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
 
     if not python_env_manager:
