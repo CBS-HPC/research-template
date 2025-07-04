@@ -32,7 +32,7 @@ def create_with_uv():
         subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
         subprocess.run(
-            ["uv", "add","uv", "pip", "setuptools", "wheel","python-dotenv"]
+            ["uv", "add","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -40,7 +40,7 @@ def create_with_uv():
     except subprocess.CalledProcessError:
         try:
             subprocess.run(
-                ["uv", "add", "uv", "pip", "setuptools", "wheel","python-dotenv", "--link-mode=copy"],
+                ["uv", "add", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -48,7 +48,7 @@ def create_with_uv():
         except subprocess.CalledProcessError:
             # fallback to pip install
             subprocess.run(
-                [sys.executable, "-m", "pip", "install","uv", "pip", "setuptools", "wheel","python-dotenv"],
+                [sys.executable, "-m", "pip", "install","uv", "pip", "setuptools", "wheel", "python-dotenv"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
