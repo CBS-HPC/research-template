@@ -18,7 +18,7 @@ def install_uv():
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "uv"],
+            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
                            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return True
@@ -27,45 +27,27 @@ def install_uv():
 
 def create_with_uv():
     """Create virtual environment using uv silently."""
-  
-    try:
-        subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
+    subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:  
         subprocess.run(
-            ["uv", "add", "--upgrade", "wheel", "uv", "python-dotenv"],
-            #["uv", "add","uv", "pip", "setuptools", "wheel", "python-dotenv"],
+            ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
-        try:
-            subprocess.run(
-                ["uv", "add", "--upgrade", "wheel", "uv", "python-dotenv", "--link-mode=copy"],
-                #["uv", "add", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        except subprocess.CalledProcessError:
-            # fallback to pip install
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", "wheel", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
-                #[sys.executable, "-m", "pip", "install","uv","python-dotenv"],
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+        subprocess.run(
+            ["uv", "add", "--upgrade",  "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
     # Run the setup script and show output (so user sees progress/errors here)
     subprocess.run(["uv", "run", "setup/project_setup.py"], check=True)
 
-def main():
-    env_path = pathlib.Path(".venv")
-    if not env_path.exists():
-        if install_uv():
-            create_with_uv()
-            return
-    
+def create_with_pip():
     subprocess.run(
                 [sys.executable, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv"],
                 #[sys.executable, "-m", "pip", "install", "wheel", "uv","python-dotenv"],
@@ -74,6 +56,15 @@ def main():
                 stderr=subprocess.DEVNULL,
             )    
     subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
+
+def main():
+    env_path = pathlib.Path(".venv")
+    if not env_path.exists():
+        if install_uv():
+            create_with_uv()
+            return
+    
+    create_with_pip()
     return
 if __name__ == "__main__":
     main()
