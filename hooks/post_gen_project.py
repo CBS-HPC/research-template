@@ -71,8 +71,7 @@ def create_with_uv_old():
         )
 
     except subprocess.CalledProcessError:
-        try:  
-        subprocess.run(
+            subprocess.run(
             ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
             check=True,
             #stdout=subprocess.DEVNULL,
