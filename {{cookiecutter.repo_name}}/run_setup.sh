@@ -49,10 +49,10 @@ if [ "$env_manager" != "base Installation" ]; then
                 conda activate "$CONDA_ENV_PATH"
 
                 # Cleanup: remove .venv folder and uv.lock file if they exist
-                if [ -d ".venv" ]; then
-                    echo "Removing .venv directory..."
-                    rm -rf .venv
-                fi
+                #if [ -d ".venv" ]; then
+                #    echo "Removing .venv directory..."
+                #    rm -rf .venv
+                #fi
                 if [ -f "uv.lock" ]; then
                     echo "Removing uv.lock file..."
                     rm -f uv.lock
