@@ -65,6 +65,14 @@ def main():
         if install_uv():
             create_with_uv()
             return
+    
+    subprocess.run(
+                #[sys.executable, "-m", "pip", "install","uv", "pip", "setuptools", "wheel", "python-dotenv"],
+                [sys.executable, "-m", "pip", "install","uv","python-dotenv"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )    
     subprocess.run([sys.executable, "setup/project_setup.py"], check=True)
     return
 if __name__ == "__main__":
