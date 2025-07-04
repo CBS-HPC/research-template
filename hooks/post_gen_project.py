@@ -2,6 +2,7 @@ import subprocess
 import pathlib
 import sys
 import platform
+import os
 
 def run_in_venv():
     if platform.system() == "Windows":
@@ -26,7 +27,11 @@ def install_uv():
             return False
 
 def create_with_uv():
+    
     """Create virtual environment using uv silently."""
+    current_dir = os.getcwd()
+    print(current_dir)
+    print("dre")
     subprocess.run(["uv", "venv"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(["uv", "lock"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:  
