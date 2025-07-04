@@ -31,7 +31,7 @@ if ($env_manager -ne "base Installation") {
                 pip install uv
             }
 
-            uv pip install uv pip setuptools wheel python-dotenv
+            uv pip install uv python-dotenv
             #uv pip install --upgrade uv pip setuptools wheel python-dotenv
         }
         "venv" {
@@ -50,7 +50,7 @@ if ($env_manager -ne "base Installation") {
                     pip install uv
                 }
                 uv lock
-                uv add uv pip setuptools wheel python-dotenv
+                uv add uv python-dotenv
                 #uv add --upgrade uv pip setuptools wheel python-dotenv
             }
         }
