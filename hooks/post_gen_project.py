@@ -47,10 +47,10 @@ def create_with_uv():
     if not env_path.exists():
         print("dre2")
 
-     subprocess.run(
+    subprocess.run(
             ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
-        )
+    )
     
     #try:  
     #    subprocess.run(
