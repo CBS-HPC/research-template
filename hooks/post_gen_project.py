@@ -51,7 +51,8 @@ def create_with_uv():
     
     try:  
         subprocess.run(
-            ["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
+            ["uv", "add", "--upgrade", "pip", "setuptools", "wheel", "python-dotenv"],
+            #["uv", "add", "--upgrade","uv", "pip", "setuptools", "wheel", "python-dotenv"],
             check=True,
             #stdout=subprocess.DEVNULL,
             #stderr=subprocess.DEVNULL,
@@ -59,7 +60,8 @@ def create_with_uv():
 
     except subprocess.CalledProcessError:
         subprocess.run(
-            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
+            ["uv", "add", "--upgrade", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
+            #["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv", "--link-mode=copy"],
             check=True,
             #stdout=subprocess.DEVNULL,
             #stderr=subprocess.DEVNULL,
