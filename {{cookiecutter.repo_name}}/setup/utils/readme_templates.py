@@ -12,12 +12,10 @@ from datetime import datetime
 from .readme_sections import *
 
 
-package_installer(required_libraries =  ['pyyaml','requests','psutil',"py-cpuinfo"])
+package_installer(required_libraries =  ['pyyaml','requests'])
 
 import yaml
 import requests
-import psutil
-import cpuinfo
 
 # README.md
 def creating_readme(programming_language = "None"):
@@ -89,6 +87,9 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
     usage = set_script_structure(programming_language,software_version,code_path,json_file)
+
+    system_spec = set_specs(py_version,code_path,software_version,str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt")),str(pathlib.Path(f"{code_path}/dependencies.txt")))
+
     config = set_config_table(programming_language)
     cli_tools = set_cli_tools(programming_language)
     dcas = set_dcas()
@@ -104,86 +105,6 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
         file.write(header)
     print(f"README.md created at: {readme_file}")
 
-def get_system_specs():
-    
-    def detect_gpu():
-        # Try NVIDIA
-        if shutil.which("nvidia-smi"):
-            try:
-                output = subprocess.check_output(
-                    ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-                    stderr=subprocess.DEVNULL
-                ).decode().strip()
-                gpus = output.splitlines()
-                return ", ".join(gpus) if gpus else None
-            except Exception:
-                return None
-
-        # Try PyTorch
-        try:
-            import torch
-            if torch.cuda.is_available():
-                gpus = [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
-                return ", ".join(gpus)
-        except ImportError:
-            pass
-
-        # Try AMD (Linux)
-        if platform.system() == "Linux":
-            try:
-                lspci_output = subprocess.check_output(["lspci"], text=True)
-                amd_gpus = [line for line in lspci_output.splitlines() if "AMD" in line and "VGA" in line]
-                if amd_gpus:
-                    return " / ".join(amd_gpus)
-            except Exception:
-                pass
-
-            if shutil.which("rocm-smi"):
-                try:
-                    rocm_output = subprocess.check_output(["rocm-smi", "--showproductname"], text=True)
-                    rocm_lines = [line.strip() for line in rocm_output.splitlines() if "GPU" in line]
-                    return " / ".join(rocm_lines) if rocm_lines else None
-                except Exception:
-                    return None
-
-        # Try Apple Silicon
-        if platform.system() == "Darwin" and "Apple" in platform.processor():
-            return platform.processor()
-
-        return None  # GPU not detected
-
-    def format_specs(info_dict):
-        lines = []
-        for k, v in info_dict.items():
-            lines.append(f"- **{k}**: {v}")
-        return "\n".join(lines) + "\n"
-
-    info = {}
-    
-    # Basic OS and Python
-    info["OS"] = f"{platform.system()} {platform.release()} ({platform.version()})"
-   
-    # CPU
-    cpu = cpuinfo.get_cpu_info()
-    info["CPU"] = cpu.get("brand_raw", platform.processor() or "Unknown")
-    info["Cores (Physical)"] = psutil.cpu_count(logical=False)
-    info["Cores (Logical)"] = psutil.cpu_count(logical=True)
-
-    # RAM
-    ram_gb = psutil.virtual_memory().total / (1024 ** 3)
-    info["RAM"] = f"{ram_gb:.2f} GB"
-
-    # GPU detection
-    gpu_info = detect_gpu()
-    if gpu_info:
-        info["GPU"] = gpu_info
-
-    # Timestamp
-    info["Collected On"] = datetime.now().isoformat()
-
-    section_text = format_specs(info)
-
-    return section_text 
 
 def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptions.json", root_folder=None):
     """

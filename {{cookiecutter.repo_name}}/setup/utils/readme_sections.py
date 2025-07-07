@@ -9,6 +9,11 @@ from .general_tools import *
 from .toml_tools import *
 
 
+package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
+
+import psutil
+import cpuinfo
+
 def main_text(
     project_name,
     project_description,
@@ -40,16 +45,7 @@ def main_text(
 <details>
 <summary>💻 System Requirements</summary>
 
-The project was developed and tested on the following operating system:
-
 {system_spec}
-
-Project setup details:
-
-- **Setup scripts** (`./setup`) use **{py_version}**
-- **Project code** (`{code_path}`) runs on **{software_version}**
-
-See the [Installation](#installation) section for full details.
 
 </details>
 
@@ -704,4 +700,155 @@ set-dataset
 | Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |
 |------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
 """
+
+
+def read_dependencies(dependencies_file):
     
+    def collect_dependencies(content):
+        
+        current_software = None
+        software_dependencies = {}
+
+        # Parse the dependencies file
+        for i, line in enumerate(content):
+            line = line.strip()
+
+            if line == "Software version:" and i + 1 < len(content):
+                current_software = content[i + 1].strip()
+                software_dependencies[current_software] = {"dependencies": []}
+                continue
+
+            if line == "Dependencies:":
+                continue
+            
+            if current_software and "==" in line:
+                package, version = line.split("==")
+                software_dependencies[current_software]["dependencies"].append((package, version))
+        
+        return software_dependencies, package, version
+
+    software_requirements_section = ""
+
+    # Check if the dependencies file exists
+    if not os.path.exists(dependencies_file):
+        return
+
+    # Read the content from the dependencies file
+    with open(dependencies_file, "r") as f:
+        content = f.readlines()
+
+    software_dependencies, package, version = collect_dependencies(content)
+
+    # Correctly loop through the dictionary
+    for software, details in software_dependencies.items():
+            
+        for package, version in details["dependencies"]:
+            software_requirements_section += f"  - {package}: {version}\n"
+
+    software_requirements_section += "\n\n"
+
+    return software_requirements_section
+
+
+def set_specs(py_version,code_path,software_version,setup_file,src_file):
+    system_spec = get_system_specs()
+    setup_file = read_dependencies(setup_file)
+    src_file = read_dependencies(src_file)
+    
+    specs = f"""The project was developed and tested on the following operating system:
+
+{system_spec}
+
+Project setup details:
+
+- **Setup scripts** (`./setup`) use **{py_version}**
+{setup_file}
+
+- **Project code** (`{code_path}`) runs on **{software_version}**
+{src_file}
+
+See the [Installation](#installation) section for full details.
+
+"""
+    return specs 
+
+def get_system_specs():
+    
+    def detect_gpu():
+        # Try NVIDIA
+        if shutil.which("nvidia-smi"):
+            try:
+                output = subprocess.check_output(
+                    ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                    stderr=subprocess.DEVNULL
+                ).decode().strip()
+                gpus = output.splitlines()
+                return ", ".join(gpus) if gpus else None
+            except Exception:
+                return None
+
+        # Try PyTorch
+        try:
+            import torch
+            if torch.cuda.is_available():
+                gpus = [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
+                return ", ".join(gpus)
+        except ImportError:
+            pass
+
+        # Try AMD (Linux)
+        if platform.system() == "Linux":
+            try:
+                lspci_output = subprocess.check_output(["lspci"], text=True)
+                amd_gpus = [line for line in lspci_output.splitlines() if "AMD" in line and "VGA" in line]
+                if amd_gpus:
+                    return " / ".join(amd_gpus)
+            except Exception:
+                pass
+
+            if shutil.which("rocm-smi"):
+                try:
+                    rocm_output = subprocess.check_output(["rocm-smi", "--showproductname"], text=True)
+                    rocm_lines = [line.strip() for line in rocm_output.splitlines() if "GPU" in line]
+                    return " / ".join(rocm_lines) if rocm_lines else None
+                except Exception:
+                    return None
+
+        # Try Apple Silicon
+        if platform.system() == "Darwin" and "Apple" in platform.processor():
+            return platform.processor()
+
+        return None  # GPU not detected
+
+    def format_specs(info_dict):
+        lines = []
+        for k, v in info_dict.items():
+            lines.append(f"- **{k}**: {v}")
+        return "\n".join(lines) + "\n"
+
+    info = {}
+    
+    # Basic OS and Python
+    info["OS"] = f"{platform.system()} {platform.release()} ({platform.version()})"
+   
+    # CPU
+    cpu = cpuinfo.get_cpu_info()
+    info["CPU"] = cpu.get("brand_raw", platform.processor() or "Unknown")
+    info["Cores (Physical)"] = psutil.cpu_count(logical=False)
+    info["Cores (Logical)"] = psutil.cpu_count(logical=True)
+
+    # RAM
+    ram_gb = psutil.virtual_memory().total / (1024 ** 3)
+    info["RAM"] = f"{ram_gb:.2f} GB"
+
+    # GPU detection
+    gpu_info = detect_gpu()
+    if gpu_info:
+        info["GPU"] = gpu_info
+
+    # Timestamp
+    info["Collected On"] = datetime.now().isoformat()
+
+    section_text = format_specs(info)
+
+    return section_text 
