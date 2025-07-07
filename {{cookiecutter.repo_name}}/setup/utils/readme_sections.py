@@ -25,6 +25,9 @@ def main_text(
     usage,
     dcas
 ):
+    
+
+
     header = f"""# {project_name}
 
 {project_description}
@@ -32,7 +35,7 @@ def main_text(
 ## 👤 Author & Contact
 {contact}
 
----
+##
 
 <details>
 <summary>💻 System Requirements</summary>
@@ -50,8 +53,9 @@ See the [Installation](#installation) section for full details.
 
 </details>
 
----
+##
 
+<a name="installation"></a>
 <details>
 <summary>📦 Installation & Environment Setup</summary>
 
@@ -61,7 +65,7 @@ Follow these steps to set up the project on your local machine:
 
 </details>
 
----
+##
 
 <a name="project-activation"></a>
 <details>
@@ -74,7 +78,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
----
+##
 
 <a name="script-structure-and-usage"></a>
 <details>
@@ -84,7 +88,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
----
+##
 
 <a name="unit-test-ci"></a>
 <details>
@@ -94,7 +98,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
----
+##
 
 <a name="cli-tools"></a>
 <details>
@@ -104,7 +108,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
----
+##
 
 <a name="configuration-files-root-level"></a>
 <details>
@@ -114,34 +118,17 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
----
+##
 
 <a name="dataset-list"></a>
 <details>
 <summary>📦 Dataset List</summary>
 
-To set up or configure a dataset, run the following command:
-
-```
-set-dataset
-```
-
-**The following datasets are included in the project:**
-
-| Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |
-|------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
+{set_dataset()}
 
 </details>
 
----
-
-<a name="code--dataset-network-analysis"></a>
-<details>
-<summary>Code & Dataset Network Analysis</summary>
-
-</details>
-
----
+##
 
 <a name="project-directory-structure"></a>
 <details>
@@ -149,14 +136,13 @@ set-dataset
 
 The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
 
-
 ```
 
 ```
 
 </details>
 
----
+##
 
 <a name="creating-a-replication-package-based-on-dcas"></a>
 <details>
@@ -194,7 +180,6 @@ def set_project():
             "source deactivate.sh\n"
             "```\n"
         )
-    usage +="\n---\n"
     return usage
 
 def set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user,hostname):            
@@ -222,7 +207,7 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
         setup += f"Project `setup` environment using **{py_version}** can be installed using the options described below.\n\n"
   
     if programming_language.lower() != "r":
-        setup += f"> Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system."
+        setup += f"> Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system.\n\n"
 
     elif programming_language.lower() == "r":
         setup += f"Conda installation is the only option which will install **{software_version}** and **{py_version}** along with its Python dependencies.\n\n"
@@ -233,11 +218,6 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
         f"Project `code` environment using **{py_version}** can be installed using the options described below.\n\n"
 
         setup +=f"These methods do **not** install external the proprietary software **{software_version}** which to be installed manually.\n\n"
-
-    
-    #setup += "If you prefer to install dependencies manually, the following options are available:\n\n"
-     #   "**Project setup scripts** (`./setup`) installed with **{py_version}**"
-#- **Project code** (`{code_path}`) installed with **{software_version}**
 
     setup +=f"""<details>
 <summary>Install with Conda</summary>
@@ -321,8 +301,6 @@ Rscript -e \"renv::restore()\"
 
 </details>
 """
-    setup +="\n---\n"
-    
     return setup
 
 def set_contact(authors, orcids, emails):
@@ -334,7 +312,6 @@ def set_contact(authors, orcids, emails):
     if emails:
         contact += f"**Email:** {emails}\n\n"
     
-    contact +="\n---\n"
     return contact
 
 def set_script_structure(programming_language, software_version, folder_path, json_file = "./file_description.json"):
@@ -463,8 +440,7 @@ def set_script_structure(programming_language, software_version, folder_path, js
     else:
         md.append("_No orchestration script (`00_…`) found._")
     
-    md +="\n---\n"
-    return md
+    return "\n".join(md)
 
 def set_config_table(programming_language):
 
@@ -489,7 +465,6 @@ def set_config_table(programming_language):
 | `renv.lock`             | Records the exact versions of R packages used in the project                                    |
 """ 
 
-    config +="\n---\n"
     return config
 
 def set_cli_tools(programming_language):
@@ -526,7 +501,6 @@ set-dataset
 update-requirements
 ```
 """
-    cli_tools +="\n---\n"
     return cli_tools
 
 def set_ci_tools(programming_language: str, code_repo: str):
@@ -700,7 +674,6 @@ Config file: `{ci['config_file']}`
 
 {ci['note']}
 """
-    section +="\n---\n"
     return section.strip()
 
 def set_dcas():
@@ -716,5 +689,19 @@ The following are examples of journals that endorse the Data and Code Availabili
 For a full list of journals, visit [here](https://datacodestandard.org/journals/).
 
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal."""
-    dcas +="\n---\n"
     return dcas
+
+def set_dataset():
+
+    return f""" To set up or configure a dataset, run the following command:
+
+```
+set-dataset
+```
+
+**The following datasets are included in the project:**
+
+| Name             | Location        |Hash                       | Provided        | Run Command               | Number of Files | Total Size (MB) | File Formats         | Source          | DOI                | Citation               | License               | Notes                  |
+|------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
+"""
+    
