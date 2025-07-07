@@ -152,28 +152,24 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
         start_index = None
         end_index = None
 
-        # Step 1: Find the <summary> line for Project Directory Structure
+        # Step 1: Find the line that starts with ```tree
         for i, line in enumerate(readme_content):
-            if "<summary>" in line and "Project Directory Structure" in line:
-                # Step 2: From there, find the next line with just ```
-                for j in range(i + 1, len(readme_content)):
-                    if readme_content[j].strip() == "```":
-                        start_index = j + 1  # Start *after* opening ```
-                        break
-                break  # Stop after the first <summary> match
+            if line.strip().startswith("```tree"):
+                start_index = i + 1  # Line *after* ```tree
+                break
 
         if start_index is None:
-            print("❌ Could not find project directory summary section with code block. No changes made.")
+            print("❌ Could not find ```tree code block. No changes made.")
             return
 
-        # Step 3: Find the closing ```
-        for k in range(start_index, len(readme_content)):
-            if readme_content[k].strip() == "```":
-                end_index = k
+        # Step 2: Find the closing ```
+        for j in range(start_index, len(readme_content)):
+            if readme_content[j].strip() == "```":
+                end_index = j
                 break
 
         if end_index is None:
-            print("❌ No closing ``` found for the project tree block. No changes made.")
+            print("❌ No closing ``` found for the tree block. No changes made.")
             return
 
         # Step 4: Generate the updated tree structure
