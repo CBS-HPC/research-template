@@ -328,13 +328,13 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
         with open(readme_file, "r", encoding="utf-8") as f:
             readme_content = f.read()
 
-        # Extract the project tree section using regex
-        tree_match = re.search(r"<summary>\s*📁\s*Project Directory Structure\s*</summary>\s*([\s\S]+?)```", readme_content)
+
+        tree_match = re.search(r"```tree\s*([\s\S]+?)```", readme_content)
         if not tree_match:
-            print("'📁 Project Directory Structure' section not found in README.md")
+            print("```tree block not found in README.md")
             return
 
-        project_tree = tree_match.group(1)
+        project_tree = tree_match.group(1).strip()
 
         # Extract file descriptions from the project tree
         tree_lines = project_tree.splitlines()
