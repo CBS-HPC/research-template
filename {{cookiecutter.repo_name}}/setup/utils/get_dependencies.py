@@ -346,12 +346,7 @@ def setup_renv(programming_language,msg:str):
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
         code_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")),"matlab")
-        print(code_path)
-        #code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
-        #cmd = [f"""'"addpath({code_path}); get_dependencies"'"""]
-
         cmd = [f"addpath({code_path}); get_dependencies"]
-
         output = run_script("matlab", cmd)
         print(output)
         print(msg)

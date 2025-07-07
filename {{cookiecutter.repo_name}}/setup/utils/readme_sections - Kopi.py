@@ -210,89 +210,47 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
      #   "**Project setup scripts** (`./setup`) installed with **{py_version}**"
 #- **Project code** (`{code_path}`) installed with **{software_version}**
 
-    setup +=f"""<details>
-<summary>Install with Conda</summary>
+    setup += "##### Install with Conda:\n"
+    setup += f"Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:\n"
+    setup += "```\n"
+    setup += "conda env create -f environment.yml\n"
+    setup += "```\n\n"
 
-Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:
+    setup += "##### Install using Pip:\n"
+    setup += f"Alternatively, you can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`:\n"
+    setup += "```\n"
+    setup += "pip install -r requirements.txt\n"
+    setup += "```\n\n"
 
-```
-conda env create -f environment.yml
-```
-</details>
-"""
+    setup += "##### Install using uv :\n"
+    setup += f"If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies from `requirements.txt`:\n"
+    setup += "```\n"
+    setup += "uv pip install -r requirements.txt\n"
+    setup += "```\n\n"
+    setup += "> 💡 [uv](https://github.com/astral-sh/uv) provides faster installs and better reproducibility by resolving and locking dependencies consistently. Install it with `pip install uv` or follow the [official instructions](https://github.com/astral-sh/uv).\n\n"
 
-    setup +=f"""<details>
-<summary>Install using Pip:</summary>
 
-You can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`::
+    # if programming_language.lower() == "r":
+    #    setup += f"> ⚡ Note: Pip or uv installation will **not** install **{software_version}**.\n\n"
 
-```
-pip install -r requirements.txt
-```
-</details>
-"""
-    
 
-    setup +=f"""<details>
-<summary>Install using Uv</summary>
-
-If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies from `requirements.txt`:
-
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./pyproject.toml` file.
-
-```
-uv pip install -r requirements.txt
-```
-> 💡 [uv](https://github.com/astral-sh/uv) provides faster installs and better reproducibility by resolving and locking dependencies consistently. Install it with `pip install uv` or follow the [official instructions](https://github.com/astral-sh/uv).
-
-</details>
-"""
-    
-    setup +=f"""<details>
-<summary>Install the `setup` package</summary>
-
-Once you have installed the python environmnet Conda, Pip or Uv, you must also install the local `setup` package used for configuration and automation scripts:
-
-```
-cd setup
-pip install -e .
-cd ..
-```
-
-This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` available in your environment.
-</details>
-"""
+    setup += "##### Install the `setup` package:\n"
+    setup += "If you installed dependencies manually using Conda or Pip, you must also install the local `setup` package used for configuration and automation scripts:\n"
+    setup += "```\n"
+    setup += "cd setup\n"
+    setup += "pip install -e .\n"
+    setup += "cd ..\n"
+    setup += "```\n"
+    setup += "This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` available in your environment.\n\n"
 
     if programming_language.lower() == "r":
-
-        setup +=f"""<details>
-<summary>Install R dependencies using renv</summary>
-
-The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/R` directory using the `renv` package and the provided lock file (`renv.lock`):
-
-```
-cd R
-Rscript -e \"renv::restore()\"
-```
-> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.
-
-</details>
-"""
-    if programming_language.lower() == "matlab":
-
-        setup +=f"""<details>
-<summary>Install R dependencies using renv</summary>
-
-The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/R` directory using the `renv` package and the provided lock file (`renv.lock`):
-
-```
-cd R
-Rscript -e \"renv::restore()\"
-```
-> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.
-
-</details>
-"""
+        setup += "#### Install R dependencies using renv:\n\n"
+        setup += f"The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/R` directory using the `renv` package and the provided lock file (`renv.lock`):\n\n"
+        setup += "```\n"
+        setup += "cd R\n\n"
+        setup += "Rscript -e \"renv::restore()\"\n"
+        setup += "```\n\n"
+        setup += f"> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.\n\n"
 
     return setup
 
