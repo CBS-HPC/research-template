@@ -9,79 +9,72 @@ from .general_tools import *
 from .toml_tools import *
 
 
-def main_text(project_name,project_description,contact,system_spec,py_version,code_path,software_version,activate,ci_tools,cli_tools,config,install,usage,dcas):
-
-    # Project header
+def main_text(
+    project_name,
+    project_description,
+    contact,
+    system_spec,
+    py_version,
+    code_path,
+    software_version,
+    activate,
+    ci_tools,
+    cli_tools,
+    config,
+    install,
+    usage,
+    dcas
+):
     header = f"""# {project_name}
 
 {project_description}
 
-## 📇 Contact Information
-
+## 👤 Author & Contact
 {contact}
 
-<a name="system-and-environment-information"></a>
+---
+
 <details>
-<summary>📋 System and Environment Information</summary>
+<summary>💻 System Requirements</summary>
 
 The project was developed and tested on the following operating system:
 
 {system_spec}
 
-The environments were set up using:
+Project setup details:
 
-- **Project setup scripts** (`./setup`) installed with **{py_version}**
-- **Project code** (`{code_path}`) installed with **{software_version}**
+- **Setup scripts** (`./setup`) use **{py_version}**
+- **Project code** (`{code_path}`) runs on **{software_version}**
 
-Further details can be found in the [Installation](#installation) section.
-
-</details>
-
-<a name="project-activation"></a>
-<details>
-<summary>🚀 Project Activation</summary>
-
-To configure the project's environment—including project paths, environment variables, and virtual environments—follow the steps below. These configurations are defined in the `.env` file.
-
-> ⚠️ The `.env` file is excluded from this repository for security reasons. To replicate the environment, please follow the instructions in the [Installation](#installation) section.
-
-{activate}
+See the [Installation](#installation) section for full details.
 
 </details>
 
-<a name="unit-test-ci"></a>
+---
+
 <details>
-<summary>📅 Unit Testing and Continuous Integration (CI)</summary>
-
-{ci_tools}
-
-</details>
-
-<a name="cli-tools"></a>
-<details>
-<summary>🔧 CLI Tools</summary>
-
-{cli_tools}
-
-</details>
-
-<a name="configuration-files-root-level"></a>
-<details>
-<summary>🗂️ Configuration Files (Root-Level)</summary>
-
-{config}
-
-</details>
-
-<a name="installation"></a>
-<details>
-<summary>💻 Installation</summary>
+<summary>📦 Installation & Environment Setup</summary>
 
 Follow these steps to set up the project on your local machine:
 
 {install}
 
 </details>
+
+---
+
+<a name="project-activation"></a>
+<details>
+<summary>🚀 Activation & Usage</summary>
+
+To configure the environment—including paths, variables, and virtualenvs—follow these steps.  
+Configurations are defined in the `.env` file (excluded from version control).
+
+{activate}
+
+</details>
+
+---
 
 <a name="script-structure-and-usage"></a>
 <details>
@@ -90,6 +83,38 @@ Follow these steps to set up the project on your local machine:
 {usage}
 
 </details>
+
+---
+
+<a name="unit-test-ci"></a>
+<details>
+<summary>🧪 Testing & Continuous Integration (CI)</summary>
+
+{ci_tools}
+
+</details>
+
+---
+
+<a name="cli-tools"></a>
+<details>
+<summary>🧰 CLI Utilities</summary>
+
+{cli_tools}
+
+</details>
+
+---
+
+<a name="configuration-files-root-level"></a>
+<details>
+<summary>🗂️ Configuration Files</summary>
+
+{config}
+
+</details>
+
+---
 
 <a name="dataset-list"></a>
 <details>
@@ -108,17 +133,22 @@ set-dataset
 
 </details>
 
+---
+
 <a name="code--dataset-network-analysis"></a>
 <details>
 <summary>Code & Dataset Network Analysis</summary>
 
 </details>
 
+---
+
 <a name="project-directory-structure"></a>
 <details>
 <summary>📁 Project Directory Structure</summary>
 
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./pyproject.toml` file.
+The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
+
 
 ```
 
@@ -126,9 +156,11 @@ The current repository structure is shown in the tree below, and descriptions fo
 
 </details>
 
+---
+
 <a name="creating-a-replication-package-based-on-dcas"></a>
 <details>
-<summary>📚 Creating a Replication Package Based on DCAS</summary>
+<summary>🔄 DCAS Compliance</summary>
 
 {dcas}
 
@@ -162,6 +194,7 @@ def set_project():
             "source deactivate.sh\n"
             "```\n"
         )
+    usage +="\n---\n"
     return usage
 
 def set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user,hostname):            
@@ -182,27 +215,23 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
             "```\n")
 
     setup += "### Software Installation\n"
-  #  setup += "The primary method for setting up this project's environment is by using the provided setup script:\n\n"
-  #  setup += "#### Recommended: Using the Custom Setup Script *(currently under development)*\n"
-
-  #  if programming_language.lower() == "r":
-  #      setup += f"Run the following command to automatically install all {py_version} and {software_version} dependencies:\n\n"
-  #  else: 
-  #      setup += f"Run the following command to automatically install all {py_version} dependencies:\n\n"
-  #  setup += ("```\n"
-  #          "python setup/run_setup.pyn\n"
-  #          "```\n")    
+    
     if programming_language.lower() == "python":
-        setup += f"Project code and setup environment using {software_version} can be installed using the options described below.\n\n"
+        setup += f"Project environment using {software_version} can be installed using the options described below.\n\n"
     else:
-        setup += f"Project setup environment using **{py_version}** can be installed using the options described below.\n\n"
+        setup += f"Project `setup` environment using **{py_version}** can be installed using the options described below.\n\n"
   
     if programming_language.lower() != "r":
-        setup += f"Conda installation is the only option which will install **{py_version}** and  its python dependencies.\n\n"
+        setup += f"> Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system."
+
     elif programming_language.lower() == "r":
-        setup += f"Conda installation is the only option which will install **{software_version}** as well as **{py_version}** and  its python dependencies.\n\n"
-        setup += f"R depedencies can be installed using the Renv as described in the section below.\n\n"
+        setup += f"Conda installation is the only option which will install **{software_version}** and **{py_version}** along with its Python dependencies.\n\n"
+        setup += f"For pip or uv installation methods, **{software_version}** and **{py_version}** must already be installed on your system.\n\n"
+        setup += f"R dependencies can be installed using Renv, as described in the section below.\n\n"
+
     if programming_language.lower() in ["matlab","stata","sas"]:
+        f"Project `code` environment using **{py_version}** can be installed using the options described below.\n\n"
+
         setup +=f"These methods do **not** install external the proprietary software **{software_version}** which to be installed manually.\n\n"
 
     
@@ -232,7 +261,6 @@ pip install -r requirements.txt
 </details>
 """
     
-
     setup +=f"""<details>
 <summary>Install using Uv</summary>
 
@@ -293,7 +321,8 @@ Rscript -e \"renv::restore()\"
 
 </details>
 """
-
+    setup +="\n---\n"
+    
     return setup
 
 def set_contact(authors, orcids, emails):
@@ -305,6 +334,7 @@ def set_contact(authors, orcids, emails):
     if emails:
         contact += f"**Email:** {emails}\n\n"
     
+    contact +="\n---\n"
     return contact
 
 def set_script_structure(programming_language, software_version, folder_path, json_file = "./file_description.json"):
@@ -432,8 +462,9 @@ def set_script_structure(programming_language, software_version, folder_path, js
             md.append(f"_Failed to read orchestrator script: {e}_")
     else:
         md.append("_No orchestration script (`00_…`) found._")
-
-    return "\n".join(md)
+    
+    md +="\n---\n"
+    return md
 
 def set_config_table(programming_language):
 
@@ -457,6 +488,8 @@ def set_config_table(programming_language):
 | `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
 | `renv.lock`             | Records the exact versions of R packages used in the project                                    |
 """ 
+
+    config +="\n---\n"
     return config
 
 def set_cli_tools(programming_language):
@@ -493,6 +526,7 @@ set-dataset
 update-requirements
 ```
 """
+    cli_tools +="\n---\n"
     return cli_tools
 
 def set_ci_tools(programming_language: str, code_repo: str):
@@ -666,6 +700,7 @@ Config file: `{ci['config_file']}`
 
 {ci['note']}
 """
+    sectiont +="\n---\n"
     return section.strip()
 
 def set_dcas():
@@ -681,4 +716,5 @@ The following are examples of journals that endorse the Data and Code Availabili
 For a full list of journals, visit [here](https://datacodestandard.org/journals/).
 
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal."""
+    dcas +="\n---\n"
     return dcas
