@@ -38,6 +38,143 @@ def main_text(
 ## 👤 Author & Contact
 {contact}
 
+##💻 System Requirements<
+
+<a name="system-requirements"></a>
+<details>
+<summary></summary>
+
+{system_spec}
+
+</details>
+
+##📦 Installation & Environment Setup
+
+<a name="installation"></a>
+<details>
+<summary></summary>
+
+Follow these steps to set up the project on your local machine:
+
+{install}
+
+</details>
+
+##🚀 Activation & Usage
+
+<a name="project-activation"></a>
+<details>
+<summary></summary>
+
+To configure the environment—including paths, variables, and virtualenvs—follow these steps.  
+Configurations are defined in the `.env` file (excluded from version control).
+
+{activate}
+
+</details>
+
+##📜 Script Structure and Usage
+
+<a name="script-structure-and-usage"></a>
+<details>
+<summary></summary>
+
+{usage}
+
+</details>
+
+##🧪 Testing & Continuous Integration (CI)
+
+<a name="unit-test-ci"></a>
+<details>
+<summary></summary>
+
+{ci_tools}
+
+</details>
+
+##🧰 CLI Utilities
+
+<a name="cli-tools"></a>
+<details>
+<summary></summary>
+
+{cli_tools}
+
+</details>
+
+##🗂️ Configuration Files
+
+<a name="configuration-files-root-level"></a>
+<details>
+<summary></summary>
+
+{config}
+
+</details>
+
+##📦 Dataset List
+
+<a name="dataset-list"></a>
+<details>
+<summary></summary>
+
+{set_dataset()}
+
+</details>
+
+##📁 Project Directory Structure
+
+<a name="project-directory-structure"></a>
+<details>
+<summary></summary>
+
+The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
+
+```
+
+```
+
+</details>
+
+##🔄 DCAS Compliance
+
+<a name="creating-a-replication-package-based-on-dcas"></a>
+<details>
+<summary></summary>
+
+{dcas}
+
+</details>
+"""
+    return header
+
+def main_text_old(
+    project_name,
+    project_description,
+    contact,
+    system_spec,
+    py_version,
+    code_path,
+    software_version,
+    activate,
+    ci_tools,
+    cli_tools,
+    config,
+    install,
+    usage,
+    dcas
+):
+    
+
+
+    header = f"""# {project_name}
+
+{project_description}
+
+## 👤 Author & Contact
+{contact}
+
 ##
 
 <details>
@@ -468,8 +605,9 @@ def set_cli_tools(programming_language):
     cli_tools = f"""
 The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
 
-> ℹ️ **Note**: To use these commands, you must first install the local `setup` package.  
-> Refer to the [Installation](#installation) section for details on how to install it using `pip install -e .` from the `setup/` directory.
+ℹ️ **Note**: To use these commands, you must first install the local `setup` package.  
+
+Refer to the [Installation](#installation) section for details on how to install it using `pip install -e .` from the `setup/` directory.
 
 After installing the setup package, the following commands become available from the terminal:
 
@@ -699,7 +837,6 @@ set-dataset
 |------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
 """
 
-
 def read_dependencies(dependencies_file):
     
     def collect_dependencies(content):
@@ -729,7 +866,7 @@ def read_dependencies(dependencies_file):
 
     # Check if the dependencies file exists
     if not os.path.exists(dependencies_file):
-        return
+        return software_requirements_section
 
     # Read the content from the dependencies file
     with open(dependencies_file, "r") as f:
@@ -747,7 +884,6 @@ def read_dependencies(dependencies_file):
 
     return software_requirements_section
 
-
 def set_specs(py_version,code_path,software_version,setup_file,src_file):
     system_spec = get_system_specs()
     setup_file = read_dependencies(setup_file)
@@ -760,9 +896,11 @@ def set_specs(py_version,code_path,software_version,setup_file,src_file):
 Project setup details:
 
 - **Setup scripts** (`./setup`) use **{py_version}**
+
 {setup_file}
 
 - **Project code** (`{code_path}`) runs on **{software_version}**
+
 {src_file}
 
 See the [Installation](#installation) section for full details.

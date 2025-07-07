@@ -80,11 +80,12 @@ def generate_readme(programming_language,readme_file = "./README.md",code_path =
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
     usage = set_script_structure(programming_language,software_version,code_path,json_file)
-    system_spec = set_specs(py_version,code_path,software_version,str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt")),str(pathlib.Path(f"{code_path}/dependencies.txt")))
+    
     config = set_config_table(programming_language)
     cli_tools = set_cli_tools(programming_language)
     dcas = set_dcas()
     code_path = language_dirs.get(programming_language.lower())
+    system_spec = set_specs(py_version,code_path,software_version,str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt")),str(pathlib.Path(f"{code_path}/dependencies.txt")))
     ci_tools = set_ci_tools(programming_language,code_repo)
     
     header = main_text(project_name,project_description,contact,system_spec,
