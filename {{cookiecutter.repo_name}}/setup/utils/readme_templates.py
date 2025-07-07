@@ -1,13 +1,8 @@
 import os
-import json
 import re
-import os
-import json
 import pathlib
 import platform
-import subprocess
-import shutil
-from datetime import datetime
+
 
 from .readme_sections import *
 
