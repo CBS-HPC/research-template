@@ -201,7 +201,7 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
         setup += f"Project `setup` environment using **{py_version}** can be installed using the options described below.\n\n"
   
     if programming_language.lower() != "r":
-        setup += f"> Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system.\n\n"
+        setup += f"Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system.\n\n"
 
     elif programming_language.lower() == "r":
         setup += f"Conda installation is the only option which will install **{software_version}** and **{py_version}** along with its Python dependencies.\n\n"
