@@ -700,7 +700,7 @@ Config file: `{ci['config_file']}`
 
 {ci['note']}
 """
-    sectiont +="\n---\n"
+    section +="\n---\n"
     return section.strip()
 
 def set_dcas():
