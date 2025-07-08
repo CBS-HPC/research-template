@@ -492,7 +492,6 @@ def set_config_table(programming_language, project_root="."):
 
     return base_config
 
-
 def set_cli_tools(programming_language):
 
     code_path = language_dirs.get(programming_language.lower())
@@ -732,56 +731,56 @@ set-dataset
 |------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
 """
 
-def read_dependencies(dependencies_file):
-    
-    def collect_dependencies(content):
+def set_specs(py_version,code_path,software_version,setup_file,src_file):
+
+    def read_dependencies(dependencies_file):
         
-        current_software = None
-        software_dependencies = {}
-
-        # Parse the dependencies file
-        for i, line in enumerate(content):
-            line = line.strip()
-
-            if line == "Software version:" and i + 1 < len(content):
-                current_software = content[i + 1].strip()
-                software_dependencies[current_software] = {"dependencies": []}
-                continue
-
-            if line == "Dependencies:":
-                continue
+        def collect_dependencies(content):
             
-            if current_software and "==" in line:
-                package, version = line.split("==")
-                software_dependencies[current_software]["dependencies"].append((package, version))
-        
-        return software_dependencies, package, version
+            current_software = None
+            software_dependencies = {}
 
-    software_requirements_section = ""
+            # Parse the dependencies file
+            for i, line in enumerate(content):
+                line = line.strip()
 
-    # Check if the dependencies file exists
-    if not os.path.exists(dependencies_file):
-        print("Hello")
+                if line == "Software version:" and i + 1 < len(content):
+                    current_software = content[i + 1].strip()
+                    software_dependencies[current_software] = {"dependencies": []}
+                    continue
+
+                if line == "Dependencies:":
+                    continue
+                
+                if current_software and "==" in line:
+                    package, version = line.split("==")
+                    software_dependencies[current_software]["dependencies"].append((package, version))
+            
+            return software_dependencies, package, version
+
+        software_requirements_section = ""
+
+        # Check if the dependencies file exists
+        if not os.path.exists(dependencies_file):
+            print("Hello")
+            return software_requirements_section
+
+        # Read the content from the dependencies file
+        with open(dependencies_file, "r") as f:
+            content = f.readlines()
+
+        software_dependencies, package, version = collect_dependencies(content)
+
+        # Correctly loop through the dictionary
+        for software, details in software_dependencies.items():
+                
+            for package, version in details["dependencies"]:
+                software_requirements_section += f"  - {package}: {version}\n"
+
+        software_requirements_section += "\n\n"
+
         return software_requirements_section
 
-    # Read the content from the dependencies file
-    with open(dependencies_file, "r") as f:
-        content = f.readlines()
-
-    software_dependencies, package, version = collect_dependencies(content)
-
-    # Correctly loop through the dictionary
-    for software, details in software_dependencies.items():
-            
-        for package, version in details["dependencies"]:
-            software_requirements_section += f"  - {package}: {version}\n"
-
-    software_requirements_section += "\n\n"
-
-    return software_requirements_section
-
-def set_specs(py_version,code_path,software_version,setup_file,src_file):
-    
     system_spec = get_system_specs()
     setup_file = read_dependencies(setup_file)
     src_file = read_dependencies(src_file)

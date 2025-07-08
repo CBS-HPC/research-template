@@ -44,8 +44,8 @@ def generate_readme(readme_file = "./README.md", code_path = None,json_file="./f
     - project_description (str): A short description of the project.
     """
     
-    if os.path.exists(readme_file):
-        return
+    #if os.path.exists(readme_file):
+    #    return
 
     header = main_text(json_file,code_path)
 
