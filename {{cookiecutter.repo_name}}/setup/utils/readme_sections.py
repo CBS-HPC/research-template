@@ -175,7 +175,6 @@ The current repository structure is shown below. Descriptions can be edited in `
 """
     return header
 
-
 def set_project():
 
     os_type = platform.system().lower()
@@ -468,7 +467,6 @@ def set_config_table(programming_language, project_root="."):
 | `.gitignore`      | Excludes unnecessary files from Git version control                                              |
 | `environment.yml` | Conda environment definition for Python/R, including packages and versions                       |
 | `requirements.txt`| Pip-based Python dependencies for lightweight environments                                       |
-
 """
 
     if programming_language.lower() == "r":
@@ -477,6 +475,24 @@ def set_config_table(programming_language, project_root="."):
     uv_lock_path = os.path.join(project_root, "uv.lock")
     if os.path.exists(uv_lock_path):
         base_config += "| `uv.lock`           | Locked Python dependencies file for reproducible installs with `uv`                            |\n"
+
+    # Add pyproject.toml section explanation
+    base_config += """
+
+---
+
+### 📄 `pyproject.toml` Sections Explained
+
+| Section                   | Purpose                                                                                      |
+|---------------------------|----------------------------------------------------------------------------------------------|
+| `[project]`               | Declares the base project metadata for Python tooling (name, version, dependencies, etc.).   |
+| `[tool.uv]`               | Placeholder for settings related to the uv package manager (currently unused).               |
+| `[tool.cookiecutter]`     | Stores project template metadata (e.g., author, licenses, language) for reproducibility and scaffolding. |
+| `[tool.rcloneignore]`     | Defines file patterns to ignore when syncing with remote tools like Rclone.                  |
+| `[tool.treeignore]`       | Specifies which files and folders to exclude from directory tree visualizations.             |
+| `[tool.platform_rules]`   | Maps Python packages to operating systems for conditional installations.                     |
+| `[tool.file_descriptions]`| Contains descriptions of files and directories for automation, UI labels, and documentation. |
+"""
 
     return base_config
 
@@ -749,7 +765,6 @@ def set_specs(py_version,code_path,software_version,setup_file,src_file):
 
         # Check if the dependencies file exists
         if not os.path.exists(dependencies_file):
-            print("Hello")
             return software_requirements_section
 
         # Read the content from the dependencies file
@@ -772,21 +787,21 @@ def set_specs(py_version,code_path,software_version,setup_file,src_file):
     setup_file = read_dependencies(setup_file)
     src_file = read_dependencies(src_file)
     
-    specs = f"""The project was developed and tested on the following operating system:
+    specs = f"""#### System Specifications
+    
+The project was developed and tested on the following operating system:
 
 {system_spec}
 
-Project setup details:
+#### Software depedency
 
-- **Setup scripts** (`./setup`) use **{py_version}**
+** Setup Package** (`./setup`) use **{py_version}** with the below detected depedencies:
 
 {setup_file}
 
-- **Project code** (`{code_path}`) runs on **{software_version}**
+**Project Code** (`{code_path}`) runs on **{software_version}** with the below detected depedencies:
 
 {src_file}
-
-See the [Installation](#installation) section for full details.
 
 """
     return specs 
