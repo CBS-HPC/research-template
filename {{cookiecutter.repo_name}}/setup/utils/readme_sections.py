@@ -12,7 +12,10 @@ package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
 import psutil
 import cpuinfo
 
+
+
 def main_text(json_file, code_path):
+    
     programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
     code_repo = load_from_env("CODE_REPO", ".cookiecutter")
@@ -45,7 +48,7 @@ def main_text(json_file, code_path):
     install = set_setup(programming_language, py_version, software_version, conda_version, pip_version, uv_version, repo_name, repo_user, hostname)
     activate = set_project()
     contact = set_contact(authors, orcids, emails)
-    usage = set_script_structure(programming_language, software_version, code_path, json_file)
+    usage, run_command = set_script_structure(programming_language, software_version, code_path, json_file)
     config = set_config_table(programming_language)
     cli_tools = set_cli_tools(programming_language)
     dcas = set_dcas()
@@ -56,11 +59,10 @@ def main_text(json_file, code_path):
     ci_tools = set_ci_tools(programming_language, code_repo)
     dataset = set_dataset()
 
-
     if programming_language.lower() != "python":
-        head = f"📋 System information and instructions for installing {py_version}, {software_version}, and dependencies"
+        head = f"📋 Instructions for installing {py_version}, {software_version}, and dependencies"
     else:
-        head = f"📋 System information and instructions for installing {software_version}, and dependencies"
+        head = f"📋 Instructions for installing {software_version}, and dependencies"
     header = f"""# {project_name}
 
 {project_description}
@@ -69,12 +71,12 @@ def main_text(json_file, code_path):
 
 {contact}
 
+{system_spec}
+
 ## 🛠️ Setup & Installation
 <a name="setup-installation"></a>
 <details>
 <summary>{head}</summary>
-
-{system_spec}
 
 {install}
 
@@ -86,27 +88,22 @@ def main_text(json_file, code_path):
 <summary>📂 Instructions for activating environments, running workflows, testing, and using CLI tools</summary>
 
 ### ⚡ Activation
-<a name="project-activation"></a>
-<details>
-<summary>Enable environment variables and virtualenvs</summary>
 
 {activate}
 
-</details>
-
-### 🗂️ Configuration Files
-<a name="configuration-files-root-level"></a>
-<details>
-<summary>Environment and dependency files (.env, requirements.txt, etc.)</summary>
-
-{config}
-
-</details>
-
 ### 📜 Workflow & Scripts
-<a name="script-structure-and-usage"></a>
+
+The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{code_path}`.
+
+#### ▶️ Run the Main Script
+
+To execute the full workflow pipeline, run the main orchestration script from the terminal:
+
+```
+{run_command}
+```
 <details>
-<summary>Modular workflow scripts for orchestration, modeling, and visualization</summary>
+<summary>Expand for more details</summary>
 
 {usage}
 
@@ -118,6 +115,15 @@ def main_text(json_file, code_path):
 <summary>Unit testing and GitHub Actions configuration</summary>
 
 {ci_tools}
+
+</details>
+
+### 🗂️ Configuration Files
+<a name="configuration-files-root-level"></a>
+<details>
+<summary>Environment and dependency files (.env, requirements.txt, etc.)</summary>
+
+{config}
 
 </details>
 
@@ -217,16 +223,14 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
             f"cd {repo_name}\n"
             "```\n")
 
-    setup += f"### {py_version} Setup\n"
+    setup += f"### {py_version}\n"
     
     if programming_language.lower() == "python":
-        setup += f"Project environment using {software_version} can be installed using the options described below.\n\n"
+        setup += f"Project environment using {software_version} can be setup using the options described below.\n\n"
     else:
-        setup += f"Project `setup` environment using **{py_version}** can be installed using the options described below.\n\n"
+        setup += f"Project `./setup` environment using **{py_version}** ccan be setup using the options described below.\n\n"
   
-
-    setup += f"Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system.\n\n"
-
+    setup += f">Only the **Conda** will install **{py_version}** along with its dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system.\n\n"
 
     if programming_language.lower() in ["matlab","stata","sas"]:
         f"Project `code` environment using **{software_version}** can be installed using the options described below.\n\n"
@@ -291,23 +295,32 @@ cd ..
 This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` available in your environment.
 
 """
+    if programming_language.lower() == "python":
+        setup +=f"""### {software_version}
+
+The project code in `{code_path}` is written in **{software_version}** with the detected {software_version} dependencies are listed below:
+
+```code_dependencies 
+{code_dependencies}
+```
+"""
     if programming_language.lower() == "r":
 
-        setup +=f"""### {software_version} Setup 
+        setup +=f"""### {software_version}
+
+The project code in `{code_path}` is written in **{software_version}** and can be set up using one of the option described below.
 
 To use **{software_version}**, it must already be installed on your system.
 
-Conda is the only installation method described earlier that will install **{software_version}** automatically.  
-If you're using pip, uv, or any other method, you must ensure **{software_version}** is installed manually.
+>**Conda** is the only installation method described earlier that will install **{software_version}** automatically.
 
-Detected **{software_version}** dependencies are listed below:
+The detected {software_version} dependencies are listed below:
 
+```code_dependencies 
 {code_dependencies}
+```
 
-R package dependencies can be restored using **Renv**, as described below.
-
-<details>
-<summary>Restore R environment using Renv</summary>
+#### Renv Installation
 
 To install R packages required by this project, use the `renv` package within the `/R` directory and the provided lock file (`renv.lock`):
 
@@ -320,29 +333,20 @@ Rscript -e \"renv::restore()\"
 ```
 install.packages("renv")
 ```
-</details>
-"""
-        
-    if programming_language.lower() == "matlab":
-
-        setup +=f"""### {software_version} Setup
-
-To use **{software_version}**, it must already be installed on your system.
-
-Detected **{software_version}** dependencies are listed below:
-
-{code_dependencies}
-
-"""
-    if programming_language.lower() == "stata":
-
-        setup +=f"""### {software_version} Setup
-
-To use **{software_version}**, it must already be installed on your system.
-
-Detected **{software_version}** dependencies are listed below: 
 
 """    
+    if programming_language.lower() in ["matlab","stata"]:
+
+        setup += f"""### {software_version}
+
+The project code in `{code_path}` is written in **{software_version}** and requires it to be pre-installed on your system. Once {software_version} is available, you can set up the environment using one of the options described below.
+
+The following dependencies have been detected for **{software_version}**:
+
+```code_dependencies 
+{code_dependencies}
+```
+"""
 
     return setup
 
@@ -357,7 +361,128 @@ def set_contact(authors, orcids, emails):
     
     return contact
 
-def set_script_structure(programming_language, software_version, folder_path, json_file = "./file_description.json"):
+def set_script_structure(programming_language, software_version, folder_path, json_file="./file_description.json"):
+    """
+    Generate the README section for Script Structure and Usage based on the programming language,
+    and return the appropriate run command for the main orchestration script.
+
+    Returns:
+        tuple[str, str]: (Formatted markdown for README, run command string)
+    """
+
+    def find_scripts(folder_path, source_ext, notebook_ext):
+        if isinstance(notebook_ext, str):
+            notebook_exts = [notebook_ext.lower()]
+        else:
+            notebook_exts = [ext.lower() for ext in notebook_ext]
+
+        prefix_pattern = re.compile(r'^s(\d{2})_', re.IGNORECASE)
+        found = []
+
+        for root, _, files in os.walk(folder_path):
+            for fn in files:
+                ext = os.path.splitext(fn)[1].lower()
+                if ext == source_ext.lower():
+                    kind = "source"
+                elif ext in notebook_exts:
+                    kind = "notebook"
+                else:
+                    continue
+
+                m = prefix_pattern.match(fn)
+                if not m:
+                    continue
+                prefix = int(m.group(1))
+                found.append((prefix, kind, os.path.join(root, fn)))
+
+        found.sort(key=lambda x: x[0])
+        return [(kind, path) for _, kind, path in found]
+
+    file_descriptions = read_toml_json(json_filename=json_file, tool_name="file_descriptions", toml_path="pyproject.toml")
+    if not file_descriptions:
+        file_descriptions = {}
+
+    programming_language = programming_language.lower()
+    if programming_language not in ["r", "python", "stata", "matlab", "sas"]:
+        raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
+
+    # Set extensions
+    if programming_language == "r":
+        source_ext, notebook_ext = ".R", ".Rmd"
+    elif programming_language == "python":
+        source_ext, notebook_ext = ".py", ".ipynb"
+    elif programming_language == "stata":
+        source_ext, notebook_ext = ".do", ".ipynb"
+    elif programming_language == "matlab":
+        source_ext, notebook_ext = ".m", [".ipynb", ".mlx"]
+    else:
+        source_ext, notebook_ext = ".sas", ".ipynb"
+
+    scripts = find_scripts(folder_path, source_ext, notebook_ext)
+
+    # Orchestration candidates
+    orch_candidates = [
+        path for kind, path in scripts
+        if kind == "source" and os.path.basename(path).lower().startswith("s00_")
+    ]
+    orchestrator = orch_candidates[0] if orch_candidates else None
+
+    # Notebook candidates
+    nb_candidates = [
+        path for kind, path in scripts
+        if kind == "notebook" and os.path.basename(path).lower().startswith("s00_")
+    ]
+    notebook = nb_candidates[0] if nb_candidates else None
+
+    code_path = language_dirs.get(programming_language)
+    md = []
+    md.append("#### Scripts Detected in Workflow:\n")
+
+    for kind, path in scripts:
+        name = os.path.basename(path)
+        display = os.path.splitext(name)[0].replace("_", " ").title()
+        desc = file_descriptions.get(name)
+        if desc:
+            md.append(f"- **{display}** (`{name}`) — {desc}")
+        else:
+            md.append(f"- **{display}** (`{name}`) — `{path}`")
+
+    md.append("")
+
+    if any("utils" in os.path.basename(p).lower() for _, p in scripts):
+        md.append("🛠️ **Note**: `utils` does not define a `main()` function and should not be executed directly.\n")
+
+    md.append("#### Execution Options:\n")
+    if orchestrator:
+        md.append(f"**Run the full pipeline via the orchestration script `{os.path.basename(orchestrator)}` shown below:**\n")
+        try:
+            code = open(orchestrator, encoding="utf-8").read().rstrip()
+            md.append(f"```{programming_language.lower()}\n{code}\n```")
+        except Exception as e:
+            md.append(f"_Failed to read orchestrator script: {e}_")
+    else:
+        md.append("_No orchestration script (`s00_...`) found._")
+
+    # Determine run command for README
+    run_command = None
+    if orchestrator:
+        script_name = os.path.relpath(orchestrator).replace("\\", "/")
+        if programming_language == "python":
+            run_command = f"python {script_name}"
+        elif programming_language == "r":
+            run_command = f"Rscript {script_name}"
+        elif programming_language == "stata":
+            run_command = f"stata-mp -b do {script_name}"
+        elif programming_language == "matlab":
+            run_command = f'matlab -batch "{os.path.splitext(os.path.basename(script_name))[0]}"'
+        elif programming_language == "sas":
+            run_command = f"sas {script_name}"
+        else:
+            run_command = f"<run {script_name}>"
+
+    return "\n".join(md), run_command
+
+def set_script_structure_old(programming_language, software_version, folder_path, json_file = "./file_description.json"):
     """
     Generate the README section for Script Structure and Usage based on the programming language.
 
@@ -448,7 +573,7 @@ def set_script_structure(programming_language, software_version, folder_path, js
     code_path = language_dirs.get(programming_language)
 
     md = []
-    md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{code_path}`.\n")
+    #md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{code_path}`.\n")
     md.append("#### Scripts Detected in Workflow:\n")
     for kind, path in scripts:
         name = os.path.basename(path)
@@ -467,13 +592,14 @@ def set_script_structure(programming_language, software_version, folder_path, js
 
     md.append("#### Execution Options:\n")
     if orchestrator:
-        md.append(f"**Run the full pipeline via the orchestration script:**\n")
-        md.append(f"\n `{os.path.basename(orchestrator)}`:\n")
+        md.append(f"**Run the full pipeline via the orchestration script `{os.path.basename(orchestrator)}` shown below::**\n")
         try:
             code = open(orchestrator, encoding="utf-8").read().rstrip()
             md.append(f"```{programming_language.lower()}\n{code}\n```")
         except Exception as e:
             md.append(f"_Failed to read orchestrator script: {e}_")
+
+        
     else:
         md.append("_No orchestration script (`00_…`) found._")
     
@@ -691,21 +817,21 @@ More information: [Codeberg CI docs](https://docs.codeberg.org/ci/)"""
     ci = ci_matrix[repo]
 
     if lang['package_file']:
-        pipeline = f"""Each pipeline:
+        pipeline = f"""#### Each pipeline:
 1. Installs language runtime and dependencies
 2. Installs project packages using {lang['package_file']}
 3. Runs tests in `tests/`
 4. Outputs results and logs"""
     else:
-        pipeline = f"""Each pipeline:
+        pipeline = f"""#### Each pipeline:
 1. Installs language runtime and dependencies
 2. Runs tests in `tests/`
 3. Outputs results and logs"""
 
 
-    section = f"""This template includes built-in support for **unit testing** and **CI automation** in {programming_language.capitalize()} to promote research reliability and reproducibility.
+    section = f"""### 🧪 Unit Testing
 
-#### 🧪 Unit Testing
+This template includes built-in support for **unit testing** in {programming_language.capitalize()} to promote research reliability and reproducibility.
 
 | Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
 | -------- | ------------------ | ----------- | ----------------- | ---------------- |
@@ -715,15 +841,31 @@ Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_ma
 
 {lang['example']}
 
-#### ⚙️ Continuous Integration (CI)
+### ⚙️ Continuous Integration (CI)
 
-CI is configured for **{code_repo.capitalize()}** with **{programming_language.capitalize()}** support.
+CI is configured for **{code_repo.capitalize()}** (`{ci['config_file']}`) with **{programming_language.capitalize()}** support.
 
-Config file: `{ci['config_file']}`
+#### 🔄 CI Control via CLI
+
+CI can be toggled on or off using the built-in CLI command:
+
+```
+ci-control --on
+ci-control --off 
+```
 
 {pipeline}
 
 {ci['note']}
+
+
+#### 🧷 Git Shortcut for Skipping CI
+
+To skip CI on a commit, use the built-in Git alias:
+
+```
+git commit-skip "Updated documentation"
+```
 """
     return section.strip()
 
@@ -797,20 +939,17 @@ def read_dependencies(dependencies_file):
     for software, details in software_dependencies.items():
             
         for package, version in details["dependencies"]:
-            software_requirements_section += f"  - {package}: {version}\n"
+            software_requirements_section += f"{package}: {version}\n"
 
     software_requirements_section += "\n\n"
 
     return software_requirements_section
 
-
 def set_specs():
 
     system_spec = get_system_specs()
-    #setup_file = read_dependencies(setup_file)
-    #src_file = read_dependencies(src_file)
-    
-    specs = f"""### System Specifications
+
+    specs = f"""## System Specifications
     
 The project was developed and tested on the following operating system:
 

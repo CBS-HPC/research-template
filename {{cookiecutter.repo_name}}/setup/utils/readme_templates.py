@@ -457,128 +457,60 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
     else:
         print(f"Failed to download {readme_file} from {url}")
 
-def update_requirements(dependencies_files, readme_file, sections):
+def update_requirements(programming_language, readme_file):
     
-    def read_dependencies(dependencies_files,sections):
-        
-        def collect_dependencies(content):
-            
-            current_software = None
-            software_dependencies = {}
-
-            # Parse the dependencies file
-            for i, line in enumerate(content):
-                line = line.strip()
-
-                if line == "Software version:" and i + 1 < len(content):
-                    current_software = content[i + 1].strip()
-                    software_dependencies[current_software] = {"dependencies": []}
-                    continue
-
-                if line == "Dependencies:":
-                    continue
-                
-                if current_software and "==" in line:
-                    package, version = line.split("==")
-                    software_dependencies[current_software]["dependencies"].append((package, version))
-            
-            return software_dependencies, package, version
-
-        # Ensure the lengths of dependencies_files and sections match
-        if len(dependencies_files) != len(sections):
-            raise ValueError("The number of dependencies files must match the number of sections.")
-
-        software_requirements_section = f"""<summary>📋 System and Environment Information</summary>
-
-The project was developed and tested on the following operating system:
-
-- **Operating System**: {platform.platform()}
-
-The environments were set up using:"""
-        programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-        py_version = get_version("python")
-        software_version = get_version(programming_language)
-
-        # Iterate through all dependency files and corresponding sections
-        for idx, (dependencies_file, section) in enumerate(zip(dependencies_files, sections)):
-
-            if section == "./setup":
-                software_requirements_section +=f"\n- **Project setup scripts** (`{section}`) installed with **{py_version}** with its **main** dependencies listed below:\n"
-            else:
-                software_requirements_section +=f"\n- **Project code** (`{section}`) installed with **{software_version}** with its **main** dependencies listed below:\n"
-         
-
-            # Check if the dependencies file exists
-            if not os.path.exists(dependencies_file):
-                continue
-
-            # Read the content from the dependencies file
-            with open(dependencies_file, "r") as f:
-                content = f.readlines()
-
-            software_dependencies, package, version = collect_dependencies(content)
-
-            # Correctly loop through the dictionary
-            for software, details in software_dependencies.items():
-                   
-                for package, version in details["dependencies"]:
-                    software_requirements_section += f"  - {package}: {version}\n"
-
-            software_requirements_section += "\n\n"
-        
-        software_requirements_section +="For further details can be found in the [Installation](#installation) section\n\n"
-
-  
-        software_requirements_section +="</details>\n"
-  
-
-        return software_requirements_section
-
-    def write_to_readme(readme_file,software_requirements_section):
-            # Check if the README file exists
+    def write_to_readme(readme_file, code_dependencies):
+        # Check if the README file exists; create it if not
         if not os.path.exists(readme_file):
-            creating_readme(programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))
+            creating_readme(programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
 
         try:
             with open(readme_file, "r", encoding="utf-8") as file:
                 readme_content = file.read()
 
-            # Check if the "### Software Requirements" section exists
-            if "<summary>📋 System and Environment Information</summary>" in readme_content:
-                # Find the "### Software Requirements" section and replace it
-                start = readme_content.find("<summary>📋 System and Environment Information</summary>")
-                end = readme_content.find("</details>", start + 1)
-                if end == -1:
-                    end = len(readme_content)  # No further sections, overwrite until the end
-                updated_content = readme_content[:start] + software_requirements_section.strip() + readme_content[end:]
+            # Look for fenced code block labeled 'code_dependencies'
+            start_marker = "```code_dependencies"
+            end_marker = "```"
+
+            start = readme_content.find(start_marker)
+            if start != -1:
+                start += len(start_marker)
+                end = readme_content.find(end_marker, start)
+                if end != -1:
+                    # Replace the content in between
+                    updated_content = (
+                        readme_content[:start].rstrip() + "\n" +
+                        code_dependencies.strip() + "\n" +
+                        readme_content[end:]
+                    )
+                else:
+                    print("❌ Could not find closing ``` after ```code_dependencies. No changes made.")
+                    return
             else:
-                # Append the new section at the end
-                updated_content = readme_content.strip() + "\n\n" + software_requirements_section.strip()
+                # If the block doesn't exist, append a new one
+                updated_content = readme_content.strip() + "\n\n```code_dependencies\n" + code_dependencies.strip() + "\n```"
+
         except FileNotFoundError:
-            # If the README file doesn't exist, create it with the new section
-            updated_content = software_requirements_section.strip()
+            # If README doesn't exist at all, create with only this block
+            updated_content = "```code_dependencies\n" + code_dependencies.strip() + "\n```"
 
-        updated_content = updated_content.replace("---## Software Requirements","")
-
-        # Write the updated content to the README file
-        with open(readme_file, "w",encoding="utf-8") as file:
+        # Write the updated content to the README
+        with open(readme_file, "w", encoding="utf-8") as file:
             file.write(updated_content.strip())
 
         print(f"{readme_file} successfully updated.")
 
-    software_requirements_section =read_dependencies(dependencies_files,sections)
-
-    write_to_readme(readme_file,software_requirements_section)
+    code_path = language_dirs.get(programming_language.lower())
+    code_dependencies = read_dependencies(str(pathlib.Path(__file__).resolve().parent.parent.parent / f"{code_path}/dependencies.txt"))
+   
+   
+    write_to_readme(readme_file,code_dependencies)
 
 def main():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     creating_readme(programming_language = programming_language)
-    code_path = language_dirs.get(programming_language.lower())
-    files = [str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt")),
-            str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"{code_path}/dependencies.txt"))
-            ]
     readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
-    update_requirements(dependencies_files = files, readme_file = readme_file ,sections = ["./setup",code_path])
+    update_requirements(programming_language, readme_file)
 
 if __name__ == "__main__":
     
