@@ -38,7 +38,7 @@ def main_text(
 ## 👤 Author & Contact
 {contact}
 
-##💻 System Requirements<
+##💻 System Requirements
 
 <a name="system-requirements"></a>
 <details>
@@ -131,7 +131,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
 
-```
+```tree
 
 ```
 
@@ -142,142 +142,6 @@ The current repository structure is shown below. Descriptions can be edited in `
 <a name="creating-a-replication-package-based-on-dcas"></a>
 <details>
 <summary></summary>
-
-{dcas}
-
-</details>
-"""
-    return header
-
-def main_text_old(
-    project_name,
-    project_description,
-    contact,
-    system_spec,
-    py_version,
-    code_path,
-    software_version,
-    activate,
-    ci_tools,
-    cli_tools,
-    config,
-    install,
-    usage,
-    dcas
-):
-    
-
-
-    header = f"""# {project_name}
-
-{project_description}
-
-## 👤 Author & Contact
-{contact}
-
-##
-
-<details>
-<summary>💻 System Requirements</summary>
-
-{system_spec}
-
-</details>
-
-##
-
-<a name="installation"></a>
-<details>
-<summary>📦 Installation & Environment Setup</summary>
-
-Follow these steps to set up the project on your local machine:
-
-{install}
-
-</details>
-
-##
-
-<a name="project-activation"></a>
-<details>
-<summary>🚀 Activation & Usage</summary>
-
-To configure the environment—including paths, variables, and virtualenvs—follow these steps.  
-Configurations are defined in the `.env` file (excluded from version control).
-
-{activate}
-
-</details>
-
-##
-
-<a name="script-structure-and-usage"></a>
-<details>
-<summary>📜 Script Structure and Usage</summary>
-
-{usage}
-
-</details>
-
-##
-
-<a name="unit-test-ci"></a>
-<details>
-<summary>🧪 Testing & Continuous Integration (CI)</summary>
-
-{ci_tools}
-
-</details>
-
-##
-
-<a name="cli-tools"></a>
-<details>
-<summary>🧰 CLI Utilities</summary>
-
-{cli_tools}
-
-</details>
-
-##
-
-<a name="configuration-files-root-level"></a>
-<details>
-<summary>🗂️ Configuration Files</summary>
-
-{config}
-
-</details>
-
-##
-
-<a name="dataset-list"></a>
-<details>
-<summary>📦 Dataset List</summary>
-
-{set_dataset()}
-
-</details>
-
-##
-
-<a name="project-directory-structure"></a>
-<details>
-<summary>📁 Project Directory Structure</summary>
-
-The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
-
-```
-
-```
-
-</details>
-
-##
-
-<a name="creating-a-replication-package-based-on-dcas"></a>
-<details>
-<summary>🔄 DCAS Compliance</summary>
 
 {dcas}
 
@@ -351,7 +215,7 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
         setup +=f"These methods do **not** install external the proprietary software **{software_version}** which to be installed manually.\n\n"
 
     setup +=f"""<details>
-<summary>Install with Conda</summary>
+<summary>Conda Installation</summary>
 
 Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:
 
@@ -362,7 +226,7 @@ conda env create -f environment.yml
 """
 
     setup +=f"""<details>
-<summary>Install using Pip:</summary>
+<summary>Pip Installation:</summary>
 
 You can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`::
 
@@ -373,7 +237,7 @@ pip install -r requirements.txt
 """
     
     setup +=f"""<details>
-<summary>Install using Uv</summary>
+<summary>Uv Installation</summary>
 
 If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies from `requirements.txt`:
 
@@ -388,7 +252,7 @@ uv pip install -r requirements.txt
 """
     
     setup +=f"""<details>
-<summary>Install the `setup` package</summary>
+<summary>Installing the `setup` package</summary>
 
 Once you have installed the python environmnet Conda, Pip or Uv, you must also install the local `setup` package used for configuration and automation scripts:
 
@@ -405,7 +269,7 @@ This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` ava
     if programming_language.lower() == "r":
 
         setup +=f"""<details>
-<summary>Install R dependencies using renv</summary>
+<summary>Installing R dependencies using Renv</summary>
 
 The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/R` directory using the `renv` package and the provided lock file (`renv.lock`):
 
