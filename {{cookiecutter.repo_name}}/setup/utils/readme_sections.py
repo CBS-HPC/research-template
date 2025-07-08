@@ -12,30 +12,64 @@ package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
 import psutil
 import cpuinfo
 
-def main_text(
-    project_name,
-    project_description,
-    contact,
-    system_spec,
-    py_version,
-    code_path,
-    software_version,
-    activate,
-    ci_tools,
-    cli_tools,
-    config,
-    install,
-    usage,
-    dcas
-):
+def main_text(json_file):
     
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    authors = load_from_env("AUTHORS",".cookiecutter")
+    orcids = load_from_env("ORCIDS",".cookiecutter")
+    emails = load_from_env("EMAIL",".cookiecutter")
+    project_name = load_from_env("PROJECT_NAME",".cookiecutter")
+    project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
+    py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
+        # Generate URL based on version control
+    if code_repo.lower() == "github":
+        repo_user = load_from_env("GITHUB_USER")
+        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
+    elif code_repo.lower() == "gitlab":
+        repo_user = load_from_env("GITLAB_USER")
+        hostname = load_from_env('GITHUB_HOSTNAME') or "gitlab.com"
 
+    elif code_repo.lower() == "codeberg":
+        repo_user = load_from_env("CODEBERG_USER")
+        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
+    else:
+        repo_user = None
+        hostname = None
+
+    py_version = get_version("python")
+    software_version = get_version(programming_language)
+    conda_version = get_version("conda") if py_manager.lower() == "conda" else "conda"
+    pip_version = get_version("pip")
+    uv_version = get_version("uv")
+    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user, hostname)
+    activate = set_project()
+    contact = set_contact(authors, orcids, emails)
+    
+    usage = set_script_structure(programming_language,software_version,code_path,json_file)
+    
+    config = set_config_table(programming_language)
+    cli_tools = set_cli_tools(programming_language)
+    dcas = set_dcas()
+    code_path = language_dirs.get(programming_language.lower())
+    
+    setup_txt = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
+    src_txt = str(pathlib.Path(f"{code_path}/dependencies.txt"))
+    print(setup_txt)
+    print(src_txt)
+    system_spec = set_specs(py_version,code_path,software_version,setup_txt,src_txt)
+    print(system_spec)
+
+    ci_tools = set_ci_tools(programming_language,code_repo)
+    dataset = set_dataset()
     header = f"""# {project_name}
 
 {project_description}
 
 ## 👤 Author & Contact
+
 {contact}
 
 ##💻 System Requirements
@@ -119,7 +153,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 <details>
 <summary></summary>
 
-{set_dataset()}
+{dataset}
 
 </details>
 
