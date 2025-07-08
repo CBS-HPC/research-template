@@ -28,13 +28,13 @@ def creating_readme(programming_language = "None"):
     
     update_file_descriptions(programming_language, readme_file, file_descriptions)
 
-    generate_readme(readme_file, file_descriptions)
+    generate_readme(readme_file, code_path, file_descriptions)
 
     ignore_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
     
     create_tree(readme_file,ignore_list ,file_descriptions)
     
-def generate_readme(readme_file = "./README.md",json_file="./file_descriptions.json"):
+def generate_readme(readme_file = "./README.md", code_path = None,json_file="./file_descriptions.json"):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
@@ -46,51 +46,8 @@ def generate_readme(readme_file = "./README.md",json_file="./file_descriptions.j
     
     if os.path.exists(readme_file):
         return
-    
-    #repo_name = load_from_env("REPO_NAME",".cookiecutter")
-    #code_repo = load_from_env("CODE_REPO",".cookiecutter")
-    #authors = load_from_env("AUTHORS",".cookiecutter")
-    #orcids = load_from_env("ORCIDS",".cookiecutter")
-    #emails = load_from_env("EMAIL",".cookiecutter")
-    #project_name = load_from_env("PROJECT_NAME",".cookiecutter")
-    #project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-    #py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
 
-        # Generate URL based on version control
-    #if code_repo.lower() == "github":
-    #    repo_user = load_from_env("GITHUB_USER")
-    #    hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
-    #elif code_repo.lower() == "gitlab":
-    #    repo_user = load_from_env("GITLAB_USER")
-    #    hostname = load_from_env('GITHUB_HOSTNAME') or "gitlab.com"
-    #
-    #elif code_repo.lower() == "codeberg":
-    #   repo_user = load_from_env("CODEBERG_USER")
-    #    hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
-    #else:
-    #    repo_user = None
-    #    hostname = None
-
-    #py_version = get_version("python")
-    #software_version = get_version(programming_language)
-    #conda_version = get_version("conda") if py_manager.lower() == "conda" else "conda"
-    #pip_version = get_version("pip")
-    #uv_version = get_version("uv")
-    #install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user, hostname)
-    #activate = set_project()
-    #contact = set_contact(authors, orcids, emails)
-    #usage = set_script_structure(programming_language,software_version,code_path,json_file)
-    
-    #config = set_config_table(programming_language)
-    #cli_tools = set_cli_tools(programming_language)
-    #dcas = set_dcas()
-    #code_path = language_dirs.get(programming_language.lower())
-    #system_spec = set_specs(py_version,code_path,software_version,str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt")),str(pathlib.Path(f"{code_path}/dependencies.txt")))
-    #ci_tools = set_ci_tools(programming_language,code_repo)
-    
-    header = main_text(json_file)
-    #header = main_text(project_name,project_description,contact,system_spec,
-    #                   py_version,code_path,software_version,activate,ci_tools,cli_tools,config,install,usage,dcas)
+    header = main_text(json_file,code_path)
 
     # Write the README.md content
     with open(readme_file, "w",encoding="utf-8") as file:

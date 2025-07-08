@@ -12,7 +12,7 @@ package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
 import psutil
 import cpuinfo
 
-def main_text(json_file):
+def main_text(json_file,code_path):
     
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
