@@ -56,7 +56,7 @@ def main_text(json_file,code_path):
     code_path = language_dirs.get(programming_language.lower())
     
     setup_txt = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
-    src_txt = str(pathlib.Path(f"{code_path}/dependencies.txt"))
+    src_txt = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"{code_path}/dependencies.txt"))
     print(setup_txt)
     print(src_txt)
     system_spec = set_specs(py_version,code_path,software_version,setup_txt,src_txt)
@@ -72,7 +72,7 @@ def main_text(json_file,code_path):
 
 {contact}
 
-##💻 System Requirements
+## 💻 System Requirements
 
 <a name="system-requirements"></a>
 <details>
@@ -82,7 +82,7 @@ def main_text(json_file,code_path):
 
 </details>
 
-##📦 Installation & Environment Setup
+## 📦 Installation & Environment Setup
 
 <a name="installation"></a>
 <details>
@@ -94,7 +94,7 @@ Follow these steps to set up the project on your local machine:
 
 </details>
 
-##🚀 Activation & Usage
+## 🚀 Activation & Usage
 
 <a name="project-activation"></a>
 <details>
@@ -107,7 +107,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
-##📜 Script Structure and Usage
+## 📜 Script Structure and Usage
 
 <a name="script-structure-and-usage"></a>
 <details>
@@ -117,7 +117,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
-##🧪 Testing & Continuous Integration (CI)
+## 🧪 Testing & Continuous Integration (CI)
 
 <a name="unit-test-ci"></a>
 <details>
@@ -127,7 +127,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
-##🧰 CLI Utilities
+## 🧰 CLI Utilities
 
 <a name="cli-tools"></a>
 <details>
@@ -137,7 +137,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
-##🗂️ Configuration Files
+## 🗂️ Configuration Files
 
 <a name="configuration-files-root-level"></a>
 <details>
@@ -147,7 +147,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
-##📦 Dataset List
+## 📦 Dataset List
 
 <a name="dataset-list"></a>
 <details>
@@ -157,7 +157,7 @@ Configurations are defined in the `.env` file (excluded from version control).
 
 </details>
 
-##📁 Project Directory Structure
+## 📁 Project Directory Structure
 
 <a name="project-directory-structure"></a>
 <details>
@@ -171,7 +171,7 @@ The current repository structure is shown below. Descriptions can be edited in `
 
 </details>
 
-##🔄 DCAS Compliance
+## 🔄 DCAS Compliance
 
 <a name="creating-a-replication-package-based-on-dcas"></a>
 <details>
@@ -471,30 +471,27 @@ def set_script_structure(programming_language, software_version, folder_path, js
     
     return "\n".join(md)
 
-def set_config_table(programming_language):
+def set_config_table(programming_language, project_root="."):
+    base_config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
 
-    if programming_language.lower() != "r":
-        config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
-| File                    | Purpose                                                                                         |
-|-------------------------|-------------------------------------------------------------------------------------------------|
-| `.gitignore`            | Excludes unnecessary files from Git version control                                             |
-| `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
-| `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
-| `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
-""" 
-    else:
-        config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
+| File              | Purpose                                                                                          |
+|-------------------|--------------------------------------------------------------------------------------------------|
+| `.gitignore`      | Excludes unnecessary files from Git version control                                              |
+| `.env`            | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
+| `environment.yml` | Conda environment definition for Python/R, including packages and versions                       |
+| `requirements.txt`| Pip-based Python dependencies for lightweight environments                                       |
+| `pyproject.toml`  | Project metadata for packaging, CLI tools, sync rules, platform logic, and documentation         |
+"""
 
-| File                    | Purpose                                                                                         |
-|-------------------------|-------------------------------------------------------------------------------------------------|
-| `.gitignore`            | Excludes unnecessary files from Git version control                                             |
-| `.env`                  | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
-| `environment.yml`       | Conda environment definition for Python/R, including packages and versions                      |
-| `requirements.txt`      | Pip-based Python dependencies for lightweight environments                                      |
-| `renv.lock`             | Records the exact versions of R packages used in the project                                    |
-""" 
+    if programming_language.lower() == "r":
+        base_config += "| `renv.lock`         | Records the exact versions of R packages used in the project                                   |\n"
 
-    return config
+    uv_lock_path = os.path.join(project_root, "uv.lock")
+    if os.path.exists(uv_lock_path):
+        base_config += "| `uv.lock`           | Locked Python dependencies file for reproducible installs with `uv`                            |\n"
+
+    return base_config
+
 
 def set_cli_tools(programming_language):
 
@@ -764,6 +761,7 @@ def read_dependencies(dependencies_file):
 
     # Check if the dependencies file exists
     if not os.path.exists(dependencies_file):
+        print("Hello")
         return software_requirements_section
 
     # Read the content from the dependencies file
@@ -783,6 +781,7 @@ def read_dependencies(dependencies_file):
     return software_requirements_section
 
 def set_specs(py_version,code_path,software_version,setup_file,src_file):
+    
     system_spec = get_system_specs()
     setup_file = read_dependencies(setup_file)
     src_file = read_dependencies(src_file)
