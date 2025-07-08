@@ -14,9 +14,8 @@ import requests
 def creating_readme(programming_language = "None"):
 
     programming_language = programming_language.lower()
-    ext = ext_map.get(programming_language)
 
-    if ext is None:
+    if ext_map.get(programming_language) is None:
         return f"Unsupported programming language: {programming_language}"
 
     code_path = language_dirs.get(programming_language)
@@ -44,16 +43,12 @@ def generate_readme(readme_file = "./README.md", code_path = None,json_file="./f
     - project_description (str): A short description of the project.
     """
     
-    #if os.path.exists(readme_file):
-    #    return
-
     header = main_text(json_file,code_path)
 
     # Write the README.md content
     with open(readme_file, "w",encoding="utf-8") as file:
         file.write(header)
     print(f"README.md created at: {readme_file}")
-
 
 def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptions.json", root_folder=None):
     """
@@ -185,27 +180,52 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
     def create_file_descriptions(programming_language,json_file):
 
         def code_file_descriptions(programming_language):
+            # Set extensions based on programming language
+            if programming_language.lower() == "r":
+                source_ext, notebook_ext = ".R", ".Rmd"
+            elif programming_language.lower() == "python":
+                source_ext, notebook_ext = ".py", ".ipynb"
+            elif programming_language.lower() == "stata":
+                source_ext, notebook_ext = ".do", ".ipynb"
+            elif programming_language.lower() == "matlab":
+                source_ext, notebook_ext = ".m", [".ipynb", ".mlx"]
+                notebook_ext = notebook_ext[0]  # Default to .ipynb
+            else:  # SAS
+                source_ext, notebook_ext = ".sas", ".ipynb"
 
             code_template = {
                 "s00_main": "orchestrates the full pipeline",
                 "s00_workflow": "notebook orchestrating the full pipeline",
-                "s01_install_dependencies": "Installs any missing packages required for the project",
+                "s01_install_dependencies": "installs any missing packages required for the project",
                 "s02_utils": "shared helper functions (not directly executable)",
                 "s03_data_collection": "imports or generates raw data",
                 "s04_preprocessing": "cleans and transforms data",
                 "s05_modeling": "fits models and generates outputs",
                 "s06_visualization": "creates plots and summaries",
-                "get_dependencies": "retrieves and checks required packages required for the project (Utilised)"            
+                "get_dependencies": "retrieves and checks required packages for the project (utilised)",
+
+                # Unit tests
+                "test_s00_main": "tests the main pipeline orchestration in `s00_main.*`",
+                "test_s00_workflow": "tests the full pipeline notebook `s00_workflow{}`".format(notebook_ext),
+                "test_s01_install_dependencies": "tests the dependency installation logic in `s01_install_dependencies.*`",
+                "test_s02_utils": "tests utility functions defined in `s02_utils.*`",
+                "test_s03_data_collection": "tests data import and generation logic from `s03_data_collection.*`",
+                "test_s04_preprocessing": "tests data cleaning and transformation in `s04_preprocessing.*`",
+                "test_s05_modeling": "tests model fitting and output generation in `s05_modeling.*`",
+                "test_s06_visualization": "tests plotting and summary creation in `s06_visualization.*`",
+                "test_get_dependencies": "tests the package dependency resolution in `get_dependencies.*`"
             }
-            
 
-            file_extension = ext_map.get(programming_language.lower(), "txt")  # Default to "txt" if language is unknown
-
-            # Generate the descriptions by replacing placeholders in the template
             descriptions = {}
+
             for key, description in code_template.items():
-                file_name = f"{key}.{file_extension}"  # Create the file name with the correct extension
-                descriptions[file_name] = description.format(language=programming_language)
+                if key == "s00_workflow":
+                    file_name = f"{key}{notebook_ext}"
+                elif key == "test_s00_workflow":
+                    file_name = f"{key}{notebook_ext}"
+                else:
+                    file_name = f"{key}{source_ext}"
+                descriptions[file_name] = description
 
             return descriptions
 
@@ -216,6 +236,8 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             "01_interim": "Intermediate data transformed during the workflow.",
             "02_processed": "The final, clean data used for analysis or modeling.",
             "00_raw": "Original, immutable raw data.",
+            "tests": "directory containing unit tests.",
+            "testthat": "Contains unit tests for R scripts using the testthat framework.",
             "src": "Directory containing source code for use in this project.",
             "R": "Directory containing source code for use in this project.",
             "stata": "Directory containing source code for use in this project.",
