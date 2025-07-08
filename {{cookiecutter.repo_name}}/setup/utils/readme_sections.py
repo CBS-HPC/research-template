@@ -12,7 +12,6 @@ package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
 import psutil
 import cpuinfo
 
-
 def main_text(json_file, code_path):
     programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
@@ -52,12 +51,16 @@ def main_text(json_file, code_path):
     dcas = set_dcas()
     code_path = language_dirs.get(programming_language.lower())
 
-    setup_txt = str(pathlib.Path(__file__).resolve().parent.parent.parent / "setup/dependencies.txt")
-    src_txt = str(pathlib.Path(__file__).resolve().parent.parent.parent / f"{code_path}/dependencies.txt")
-    system_spec = set_specs(py_version, code_path, software_version, setup_txt, src_txt)
+
+    system_spec = set_specs()
     ci_tools = set_ci_tools(programming_language, code_repo)
     dataset = set_dataset()
 
+
+    if programming_language.lower() != "python":
+        head = f"📋 System information and instructions for installing {py_version}, {software_version}, and dependencies"
+    else:
+        head = f"📋 System information and instructions for installing {software_version}, and dependencies"
     header = f"""# {project_name}
 
 {project_description}
@@ -69,25 +72,12 @@ def main_text(json_file, code_path):
 ## 🛠️ Setup & Installation
 <a name="setup-installation"></a>
 <details>
-<summary>📋 System information and instructions for installing Python, R, and dependencies</summary>
-
-### 💻 System & Dependency Information
-<a name="system-requirements"></a>
-<details>
-<summary>📋 Full system specs and installed packages</summary>
+<summary>{head}</summary>
 
 {system_spec}
 
-</details>
-
-### 📦 Environment Setup
-<a name="installation"></a>
-<details>
-<summary>🔧 Install with Conda, pip, uv, and Renv</summary>
-
 {install}
 
-</details>
 </details>
 
 ## 🚀 Usage & Execution
@@ -204,39 +194,42 @@ def set_project():
     return usage
 
 def set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user,hostname):            
+    
+    
+    code_path = language_dirs.get(programming_language.lower())
+
+    #setup_dependencies = read_dependencies(str(pathlib.Path(__file__).resolve().parent.parent.parent / "setup/dependencies.txt"))
+    code_dependencies = read_dependencies(str(pathlib.Path(__file__).resolve().parent.parent.parent / f"{code_path}/dependencies.txt"))
+    
     setup = ""
 
     if repo_name and repo_user:
-        setup += "#### Clone the Project Repository\n"
+        setup += "### Clone the Project Repository\n"
         "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
         "Clone the repository using the following command:\n"
         setup += "```\n"
         if hostname:
             setup += (f"git clone https://{hostname}/{repo_user}/{repo_name}.git\n"   
                     "```\n")
-    setup += ("#### Navigate to the Project Directory\n"
+    setup += ("### Navigate to the Project Directory\n"
             "Change into the project directory:\n"  
             "```\n"
             f"cd {repo_name}\n"
             "```\n")
 
-    setup += "#### Software Installation\n"
+    setup += f"### {py_version} Setup\n"
     
     if programming_language.lower() == "python":
         setup += f"Project environment using {software_version} can be installed using the options described below.\n\n"
     else:
         setup += f"Project `setup` environment using **{py_version}** can be installed using the options described below.\n\n"
   
-    if programming_language.lower() != "r":
-        setup += f"Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system.\n\n"
 
-    elif programming_language.lower() == "r":
-        setup += f"Conda installation is the only option which will install **{software_version}** and **{py_version}** along with its Python dependencies.\n\n"
-        setup += f"For pip or uv installation methods, **{software_version}** and **{py_version}** must already be installed on your system.\n\n"
-        setup += f"R dependencies can be installed using Renv, as described in the section below.\n\n"
+    setup += f"Only the Conda installation will install **{py_version}** along with its Python dependencies. For pip and uv installation methods, **{py_version}** must already be installed on your system.\n\n"
+
 
     if programming_language.lower() in ["matlab","stata","sas"]:
-        f"Project `code` environment using **{py_version}** can be installed using the options described below.\n\n"
+        f"Project `code` environment using **{software_version}** can be installed using the options described below.\n\n"
 
         setup +=f"These methods do **not** install external the proprietary software **{software_version}** which to be installed manually.\n\n"
 
@@ -249,6 +242,7 @@ Install the required dependencies using **{conda_version}** and the provided `en
 conda env create -f environment.yml
 ```
 </details>
+
 """
 
     setup +=f"""<details>
@@ -260,25 +254,31 @@ You can install the Python dependencies using **{py_version}** and **{pip_versio
 pip install -r requirements.txt
 ```
 </details>
+
 """
     
     setup +=f"""<details>
 <summary>Uv Installation</summary>
 
-If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies from `requirements.txt`:
+If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies.
 
-The current repository structure is shown in the tree below, and descriptions for each file can be found or edited in the `./pyproject.toml` file.
+To install using `requirements.txt`:
 
 ```
 uv pip install -r requirements.txt
 ```
-> 💡 [uv](https://github.com/astral-sh/uv) provides faster installs and better reproducibility by resolving and locking dependencies consistently. Install it with `pip install uv` or follow the [official instructions](https://github.com/astral-sh/uv).
+
+Or, if a `uv.lock` file is available and you want full reproducibility:
+
+```
+uv pip install --strict uv.lock
+```
 
 </details>
+
 """
     
-    setup +=f"""<details>
-<summary>Installing the `setup` package</summary>
+    setup +=f"""### Installing the `setup` package
 
 Once you have installed the python environmnet Conda, Pip or Uv, you must also install the local `setup` package used for configuration and automation scripts:
 
@@ -289,39 +289,61 @@ cd ..
 ```
 
 This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` available in your environment.
-</details>
-"""
 
+"""
     if programming_language.lower() == "r":
 
-        setup +=f"""<details>
-<summary>Installing R dependencies using Renv</summary>
+        setup +=f"""### {software_version} Setup 
 
-The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/R` directory using the `renv` package and the provided lock file (`renv.lock`):
+To use **{software_version}**, it must already be installed on your system.
+
+Conda is the only installation method described earlier that will install **{software_version}** automatically.  
+If you're using pip, uv, or any other method, you must ensure **{software_version}** is installed manually.
+
+Detected **{software_version}** dependencies are listed below:
+
+{code_dependencies}
+
+R package dependencies can be restored using **Renv**, as described below.
+
+<details>
+<summary>Restore R environment using Renv</summary>
+
+To install R packages required by this project, use the `renv` package within the `/R` directory and the provided lock file (`renv.lock`):
 
 ```
 cd R
 Rscript -e \"renv::restore()\"
 ```
-> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.
+> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run:
 
+```
+install.packages("renv")
+```
 </details>
 """
+        
     if programming_language.lower() == "matlab":
 
-        setup +=f"""<details>
-<summary>Install R dependencies using renv</summary>
+        setup +=f"""### {software_version} Setup
 
-The project's environment is based on **{software_version}**. R package dependencies can be installed within the `/R` directory using the `renv` package and the provided lock file (`renv.lock`):
+To use **{software_version}**, it must already be installed on your system.
 
-```
-cd R
-Rscript -e \"renv::restore()\"
-```
-> ⚠️ Warning: Ensure you are using **{software_version}** for full compatibility. If `renv` is not already installed, run `install.packages('renv')` first.
+Detected **{software_version}** dependencies are listed below:
 
-</details>
+{code_dependencies}
+
 """
+    if programming_language.lower() == "stata":
+
+        setup +=f"""### {software_version} Setup
+
+To use **{software_version}**, it must already be installed on your system.
+
+Detected **{software_version}** dependencies are listed below: 
+
+"""    
+
     return setup
 
 def set_contact(authors, orcids, emails):
@@ -734,74 +756,65 @@ set-dataset
 |------------------|-----------------|---------------------------|-----------------|---------------------------|-----------------|-----------------|----------------------|-----------------|--------------------|------------------------|-----------------------|------------------------|
 """
 
-def set_specs(py_version,code_path,software_version,setup_file,src_file):
-
-    def read_dependencies(dependencies_file):
+def read_dependencies(dependencies_file):
+    
+    def collect_dependencies(content):
         
-        def collect_dependencies(content):
+        current_software = None
+        software_dependencies = {}
+
+        # Parse the dependencies file
+        for i, line in enumerate(content):
+            line = line.strip()
+
+            if line == "Software version:" and i + 1 < len(content):
+                current_software = content[i + 1].strip()
+                software_dependencies[current_software] = {"dependencies": []}
+                continue
+
+            if line == "Dependencies:":
+                continue
             
-            current_software = None
-            software_dependencies = {}
+            if current_software and "==" in line:
+                package, version = line.split("==")
+                software_dependencies[current_software]["dependencies"].append((package, version))
+        
+        return software_dependencies, package, version
 
-            # Parse the dependencies file
-            for i, line in enumerate(content):
-                line = line.strip()
+    software_requirements_section = ""
 
-                if line == "Software version:" and i + 1 < len(content):
-                    current_software = content[i + 1].strip()
-                    software_dependencies[current_software] = {"dependencies": []}
-                    continue
-
-                if line == "Dependencies:":
-                    continue
-                
-                if current_software and "==" in line:
-                    package, version = line.split("==")
-                    software_dependencies[current_software]["dependencies"].append((package, version))
-            
-            return software_dependencies, package, version
-
-        software_requirements_section = ""
-
-        # Check if the dependencies file exists
-        if not os.path.exists(dependencies_file):
-            return software_requirements_section
-
-        # Read the content from the dependencies file
-        with open(dependencies_file, "r") as f:
-            content = f.readlines()
-
-        software_dependencies, package, version = collect_dependencies(content)
-
-        # Correctly loop through the dictionary
-        for software, details in software_dependencies.items():
-                
-            for package, version in details["dependencies"]:
-                software_requirements_section += f"  - {package}: {version}\n"
-
-        software_requirements_section += "\n\n"
-
+    # Check if the dependencies file exists
+    if not os.path.exists(dependencies_file):
         return software_requirements_section
 
+    # Read the content from the dependencies file
+    with open(dependencies_file, "r") as f:
+        content = f.readlines()
+
+    software_dependencies, package, version = collect_dependencies(content)
+
+    # Correctly loop through the dictionary
+    for software, details in software_dependencies.items():
+            
+        for package, version in details["dependencies"]:
+            software_requirements_section += f"  - {package}: {version}\n"
+
+    software_requirements_section += "\n\n"
+
+    return software_requirements_section
+
+
+def set_specs():
+
     system_spec = get_system_specs()
-    setup_file = read_dependencies(setup_file)
-    src_file = read_dependencies(src_file)
+    #setup_file = read_dependencies(setup_file)
+    #src_file = read_dependencies(src_file)
     
-    specs = f"""#### System Specifications
+    specs = f"""### System Specifications
     
 The project was developed and tested on the following operating system:
 
 {system_spec}
-
-#### Software depedency
-
-** Setup Package** (`./setup`) use **{py_version}** with the below detected depedencies:
-
-{setup_file}
-
-**Project Code** (`{code_path}`) runs on **{software_version}** with the below detected depedencies:
-
-{src_file}
 
 """
     return specs 
