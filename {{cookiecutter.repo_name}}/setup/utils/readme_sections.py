@@ -67,6 +67,9 @@ def main_text(json_file, code_path):
 {contact}
 
 ## 🛠️ Setup & Installation
+<a name="setup-installation"></a>
+<details>
+<summary>📋 System information and instructions for installing Python, R, and dependencies</summary>
 
 ### 💻 System & Dependency Information
 <a name="system-requirements"></a>
@@ -85,8 +88,12 @@ def main_text(json_file, code_path):
 {install}
 
 </details>
+</details>
 
 ## 🚀 Usage & Execution
+<a name="usage-execution"></a>
+<details>
+<summary>📂 Instructions for activating environments, running workflows, testing, and using CLI tools</summary>
 
 ### ⚡ Activation
 <a name="project-activation"></a>
@@ -132,6 +139,7 @@ def main_text(json_file, code_path):
 {cli_tools}
 
 </details>
+</details>
 
 ## 📦 Dataset List
 <a name="dataset-list"></a>
@@ -167,178 +175,6 @@ The current repository structure is shown below. Descriptions can be edited in `
 """
     return header
 
-
-
-def main_text_old(json_file,code_path):
-    
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    repo_name = load_from_env("REPO_NAME",".cookiecutter")
-    code_repo = load_from_env("CODE_REPO",".cookiecutter")
-    authors = load_from_env("AUTHORS",".cookiecutter")
-    orcids = load_from_env("ORCIDS",".cookiecutter")
-    emails = load_from_env("EMAIL",".cookiecutter")
-    project_name = load_from_env("PROJECT_NAME",".cookiecutter")
-    project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-    py_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
-
-        # Generate URL based on version control
-    if code_repo.lower() == "github":
-        repo_user = load_from_env("GITHUB_USER")
-        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
-    elif code_repo.lower() == "gitlab":
-        repo_user = load_from_env("GITLAB_USER")
-        hostname = load_from_env('GITHUB_HOSTNAME') or "gitlab.com"
-
-    elif code_repo.lower() == "codeberg":
-        repo_user = load_from_env("CODEBERG_USER")
-        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
-    else:
-        repo_user = None
-        hostname = None
-
-    py_version = get_version("python")
-    software_version = get_version(programming_language)
-    conda_version = get_version("conda") if py_manager.lower() == "conda" else "conda"
-    pip_version = get_version("pip")
-    uv_version = get_version("uv")
-    install = set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user, hostname)
-    activate = set_project()
-    contact = set_contact(authors, orcids, emails)
-    
-    usage = set_script_structure(programming_language,software_version,code_path,json_file)
-    
-    config = set_config_table(programming_language)
-    cli_tools = set_cli_tools(programming_language)
-    dcas = set_dcas()
-    code_path = language_dirs.get(programming_language.lower())
-    
-    setup_txt = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
-    src_txt = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"{code_path}/dependencies.txt"))
-    print(setup_txt)
-    print(src_txt)
-    system_spec = set_specs(py_version,code_path,software_version,setup_txt,src_txt)
-    print(system_spec)
-
-    ci_tools = set_ci_tools(programming_language,code_repo)
-    dataset = set_dataset()
-    header = f"""# {project_name}
-
-{project_description}
-
-## 👤 Author & Contact
-
-{contact}
-
-## 💻 System Requirements
-
-<a name="system-requirements"></a>
-<details>
-<summary></summary>
-
-{system_spec}
-
-</details>
-
-## 📦 Installation & Environment Setup
-
-<a name="installation"></a>
-<details>
-<summary></summary>
-
-Follow these steps to set up the project on your local machine:
-
-{install}
-
-</details>
-
-## 🚀 Activation & Usage
-
-<a name="project-activation"></a>
-<details>
-<summary></summary>
-
-To configure the environment—including paths, variables, and virtualenvs—follow these steps.  
-Configurations are defined in the `.env` file (excluded from version control).
-
-{activate}
-
-</details>
-
-## 📜 Script Structure and Usage
-
-<a name="script-structure-and-usage"></a>
-<details>
-<summary></summary>
-
-{usage}
-
-</details>
-
-## 🧪 Testing & Continuous Integration (CI)
-
-<a name="unit-test-ci"></a>
-<details>
-<summary></summary>
-
-{ci_tools}
-
-</details>
-
-## 🧰 CLI Utilities
-
-<a name="cli-tools"></a>
-<details>
-<summary></summary>
-
-{cli_tools}
-
-</details>
-
-## 🗂️ Configuration Files
-
-<a name="configuration-files-root-level"></a>
-<details>
-<summary></summary>
-
-{config}
-
-</details>
-
-## 📦 Dataset List
-
-<a name="dataset-list"></a>
-<details>
-<summary></summary>
-
-{dataset}
-
-</details>
-
-## 📁 Project Directory Structure
-
-<a name="project-directory-structure"></a>
-<details>
-<summary></summary>
-
-The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
-
-```tree
-
-```
-
-</details>
-
-## 🔄 DCAS Compliance
-
-<a name="creating-a-replication-package-based-on-dcas"></a>
-<details>
-<summary></summary>
-
-{dcas}
-
-</details>
-"""
-    return header
 
 def set_project():
 
