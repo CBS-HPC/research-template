@@ -201,7 +201,7 @@ Each script is structured to:
 </details>
 
 <details>
-<summary>🧪 Environment Configuration
+<summary>🧪 Environment Configuration /n
 
 To ensure **reproducibility** in computational research, it’s essential to isolate your project’s software dependencies. Virtual environments allow you to lock in specific package versions and avoid conflicts with system-wide tools or other projects. This makes it possible for collaborators—and future you—to re-run analyses under the exact same conditions.
 
