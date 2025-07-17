@@ -49,22 +49,15 @@ This section walks you through how to create and configure a new project using t
 
 ### 🛠️ Requirements
 
-- [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts.
+Before using the template, ensure the following tools are available:
 
-- [**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure. 
- > Can be installed by `pip install cookiecutter`.
+- [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the setup scripts.  
+- [**Cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Generates the project structure. Install with: `pip install cookiecutter`  
+- [**Git**](https://git-scm.com/downloads) *(Recommended)* – Required for version control and remote repository setup.  
+- [**Personal Access Token**](#-personal-access-tokens-and-permissions) *(Recommended)* – Needed to push to **GitHub**, **GitLab**, or **Codeberg**.  
+- [**Stata**](https://www.stata.com/) or [**MATLAB**](https://www.mathworks.com/products/matlab.html) – Required if selected as a scripting language.
 
-- [**Git**](https://git-scm.com/downloads) *(Recommended)* 
-  > Git is optional for project generation but **required** if using version control or pushing to remote repositories.
-
-- [**Personal Access Token** with proper **permissions**](#-personal-access-tokens-and-permissions) *(Recommended)* 
-  > Required to push to **GitHub**, **GitLab**, or **Codeberg**.
-
-- [Stata](https://www.stata.com/) *(if selected)*
-
-- [MATLAB](https://www.mathworks.com/products/matlab.html) *(if selected)*
-
-> If Git or other tools are missing, the template will offer to download and configure them for you.
+> 💡 Missing tools (e.g. Git) can be automatically downloaded during setup.
 
 ### 🏗️ Initialize a New Project
 
