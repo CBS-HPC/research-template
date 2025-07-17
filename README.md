@@ -103,7 +103,7 @@ This template guides you through a series of interactive prompts to configure yo
 <details>
 <summary>📦 Project Metadata</summary>
 
-Provide core metadata for your project—used for naming, documentation, citation, and licensing.
+>Provide core metadata for your project—used for naming, documentation, citation, and licensing.
 
 ```
 ├── project_name              → Human-readable name
@@ -148,10 +148,9 @@ This information is used to auto-generate:
 </details>
 
 <details>
-<summary>🧬 Programming Language & Script Templates
+<summary>🧬 Programming Language & Script Templates</summary
 
-Reproducible research depends on clear, modular, and well-documented code. This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
-</summary>
+>Reproducible research depends on clear, modular, and well-documented code. This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
 
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
@@ -201,11 +200,10 @@ Each script is structured to:
 </details>
 
 <details>
-<summary>🧪 Environment Configuration /n
+<summary>🧪 Environment Configuration</summary>
 
-To ensure **reproducibility** in computational research, it’s essential to isolate your project’s software dependencies. Virtual environments allow you to lock in specific package versions and avoid conflicts with system-wide tools or other projects. This makes it possible for collaborators—and future you—to re-run analyses under the exact same conditions.
+>To ensure **reproducibility** in computational research, it’s essential to isolate your project’s software dependencies. Virtual environments allow you to lock in specific package versions and avoid conflicts with system-wide tools or other projects. This makes it possible for collaborators—and future you—to re-run analyses under the exact same conditions.
 
-</summary>
 
 ```
 Set up isolated virtual environments using Conda, UV (venv backend), or system installation.
