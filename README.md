@@ -43,26 +43,25 @@ Whether you're preparing a replication package, submitting code and data for pee
 
 ---
 
-## 🛠️ Requirements
-
-[**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts.
-
-[**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure. Can be installed by `pip install cookiecutter`.
-
-[**Git**](https://git-scm.com/downloads) *(Recommended)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
-
-[**Personal Access Token** with **proper Permissions**](#-personal-access-tokens-and-permissions) *(Recommended)* – Required to push to **GitHub**, **GitLab**, or **Codeberg**.
-
-**Proprietary software** *(if selected)* – Required if using:
-- [Stata](https://www.stata.com/)
-- [MATLAB](https://www.mathworks.com/products/matlab.html)
-
-> If Git or other tools are missing, the template will offer to download and configure them for you.
-
-
 ## 🚀 Getting Started
 
 This section walks you through how to create and configure a new project using the template, either online (with Git) or offline (manual ZIP download), followed by interactive setup options.
+
+### 🛠️ Requirements
+
+- [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts.
+
+- [**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure. Can be installed by `pip install cookiecutter`.
+
+- [**Git**](https://git-scm.com/downloads) *(Recommended)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
+
+- [**Personal Access Token** with **proper Permissions**](#-personal-access-tokens-and-permissions) *(Recommended)* – Required to push to **GitHub**, **GitLab**, or **Codeberg**.
+
+- **Proprietary software** *(if selected)* – Required if using:
+  - [Stata](https://www.stata.com/)
+  - [MATLAB](https://www.mathworks.com/products/matlab.html)
+
+> If Git or other tools are missing, the template will offer to download and configure them for you.
 
 ### 🏗️ Initialize a New Project
 
