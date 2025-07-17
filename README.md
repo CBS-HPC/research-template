@@ -148,13 +148,15 @@ This information is used to auto-generate:
 </details>
 
 <details>
-<summary>🧬 Programming Language & Script Templates</summary>
+<summary>🧬 Programming Language & Script Templates
 
 Reproducible research depends on clear, modular, and well-documented code. This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
+</summary>
 
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
 ```
+Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 ├── programming_language      → [Python | R | Stata | Matlab | None]
 │   └── If R/Stata/Matlab selected:
 │       └── Prompt for executable path if not auto-detected
@@ -199,13 +201,14 @@ Each script is structured to:
 </details>
 
 <details>
-<summary>🧪 Environment Configuration</summary>
+<summary>🧪 Environment Configuration
 
 To ensure **reproducibility** in computational research, it’s essential to isolate your project’s software dependencies. Virtual environments allow you to lock in specific package versions and avoid conflicts with system-wide tools or other projects. This makes it possible for collaborators—and future you—to re-run analyses under the exact same conditions.
 
-Set up isolated virtual environments using **Conda**, **UV (venv backend)**, or system **installation** for R and Python.
+</summary>
 
 ```
+Set up isolated virtual environments using Conda, UV (venv backend), or system installation.
 ├── Python environment
 │   └── env_manager_python        → [Conda | UV]
 │       ├── If Conda:             → Prompts for Python version
@@ -247,12 +250,10 @@ Regardless of your choice, the following files are generated to document your en
 
 <details>
 <summary>🗃️ Version Control is a cornerstone of reproducible research. It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration. 
-
 </summary>
 
-Choose a system to version your code (and optionally your data).
-
 ```
+Choose a system to version your code (and optionally your data).
 ├── version_control           → [Git | Datalad | DVC | None]
 │   ├── Git:
 │   │   ├── Prompt for Git user.name and user.email
