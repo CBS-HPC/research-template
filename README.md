@@ -47,10 +47,14 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 ## 🛠️ Requirements
 
-[**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts  
-[**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure  
+[**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts.
+
+[**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure.
+
 [**Git**](https://git-scm.com/downloads) *(optional)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
+
 [**Personal Access Token**](#-personal-access-tokens-and-permissions) *(optional)* – Required to push to remote repositories and enable CI workflows on **GitHub**, **GitLab**, or **Codeberg**. See the section *Personal Access Tokens and Permissions* for required scopes.
+
 **Proprietary software** *(if selected)* – Required if using:
   - [Stata](https://www.stata.com/)
   - [MATLAB](https://www.mathworks.com/products/matlab.html)
