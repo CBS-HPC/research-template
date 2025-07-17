@@ -103,7 +103,9 @@ This template guides you through a series of interactive prompts to configure yo
 <details>
 <summary>📦 Project Metadata</summary>
 
-**Provide core metadata for your project—used for naming, documentation, citation, and licensing.**
+**Provide essential project metadata to support clear documentation, proper attribution, and machine-readable citations.**
+
+ These details help define your project's identity and improve visibility in collaborative and academic contexts.
 
 ```
 ├── project_name              → Human-readable name
@@ -124,9 +126,9 @@ This information is used to auto-generate:
 
 
 <details>
-<summary>🔑 License Descriptions</summary>
+<summary>🔑 License</summary>
 
-**Provide core metadata for your project—used for naming, documentation, citation, and licensing.**
+**Clear licensing is essential for open and reproducible research. It defines how others can use, share, and build on your work—whether it's code, data, or documentation.**
 
 ```
 ├── code_license              → [MIT | BSD-3-Clause | Apache-2.0 | None]
@@ -262,7 +264,7 @@ Regardless of your choice, the following files are generated to document your en
 
 
 <details>
-<summary>🗃️ Version Control is a cornerstone of reproducible research. It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration. 
+<summary>🗃️ Version Control</summary>
 </summary>
 
 **Version control is a cornerstone of reproducible research.** 
