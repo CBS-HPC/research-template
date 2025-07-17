@@ -49,7 +49,7 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the template and environment setup scripts.
 
-[**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure.
+[**cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Used to generate the project structure. Can be installed by `pip install cookiecutter`.
 
 [**Git**](https://git-scm.com/downloads) *(Recommended)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
 
@@ -59,20 +59,13 @@ This template is developed and maintained by the **CBS High-Performance Computin
 - [Stata](https://www.stata.com/)
 - [MATLAB](https://www.mathworks.com/products/matlab.html)
 
-**Install Cookiecutter**
-
-```bash
-pip install cookiecutter
-```
-
 > If Git or other tools are missing, the template will offer to download and configure them for you.
 
----
+
 ## 🚀 Getting Started
 
 This section walks you through how to create and configure a new project using the template, either online (with Git) or offline (manual ZIP download), followed by interactive setup options.
 
----
 ### 🏗️ Initialize a New Project
 
 To create a new project, run the `cookiecutter` command **from the folder where you want your project directory to be created**. You can use the template either online (with Git) or offline (via manual download).
@@ -105,8 +98,6 @@ cookiecutter path/to/research-template
 > ⚠️ Do **not** use `git clone` if Git is not installed. Manual download is required in this case.
 
 </details>
-
----
 
 ### 🧩 Interactive Project Configuration
 
