@@ -547,24 +547,29 @@ Each script is structured to:
 <details>
 <summary><strong>🧪 Unit Testing</strong></summary><br>
 
-This template includes built-in support for **unit testing** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility. 
+Unit tests play a critical role in **ensuring the reliability and reproducibility** of your research code. This template provides built-in testing support for **Python**, **R**, **MATLAB**, and **Stata** to help you catch errors early and build trust in your results.
 
-It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected.  
-Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
+It supports both:
 
-Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure and commands vary slightly by language:
+- **Traditional unit testing** – write tests to validate existing code
+- **Test-Driven Development (TDD)** – write tests before code to guide design
 
-| Language | Test Framework     | Code Folder     | Test Folder         | File Format     | Run Tests Command                                               |
-|----------|--------------------|------------------|----------------------|------------------|------------------------------------------------------------------|
-| Python   | `pytest`           | `src/`           | `tests/`             | `test_*.py`      | `pytest`                                                        |
-| R        | `testthat`         | `R/`             | `tests/testthat/`    | `test-*.R`       | `testthat::test_dir("tests/testthat")`<br>`Rscript -e '...'`    |
-| MATLAB   | `matlab.unittest`  | `src/`           | `tests/`             | `test_*.m`       | `runtests('tests')`<br>`matlab -batch "..."`                    |
-| Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `do tests/test_s00_main.do`<br>`stata -b do tests/...`          |
+> 🧪 Test scaffolding is automatically generated for each core analysis script (e.g., `s00_main`, `s04_preprocessing`), making it easy to integrate testing from day one.
 
+---
 
-📄 For each core analysis script (e.g., `s00_main`, `s04_preprocessing`), a matching test file is automatically scaffolded. Tests can be run locally or through CI pipelines.
+### 📁 File Structure & Test Execution
 
-Example:
+During setup, a dedicated `tests/` folder is created. Matching test files are generated for each language and script:
+
+| Language | Test Framework     | Code Folder     | Test Folder         | File Format     | Run Command                                                   |
+|----------|--------------------|------------------|----------------------|------------------|----------------------------------------------------------------|
+| Python   | `pytest`           | `src/`           | `tests/`             | `test_*.py`      | `pytest`                                                       |
+| R        | `testthat`         | `R/`             | `tests/testthat/`    | `test-*.R`       | `testthat::test_dir("tests/testthat")`<br>`Rscript -e '...'`   |
+| MATLAB   | `matlab.unittest`  | `src/`           | `tests/`             | `test_*.m`       | `runtests('tests')`<br>`matlab -batch "..."`                   |
+| Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `do tests/test_s00_main.do`<br>`stata -b do tests/...`         |
+
+📄 Example (Python):
 
 ```
 # Matching tests
@@ -577,25 +582,25 @@ pytest
 
 💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
 
-#### ✅ Best Practices
+---
 
-Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
+### ✅ Best Practices
 
-Include **edge cases** — such as missing data, unexpected formats, or invalid input.
+- **Test core logic and workflows** – e.g., cleaning, transformation, modeling functions  
+- **Cover edge cases** – missing data, invalid inputs, unexpected file formats  
+- **Write independent tests** – avoid shared state between tests  
+- **Use language-specific assertions:**
+  - Python: `assert`
+  - R: `expect_equal()`, `expect_error()`
+  - MATLAB: `verifyEqual()`, `verifyTrue()`
+  - Stata: `assert`
 
-Keep tests **independent and repeatable** — avoid reliance on shared state or execution order.
-Use assertions appropriate for your language:
-  - `assert` in Python
-  - `expect_equal()` / `expect_error()` in R
-  - `verifyEqual()` / `verifyTrue()` in MATLAB
-  - `assert` in Stata
+🧩 Match test names to your scripts for clarity:  
+Example: `s05_modeling.R` → `test-s05_modeling.R`
 
-Mirror your code structure — e.g., `s05_modeling.R` → `test-s05_modeling.R`
-
-> 💡 Tests don’t need to be exhaustive — focus on **critical correctness** and **key workflow branches**.
+> ✅ Your tests don’t have to be exhaustive. Focus on **critical functions** and **key workflow branches**.
 
 </details>
-
 
 <details>
 <summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
@@ -605,6 +610,8 @@ Continuous Integration (CI) helps ensure your research project is **reproducible
 - **GitHub Actions**
 - **GitLab CI/CD**
 - **Codeberg CI** (Woodpecker)
+
+✅ Even without writing **unit tests**, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
 
 #### 🔁 What the CI Pipeline Does
 
@@ -616,8 +623,6 @@ Each auto-generated CI pipeline:
    - R: via `renv::restore()` using `R/renv.lock`
 3. Executes tests in the `tests/` directory (if present)
 4. Outputs logs and results for debugging or documentation
-
-✅ Even without writing tests, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
 
 #### ✅ Supported CI Platforms
 
@@ -655,67 +660,6 @@ ci-control --off
 ##### 🧷 Skip CI for a Commit
 
 Use this Git alias to skip CI on minor commits:
-
-```
-git commit-skip "Updated documentation"
-```
-
-</details>
-
-<details>
-<summary><strong> ⚙️ Continuous Integration2 (CI)</strong></summary><br>
-
-This template includes built-in support **CI automation** across Python, R and MATLAB on all major platforms: 
-
-The template supports CI pipelines on all major platforms:
-
-- **GitHub Actions** – supports **Python**, **R**, and **MATLAB**
-  - ✅ tests across **Linux**, **Windows**, and **macOS** runners by default.
-
-- **GitLab CI/CD** – supports **Python**, **R**, and **MATLAB**
-  - ✅ tests on **Linux** runners by default.
-
-- **Codeberg CI** (via Woodpecker) – supports **Python** and **R** only  
-  - ✅ tests on **Linux** runners by default.  
-  - ⚠️ No support for MATLAB or cross-platform testing.  
-  - 📝 **CI is not enabled by default** – to activate CI for your repository, you must [submit a request](https://codeberg.org/Codeberg-e.V./requests/issues/new?template=ISSUE_TEMPLATE%2fWoodpecker-CI.yaml) to the Codeberg team.  
-    More information is available in the [Codeberg CI documentation](https://docs.codeberg.org/ci/).
-
-❌ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.  
-
-⚠️ **MATLAB CI is only configured as a starting template and is unlikely to work out of the box on either GitHub or GitLab**. You can read more about MATLAB CI support in the official documentation:
-  - **[GitHub](https://github.com/matlab-actions/setup-matlab/)**: Uses [MathWorks' official GitHub Actions](https://github.com/matlab-actions/setup-matlab/) and requires a valid license and a `MATLAB_TOKEN` secret.
-  - **[GitLab](https://github.com/mathworks/matlab-gitlab-ci-template/blob/main/README.md)** : Uses a MATLAB Docker image and license server via the `MLM_LICENSE_FILE` variable. 
-
-CI configurations are **auto-generated** based on your selected programming language and code hosting platform, and are written to the appropriate file:
-
-| Platform | Supported Languages | Config File                |
-|----------|---------------------|----------------------------|
-| GitHub   | Python, R, MATLAB   | `.github/workflows/ci.yml` |
-| GitLab   | Python, R, MATLAB   | `.gitlab-ci.yml`           |
-| Codeberg | Python, R           | `.woodpecker.yml`          |
-
-Each CI pipeline performs the following:
-
-1. Installs the appropriate language runtime and dependencies  
-2. Installs project dependencies (e.g., `requirements.txt`, `renv.lock`) 
-   - **R**: CI uses `renv::restore(project = "R")` if `R/renv.lock` is found, otherwise falls back to `install.packages()`.
-3. Executes tests in the `tests/` directory  
-4. Outputs test results and logs
----
-
-#### 🔄 CI Control via CLI
-
-CI can be toggled on or off using the built-in CLI command:
-
-```
-ci-control --on
-ci-control --off 
-```
-
-#### 🧷 Git Shortcut for Skipping CI
-
-To skip CI on a commit, use the built-in Git alias:
 
 ```
 git commit-skip "Updated documentation"
