@@ -53,7 +53,7 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 [**Git**](https://git-scm.com/downloads) *(Recommended)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
 
-[**Personal Access Token**](#-personal-access-tokens-and-permissions) *(Recommended)* – Required to push to remote repositories and enable CI workflows on **GitHub**, **GitLab**, or **Codeberg**. See the section *Personal Access Tokens and Permissions* for required scopes.
+[**Personal Access Token** with ** proper Permissions**](#-personal-access-tokens-and-permissions) *(Recommended)* – Required to push to **GitHub**, **GitLab**, or **Codeberg**.
 
 **Proprietary software** *(if selected)* – Required if using:
 - [Stata](https://www.stata.com/)
@@ -383,11 +383,11 @@ Supported platforms include:
 - [**GitLab**](https://gitlab.com) – a DevOps platform that supports both self-hosted and cloud-hosted repositories. Ideal for collaborative development with built-in CI/CD pipelines.
 - [**Codeberg**](https://codeberg.org) – a privacy-focused Git hosting service powered by [Gitea](https://about.gitea.com). Community-driven and compliant with European data governance standards.
 
-Repositories are created using the **HTTPS API**, and authenticated with [**personal access tokens**](#personal-access-tokens-and-permissions).
+Repositories are created using the **HTTPS API**, and authenticated with [**personal access tokens**](#-personal-access-tokens-and-permissions).
 
 > 🛡️ Your credentials and tokens are securely stored in the `.env` file and never exposed in plain text.
 
-####  🔐 Personal Access Tokens and Permissions
+#### 🔐 Personal Access Tokens and Permissions
 
 A Personal Access Token (PAT) is needed to:
 
