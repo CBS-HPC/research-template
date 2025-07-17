@@ -66,7 +66,6 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 This section walks you through how to create and configure a new project using the template, either online (with Git) or offline (manual ZIP download), followed by interactive setup options.
 
----
 ### 🏗️ Initialize a New Project
 
 To create a new project, run the `cookiecutter` command **from the folder where you want your project directory to be created**. You can use the template either online (with Git) or offline (via manual download).
@@ -99,8 +98,6 @@ cookiecutter path/to/research-template
 > ⚠️ Do **not** use `git clone` if Git is not installed. Manual download is required in this case.
 
 </details>
-
----
 
 ### 🧩 Interactive Project Configuration
 
