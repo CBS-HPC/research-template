@@ -561,8 +561,15 @@ Unit test files are automatically generated for core analysis scripts and placed
 | MATLAB   | `matlab.unittest`  | `src/`           | `tests/`             | `test_*.m`       | `runtests('tests')`<br>`matlab -batch "..."`                    |
 | Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `do tests/test_s00_main.do`<br>`stata -b do tests/...`          |
 
-> 📄 Tests are scaffolded to match key analysis scripts (e.g., `s00_main`, `s04_preprocessing`) and are runnable locally or via CI pipelines.
-> 💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
+
+📄 Tests are scaffolded to match key analysis scripts (e.g., `s00_main`, `s04_preprocessing`) and are runnable locally or via CI pipelines. e.g. : 
+
+```
+src/s00_main.py
+tests/test_s00_main.py
+```
+
+💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
 
 📄 Example Layouts and Test Commands are shown below:
 
