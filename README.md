@@ -505,7 +505,7 @@ The following configuration files are intentionally placed at the root of the re
 </details>
 
 <details>
-<summary><strong>🧪 🛠️ Script Templates</strong></summary><br>
+<summary><strong>🛠️ Script Templates</strong></summary><br>
 
 This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
 

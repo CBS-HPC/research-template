@@ -175,28 +175,28 @@ def set_project():
 
     os_type = platform.system().lower()
     if os_type == "windows":
-        usage = (
-            "\n**Activate on Windows (PowerShell)**\n\n"
-            "```powershell\n"
-            "./activate.ps1\n"
-            "```\n"
-            "\n**Deactivate on Windows (PowerShell)**\n\n"
-            "```powershell\n"
-            "./deactivate.ps1\n"
-            "```\n"
-        )
 
+        usage =f"""**On Windows (PowerShell)**
+        ```powershell
+        # Activate
+        ./activate.ps1
+        
+        # Deactivate
+        ./deactivate.ps1
+        ```
+        """
     elif os_type in ("darwin", "linux"):
-        usage = (
-            "\n**Activate on Linux/macOS (bash)** \n\n"
-            "```bash\n"
-            "source activate.sh\n"
-            "```\n"
-            "\n**Deactivate on Linux/macOS (bash)** \n\n"
-            "```bash\n"
-            "source deactivate.sh\n"
-            "```\n"
-        )
+
+        usage =f"""**On Linux/macOS (bash)**
+        ```bash
+        # Activate
+        source activate.sh
+        
+        # Deactivate
+        source deactivate.sh
+        ```
+        """
+           
     return usage
 
 def set_setup(programming_language,py_version,software_version,conda_version,pip_version,uv_version,repo_name, repo_user,hostname):            
