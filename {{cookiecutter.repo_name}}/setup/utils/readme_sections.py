@@ -76,7 +76,7 @@ def main_text(json_file, code_path):
 ## 🛠️ Setup & Installation
 <a name="setup-installation"></a>
 <details>
-<summary>{head}</summary>
+<summary>{head}</summary><br>
 
 {install}
 
@@ -85,7 +85,7 @@ def main_text(json_file, code_path):
 ## 🚀 Usage & Execution
 <a name="usage-execution"></a>
 <details>
-<summary>📂 Instructions for activating environments, running workflows, testing, and using CLI tools</summary>
+<summary>📂 Instructions for activating environments, running workflows, testing, and using CLI tools</summary><br>
 
 ### ⚡ Activation
 
@@ -103,7 +103,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 {run_command}
 ```
 <details>
-<summary>Expand for more details</summary>
+<summary>Expand for more details</summary><br>
 
 {usage}
 
@@ -112,7 +112,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 ### 🧪 Testing & CI
 <a name="unit-test-ci"></a>
 <details>
-<summary>Unit testing and GitHub Actions configuration</summary>
+<summary>Unit testing and GitHub Actions configuration</summary><br>
 
 {ci_tools}
 
@@ -121,7 +121,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 ### 🗂️ Configuration Files
 <a name="configuration-files-root-level"></a>
 <details>
-<summary>Environment and dependency files (.env, requirements.txt, etc.)</summary>
+<summary>Environment and dependency files (.env, requirements.txt, etc.)</summary><br>
 
 {config}
 
@@ -130,7 +130,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 ### 🧰 CLI Utilities
 <a name="cli-tools"></a>
 <details>
-<summary>Custom CLI tools for reproducibility and automation</summary>
+<summary>Custom CLI tools for reproducibility and automation</summary><br>
 
 {cli_tools}
 
@@ -140,7 +140,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 ## 📦 Dataset List
 <a name="dataset-list"></a>
 <details>
-<summary>Included datasets and metadata</summary>
+<summary>Included datasets and metadata</summary><br>
 
 {dataset}
 
@@ -149,7 +149,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 ## 📁 Project Directory Structure
 <a name="project-directory-structure"></a>
 <details>
-<summary>Click to expand project file tree</summary>
+<summary>Click to expand project file tree</summary><br>
 
 The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
 
@@ -163,7 +163,7 @@ The current repository structure is shown below. Descriptions can be edited in `
 
 <a name="creating-a-replication-package-based-on-dcas"></a>
 <details>
-<summary></summary>
+<summary></summary><br>
 
 {dcas}
 
@@ -239,7 +239,7 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
 
 
     setup +=f"""<details>
-<summary>Uv Installation (Recommended)</summary>
+<summary>Uv Installation (Recommended)</summary><br>
 
 If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies.
 
@@ -260,7 +260,7 @@ uv pip install --strict uv.lock
 """
     
     setup +=f"""<details>
-<summary>Pip Installation:</summary>
+<summary>Pip Installation:</summary><br>
 
 You can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`::
 
@@ -278,7 +278,7 @@ pip install -r requirements.txt
 
 
     setup +=f"""<details>
-<summary>{conda_title}</summary>
+<summary>{conda_title}</summary><br>
 
 Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:
 

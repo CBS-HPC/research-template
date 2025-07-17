@@ -66,7 +66,7 @@ pip install cookiecutter
 This template can be used either online (via GitHub) or offline (manually downloaded).
 
 <details>
-<summary>📦 Online (with Git)</summary>
+<summary>📦 Online (with Git)</summary><br>
 
 Use this option if Git is installed and you want to fetch the template directly from GitHub:
 
@@ -77,7 +77,7 @@ cookiecutter gh:CBS-HPC/research-template
 </details>
 
 <details>
-<summary>📁 Offline (Local Installation)</summary>
+<summary>📁 Offline (Local Installation)</summary><br>
 
 If Git is **not installed**, you can still use the template by downloading it manually:
 
@@ -101,11 +101,11 @@ cookiecutter path/to/research-template
 This template guides you through a series of interactive prompts to configure your project. **Click below to expand each section for a visual breakdown of all setup steps.**
 
 <details>
-<summary>📦 Project Metadata</summary>
+<summary>📦 Project Metadata</summary><br>
 
-**Provide essential project metadata to support clear documentation, proper attribution, and machine-readable citations.**
+Provide essential project metadata to support clear documentation, proper attribution, and machine-readable citations.
 
- These details help define your project's identity and improve visibility in collaborative and academic contexts.
+These details help define your project's identity and improve visibility in collaborative and academic contexts.
 
 ```
 ├── project_name              → Human-readable name
@@ -126,9 +126,9 @@ This information is used to auto-generate:
 
 
 <details>
-<summary>🔑 License</summary>
+<summary>🔑 License</summary><br>
 
-**Clear licensing is essential for open and reproducible research. It defines how others can use, share, and build on your work—whether it's code, data, or documentation.**
+Clear licensing is essential for open and reproducible research. It defines how others can use, share, and build on your work—whether it's code, data, or documentation.
 
 ```
 ├── code_license              → [MIT | BSD-3-Clause | Apache-2.0 | None]
@@ -163,7 +163,7 @@ This information is used to auto-generate:
 <details>
 <summary>🧬 Programming Language & Script Templates</summary><br>
 
-**Reproducible research depends on clear, modular, and well-documented code.** 
+Reproducible research depends on clear, modular, and well-documented code.
 
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
@@ -215,9 +215,9 @@ Each script is structured to:
 </details>
 
 <details>
-<summary>🧪 Environment Configuration</summary>
+<summary>🧪 Environment Configuration</summary><br>
 
-**To ensure reproducibility in computational research, it’s essential to isolate your project’s software dependencies.** 
+To ensure reproducibility in computational research, it’s essential to isolate your project’s software dependencies.
 
 Virtual environments allow you to lock in specific package versions and avoid conflicts with system-wide tools or other projects. This makes it possible for collaborators—and future you—to re-run analyses under the exact same conditions.
 
@@ -264,12 +264,9 @@ Regardless of your choice, the following files are generated to document your en
 
 
 <details>
-<summary>🗃️ Version Control</summary>
-</summary>
+<summary>🗃️ Version Control</summary><br>
 
-**Version control is a cornerstone of reproducible research.** 
-
-It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration.
+Version control is a cornerstone of reproducible research.It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration.
 
 Choose a system to version your code (and optionally your data).
 
@@ -320,7 +317,7 @@ This template supports several version control systems to suit different workflo
 </details>
 
 <details>
-<summary>☁️ Backup with Rclone</summary>
+<summary>☁️ Backup with Rclone</summary><br>
 
 **Data loss can compromise months or years of research.**
 
@@ -354,9 +351,9 @@ Supported backup targets include:
 </details>
 
 <details>
-<summary>📡 Remote Repository Setup</summary>
+<summary>📡 Remote Repository Setup</summary><br>
 
-**Publishing your project to a remote Git hosting platform is a key step toward transparent, collaborative, and **reproducible** research.**
+Publishing your project to a remote Git hosting platform is a key step toward transparent, collaborative, and **reproducible** research.
 
 A remote repository provides versioned backups, collaboration support, and integration with tools like CI pipelines—crucial for reproducible and FAIR research.
 
@@ -405,7 +402,7 @@ A Personal Access Token (PAT) is needed to:
 This template generates a standardized, reproducible project layout. It separates raw data, code, documentation, setup scripts, and outputs to support collaboration, transparency, and automation.
 
 <details>
-<summary>📁 Directory Structure</summary>
+<summary>📁 Directory Structure</summary><br>
 
 You can find or update human-readable file descriptions in `pyproject.toml` under `file_descriptions` .
 
@@ -457,7 +454,7 @@ You can find or update human-readable file descriptions in `pyproject.toml` unde
 </details>
 
 <details>
-<summary>🚀 Project Activation</summary>
+<summary>🚀 Project Activation</summary><br>
 
 To configure the project's environment—including project paths, environment variables, and virtual environments—run the activation script for your operating system. These scripts read settings from the `.env` file.
 
@@ -492,7 +489,7 @@ source deactivate.sh
 </details>
 
 <details>
-<summary>📅 Unit Testing and Continuous Integration (CI)</summary>
+<summary>📅 Unit Testing and Continuous Integration (CI)</summary><br>
 
 ---
 
@@ -519,7 +516,7 @@ Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_ma
 📄 Example Layouts and Test Commands are shown below:
 
 <details>
-<summary>Python</summary>
+<summary>Python</summary><br>
 
 Project structure:
 
@@ -537,7 +534,7 @@ pytest
 </details>
 
 <details>
-<summary>R</summary>
+<summary>R</summary><br>
 
 Project structure:
 
@@ -561,7 +558,7 @@ Rscript -e 'testthat::test_dir("tests/testthat")'
 </details>
 
 <details>
-<summary>Matlab</summary>
+<summary>Matlab</summary><br>
 
 Project structure:
 
@@ -586,7 +583,7 @@ matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some 
 </details>
 
 <details>
-<summary>Stata</summary>
+<summary>Stata</summary><br>
 
 Project structure:
 
@@ -702,7 +699,7 @@ git commit-skip "Updated documentation"
 
 
 <details>
-<summary>🔧 CLI Tools</summary>
+<summary>🔧 CLI Tools</summary><br>
 
 The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
 
@@ -736,7 +733,7 @@ update-requirements
 </details>
 
 <details>
-<summary>🗂️ Configuration Files (Root-Level)</summary>
+<summary>🗂️ Configuration Files (Root-Level)</summary><br>
 
 The following configuration files are placed in the root directory and used by tools for managing environments, templates, backups, and project metadata.
 
