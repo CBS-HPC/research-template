@@ -161,9 +161,7 @@ This information is used to auto-generate:
 
 
 <details>
-<summary>🧬 Programming Language & Script Templates</summary>
-
-<br>
+<summary>🧬 Programming Language & Script Templates</summary><br>
 
 **Reproducible research depends on clear, modular, and well-documented code.** 
 
