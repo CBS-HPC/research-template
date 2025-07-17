@@ -68,10 +68,14 @@ pip install cookiecutter
 > If Git or other tools are missing, the template will offer to download and configure them for you.
 
 ---
+## 🚀 Getting Started
 
-## 🏗️ Generate a New Project
+This section walks you through how to create and configure a new project using the template, either online (with Git) or offline (manual ZIP download), followed by interactive setup options.
 
-This template can be used either online (via GitHub) or offline (manually downloaded).
+---
+### 🏗️ Initialize a New Project
+
+To create a new project, run the `cookiecutter` command **from the folder where you want your project directory to be created**. You can use the template either online (with Git) or offline (via manual download).
 
 <details>
 <summary><strong>📦 Online (with Git)</strong></summary><br>
@@ -104,7 +108,7 @@ cookiecutter path/to/research-template
 
 ---
 
-## 🧾 Setup Options
+### 🧩 Interactive Project Configuration
 
 This template guides you through a series of interactive prompts to configure your project:
 
