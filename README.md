@@ -66,6 +66,7 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 This section walks you through how to create and configure a new project using the template, either online (with Git) or offline (manual ZIP download), followed by interactive setup options.
 
+---
 ### 🏗️ Initialize a New Project
 
 To create a new project, run the `cookiecutter` command **from the folder where you want your project directory to be created**. You can use the template either online (with Git) or offline (via manual download).
@@ -98,6 +99,8 @@ cookiecutter path/to/research-template
 > ⚠️ Do **not** use `git clone` if Git is not installed. Manual download is required in this case.
 
 </details>
+
+---
 
 ### 🧩 Interactive Project Configuration
 
@@ -259,12 +262,13 @@ Regardless of your choice, the following files are generated to document your en
 - `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package
 - `uv.lock` – (if Venv is selected) snapshot of python packages using the `uv` package manager  
 
-> ⚠️ When using **UV** or **Pre-Installed R**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
-> ⚠️ If proprietary software (e.g., Stata, Matlab) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
-> 💡 Conda will be downloaded and installed automatically if it's not already available.
+⚠️ When using **UV** or **Pre-Installed R**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.
+
+⚠️ If proprietary software (e.g., Stata, Matlab) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
+
+💡 Conda will be downloaded and installed automatically if it's not already available.
 
 </details>
-
 
 <details>
 <summary><strong>🗃️ Version Control</strong></summary><br>
@@ -492,15 +496,15 @@ source deactivate.sh
 <details>
 <summary><strong>📅 Unit Testing and Continuous Integration (CI)</strong></summary><br>
 
----
-
 This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility. 
 
 It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected. 
 Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
+</details>
 
----
-#### 🧪 Unit Testing
+<details>
+<summary><strong>🧪 Unit Testing</strong></summary><br>
+
 
 Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure varies slightly by language:
 
@@ -622,25 +626,11 @@ stata -b do tests/test_s00_main.do
 
 > 💡 Tests don’t need to be exhaustive — focus on **critical correctness** and **key workflow branches**.
 
----
-#### 🔧 Test-Driven Development (TDD)
 
-TDD encourages writing tests **before** implementation. This is especially effective in research workflows where reproducibility is critical.
+</details>
 
-**TDD workflow:**
-1. Write a **failing test** that defines the expected behavior
-2. Write the **minimal code** to make it pass
-3. Refactor with confidence — tests ensure nothing breaks
-
-**Why use TDD in research?**
-- Validates assumptions before modeling
-- Encourages modular, testable code
-- Prevents regressions as scripts evolve
-
-> 🚀 Each generated script comes with a matching test file scaffold to support TDD from day one.
-
----
-#### ⚙️ Continuous Integration (CI)
+<details>
+<summary><strong>🧪 ⚙️ Continuous Integration (CI)</strong></summary><br>
 
 The template supports CI pipelines on all major platforms:
 
