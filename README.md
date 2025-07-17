@@ -179,41 +179,7 @@ Choose your primary scripting language. The template supports multi-language pro
 
 If you select **R**, **Stata** or **Matlab** the template will prompt for the path to the installed software if it is not auto-detected.
 
-#### 🛠️ Script Generation
-
-This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
-
-Script generation is **language-agnostic**: based on your selected language, the template will create files with the appropriate extensions:
-
-- `.py` (scripts) and `.ipynb` (notebooks) for Python
-- `.R` (scripts) and `.Rmd` (notebooks) for R
-- `.m`(scripts) and `.mlx` (notebooks) for Matlab 
-- `.do` (scripts) and `.ipynb` (notebooks) for Stata
-
-
-These starter scripts are placed in the `src/` directory and include:
-
-```
-├── s00_main.*                  → orchestrates the full pipeline
-├── s00_workflow.*              → notebook (.ipynb, .Rmd, .mlx) orchestrating the full pipeline
-├── s01_install_dependencies.*  → installs any missing packages required for the project
-├── s02_utils.*                 → shared helper functions (not directly executable)
-├── s03_data_collection.*       → imports or generates raw data
-├── s04_preprocessing.*         → cleans and transforms data
-├── s05_modeling.*              → fits models and generates outputs
-├── s06_visualization.*         → creates plots and summaries
-├── get_dependencies.*          → retrieves and checks required dependencies for the project environment. (Utilised)
-
-```
-
-Each script is structured to:
-
-- Define a `main()` function or logical entry point (where applicable)  
-- Automatically resolve project folder paths (`data/00_raw/`, `results/figures/`, etc.)  
-- Remain passive unless directly called or imported  
-- Support reproducible workflows by default
-
-> 🧩 Scripts are designed to be flexible and modular: you can run them individually, chain them in `main.*`, or explore them interactively using Jupyter or RMarkdown.
+📝 Based on your selected language, the template will automatically generate example scripts and notebooks for each stage of the workflow — see [How it works](#-how-it-works) for details.
 
 </details>
 
@@ -528,6 +494,44 @@ The following configuration files are placed in the root directory and used by t
 | `environment.yml`         | Conda environment definition for installing Python and R dependencies                               |
 | `requirements.txt`        | pip-compatible Python dependencies                                                                  |
 | `renv.lock`               | Captures exact versions of R packages used (if R is selected)                                       |
+</details>
+
+<details>
+<summary><strong>🧪 🛠️ Script Templates</strong></summary><br>
+
+This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
+
+Script generation is **language-agnostic**: based on your selected language, the template will create files with the appropriate extensions:
+
+- `.py` (scripts) and `.ipynb` (notebooks) for Python
+- `.R` (scripts) and `.Rmd` (notebooks) for R
+- `.m`(scripts) and `.mlx` (notebooks) for Matlab 
+- `.do` (scripts) and `.ipynb` (notebooks) for Stata
+
+
+These starter scripts are placed in the `src/` directory and include:
+
+```
+├── s00_main.*                  → orchestrates the full pipeline
+├── s00_workflow.*              → notebook (.ipynb, .Rmd, .mlx) orchestrating the full pipeline
+├── s01_install_dependencies.*  → installs any missing packages required for the project
+├── s02_utils.*                 → shared helper functions (not directly executable)
+├── s03_data_collection.*       → imports or generates raw data
+├── s04_preprocessing.*         → cleans and transforms data
+├── s05_modeling.*              → fits models and generates outputs
+├── s06_visualization.*         → creates plots and summaries
+├── get_dependencies.*          → retrieves and checks required dependencies for the project environment. (Utilised)
+
+```
+
+Each script is structured to:
+
+- Define a `main()` function or logical entry point (where applicable)  
+- Automatically resolve project folder paths (`data/00_raw/`, `results/figures/`, etc.)  
+- Remain passive unless directly called or imported  
+- Support reproducible workflows by default
+
+> 🧩 Scripts are designed to be flexible and modular: you can run them individually, chain them in `main.*`, or explore them interactively using Jupyter or RMarkdown.
 </details>
 
 <details>
