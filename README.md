@@ -2,7 +2,9 @@
 
 
 
-# 🧪 Reproducible Research Template: Structured Workflows and Replication Packages
+# 🧪 Research Template 
+
+## Structured Workflows and Replication Packages
 
 ![Repo size](https://img.shields.io/github/repo-size/CBS-HPC/research-template)
 ![Last commit](https://img.shields.io/github/last-commit/CBS-HPC/research-template)
