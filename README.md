@@ -164,27 +164,19 @@ This information is used to auto-generate:
 
 
 <details>
-<summary><strong>🧬 Programming Language & Script Templates</strong></summary><br>
-
-Reproducible research depends on clear, modular, and well-documented code.
+<summary><strong>🧬 Programming Language & Virtual Environment</strong></summary><br>
 
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
 ```
-Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 ├── programming_language      → [Python | R | Stata | Matlab | None]
 │   └── If R/Stata/Matlab selected:
 │       └── Prompt for executable path if not auto-detected
 ```
 
-If you select **R**, **Stata** or **Matlab** the template will prompt for the path to the installed software if it is not auto-detected.
-
 📝 Based on your selected language, the template will automatically generate example scripts and notebooks for each stage of the workflow — see [How it works](#-how-it-works) for details.
 
-</details>
-
-<details>
-<summary><strong>🧪 Environment Configuration</strong></summary><br>
+#### 🧪 Environment Configuration
 
 To ensure reproducibility in computational research, it’s essential to isolate your project’s software dependencies.
 
