@@ -163,9 +163,9 @@ This information is used to auto-generate:
 <details>
 <summary>🧬 Programming Language & Script Templates</summary
 
-**Reproducible research depends on clear, modular, and well-documented code.** 
+<br>
 
-This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
+**Reproducible research depends on clear, modular, and well-documented code.** 
 
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
@@ -179,6 +179,8 @@ Choose your primary scripting language. The template supports multi-language pro
 If you select **R**, **Stata** or **Matlab** the template will prompt for the path to the installed software if it is not auto-detected.
 
 ### 🛠️ Script Generation
+
+This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
 
 Script generation is **language-agnostic**: based on your selected language, the template will create files with the appropriate extensions:
 
