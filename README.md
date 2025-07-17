@@ -199,18 +199,22 @@ Each script is structured to:
 <details>
 <summary>🧪 Environment Configuration</summary>
 
-Set up isolated virtual environments using **Conda**, **Venv (via UV)**, or system **Pre-Installation**.
+Set up isolated virtual environments using **Conda**, **UV (venv backend)**, or system **Pre-Installation**.
 
 ```
-├── R environment (if R used)
-│   └── env_manager_r         → [Conda | Pre-installed R]
-│       ├── If Conda:         → Prompt for R version
-│       └── If Pre-installed: → Searches system PATH for installed application
-│                             → Prompts user for executable path if not found
 ├── Python environment
-│   └── env_manager_python    → [Conda | Venv]
-│       ├── If Conda:         → Prompt for Python version
-│       ├── If Venv (via Uv): → Uses current Python kernel version
+│   └── env_manager_python        → [Conda | UV]
+│       ├── If Conda:             → Prompts for Python version
+│       ├── If UV (venv backend): → Uses current Python kernel version
+│                                 → Creates a `.venv` directory for the environment
+│                                 → Initializes a UV project and generates `uv.lock` to capture dependencies
+├── R environment (if R used)
+│   └── env_manager_r             → [Conda | System R]
+│       ├── If Conda:             → Prompts for R version
+│       └── If System R:          → Searches system PATH for installed R
+│                                 → Prompts for path if not found
+│       → In all cases:           → Initializes an isolated R environment using `renv` in the `/R` directory
+│                                 → Generates `renv.lock` to capture R package versions
 ├── Proprietary software (if selected)
 │   └── [Stata | Matlab]
 │       ├── Searches system PATH for installed application
@@ -219,8 +223,9 @@ Set up isolated virtual environments using **Conda**, **Venv (via UV)**, or syst
 
 **Environment manager options:**
 
-- [**Conda**](https://docs.conda.io/en/latest/) – A popular environment and package manager that supports both Python and R. Enables exact version control and cross-platform reproducibility.  
-- [**venv**](https://docs.python.org/3/library/venv.html) – Python’s built-in tool for creating lightweight, isolated environments. Ideal for Python-only projects.  
+- [**Conda**](https://docs.conda.io/en/latest/) – A widely used environment and package manager for both Python and R. Supports precise version control, reproducibility, and cross-platform compatibility.  
+- [**UV**](https://github.com/astral-sh/uv) – A fast, modern Python package manager and `venv` backend. Provides isolated environments and accelerated dependency resolution. Ideal for Python-only workflows.  
+- [**renv**](https://rstudio.github.io/renv/) – An R package for creating isolated, project-local environments. Captures exact package versions in a `renv.lock` file, enabling reproducibility similar to `requirements.txt` or `environment.yml`.
 
 Regardless of your choice, the following files are generated to document your environment:
 
@@ -229,7 +234,7 @@ Regardless of your choice, the following files are generated to document your en
 - `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package
 - `uv.lock` – (if Venv is selected) snapshot of python packages using the `uv` package manager  
 
-> ⚠️ When using **venv** or **Pre-Installed R**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
+> ⚠️ When using **UV** or **Pre-Installed R**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
 > ⚠️ If proprietary software (e.g., Stata, Matlab) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
 > 💡 Conda will be downloaded and installed automatically if it's not already available.
 
