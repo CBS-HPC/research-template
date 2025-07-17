@@ -707,7 +707,7 @@ This template uses a modular folder layout that promotes transparency, reproduci
 </details>
 
 <details>
-<summary><strong>📚 DCAS Compatibility/strong></summary><br>
+<summary><strong>📚 DCAS Compatibility</strong></summary><br>
 
 This template is designed to support the creation of replication packages that are fully compatible with the [Data and Code Availability Standard (DCAS)](https://datacodestandard.org/), a widely endorsed initiative to promote transparency and reproducibility in social science research.
 
