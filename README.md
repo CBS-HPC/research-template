@@ -319,7 +319,6 @@ A Personal Access Token (PAT) is needed to:
 
 </details>
 
----
 ## 🧾 How It Works: Structure & Scripts
 
 This template generates a standardized, reproducible project layout. It separates raw data, code, documentation, setup scripts, and outputs to support collaboration, transparency, and automation.
