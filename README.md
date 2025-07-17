@@ -274,38 +274,6 @@ This template supports several version control systems to suit different workflo
 </details>
 
 <details>
-<summary><strong>☁️ Backup with Rclone</strong></summary><br>
-
-Data loss can compromise months or years of research. To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org). Whether working locally or in the cloud, your data can be reliably mirrored to trusted storage systems.
-
-```
-├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
-│   ├── DeIC:
-│   │   ├── Prompt for email
-│   │   └── Prompt for password (encrypted)
-│   ├── Dropbox / OneDrive:
-│   │   ├── Prompt for email
-│   │   └── Prompt for password (encrypted)
-│   ├── Local:
-│   │   └── Prompt to choose a local destination path
-│   └── Multiple:
-│       └── Allows choosing several of the above
-```
-
-Supported backup targets include:
-
-- [**DeIC-Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA** (see instructions under “Setup → SFTP”)  
-- [**Dropbox**](https://www.dropbox.com/)  
-- [**OneDrive**](https://onedrive.live.com/)  
-- **Local** storage – backup to a folder on your own system  
-- **Multiple** – select any combination of the above
-
-> 🔐 All credentials are stored in `rclone.conf`.  
-> ☁️ `rclone` is automatically downloaded and installed if not already available on your system.
-
-</details>
-
-<details>
 <summary><strong>📡 Remote Repository Setup</strong></summary><br>
 
 Publishing your project to a remote Git hosting platform is a key step toward transparent, collaborative, and **reproducible** research.
@@ -605,6 +573,39 @@ Use this Git alias to skip CI on minor commits:
 ```
 git commit-skip "Updated documentation"
 ```
+
+</details>
+
+<details>
+<summary><strong>☁️ Backup with Rclone</strong></summary><br>
+
+Data loss can compromise months or years of research. To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org). Whether working locally or in the cloud, your data can be reliably mirrored to trusted storage systems.
+
+```
+├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
+│   ├── DeIC:
+│   │   ├── Prompt for email
+│   │   └── Prompt for password (encrypted)
+│   ├── Dropbox / OneDrive:
+│   │   ├── Prompt for email
+│   │   └── Prompt for password (encrypted)
+│   ├── Local:
+│   │   └── Prompt to choose a local destination path
+│   └── Multiple:
+│       └── Allows choosing several of the above
+```
+
+Supported backup targets include:
+
+- [**DeIC-Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA**  
+- [**ERDA**](https://erda.dk/) – configured via **SFTP with password and MFA**   
+- [**Dropbox**](https://www.dropbox.com/)  
+- [**OneDrive**](https://onedrive.live.com/)  
+- **Local** storage – backup to a folder on your own system  
+- **Multiple** – select any combination of the above
+
+> 🔐 All credentials are stored in `rclone.conf`.  
+> ☁️ `rclone` is automatically downloaded and installed if not already available on your system.
 
 </details>
 
