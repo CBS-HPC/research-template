@@ -73,99 +73,76 @@ def main_text(json_file, code_path):
 
 {system_spec}
 
-## 🛠️ Setup & Installation
-<a name="setup-installation"></a>
 <details>
-<summary><strong>{head}</strong></summary><br>
+<summary><strong>🔧 Initial Setup</strong></summary><br>
+
+{head}
 
 {install}
 
 </details>
 
-## 🚀 Usage & Execution
-<a name="usage-execution"></a>
 <details>
-<summary><strong>📂 Instructions for activating environments, running workflows, testing, and using CLI tools</strong></summary><br>
-
-### ⚡ Activation
+<summary><strong>⚡Project Activation</strong></summary><br>
 
 {activate}
 
-### 📜 Workflow & Scripts
+</details>
+
+<details>
+<summary><strong>📜 Code Scripts</strong></summary><br>
 
 The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{code_path}`.
 
-#### ▶️ Run the Main Script
+##### ▶️ Run the Main Script
 
 To execute the full workflow pipeline, run the main orchestration script from the terminal:
 
 ```
 {run_command}
 ```
+
 <details>
-<summary><strong>Expand for more details</strong></summary><br>
+<summary><strong>Expand for more details</strong></summary>
 
 {usage}
 
 </details>
-
-### 🧪 Testing & CI
-<a name="unit-test-ci"></a>
-<details>
-<summary><strong>Unit testing and GitHub Actions configuration</strong></summary><br>
+</details>
 
 {ci_tools}
 
 </details>
 
-### 🗂️ Configuration Files
-<a name="configuration-files-root-level"></a>
 <details>
-<summary><strong>Environment and dependency files (.env, requirements.txt, etc.)</strong></summary><br>
+<summary><strong>🗂️ Configuration Files (Root-Level)</strong></summary><br>
 
 {config}
 
 </details>
 
-### 🧰 CLI Utilities
-<a name="cli-tools"></a>
 <details>
-<summary><strong>Custom CLI tools for reproducibility and automation</strong></summary><br>
+<summary><strong>🧰 CLI Utilities</strong></summary><br>
 
 {cli_tools}
 
 </details>
-</details>
 
-## 📦 Dataset List
-<a name="dataset-list"></a>
 <details>
-<summary><strong>Included datasets and metadata</strong></summary><br>
+<summary><strong>📦 Dataset List</strong></summary><br>
 
 {dataset}
 
 </details>
 
-## 📁 Project Directory Structure
-<a name="project-directory-structure"></a>
 <details>
-<summary><strong>Click to expand project file tree</strong></summary><br>
+<summary><strong>📁 Project Directory Structure</strong></summary><br>
 
 The current repository structure is shown below. Descriptions can be edited in `./pyproject.toml`.
 
 ```tree
 
 ```
-
-</details>
-
-## 🔄 DCAS Compliance
-
-<a name="creating-a-replication-package-based-on-dcas"></a>
-<details>
-<summary><strong></strong></summary><br>
-
-{dcas}
 
 </details>
 """
@@ -177,6 +154,7 @@ def set_project():
     if os_type == "windows":
 
         usage =f"""**On Windows (PowerShell)**
+        
         ```powershell
         # Activate
         ./activate.ps1
@@ -188,6 +166,7 @@ def set_project():
     elif os_type in ("darwin", "linux"):
 
         usage =f"""**On Linux/macOS (bash)**
+        
         ```bash
         # Activate
         source activate.sh
@@ -210,20 +189,20 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
     setup = ""
 
     if repo_name and repo_user:
-        setup += "### Clone the Project Repository\n"
+        setup += "#### Clone the Project Repository\n"
         "This will donwload the repository to your local machine. '.env' file is not include in the online repository.\n"
         "Clone the repository using the following command:\n"
         setup += "```\n"
         if hostname:
             setup += (f"git clone https://{hostname}/{repo_user}/{repo_name}.git\n"   
                     "```\n")
-    setup += ("### Navigate to the Project Directory\n"
+    setup += ("#### Navigate to the Project Directory\n"
             "Change into the project directory:\n"  
             "```\n"
             f"cd {repo_name}\n"
             "```\n")
 
-    setup += f"### {py_version}\n"
+    setup += f"#### {py_version}\n"
     
     if programming_language.lower() == "python":
         setup += f"Project environment using {software_version} can be setup using the options described below.\n\n"
@@ -288,7 +267,7 @@ conda env create -f environment.yml
 </details>
 
 """
-    setup +=f"""### Installing the `setup` package
+    setup +=f"""#### Installing the `setup` package
 
 Once you have installed the python environmnet Conda, Pip or Uv, you must also install the local `setup` package used for configuration and automation scripts:
 
@@ -302,7 +281,7 @@ This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` ava
 
 """
     if programming_language.lower() == "python":
-        setup +=f"""### {software_version}
+        setup +=f"""#### {software_version}
 
 The project code in `{code_path}` is written in **{software_version}** with the detected {software_version} dependencies are listed below:
 
@@ -312,7 +291,7 @@ The project code in `{code_path}` is written in **{software_version}** with the 
 """
     if programming_language.lower() == "r":
 
-        setup +=f"""### {software_version}
+        setup +=f"""#### {software_version}
 
 The project code in `{code_path}` is written in **{software_version}** and can be set up using one of the option described below.
 
@@ -326,7 +305,7 @@ The detected {software_version} dependencies are listed below:
 {code_dependencies}
 ```
 
-#### Renv Installation
+##### Renv Installation
 
 To install R packages required by this project, use the `renv` package within the `/R` directory and the provided lock file (`renv.lock`):
 
@@ -343,7 +322,7 @@ install.packages("renv")
 """    
     if programming_language.lower() in ["matlab","stata"]:
 
-        setup += f"""### {software_version}
+        setup += f"""#### {software_version}
 
 The project code in `{code_path}` is written in **{software_version}** and requires it to be pre-installed on your system. Once {software_version} is available, you can set up the environment using one of the options described below.
 
@@ -442,7 +421,7 @@ def set_script_structure(programming_language, software_version, folder_path, js
 
     code_path = language_dirs.get(programming_language)
     md = []
-    md.append("#### Scripts Detected in Workflow:\n")
+    md.append("##### Scripts Detected in Workflow:\n")
 
     for kind, path in scripts:
         name = os.path.basename(path)
@@ -458,7 +437,7 @@ def set_script_structure(programming_language, software_version, folder_path, js
     if any("utils" in os.path.basename(p).lower() for _, p in scripts):
         md.append("🛠️ **Note**: `utils` does not define a `main()` function and should not be executed directly.\n")
 
-    md.append("#### Execution Options:\n")
+    md.append("##### Execution Options:\n")
     if orchestrator:
         md.append(f"**Run the full pipeline via the orchestration script `{os.path.basename(orchestrator)}` shown below:**\n")
         try:
@@ -596,7 +575,7 @@ def set_script_structure_old(programming_language, software_version, folder_path
     if any("utils" in os.path.basename(p).lower() for _, p in scripts):
         md.append("🛠️ **Note**: `utils` does not define a `main()` function and should not be executed directly.\n")
 
-    md.append("#### Execution Options:\n")
+    md.append("##### Execution Options:\n")
     if orchestrator:
         md.append(f"**Run the full pipeline via the orchestration script `{os.path.basename(orchestrator)}` shown below::**\n")
         try:
@@ -635,7 +614,7 @@ def set_config_table(programming_language, project_root="."):
 
 ---
 
-### 📄 `pyproject.toml` Sections Explained
+#### 📄 `pyproject.toml` Sections Explained
 
 | Section                   | Purpose                                                                                      |
 |---------------------------|----------------------------------------------------------------------------------------------|
@@ -823,19 +802,19 @@ More information: [Codeberg CI docs](https://docs.codeberg.org/ci/)"""
     ci = ci_matrix[repo]
 
     if lang['package_file']:
-        pipeline = f"""#### Each pipeline:
+        pipeline = f"""##### Each pipeline:
 1. Installs language runtime and dependencies
 2. Installs project packages using {lang['package_file']}
 3. Runs tests in `tests/`
 4. Outputs results and logs"""
     else:
-        pipeline = f"""#### Each pipeline:
+        pipeline = f"""##### Each pipeline:
 1. Installs language runtime and dependencies
 2. Runs tests in `tests/`
 3. Outputs results and logs"""
 
-
-    section = f"""### 🧪 Unit Testing
+    section = f"""<details>
+<summary><strong>🧪 Unit Testing</strong></summary><br>
 
 This template includes built-in support for **unit testing** in {programming_language.capitalize()} to promote research reliability and reproducibility.
 
@@ -847,11 +826,16 @@ Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_ma
 
 {lang['example']}
 
-### ⚙️ Continuous Integration (CI)
+</details>
+
+<details>
+<summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
 
 CI is configured for **{code_repo.capitalize()}** (`{ci['config_file']}`) with **{programming_language.capitalize()}** support.
 
-#### 🔄 CI Control via CLI
+✅ Even without writing **unit tests**, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
+
+##### 🔄 CI Control via CLI
 
 CI can be toggled on or off using the built-in CLI command:
 
@@ -865,13 +849,14 @@ ci-control --off
 {ci['note']}
 
 
-#### 🧷 Git Shortcut for Skipping CI
+##### 🧷 Git Shortcut for Skipping CI
 
 To skip CI on a commit, use the built-in Git alias:
 
 ```
 git commit-skip "Updated documentation"
 ```
+</details>
 """
     return section.strip()
 
