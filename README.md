@@ -494,17 +494,60 @@ source deactivate.sh
 </details>
 
 <details>
-<summary><strong>📅 Unit Testing and Continuous Integration (CI)</strong></summary><br>
+<summary><strong>🔧 CLI Tools</strong></summary><br>
 
-This template includes built-in support for **unit testing** and **CI automation** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility. 
+The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
 
-It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected. 
-Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
+> ℹ️ **Note**: The `setup` package is **automatically installed** during project setup.  
+> You can also manually install or reinstall it using:  
+> `pip install -e ./setup`
+
+Once installed, the following CLI commands become available from the terminal:
+
+| Command                     | Description                                                                                       |
+|-----------------------------|---------------------------------------------------------------------------------------------------|
+| `push-backup`                | Executes a full project backup using preconfigured rules and paths.                               |
+| `set-dataset`               | Initializes or registers datasets (e.g., add metadata, sync folders).                            |
+| `update-dependencies`       | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`.                   |
+| `run-setup` *(in progress)* | Main entry point to initialize or reconfigure the project environment.                           |
+| `update-readme`             | Regenerates the `README.md` with updated metadata and file structure.                            |
+| `reset-templates`           | Resets or regenerates script templates in `src/` based on project language.                      |
+| `code-examples`             | Generates language-specific example code and notebooks (Python, R, etc.).                   |
+| `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
+
+#### 🛠️ Usage
+
+After activating your environment, run commands like:
+
+```bash
+run-setup
+set-dataset
+update-requirements
+```
+
+</details>
+
+<details>
+<summary><strong>🗂️ Configuration Files (Root-Level)</strong></summary><br>
+
+The following configuration files are placed in the root directory and used by tools for managing environments, templates, backups, and project metadata.
+
+| File                      | Purpose                                                                                             |
+|---------------------------|-----------------------------------------------------------------------------------------------------|
+| `.gitignore`              | Excludes unnecessary files from Git version control                                                 |
+| `.env`                    | Defines environment-specific variables (e.g., paths, tokens, settings); typically excluded from Git |
+| `environment.yml`         | Conda environment definition for installing Python and R dependencies                               |
+| `requirements.txt`        | pip-compatible Python dependencies                                                                  |
+| `renv.lock`               | Captures exact versions of R packages used (if R is selected)                                       |
 </details>
 
 <details>
 <summary><strong>🧪 Unit Testing</strong></summary><br>
 
+This template includes built-in support for **unit testing** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility. 
+
+It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected. 
+Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
 
 Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure varies slightly by language:
 
@@ -630,7 +673,9 @@ stata -b do tests/test_s00_main.do
 </details>
 
 <details>
-<summary><strong>🧪 ⚙️ Continuous Integration (CI)</strong></summary><br>
+<summary><strong> ⚙️ Continuous Integration (CI)</strong></summary><br>
+
+This template includes built-in support **CI automation** across Python, R and MATLAB on all major platforms: 
 
 The template supports CI pipelines on all major platforms:
 
@@ -685,57 +730,6 @@ To skip CI on a commit, use the built-in Git alias:
 ```
 git commit-skip "Updated documentation"
 ```
-
-</details>
-
-
-<details>
-<summary><strong>🔧 CLI Tools</strong></summary><br>
-
-The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
-
-> ℹ️ **Note**: The `setup` package is **automatically installed** during project setup.  
-> You can also manually install or reinstall it using:  
-> `pip install -e ./setup`
-
-Once installed, the following CLI commands become available from the terminal:
-
-| Command                     | Description                                                                                       |
-|-----------------------------|---------------------------------------------------------------------------------------------------|
-| `push-backup`                | Executes a full project backup using preconfigured rules and paths.                               |
-| `set-dataset`               | Initializes or registers datasets (e.g., add metadata, sync folders).                            |
-| `update-dependencies`       | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`.                   |
-| `run-setup` *(in progress)* | Main entry point to initialize or reconfigure the project environment.                           |
-| `update-readme`             | Regenerates the `README.md` with updated metadata and file structure.                            |
-| `reset-templates`           | Resets or regenerates script templates in `src/` based on project language.                      |
-| `code-examples`             | Generates language-specific example code and notebooks (Python, R, etc.).                   |
-| `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
-
-#### 🛠️ Usage
-
-After activating your environment, run commands like:
-
-```bash
-run-setup
-set-dataset
-update-requirements
-```
-
-</details>
-
-<details>
-<summary><strong>🗂️ Configuration Files (Root-Level)</strong></summary><br>
-
-The following configuration files are placed in the root directory and used by tools for managing environments, templates, backups, and project metadata.
-
-| File                      | Purpose                                                                                             |
-|---------------------------|-----------------------------------------------------------------------------------------------------|
-| `.gitignore`              | Excludes unnecessary files from Git version control                                                 |
-| `.env`                    | Defines environment-specific variables (e.g., paths, tokens, settings); typically excluded from Git |
-| `environment.yml`         | Conda environment definition for installing Python and R dependencies                               |
-| `requirements.txt`        | pip-compatible Python dependencies                                                                  |
-| `renv.lock`               | Captures exact versions of R packages used (if R is selected)                                       |
-
 
 </details>
 
