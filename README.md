@@ -42,12 +42,7 @@ Whether you're preparing a replication package, submitting code and data for pee
 - 📄 Includes support for DCAS-compliant replication packages
 
 ---
-
-## 🚀 Getting Started
-
-This section walks you through how to create and configure a new project using the template, either online (with Git) or offline (manual ZIP download), followed by interactive setup options.
-
-### 🛠️ Requirements
+## 🛠️ Requirements
 
 Before using the template, ensure the following tools are available:
 
@@ -58,6 +53,10 @@ Before using the template, ensure the following tools are available:
 - [**Stata**](https://www.stata.com/) or [**MATLAB**](https://www.mathworks.com/products/matlab.html) – Required if selected as a scripting language.
 
 > 💡 Missing tools (e.g. Git) can be automatically downloaded during setup.
+
+## 🚀 Getting Started
+
+This section walks you through how to create and configure a new project using the template, either online (with Git) or offline (manual ZIP download), followed by interactive setup options.
 
 ### 🏗️ Initialize a New Project
 
