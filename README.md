@@ -1,3 +1,12 @@
+
+<style>
+summary {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+</style>
+
+
 # 🧪 Reproducible Research Template: Structured Workflows and Replication Packages
 
 ![Repo size](https://img.shields.io/github/repo-size/CBS-HPC/research-template)
