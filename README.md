@@ -291,14 +291,14 @@ This template supports several version control systems to suit different workflo
 - [**Datalad**](https://www.datalad.org/) – for data-heavy, file-based versioning; designed to support **FAIR** principles and **Open Science** workflows  
 - [**DVC**](https://dvc.org/) – for machine learning pipelines, dataset tracking, and model versioning
 
-### 🔧 How it works:
+#### 🔧 How it works:
 
 - **Git**: initializes the project root as a Git repository  
   - Also creates a separate Git repo in `data/` to track datasets independently  
 - **Datalad**: builds on Git by creating a [Datalad dataset](https://handbook.datalad.org/en/latest/basics/101-137-datasets.html) in `data/`  
 - **DVC**: runs `dvc init` and sets up `data/` as a [DVC-tracked directory](https://dvc.org/doc/start/data-management) using external storage and `.dvc` files
 
-### 📝 Auto-generated `.gitignore` includes:
+#### 📝 Auto-generated `.gitignore` includes:
 
 ```
 ├── data/                  → 00_raw, 01_interim and 02_processed data folders
@@ -375,7 +375,7 @@ Repositories are created using the **HTTPS API**, and authenticated with [**pers
 
 > 🛡️ Your credentials and tokens are securely stored in the `.env` file and never exposed in plain text.
 
-###  🔐 Personal Access Tokens and Permissions
+####  🔐 Personal Access Tokens and Permissions
 
 A Personal Access Token (PAT) is needed to:
 
@@ -383,7 +383,7 @@ A Personal Access Token (PAT) is needed to:
 - Push CI configuration files
 - Enable automated workflows (e.g. GitHub Actions, GitLab CI)
 
-#### 🔎 Required Token Scopes by Platform
+##### 🔎 Required Token Scopes by Platform
 
 | Platform   | Purpose                              | Required Scopes           |
 |------------|--------------------------------------|---------------------------|
@@ -456,7 +456,7 @@ You can find or update human-readable file descriptions in `pyproject.toml` unde
 
 To configure the project's environment—including project paths, environment variables, and virtual environments—run the activation script for your operating system. These scripts read settings from the `.env` file.
 
-### 🪟 Windows (PowerShell)
+#### 🪟 Windows (PowerShell)
 
 **Activate:**
 
@@ -470,7 +470,7 @@ To configure the project's environment—including project paths, environment va
 ./deactivate.ps1
 ```
 
-### 🐧 macOS / Linux (bash)
+#### 🐧 macOS / Linux (bash)
 
 **Activate:**
 
@@ -497,7 +497,7 @@ It encourages both **traditional unit testing** and a **Test-Driven Development 
 Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
 
 ---
-### 🧪 Unit Testing
+#### 🧪 Unit Testing
 
 Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure varies slightly by language:
 
@@ -605,7 +605,7 @@ stata -b do tests/test_s00_main.do
 </details>
 
 ---
-### ✅ Best Practices
+#### ✅ Best Practices
 
 - Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
 - Include **edge cases** — such as missing data, unexpected formats, or invalid input.
@@ -620,7 +620,7 @@ stata -b do tests/test_s00_main.do
 > 💡 Tests don’t need to be exhaustive — focus on **critical correctness** and **key workflow branches**.
 
 ---
-### 🔧 Test-Driven Development (TDD)
+#### 🔧 Test-Driven Development (TDD)
 
 TDD encourages writing tests **before** implementation. This is especially effective in research workflows where reproducibility is critical.
 
@@ -637,7 +637,7 @@ TDD encourages writing tests **before** implementation. This is especially effec
 > 🚀 Each generated script comes with a matching test file scaffold to support TDD from day one.
 
 ---
-### ⚙️ Continuous Integration (CI)
+#### ⚙️ Continuous Integration (CI)
 
 The template supports CI pipelines on all major platforms:
 
@@ -676,7 +676,7 @@ Each CI pipeline performs the following:
 4. Outputs test results and logs
 ---
 
-### 🔄 CI Control via CLI
+#### 🔄 CI Control via CLI
 
 CI can be toggled on or off using the built-in CLI command:
 
@@ -685,7 +685,7 @@ ci-control --on
 ci-control --off 
 ```
 
-### 🧷 Git Shortcut for Skipping CI
+#### 🧷 Git Shortcut for Skipping CI
 
 To skip CI on a commit, use the built-in Git alias:
 
@@ -718,7 +718,7 @@ Once installed, the following CLI commands become available from the terminal:
 | `code-examples`             | Generates language-specific example code and notebooks (Python, R, etc.).                   |
 | `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
 
-### 🛠️ Usage
+#### 🛠️ Usage
 
 After activating your environment, run commands like:
 
