@@ -113,6 +113,22 @@ This template guides you through a series of interactive prompts to configure yo
 ├── email                     → Your email
 ├── orcid                     → Your ORCID researcher ID
 ├── version                   → Initial version number (e.g., 0.0.1)
+```
+
+This information is used to auto-generate:
+
+- `README.md` – populated with title, description, and author info  
+- `CITATION.cff` – for machine-readable academic citation
+
+</details>
+
+
+<details>
+<summary>🔑 License Descriptions</summary>
+
+**Provide core metadata for your project—used for naming, documentation, citation, and licensing.**
+
+```
 ├── code_license              → [MIT | BSD-3-Clause | Apache-2.0 | None]
 ├── documentation_license     → [CC-BY-4.0 | CC0-1.0 | None]
 ├── data_license              → [CC-BY-4.0 | CC0-1.0 | None]
@@ -120,33 +136,27 @@ This template guides you through a series of interactive prompts to configure yo
 
 This information is used to auto-generate:
 
-- `README.md` – populated with title, description, and author info  
 - `LICENSE.txt` – includes license sections for code, documentation, and data  
-- `CITATION.cff` – for machine-readable academic citation
 
 > ℹ️ If “None” is selected, the corresponding section will be omitted from the LICENSE file.
 
-  <details>
-  <summary>🔑 License Descriptions</summary>
+**Code Licenses:**
 
-  **Code Licenses:**
+- [**MIT**](https://opensource.org/licenses/MIT) – Very permissive, short license. Allows reuse with attribution.  
+- [**BSD-3-Clause**](https://opensource.org/license/bsd-3-clause/) – Permissive, but includes a non-endorsement clause.  
+- [**Apache-2.0**](https://www.apache.org/licenses/LICENSE-2.0) – Like MIT, but includes explicit patent protection.  
 
-  - [**MIT**](https://opensource.org/licenses/MIT) – Very permissive, short license. Allows reuse with attribution.  
-  - [**BSD-3-Clause**](https://opensource.org/license/bsd-3-clause/) – Permissive, but includes a non-endorsement clause.  
-  - [**Apache-2.0**](https://www.apache.org/licenses/LICENSE-2.0) – Like MIT, but includes explicit patent protection.  
+**Documentation Licenses:**
 
-  **Documentation Licenses:**
+- [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Requires attribution, allows commercial and derivative use.  
+- [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Places documentation in the public domain (no attribution required).
 
-  - [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Requires attribution, allows commercial and derivative use.  
-  - [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Places documentation in the public domain (no attribution required).
+**Data Licenses:**
 
-  **Data Licenses:**
-
-  - [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Allows reuse and redistribution with attribution.  
-  - [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Public domain dedication for unrestricted reuse.
-  </details>
-
+- [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Allows reuse and redistribution with attribution.  
+- [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Public domain dedication for unrestricted reuse.
 </details>
+
 
 <details>
 <summary>🧬 Programming Language & Script Templates</summary
