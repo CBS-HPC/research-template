@@ -237,32 +237,9 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
 
         setup +=f"These methods do **not** install external the proprietary software **{software_version}** which to be installed manually.\n\n"
 
-    setup +=f"""<details>
-<summary>Conda Installation</summary>
-
-Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:
-
-```
-conda env create -f environment.yml
-```
-</details>
-
-"""
 
     setup +=f"""<details>
-<summary>Pip Installation:</summary>
-
-You can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`::
-
-```
-pip install -r requirements.txt
-```
-</details>
-
-"""
-    
-    setup +=f"""<details>
-<summary>Uv Installation</summary>
+<summary>Uv Installation (Recommended)</summary>
 
 If you prefer a faster and more reproducible alternative to pip, you can use **[{uv_version}](https://github.com/astral-sh/uv)** with **{py_version}** to install the dependencies.
 
@@ -282,6 +259,35 @@ uv pip install --strict uv.lock
 
 """
     
+    setup +=f"""<details>
+<summary>Pip Installation:</summary>
+
+You can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`::
+
+```
+pip install -r requirements.txt
+```
+</details>
+
+"""
+    
+    if programming_language.lower() == "r":
+        conda_title = f"Conda Installation (Installs **{py_version}** and **{software_version}**)"
+    else:
+        conda_title = f"Conda Installation (Installs **{py_version}**)"
+
+
+    setup +=f"""<details>
+<summary>{conda_title}</summary>
+
+Install the required dependencies using **{conda_version}** and the provided `environment.yml` file:
+
+```
+conda env create -f environment.yml
+```
+</details>
+
+"""
     setup +=f"""### Installing the `setup` package
 
 Once you have installed the python environmnet Conda, Pip or Uv, you must also install the local `setup` package used for configuration and automation scripts:

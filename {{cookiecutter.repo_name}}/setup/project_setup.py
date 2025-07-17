@@ -111,24 +111,24 @@ def set_options(programming_language,version_control):
         return r_version, python_version
 
     python_version = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
-    environment_opts = [f"Venv {python_version}","Conda (Choose Python Version)"]
+    environment_opts = [f"Venv (via UV) {python_version}","Conda (Choose Python Version)"]
     python_env_manager = None
+    
     if programming_language.lower() == 'r':
         question = "Do you want to create a new R environment using Conda or use Base Installation:"
         r_env_manager = prompt_user(question, ["Conda (Choose R Version)","Base Installation"])
         r_env_manager = r_env_manager.replace("(Choose R Version)","").strip()
-        python_env_manager = "Venv"
-
-
+  
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
         
         if r_env_manager.lower() =='conda':
-            #environment_opts = [f"Venv {python_version}","Conda (Choose Python Version)"]
             python_env_manager = "Conda"
-            #print("A new python environment will be created to facilitate the setup functionalities")
+        else:
+            python_env_manager = "Venv"
 
     else:     
-        r_env_manager = "Base Installation"
+        #r_env_manager = "Base Installation"
+        r_env_manager = ""
 
         if programming_language.lower() == 'python':
             question = "Do you want to create a new python environment using:"
@@ -153,6 +153,7 @@ def set_options(programming_language,version_control):
 
     python_env_manager = python_env_manager.replace(python_version,"").strip()
     python_env_manager = python_env_manager.replace("(Choose Python Version)","").strip()
+    python_env_manager = python_env_manager.replace("(via UV)","").strip()
 
     conda_r_version, conda_python_version = select_version()
 
@@ -316,7 +317,7 @@ def set_programming_language(programming_language,r_env_manager):
         _, selected_path = choose_apps(programming_language,found_apps)
 
         if not selected_path: 
-            _, selected_path =manual_apps()
+            _, selected_path = manual_apps()
 
         if selected_path:
 
