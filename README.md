@@ -368,15 +368,11 @@ This template generates a standardized, reproducible project layout. It separate
 <details>
 <summary><strong>📁 Directory Structure</strong></summary><br>
 
-This template provides a standardized, modular folder layout that supports **transparency**, **reproducibility**, and **clean separation of concerns**.
+This template uses a modular folder layout that promotes transparency, reproducibility, and clear separation of data, code, results, and documentation—making your project easy to navigate and maintain.
 
-It includes dedicated folders for raw and processed data, source code, results, documentation, environment setup, and licensing—making your project easy to navigate, maintain, and publish. This structure aligns with standards like [DCAS](https://datacodestandard.org/), [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/), and FAIR principles.
+📝 File and folder descriptions are stored in `pyproject.toml` under `[tool.research_template.file_descriptions]`. See the [Configuration Files section](#-configuration-files-root-level) for details.
 
-> 📝 File and folder descriptions are stored in `pyproject.toml` under `[tool.research_template.file_descriptions]`. See the [Configuration Files section](#-configuration-files-root-level) for details.
-
----
-
-### 🗂️ Top-Level Overview
+#### 🗂️ Top-Level Overview
 
 ```
 ├── .git/                     # Git repository metadata
@@ -392,9 +388,7 @@ It includes dedicated folders for raw and processed data, source code, results, 
 
 > 🔁 `activate.*` and `deactivate.*` are either PowerShell (`.ps1`) or Bash (`.sh`) scripts, depending on your platform (Windows or macOS/Linux).
 
----
-
-### 📦 Project Subdirectories
+#### 📦 Project Subdirectories
 
 ```
 ├── bin/                      # Local tools (e.g., rclone binaries, installers)
@@ -409,9 +403,7 @@ It includes dedicated folders for raw and processed data, source code, results, 
 │   └── figures/              # Visualizations and plots
 ```
 
----
-
-### 🔧 Setup & Configuration
+#### 🔧 Setup & Configuration
 
 ```
 ├── setup/                    # Internal setup module for project automation
@@ -420,9 +412,7 @@ It includes dedicated folders for raw and processed data, source code, results, 
 │   └── utils/                # Helper functions and setup utilities
 ```
 
----
-
-### 🧬 Source Code
+#### 🧬 Source Code
 
 ```
 └── src (R/stata)/                  # Main scripts for analysis and data workflows
@@ -439,7 +429,6 @@ It includes dedicated folders for raw and processed data, source code, results, 
 ```
 > ✳️ Script file extensions (`.py`, `.R`, `.do`, `.m`) are determined by the programming language selected during project setup.
 
----
 
 <details>
 <summary><strong>📂 Expand Full Directory Tree</strong></summary><br>
