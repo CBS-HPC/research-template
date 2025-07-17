@@ -150,7 +150,9 @@ This information is used to auto-generate:
 <details>
 <summary>🧬 Programming Language & Script Templates</summary
 
-**Reproducible research depends on clear, modular, and well-documented code. This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.**
+**Reproducible research depends on clear, modular, and well-documented code.** 
+
+This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
 
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
@@ -202,7 +204,9 @@ Each script is structured to:
 <details>
 <summary>🧪 Environment Configuration</summary>
 
-**To ensure reproducibility in computational research, it’s essential to isolate your project’s software dependencies. Virtual environments allow you to lock in specific package versions and avoid conflicts with system-wide tools or other projects. This makes it possible for collaborators—and future you—to re-run analyses under the exact same conditions.**
+**To ensure reproducibility in computational research, it’s essential to isolate your project’s software dependencies.** 
+
+Virtual environments allow you to lock in specific package versions and avoid conflicts with system-wide tools or other projects. This makes it possible for collaborators—and future you—to re-run analyses under the exact same conditions.
 
 Set up isolated virtual environments using **Conda**, **UV (venv backend)**, or **system installation**.
 
@@ -250,7 +254,9 @@ Regardless of your choice, the following files are generated to document your en
 <summary>🗃️ Version Control is a cornerstone of reproducible research. It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration. 
 </summary>
 
-**Version control is a cornerstone of reproducible research. It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration.**
+**Version control is a cornerstone of reproducible research.** 
+
+It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration.
 
 Choose a system to version your code (and optionally your data).
 
@@ -303,7 +309,9 @@ This template supports several version control systems to suit different workflo
 <details>
 <summary>☁️ Backup with Rclone</summary>
 
-This template supports automated backup to **CBS-approved storage solutions** using [`rclone`](https://rclone.org).
+**Data loss can compromise months or years of research.**
+
+To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org). Whether working locally or in the cloud, your data can be reliably mirrored to trusted storage systems.
 
 ```
 ├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
@@ -334,6 +342,10 @@ Supported backup targets include:
 
 <details>
 <summary>📡 Remote Repository Setup</summary>
+
+**Publishing your project to a remote Git hosting platform is a key step toward transparent, collaborative, and **reproducible** research.**
+
+A remote repository provides versioned backups, collaboration support, and integration with tools like CI pipelines—crucial for reproducible and FAIR research.
 
 Automatically create and push to a Git repository on a remote hosting platform.
 
