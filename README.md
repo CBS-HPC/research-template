@@ -103,7 +103,7 @@ This template guides you through a series of interactive prompts to configure yo
 <details>
 <summary>📦 Project Metadata</summary>
 
->Provide core metadata for your project—used for naming, documentation, citation, and licensing.
+  > Provide core metadata for your project—used for naming, documentation, citation, and licensing.
 
 ```
 ├── project_name              → Human-readable name
