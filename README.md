@@ -98,7 +98,7 @@ cookiecutter path/to/research-template
 
 ## 🧾 Setup Options
 
-This template guides you through a series of interactive prompts to configure your project. Click below to expand each section for a visual breakdown of all setup steps.
+This template guides you through a series of interactive prompts to configure your project. **Click below to expand each section for a visual breakdown of all setup steps.**
 
 <details>
 <summary>📦 Project Metadata</summary>
@@ -124,8 +124,10 @@ This information is used to auto-generate:
 - `LICENSE.txt` – includes license sections for code, documentation, and data  
 - `CITATION.cff` – for machine-readable academic citation
 
+> ℹ️ If “None” is selected, the corresponding section will be omitted from the LICENSE file.
 
-### 🔑 License Descriptions
+<details>
+<summary>🔑 License Descriptions</summary>
 
 **Code Licenses:**
 
@@ -142,8 +144,7 @@ This information is used to auto-generate:
 
 - [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Allows reuse and redistribution with attribution.  
 - [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Public domain dedication for unrestricted reuse.
-
-> ℹ️ If “None” is selected, the corresponding section will be omitted from the LICENSE file.
+</details>
 
 </details>
 
