@@ -248,8 +248,9 @@ Regardless of your choice, the following files are generated to document your en
 <details>
 <summary>🗃️ Version Control
 
-Version control is a cornerstone of reproducible research. It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration. Whether you're working solo or in a team, version control helps you recover past states, document your workflow, and align with FAIR data and Open Science practices.
+ - Version control is a cornerstone of reproducible research. It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration. 
 </summary>
+
 Choose a system to version your code (and optionally your data).
 
 ```
