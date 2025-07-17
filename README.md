@@ -98,7 +98,7 @@ cookiecutter path/to/research-template
 
 ## 🧾 Setup Options
 
-This template guides you through a series of interactive prompts to configure your project—including version control, environment setup, backup destinations, and remote repository platforms. Click below to expand each section for a visual breakdown of all setup steps.
+This template guides you through a series of interactive prompts to configure your project. Click below to expand each section for a visual breakdown of all setup steps.
 
 <details>
 <summary>📦 Project Metadata</summary>
