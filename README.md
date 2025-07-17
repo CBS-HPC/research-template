@@ -53,7 +53,7 @@ This template is developed and maintained by the **CBS High-Performance Computin
 
 [**Git**](https://git-scm.com/downloads) *(Recommended)* – Git is optional for project generation but **required** if using version control or pushing to remote repositories.
 
-[**Personal Access Token** with ** proper Permissions**](#-personal-access-tokens-and-permissions) *(Recommended)* – Required to push to **GitHub**, **GitLab**, or **Codeberg**.
+[**Personal Access Token** with **proper Permissions**](#-personal-access-tokens-and-permissions) *(Recommended)* – Required to push to **GitHub**, **GitLab**, or **Codeberg**.
 
 **Proprietary software** *(if selected)* – Required if using:
 - [Stata](https://www.stata.com/)
