@@ -562,7 +562,9 @@ Unit test files are automatically generated for core analysis scripts and placed
 | Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `do tests/test_s00_main.do`<br>`stata -b do tests/...`          |
 
 
-📄 Tests are scaffolded to match key analysis scripts (e.g., `s00_main`, `s04_preprocessing`) and are runnable locally or via CI pipelines. e.g. : 
+📄 For each core analysis script (e.g., `s00_main`, `s04_preprocessing`), a matching test file is automatically scaffolded. Tests can be run locally or through CI pipelines.
+
+Example:
 
 ```
 src/s00_main.py
@@ -570,97 +572,6 @@ tests/test_s00_main.py
 ```
 
 💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
-
-📄 Example Layouts and Test Commands are shown below:
-
-<details>
-<summary><strong>Python</strong></summary><br>
-
-Project structure:
-
-```
-src/s00_main.py
-tests/test_s00_main.py
-```
-
-Run tests:
-
-```
-pytest
-```
-
-</details>
-
-<details>
-<summary><strong>R</strong></summary><br>
-
-Project structure:
-
-```
-R/s00_main.R
-tests/testthat/test-s00_main.R
-```
-
-Run tests:
-
-```
-testthat::test_dir("tests/testthat")
-```
-
-From command line:
-
-```
-Rscript -e 'testthat::test_dir("tests/testthat")'
-```
-
-</details>
-
-<details>
-<summary><strong>Matlab</strong></summary><br>
-
-Project structure:
-
-```
-src/s00_main.m
-tests/test_s00_main.m
-```
-
-Run tests in MATLAB:
-
-```
-results = runtests('tests');
-assert(all([results.Passed]), 'Some tests failed')
-```
-
-From command line:
-
-```
-matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some tests failed')"
-```
-
-</details>
-
-<details>
-<summary><strong>Stata</strong></summary><br>
-
-Project structure:
-
-```
-stata/do/s00_main.do
-tests/test_s00_main.do
-```
-
-Run tests in Stata:
-
-```
-do tests/test_s00_main.do
-```
-
-Or in batch mode:
-
-```
-stata -b do tests/test_s00_main.do
-```
 
 </details>
 
