@@ -161,7 +161,7 @@ This information is used to auto-generate:
 
 
 <details>
-<summary>🧬 Programming Language & Script Templates</summary
+<summary>🧬 Programming Language & Script Templates</summary>
 
 <br>
 
