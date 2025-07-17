@@ -492,7 +492,7 @@ The following configuration files are intentionally placed at the root of the re
 | `renv.lock`       | Records the exact versions of R packages used in the project                                    |
 | `uv.lock`         | Locked Python dependencies file for reproducible installs with `uv`                            |
 
-### 📄 `pyproject.toml` Sections Explained
+#### 📄 `pyproject.toml` Sections Explained
 
 | Section                   | Purpose                                                                                      |
 |---------------------------|----------------------------------------------------------------------------------------------|
@@ -600,19 +600,13 @@ Mirror your code structure — e.g., `s05_modeling.R` → `test-s05_modeling.R`
 <details>
 <summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
 
-Continuous Integration (CI) helps ensure your research project is **reproducible, portable, and robust** across different systems.  
-This template includes built-in CI support for **Python**, **R**, and **MATLAB** using:
+Continuous Integration (CI) helps ensure your research project is **reproducible, portable, and robust** across different systems. This template includes built-in CI support for **Python**, **R**, and **MATLAB** using:
 
 - **GitHub Actions**
 - **GitLab CI/CD**
 - **Codeberg CI** (Woodpecker)
 
-> ✅ Even without writing tests, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).  
-> This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
-
----
-
-### 🔁 What the CI Pipeline Does
+#### 🔁 What the CI Pipeline Does
 
 Each auto-generated CI pipeline:
 
@@ -623,9 +617,9 @@ Each auto-generated CI pipeline:
 3. Executes tests in the `tests/` directory (if present)
 4. Outputs logs and results for debugging or documentation
 
----
+✅ Even without writing tests, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
 
-### ✅ Supported CI Platforms
+#### ✅ Supported CI Platforms
 
 | Platform     | Supported Languages     | OS Support              | Config File                |
 |--------------|--------------------------|--------------------------|----------------------------|
@@ -635,27 +629,21 @@ Each auto-generated CI pipeline:
 
 > ⚠️ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.
 
----
-
-### ⚠️ MATLAB CI Caveats
+#### ⚠️ MATLAB CI Caveats
 
 MATLAB CI support is included as a **starter configuration**. It may require manual setup, including licensing and tokens.
 
 - **GitHub Actions**: Uses [`setup-matlab`](https://github.com/matlab-actions/setup-matlab) and requires a `MATLAB_TOKEN`.
 - **GitLab CI/CD**: Uses [MathWorks' CI template](https://github.com/mathworks/matlab-gitlab-ci-template) and requires a license server or `MLM_LICENSE_FILE`.
 
----
-
-### 📝 Codeberg CI Requires Activation
+#### 📝 Codeberg CI Requires Activation
 
 CI is **not enabled by default** on Codeberg. To enable:
 
 - Submit a request via [Codeberg CI Activation Form](https://codeberg.org/Codeberg-e.V./requests/issues/new?template=ISSUE_TEMPLATE%2fWoodpecker-CI.yaml)
 - Learn more in the [Codeberg CI documentation](https://docs.codeberg.org/ci/)
 
----
-
-### 🛠️ CI Control via CLI
+#### 🛠️ CI Control via CLI
 
 You can toggle CI setup on or off at any time using the built-in CLI:
 
@@ -664,7 +652,7 @@ ci-control --on
 ci-control --off
 ```
 
-#### 🧷 Skip CI for a Commit
+##### 🧷 Skip CI for a Commit
 
 Use this Git alias to skip CI on minor commits:
 
