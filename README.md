@@ -42,6 +42,7 @@ Whether you're preparing a replication package, submitting code and data for pee
 - 📄 Includes support for DCAS-compliant replication packages
 
 Developed and maintained by the **CBS High-Performance Computing (HPC)** team to support reproducible, collaborative, and policy-aligned research at Copenhagen Business School.
+
 ---
 
 ## 🛠️ Requirements
