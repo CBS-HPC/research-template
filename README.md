@@ -176,7 +176,7 @@ Choose your primary scripting language. The template supports multi-language pro
 
 If you select **R**, **Stata** or **Matlab** the template will prompt for the path to the installed software if it is not auto-detected.
 
-### 🛠️ Script Generation
+#### 🛠️ Script Generation
 
 This template helps you organize your scripts in a standardized way across programming languages—making it easier to rerun analyses, share with collaborators, and automate complex workflows over time.
 
@@ -319,9 +319,7 @@ This template supports several version control systems to suit different workflo
 <details>
 <summary>☁️ Backup with Rclone</summary><br>
 
-**Data loss can compromise months or years of research.**
-
-To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org). Whether working locally or in the cloud, your data can be reliably mirrored to trusted storage systems.
+Data loss can compromise months or years of research. To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org). Whether working locally or in the cloud, your data can be reliably mirrored to trusted storage systems.
 
 ```
 ├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
