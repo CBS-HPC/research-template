@@ -164,8 +164,10 @@ This information is used to auto-generate:
 
 
 <details>
-<summary><strong>🧬 Programming Language & Virtual Environment</strong></summary><br>
+<summary><strong>🧬 Language & Environment</strong></summary><br>
 
+
+#### ⚙️ Programming Language
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
 ```
