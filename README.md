@@ -166,6 +166,8 @@ This information is used to auto-generate:
 <details>
 <summary><strong>🧬 Language & Environment</strong></summary><br>
 
+Define the core programming language and set up an isolated environment to ensure your analysis is reproducible across systems and collaborators.
+
 #### ⚙️ Programming Language
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
@@ -547,20 +549,20 @@ Each script is structured to:
 
 This template includes built-in support for **unit testing** across Python, R, MATLAB, and Stata to promote research reliability and reproducibility. 
 
-It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected. 
+It encourages both **traditional unit testing** and a **Test-Driven Development (TDD)** approach—where tests are written before code implementation. This leads to better structured, more maintainable code, and ensures that every component of your workflow behaves as expected.  
 Whether you're validating data cleaning, modeling logic, or helper utilities, this framework is designed to help you confidently build reproducible research pipelines.
 
-Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure varies slightly by language:
+Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure and commands vary slightly by language:
 
-| Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
-| -------- | ------------------ | ----------- | ----------------- | ---------------- |
-| Python   | `pytest`           | `src/`      | `tests/`          | `test_*.py`      |
-| R        | `testthat`         | `R/`        | `tests/testthat/` | `test-*.R`       |
-| MATLAB   | `matlab.unittest`  | `src/`      | `tests/`          | `test_*.m`       |
-| Stata    | `.do` script-based | `stata/do/` | `tests/`          | `test_*.do`      |
+| Language | Test Framework     | Code Folder     | Test Folder         | File Format     | Project Structure Example                                   | Run Tests Command                                               |
+|----------|--------------------|------------------|----------------------|------------------|---------------------------------------------------------------|------------------------------------------------------------------|
+| Python   | `pytest`           | `src/`           | `tests/`             | `test_*.py`      | `src/s00_main.py`<br>`tests/test_s00_main.py`                | `pytest`                                                        |
+| R        | `testthat`         | `R/`             | `tests/testthat/`    | `test-*.R`       | `R/s00_main.R`<br>`tests/testthat/test-s00_main.R`           | `testthat::test_dir("tests/testthat")`<br>`Rscript -e '...'`    |
+| MATLAB   | `matlab.unittest`  | `src/`           | `tests/`             | `test_*.m`       | `src/s00_main.m`<br>`tests/test_s00_main.m`                  | `runtests('tests')`<br>`matlab -batch "..."`                    |
+| Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `stata/do/s00_main.do`<br>`tests/test_s00_main.do`           | `do tests/test_s00_main.do`<br>`stata -b do tests/...`          |
 
-Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
-
+> 📄 Tests are scaffolded to match key analysis scripts (e.g., `s00_main`, `s04_preprocessing`) and are runnable locally or via CI pipelines.
+> 💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
 
 📄 Example Layouts and Test Commands are shown below:
 
