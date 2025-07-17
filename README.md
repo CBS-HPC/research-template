@@ -573,9 +573,7 @@ tests/test_s00_main.py
 
 💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
 
-</details>
 
----
 #### ✅ Best Practices
 
 - Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
