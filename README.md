@@ -554,12 +554,12 @@ Whether you're validating data cleaning, modeling logic, or helper utilities, th
 
 Unit test files are automatically generated for core analysis scripts and placed in a unified `tests/` folder during setup. The structure and commands vary slightly by language:
 
-| Language | Test Framework     | Code Folder     | Test Folder         | File Format     | Project Structure Example                                   | Run Tests Command                                               |
-|----------|--------------------|------------------|----------------------|------------------|---------------------------------------------------------------|------------------------------------------------------------------|
-| Python   | `pytest`           | `src/`           | `tests/`             | `test_*.py`      | `src/s00_main.py`<br>`tests/test_s00_main.py`                | `pytest`                                                        |
-| R        | `testthat`         | `R/`             | `tests/testthat/`    | `test-*.R`       | `R/s00_main.R`<br>`tests/testthat/test-s00_main.R`           | `testthat::test_dir("tests/testthat")`<br>`Rscript -e '...'`    |
-| MATLAB   | `matlab.unittest`  | `src/`           | `tests/`             | `test_*.m`       | `src/s00_main.m`<br>`tests/test_s00_main.m`                  | `runtests('tests')`<br>`matlab -batch "..."`                    |
-| Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `stata/do/s00_main.do`<br>`tests/test_s00_main.do`           | `do tests/test_s00_main.do`<br>`stata -b do tests/...`          |
+| Language | Test Framework     | Code Folder     | Test Folder         | File Format     | Run Tests Command                                               |
+|----------|--------------------|------------------|----------------------|------------------|------------------------------------------------------------------|
+| Python   | `pytest`           | `src/`           | `tests/`             | `test_*.py`      | `pytest`                                                        |
+| R        | `testthat`         | `R/`             | `tests/testthat/`    | `test-*.R`       | `testthat::test_dir("tests/testthat")`<br>`Rscript -e '...'`    |
+| MATLAB   | `matlab.unittest`  | `src/`           | `tests/`             | `test_*.m`       | `runtests('tests')`<br>`matlab -batch "..."`                    |
+| Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `do tests/test_s00_main.do`<br>`stata -b do tests/...`          |
 
 > 📄 Tests are scaffolded to match key analysis scripts (e.g., `s00_main`, `s04_preprocessing`) and are runnable locally or via CI pipelines.
 > 💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
