@@ -1,10 +1,5 @@
 
-<style>
-summary {
-  font-size: 1.2em;
-  font-weight: bold;
-}
-</style>
+
 
 
 # 🧪 Reproducible Research Template: Structured Workflows and Replication Packages
@@ -75,7 +70,7 @@ pip install cookiecutter
 This template can be used either online (via GitHub) or offline (manually downloaded).
 
 <details>
-<summary>📦 Online (with Git)</summary><br>
+<summary><strong>📦 Online (with Git)</strong></summary><br>
 
 Use this option if Git is installed and you want to fetch the template directly from GitHub:
 
@@ -86,7 +81,7 @@ cookiecutter gh:CBS-HPC/research-template
 </details>
 
 <details>
-<summary>📁 Offline (Local Installation)</summary><br>
+<summary><strong>📁 Offline (Local Installation)</strong></summary><br>
 
 If Git is **not installed**, you can still use the template by downloading it manually:
 
@@ -110,7 +105,7 @@ cookiecutter path/to/research-template
 This template guides you through a series of interactive prompts to configure your project. **Click below to expand each section for a visual breakdown of all setup steps.**
 
 <details>
-<summary>📦 Project Metadata</summary><br>
+<summary><strong>📦 Project Metadata</strong></summary><br>
 
 Provide essential project metadata to support clear documentation, proper attribution, and machine-readable citations.
 
@@ -135,7 +130,7 @@ This information is used to auto-generate:
 
 
 <details>
-<summary>🔑 License</summary><br>
+<summary><strong>🔑 License</strong></summary><br>
 
 Clear licensing is essential for open and reproducible research. It defines how others can use, share, and build on your work—whether it's code, data, or documentation.
 
@@ -170,7 +165,7 @@ This information is used to auto-generate:
 
 
 <details>
-<summary>🧬 Programming Language & Script Templates</summary><br>
+<summary><strong>🧬 Programming Language & Script Templates</strong></summary><br>
 
 Reproducible research depends on clear, modular, and well-documented code.
 
@@ -224,7 +219,7 @@ Each script is structured to:
 </details>
 
 <details>
-<summary>🧪 Environment Configuration</summary><br>
+<summary><strong>🧪 Environment Configuration</strong></summary><br>
 
 To ensure reproducibility in computational research, it’s essential to isolate your project’s software dependencies.
 
@@ -273,7 +268,7 @@ Regardless of your choice, the following files are generated to document your en
 
 
 <details>
-<summary>🗃️ Version Control</summary><br>
+<summary><strong>🗃️ Version Control</strong></summary><br>
 
 Version control is a cornerstone of reproducible research.It enables you to track changes to your code, data, and analysis pipelines over time—ensuring transparency, accountability, and collaboration.
 
@@ -326,7 +321,7 @@ This template supports several version control systems to suit different workflo
 </details>
 
 <details>
-<summary>☁️ Backup with Rclone</summary><br>
+<summary><strong>☁️ Backup with Rclone</strong></summary><br>
 
 Data loss can compromise months or years of research. To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org). Whether working locally or in the cloud, your data can be reliably mirrored to trusted storage systems.
 
@@ -358,7 +353,7 @@ Supported backup targets include:
 </details>
 
 <details>
-<summary>📡 Remote Repository Setup</summary><br>
+<summary><strong>📡 Remote Repository Setup</strong></summary><br>
 
 Publishing your project to a remote Git hosting platform is a key step toward transparent, collaborative, and **reproducible** research.
 
@@ -409,7 +404,7 @@ A Personal Access Token (PAT) is needed to:
 This template generates a standardized, reproducible project layout. It separates raw data, code, documentation, setup scripts, and outputs to support collaboration, transparency, and automation.
 
 <details>
-<summary>📁 Directory Structure</summary><br>
+<summary><strong>📁 Directory Structure</strong></summary><br>
 
 You can find or update human-readable file descriptions in `pyproject.toml` under `file_descriptions` .
 
@@ -461,7 +456,7 @@ You can find or update human-readable file descriptions in `pyproject.toml` unde
 </details>
 
 <details>
-<summary>🚀 Project Activation</summary><br>
+<summary><strong>🚀 Project Activation</strong></summary><br>
 
 To configure the project's environment—including project paths, environment variables, and virtual environments—run the activation script for your operating system. These scripts read settings from the `.env` file.
 
@@ -496,7 +491,7 @@ source deactivate.sh
 </details>
 
 <details>
-<summary>📅 Unit Testing and Continuous Integration (CI)</summary><br>
+<summary><strong>📅 Unit Testing and Continuous Integration (CI)</strong></summary><br>
 
 ---
 
@@ -523,7 +518,7 @@ Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_ma
 📄 Example Layouts and Test Commands are shown below:
 
 <details>
-<summary>Python</summary><br>
+<summary><strong>Python</strong></summary><br>
 
 Project structure:
 
@@ -541,7 +536,7 @@ pytest
 </details>
 
 <details>
-<summary>R</summary><br>
+<summary><strong>R</strong></summary><br>
 
 Project structure:
 
@@ -565,7 +560,7 @@ Rscript -e 'testthat::test_dir("tests/testthat")'
 </details>
 
 <details>
-<summary>Matlab</summary><br>
+<summary><strong>Matlab</strong></summary><br>
 
 Project structure:
 
@@ -590,7 +585,7 @@ matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some 
 </details>
 
 <details>
-<summary>Stata</summary><br>
+<summary><strong>Stata</strong></summary><br>
 
 Project structure:
 
@@ -706,7 +701,7 @@ git commit-skip "Updated documentation"
 
 
 <details>
-<summary>🔧 CLI Tools</summary><br>
+<summary><strong>🔧 CLI Tools</strong></summary><br>
 
 The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
 
@@ -740,7 +735,7 @@ update-requirements
 </details>
 
 <details>
-<summary>🗂️ Configuration Files (Root-Level)</summary><br>
+<summary><strong>🗂️ Configuration Files (Root-Level)</strong></summary><br>
 
 The following configuration files are placed in the root directory and used by tools for managing environments, templates, backups, and project metadata.
 
