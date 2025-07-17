@@ -13,8 +13,8 @@
   "programming_language": [
     "Python",
     "R",
-    "Stata (Base installation required)",
-    "Matlab (Base installation required)",
+    "Stata (Pre-installation required)",
+    "Matlab (Pre-installation required)",
     "None"
   ],
 

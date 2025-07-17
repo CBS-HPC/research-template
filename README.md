@@ -199,20 +199,20 @@ Each script is structured to:
 <details>
 <summary>🧪 Environment Configuration</summary>
 
-Set up isolated virtual environments using **Conda**, **venv**, or your system’s **base installation**.
+Set up isolated virtual environments using **Conda**, **Venv (via UV)**, or system **Pre-Installation**.
 
 ```
 ├── R environment (if R used)
-│   └── env_manager_r         → [Conda | Base Installation]
+│   └── env_manager_r         → [Conda | Pre-installed R]
 │       ├── If Conda:         → Prompt for R version
-│       └── If Base:          → Uses system-installed R
+│       └── If Pre-installed: → Searches system PATH for installed application
+│                             → Prompts user for executable path if not found
 ├── Python environment
-│   └── env_manager_python    → [Conda | Venv | Base Installation]
+│   └── env_manager_python    → [Conda | Venv]
 │       ├── If Conda:         → Prompt for Python version
-│       ├── If Venv:          → Uses current Python kernel version
-│       └── If Base:          → Uses system-installed Python
+│       ├── If Venv (via Uv): → Uses current Python kernel version
 ├── Proprietary software (if selected)
-│   └── [Stata | Matlab | R]
+│   └── [Stata | Matlab]
 │       ├── Searches system PATH for installed application
 │       └── Prompts user for executable path if not found
 ```
@@ -221,16 +221,16 @@ Set up isolated virtual environments using **Conda**, **venv**, or your system�
 
 - [**Conda**](https://docs.conda.io/en/latest/) – A popular environment and package manager that supports both Python and R. Enables exact version control and cross-platform reproducibility.  
 - [**venv**](https://docs.python.org/3/library/venv.html) – Python’s built-in tool for creating lightweight, isolated environments. Ideal for Python-only projects.  
-- **Base Installation** – No virtual environment is created. Dependencies are installed directly into your system-wide Python or R installation.
 
 Regardless of your choice, the following files are generated to document your environment:
 
 - `environment.yml` – Conda-compatible list of dependencies  
 - `requirements.txt` – pip-compatible Python package list  
-- `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package  
+- `renv.lock` – (if R is selected) snapshot of R packages using the `renv` package
+- `uv.lock` – (if Venv is selected) snapshot of python packages using the `uv` package manager  
 
-> ⚠️ When using **venv** or **base installation**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
-> ⚠️ If proprietary software (e.g., Stata, Matlab, R) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
+> ⚠️ When using **venv** or **Pre-Installed R**, the `environment.yml` file is created **without Conda's native environment tracking**. As a result, it may be **less accurate or reproducible** than environments created with Conda.  
+> ⚠️ If proprietary software (e.g., Stata, Matlab) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
 > 💡 Conda will be downloaded and installed automatically if it's not already available.
 
 </details>

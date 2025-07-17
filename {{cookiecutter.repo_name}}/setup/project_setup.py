@@ -7,9 +7,6 @@ import pathlib
 
 def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None):
 
-    if not python_env_manager:
-        python_env_manager = "Base Installation"    
-
     script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
     env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
     main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
@@ -23,9 +20,6 @@ def run_bash(script_path, env_path=None, python_env_manager=None,main_setup=None
 
 def run_powershell(script_path, env_path=None, python_env_manager=None, main_setup=None):
 
-    if not python_env_manager:
-        python_env_manager = "Base Installation"    
- 
     script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
     env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
     main_setup = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(main_setup))
@@ -61,8 +55,8 @@ def prompt_user(question, options):
 
 def correct_format(programming_language, authors, orcids):
 
-    if "(Base installation required)" in programming_language:
-            programming_language = programming_language.replace(" (Base installation required)", "")
+    if "(Pre-installation required)" in programming_language:
+            programming_language = programming_language.replace(" (Pre-installation required)", "")
 
     if "Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)" in authors:
             authors = authors.replace("Your Name(s) (multiple authors can be added by using a ';' or ',' delimiter)", "Not Provided")
@@ -97,13 +91,13 @@ def set_options(programming_language,version_control):
     def select_version():
         r_version = None
         if r_env_manager.lower() == 'conda':
-            r_version = input("Would you like to specify an R version (e.g., '4.4.3', '4.3', or '4') to be installed via conda? Leave empty for default: ").strip()
+            r_version = input("Would you like to specify an R version (e.g., '4.4.3', '4.3', or '4') to be installed via Conda? Leave empty for default: ").strip()
             if r_version and not is_valid_version(r_version, 'r'):
                 print("Invalid R version format. Will be left empty.")
                 r_version = None
         python_version = None
         if python_env_manager.lower() == 'conda':
-            python_version = input("Would you like to specify a Python version (e.g., '3.9.3', '3.12', or '3') to be installed via conda? Leave empty for default: ").strip()
+            python_version = input("Would you like to specify a Python version (e.g., '3.9.3', '3.12', or '3') to be installed via Conda? Leave empty for default: ").strip()
             if python_version and not is_valid_version(python_version, 'python'):
                 print("Invalid Python version format. Will be left empty.")
                 python_version = None
@@ -111,12 +105,12 @@ def set_options(programming_language,version_control):
         return r_version, python_version
 
     python_version = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
-    environment_opts = [f"Venv (via UV) {python_version}","Conda (Choose Python Version)"]
+    environment_opts = [f"UV (venv backend) {python_version}","Conda (Choose Python Version)"]
     python_env_manager = None
     
     if programming_language.lower() == 'r':
-        question = "Do you want to create a new R environment using Conda or use Base Installation:"
-        r_env_manager = prompt_user(question, ["Conda (Choose R Version)","Base Installation"])
+        question = "Do you want to create a new R environment using Conda or use Pre-installed R:"
+        r_env_manager = prompt_user(question, ["Conda (Choose R Version)","Pre-installed R"])
         r_env_manager = r_env_manager.replace("(Choose R Version)","").strip()
   
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
@@ -127,7 +121,6 @@ def set_options(programming_language,version_control):
             python_env_manager = "Venv"
 
     else:     
-        #r_env_manager = "Base Installation"
         r_env_manager = ""
 
         if programming_language.lower() == 'python':
@@ -153,9 +146,12 @@ def set_options(programming_language,version_control):
 
     python_env_manager = python_env_manager.replace(python_version,"").strip()
     python_env_manager = python_env_manager.replace("(Choose Python Version)","").strip()
-    python_env_manager = python_env_manager.replace("(via UV)","").strip()
+    python_env_manager = python_env_manager.replace("UV (venv backend)","Venv").strip()
 
     conda_r_version, conda_python_version = select_version()
+
+    if not python_env_manager:
+        python_env_manager = "Venv"   
 
     return programming_language, python_env_manager,r_env_manager,code_repo, remote_storage, conda_r_version, conda_python_version 
 
@@ -371,7 +367,7 @@ if not env_path:
         raise ValueError("Creating Conda Environment Failed")
     else:
         raise ValueError("Creating Venv Environment Failed")
-    
+
 if platform.system().lower() == "windows":
     run_powershell(setup_powershell, env_path, python_env_manager, main_setup)
 elif platform.system().lower()== "darwin" or platform.system().lower() == "linux":

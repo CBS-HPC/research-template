@@ -1,6 +1,6 @@
 param (
     [string]$env_path,
-    [string]$env_manager,  # "conda", "venv", or "base Installation"
+    [string]$env_manager,  # "conda" or "venv" 
     [string]$main_setup    # Path to the main Python script
 )
 
@@ -11,7 +11,7 @@ $venvPath = ".venv"
 $uvLockFile = "uv.lock"
 
 # Activate the Python environment
-if ($env_manager -ne "base Installation") {
+if ($env_manager -ne "") {
     switch ($env_manager.ToLower()) {
         "conda" {
             Write-Output "Activating Conda environment: $env_path"
