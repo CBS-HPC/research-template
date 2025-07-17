@@ -567,32 +567,115 @@ Unit test files are automatically generated for core analysis scripts and placed
 Example:
 
 ```
+# Matching tests
 src/s00_main.py
 tests/test_s00_main.py
+
+# Run Tests
+pytest
 ```
 
 💡 See the [CI section](#-continuous-integration-ci) for more on automated test execution.
 
-
 #### ✅ Best Practices
 
-- Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
-- Include **edge cases** — such as missing data, unexpected formats, or invalid input.
-- Keep tests **independent and repeatable** — avoid reliance on shared state or execution order.
-- Use assertions appropriate for your language:
+Focus on **core logic and data transformations** — test cleaning, modeling, or custom functions.
+
+Include **edge cases** — such as missing data, unexpected formats, or invalid input.
+
+Keep tests **independent and repeatable** — avoid reliance on shared state or execution order.
+Use assertions appropriate for your language:
   - `assert` in Python
   - `expect_equal()` / `expect_error()` in R
   - `verifyEqual()` / `verifyTrue()` in MATLAB
   - `assert` in Stata
-- Mirror your code structure — e.g., `s05_modeling.R` → `test-s05_modeling.R`
+
+Mirror your code structure — e.g., `s05_modeling.R` → `test-s05_modeling.R`
 
 > 💡 Tests don’t need to be exhaustive — focus on **critical correctness** and **key workflow branches**.
 
+</details>
+
+
+<details>
+<summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
+
+Continuous Integration (CI) helps ensure your research project is **reproducible, portable, and robust** across different systems.  
+This template includes built-in CI support for **Python**, **R**, and **MATLAB** using:
+
+- **GitHub Actions**
+- **GitLab CI/CD**
+- **Codeberg CI** (Woodpecker)
+
+> ✅ Even without writing tests, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).  
+> This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
+
+---
+
+### 🔁 What the CI Pipeline Does
+
+Each auto-generated CI pipeline:
+
+1. Installs the appropriate language runtime (e.g., Python, R, MATLAB)
+2. Installs project dependencies:
+   - Python: via `requirements.txt`
+   - R: via `renv::restore()` using `R/renv.lock`
+3. Executes tests in the `tests/` directory (if present)
+4. Outputs logs and results for debugging or documentation
+
+---
+
+### ✅ Supported CI Platforms
+
+| Platform     | Supported Languages     | OS Support              | Config File                |
+|--------------|--------------------------|--------------------------|----------------------------|
+| **GitHub**   | Python, R, MATLAB        | Linux, Windows, macOS    | `.github/workflows/ci.yml` |
+| **GitLab**   | Python, R, MATLAB        | Linux only               | `.gitlab-ci.yml`           |
+| **Codeberg** | Python, R *(no MATLAB)*  | Linux only               | `.woodpecker.yml`          |
+
+> ⚠️ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.
+
+---
+
+### ⚠️ MATLAB CI Caveats
+
+MATLAB CI support is included as a **starter configuration**. It may require manual setup, including licensing and tokens.
+
+- **GitHub Actions**: Uses [`setup-matlab`](https://github.com/matlab-actions/setup-matlab) and requires a `MATLAB_TOKEN`.
+- **GitLab CI/CD**: Uses [MathWorks' CI template](https://github.com/mathworks/matlab-gitlab-ci-template) and requires a license server or `MLM_LICENSE_FILE`.
+
+---
+
+### 📝 Codeberg CI Requires Activation
+
+CI is **not enabled by default** on Codeberg. To enable:
+
+- Submit a request via [Codeberg CI Activation Form](https://codeberg.org/Codeberg-e.V./requests/issues/new?template=ISSUE_TEMPLATE%2fWoodpecker-CI.yaml)
+- Learn more in the [Codeberg CI documentation](https://docs.codeberg.org/ci/)
+
+---
+
+### 🛠️ CI Control via CLI
+
+You can toggle CI setup on or off at any time using the built-in CLI:
+
+```bash
+ci-control --on
+ci-control --off
+```
+
+#### 🧷 Skip CI for a Commit
+
+Use this Git alias to skip CI on minor commits:
+
+```
+git commit-skip "Updated documentation"
+```
 
 </details>
 
 <details>
-<summary><strong> ⚙️ Continuous Integration (CI)</strong></summary><br>
+<summary><strong> ⚙️ Continuous Integration2 (CI)</strong></summary><br>
 
 This template includes built-in support **CI automation** across Python, R and MATLAB on all major platforms: 
 
