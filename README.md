@@ -166,7 +166,6 @@ This information is used to auto-generate:
 <details>
 <summary><strong>🧬 Language & Environment</strong></summary><br>
 
-
 #### ⚙️ Programming Language
 Choose your primary scripting language. The template supports multi-language projects and automatically generates a modular codebase tailored to your selection.
 
@@ -479,15 +478,30 @@ update-requirements
 <details>
 <summary><strong>🗂️ Configuration Files (Root-Level)</strong></summary><br>
 
-The following configuration files are placed in the root directory and used by tools for managing environments, templates, backups, and project metadata.
+The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
 
-| File                      | Purpose                                                                                             |
-|---------------------------|-----------------------------------------------------------------------------------------------------|
-| `.gitignore`              | Excludes unnecessary files from Git version control                                                 |
-| `.env`                    | Defines environment-specific variables (e.g., paths, tokens, settings); typically excluded from Git |
-| `environment.yml`         | Conda environment definition for installing Python and R dependencies                               |
-| `requirements.txt`        | pip-compatible Python dependencies                                                                  |
-| `renv.lock`               | Captures exact versions of R packages used (if R is selected)                                       |
+| File              | Purpose                                                                                          |
+|-------------------|--------------------------------------------------------------------------------------------------|
+| `pyproject.toml`  | Project metadata for packaging, CLI tools, sync rules, platform logic, and documentation         |
+| `.env`            | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
+| `.gitignore`      | Excludes unnecessary files from Git version control                                              |
+| `environment.yml` | Conda environment definition for Python/R, including packages and versions                       |
+| `requirements.txt`| Pip-based Python dependencies for lightweight environments                                       |
+| `renv.lock`       | Records the exact versions of R packages used in the project                                    |
+| `uv.lock`         | Locked Python dependencies file for reproducible installs with `uv`                            |
+
+### 📄 `pyproject.toml` Sections Explained
+
+| Section                   | Purpose                                                                                      |
+|---------------------------|----------------------------------------------------------------------------------------------|
+| `[project]`               | Declares the base project metadata for Python tooling (name, version, dependencies, etc.).   |
+| `[tool.uv]`               | Placeholder for settings related to the uv package manager (currently unused).               |
+| `[tool.cookiecutter]`     | Stores project template metadata (e.g., author, licenses, language) for reproducibility and scaffolding. |
+| `[tool.rcloneignore]`     | Defines file patterns to ignore when syncing with remote tools like Rclone.                  |
+| `[tool.treeignore]`       | Specifies which files and folders to exclude from directory tree visualizations.             |
+| `[tool.platform_rules]`   | Maps Python packages to operating systems for conditional installations.                     |
+| `[tool.file_descriptions]`| Contains descriptions of files and directories for automation, UI labels, and documentation. |
+
 </details>
 
 <details>
