@@ -402,7 +402,7 @@ A Personal Access Token (PAT) is needed to:
 </details>
 
 ---
-## 🧾 Project Structure and Usage
+## 🧾 How It Works: Structure & Scripts
 
 This template generates a standardized, reproducible project layout. It separates raw data, code, documentation, setup scripts, and outputs to support collaboration, transparency, and automation.
 
@@ -465,29 +465,21 @@ To configure the project's environment—including project paths, environment va
 
 #### 🪟 Windows (PowerShell)
 
-**Activate:**
-
 ```powershell
+#Activate
 ./activate.ps1
-```
 
-**Deactivate:**
-
-```powershell
+#Deactivate
 ./deactivate.ps1
 ```
 
 #### 🐧 macOS / Linux (bash)
 
-**Activate:**
-
 ```bash
+#Activate
 source activate.sh
-```
 
-**Deactivate:**
-
-```bash
+#Deactivate
 source deactivate.sh
 ```
 
