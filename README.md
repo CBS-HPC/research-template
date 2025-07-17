@@ -14,35 +14,34 @@
 ![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-blue?logo=linux&logoColor=white)
 
 
-> ⚠️ **This repository is under active development. Features, structure, and documentation may change.**
+> ⚠️ **Heads up!** This template is still under active development — features, structure, and documentation may evolve as we improve things.
 
-This project template is designed to help **CBS researchers** create structured, automated, and publication-ready workflows aligned with the principles of **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
+Welcome! This project template is built to help **researchers** create well-organized, automated, and publication-ready workflows that align with **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
-Built with [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), the template supports **Python**, **R**, **Stata** and **Matlab**, and provides an integrated framework for organizing code, managing datasets, tracking dependencies, enabling version control, and backing up research securely.
+Powered by [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), it supports **Python**, **R**, **Stata**, and **Matlab**, and comes with everything you need to manage code, data, dependencies, version control, and backups — all in one reproducibility-friendly framework.
 
-Whether you're preparing a replication package for publication, submitting data and code for peer review, or organizing internal research, this tool helps you streamline reproducible research workflows tailored to the needs of the **CBS research community**.
+Whether you're preparing a replication package, submitting code and data for peer review, or just bringing order to an internal project, this tool helps streamline the process.
 
-> ✅ This template has been tested on **Windows (PowerShell)** and **Ubuntu (bash)** environments.
+> ✅ Tested on **Windows (PowerShell)** and **Ubuntu (bash)** environments.
 
 ---
 
 🔍 **Key features:**
 
-- 📁 Effective project structure for transparent and consistent workflows  
-- 🧬 Multi-language support: Python, R, Stata and Matlab 
-- 🗃️ Version control via Git, Datalad, or DVC  
-- 📦 Automated script scaffolding for analysis, modeling, and visualization  
-- 🔐 Environment management via Conda or venv  
+- 📁 Clear project structure for transparency and consistency  
+- 🧬 Multi-language support: Python, R, Stata, and Matlab  
+- 🗃️ Built-in version control options: Git, Datalad, or DVC  
+- 📦 Auto-generated scripts for analysis, modeling, and visualization  
+- 🔐 Environment management via Conda or venv (with UV support)  
 - ☁️ Backup integration with DeiC-Storage, Dropbox, and OneDrive  
-- 🚀 Remote repository setup with GitHub, GitLab, or Codeberg
-- 🧪 Built-in unit testing, test scaffolds, TDD support, and CI integration across all languages  
+- 🚀 Remote repository setup for GitHub, GitLab, or Codeberg  
+- 🧪 Unit testing support, TDD scaffolds, and CI integration  
 - 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`  
-- 🧰 Installation guides and activation scripts for both Windows and Bash  
-- 📑 Structured documentation of all files, code, and datasets
-- 📄 Support for DCAS-aligned replication packages  
+- 🧰 Easy activation scripts for both Windows and Bash  
+- 📑 Structured documentation of all code, data, and dependencies  
+- 📄 Includes support for DCAS-compliant replication packages
 
-This template is developed and maintained by the **CBS High-Performance Computing (HPC)** team to promote reproducibility, collaboration, and compliance in computational research at Copenhagen Business School.
-
+Developed and maintained by the **CBS High-Performance Computing (HPC)** team to support reproducible, collaborative, and policy-aligned research at Copenhagen Business School.
 ---
 
 ## 🛠️ Requirements
