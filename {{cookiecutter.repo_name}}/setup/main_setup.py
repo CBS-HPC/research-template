@@ -13,7 +13,6 @@ from utils.repo_tools import *
 from utils.get_dependencies import *
 from utils.ci_tools import *
 
-@ensure_correct_kernel
 def intro():
 
     def create_folders():
@@ -59,7 +58,6 @@ def intro():
                
     download_README_template(readme_file = "./DCAS template/README.md")
 
-@ensure_correct_kernel
 def version_setup():
 
     # Ensure the working directory is the project root
@@ -76,7 +74,6 @@ def version_setup():
     # Setup Version Control
     setup_version_control(version_control,remote_storage,code_repo,repo_name)
 
-@ensure_correct_kernel
 def remote_repo_setup():
 
     def setup_remote_repository(version_control, code_repo, repo_name, project_description):
@@ -135,7 +132,6 @@ def remote_repo_setup():
     push_msg = " Created `requirements.txt`, `environment.yml`, and `dependencies.txt`, installed Setup package and updated in README.md" 
     git_push(flag,push_msg)
 
-@ensure_correct_kernel
 def outro():
     def delete_files(file_paths:list=[]):
         """

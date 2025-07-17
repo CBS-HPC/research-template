@@ -632,7 +632,8 @@ def repo_user_info(version_control, repo_name, code_repo):
         }.get(code_repo.lower())
 
         while not hostname or not repo_user or not privacy_setting:
-            hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
+            #hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
+            hostname = default_host
             repo_user = input(f"Enter your {code_repo} username: ").strip()
             privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
 
