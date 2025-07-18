@@ -578,59 +578,52 @@ git commit-skip "Updated documentation"
 <details>
 <summary><strong>☁️ Backup with Rclone</strong></summary><br>
 
-Data loss can compromise months or years of research. To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org). Whether working locally or in the cloud, your data can be reliably mirrored to trusted storage systems.
-
-```
-├── remote_backup             → [DeIC | Dropbox | OneDrive | Local | Multiple | None]
-│   ├── DeIC:
-│   │   ├── Prompt for email
-│   │   └── Prompt for password (encrypted)
-│   ├── Dropbox / OneDrive:
-│   │   ├── Prompt for email
-│   │   └── Prompt for password (encrypted)
-│   ├── Local:
-│   │   └── Prompt to choose a local destination path
-│   └── Multiple:
-│       └── Allows choosing several of the above
-```
+Data loss can compromise months or years of research. To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org).
 
 Supported backup targets include:
 
 - [**DeIC-Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA**  
-- [**ERDA**](https://erda.dk/) – configured via **SFTP with password and MFA**   
+- [**ERDA**](https://erda.dk/) – configured via **SFTP with password and MFA**  
 - [**Dropbox**](https://www.dropbox.com/)  
 - [**OneDrive**](https://onedrive.live.com/)  
 - **Local** storage – backup to a folder on your own system  
 - **Multiple** – select any combination of the above
 
-> 🔐 All credentials are stored in `rclone.conf`.  
-> ☁️ `rclone` is automatically downloaded and installed if not already available on your system.
+> ☁️ `rclone` is automatically downloaded and installed if not already available on your system.  
+> 🧪 Other [Rclone-supported remotes](https://rclone.org/overview/#supported-storage-systems) **should work**, but have not yet been tested with this template's workflow.
+> 📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
 
 #### 🧰 CLI Backup Commands
 
-Once your environment is activated you can run the following commands from the terminal:
-
-📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
+Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can use the `backup` CLI tool:
 
 📌 Setup a Remote
 ```
-backup add --remote deic-storage
+backup add --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
 🚀 Push to Remote
 ```
-backup push --remote deic-storage
+backup push --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
+- This command performs the following:
+
+  - Commits and pushes the root Git project (if version control is enabled)
+
+  - Commits and pushes the data/ Git repository
+
+  - Syncs the full project to the configured remote using rclone, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
+
 📥 Pull Backup from Remote
 ```
-backup pull --remote deic-storage
+backup pull --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
 📊 View Differences Before Sync
 ```
-backup diff --remote deic-storage
+backup diff --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
-🧹 Remove Remote + Metadata
+🧹 Remove Remote
 ```
-backup delete --remote deic-storage
+backup delete --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
 📋 List Configured Remotes and Sync Status
 ```
