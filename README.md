@@ -320,7 +320,6 @@ A Personal Access Token (PAT) is needed to:
 | **GitLab** | Create repos, push code, configure CI/CD        | `api`                    |
 | **Codeberg** | Create repo (CI enabled manually)  | `repo` *(if using API)*   |
 
----
 </details>
 
 ## 🧾 How It Works: Structure & Scripts
@@ -1135,7 +1134,6 @@ For a full list of supporting journals, visit the [DCAS website](https://datacod
 
 > 📝 Journal-specific requirements may vary—always consult their latest submission guidelines to ensure full compliance.
 
----
 </details>
 
 ---
