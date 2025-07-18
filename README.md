@@ -385,11 +385,12 @@ update-dependencies
 set-dataset
 reset-templates
 ```
----
+
+Below is a detailed description of each CLI command available in the project, including usage, behavior, and example output.
 
 ### <a id="backup"></a>
 <details>
-<summary><strong>🧰 CLI Backup Commands: `backup`</strong></summary>
+<summary><strong>🧰 `backup`</strong></summary>
 
 The backup CLI is exposed as the `backup` command via the Python package defined in `pyproject.toml`:
 
@@ -440,7 +441,7 @@ backup types
 
 ### <a id="set-dataset"></a>
 <details>
-<summary><strong>🗃️ CLI Command: `set-dataset`</strong></summary>
+<summary><strong>🗃️ `set-dataset`</strong></summary>
 
 The `set-dataset` command scans your `./data/` folder and registers each dataset into a structured metadata file (`datasets.json`). This helps track the location, structure, and reproducibility of datasets in your project.
 
@@ -473,7 +474,7 @@ set-dataset
 
 ### <a id="update-dependencies"></a>
 <details>
-<summary><strong>📦 CLI Command: `update-dependencies`</strong></summary>
+<summary><strong>📦 `update-dependencies`</strong></summary>
 
 The `update-dependencies` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across both `setup/` and `src/` (or `R/`, `stata/do/`).
 
@@ -511,7 +512,7 @@ update-dependencies
 
 ### <a id="install-dependencies"></a>
 <details>
-<summary><strong>CLI Command: `install-dependencies`</strong></summary>
+<summary><strong>📥 `install-dependencies`</strong></summary>
 
 The `install-dependencies` command reads a plain text dependency list (typically `dependencies.txt`) and installs all required Python packages using `pip`.
 
@@ -556,7 +557,7 @@ seaborn==0.12.2
 
 ### <a id="update-readme"></a>
 <details>
-<summary><strong>📝 CLI Command: `update-readme`</strong></summary>
+<summary><strong>📝 `update-readme`</strong></summary>
 
 The `update-readme` command regenerates your `README.md` with up-to-date project information, including:
 
@@ -591,7 +592,7 @@ update-readme
 
 ### <a id="code-examples"></a>
 <details>
-<summary><strong>💡 CLI Command: `code-examples`</strong></summary>
+<summary><strong>💡 `code-examples`</strong></summary>
 
 The `code-examples` command generates realistic starter scripts and notebooks for your selected programming language using predefined Jinja2 templates.
 
@@ -624,7 +625,7 @@ code-examples
 
 ### <a id="reset-templates"></a>
 <details>
-<summary><strong>🧱 CLI Command: `reset-templates`</strong></summary>
+<summary><strong>🧱 `reset-templates`</strong></summary>
 
 The `reset-templates` command regenerates all core analysis and test scripts using predefined Jinja2 templates. It ensures a consistent structure and coding pattern across different scripting languages.
 
@@ -663,7 +664,7 @@ reset-templates
 
 ### <a id="git-config"></a>
 <details>
-<summary><strong>🌐 CLI Command: `git-config`</strong></summary>
+<summary><strong>🌐 `git-config`</strong></summary>
 
 The `git-config` command sets up your version control system and configures a remote Git repository on **GitHub**, **GitLab**, or **Codeberg** based on environment settings.
 
@@ -702,7 +703,7 @@ git-config
 
 ### <a id="ci-control"></a>
 <details>
-<summary><strong>⚙️ CLI Command: `ci-control`</strong></summary>
+<summary><strong>⚙️ `ci-control`</strong></summary>
 
 The `ci-control` command lets you enable or disable Continuous Integration (CI) for your project, and generates default CI configurations for your selected language and Git platform (GitHub, GitLab, or Codeberg).
 
