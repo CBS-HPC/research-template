@@ -744,6 +744,7 @@ ci-control --off    # Disable CI
 - CI files can be removed manually using `remove_ci_configs()` in code
 
 </details>
+---
 </details>
 
 <details>
