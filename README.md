@@ -66,6 +66,7 @@ Use this option if Git is installed and you want to fetch the template directly 
 ```bash
 cookiecutter gh:CBS-HPC/research-template
 ```
+
 ---
 </details>
 
@@ -84,6 +85,7 @@ cookiecutter path/to/research-template
 ```
 
 > ⚠️ Do **not** use `git clone` if Git is not installed. Manual download is required in this case.
+
 ---
 </details>
 
@@ -112,6 +114,7 @@ This information is used to auto-generate:
 
 - `README.md` – populated with title, description, and author info  
 - `CITATION.cff` – for machine-readable academic citation
+
 ---
 </details>
 
@@ -148,6 +151,7 @@ This information is used to auto-generate:
 
 - [**CC-BY-4.0**](https://creativecommons.org/licenses/by/4.0/) – Allows reuse and redistribution with attribution.  
 - [**CC0-1.0**](https://creativecommons.org/publicdomain/zero/1.0/) – Public domain dedication for unrestricted reuse.
+
 ---
 </details>
 
@@ -214,6 +218,7 @@ Regardless of your choice, the following files are generated to document your en
 ⚠️ If proprietary software (e.g., Stata, Matlab) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
 
 💡 Conda will be downloaded and installed automatically if it's not already available.
+
 ---
 </details>
 
@@ -268,6 +273,7 @@ This template supports several version control systems to suit different workflo
 
 > ⚙️ If **Git**, **Datalad**, or **DVC** (or their dependencies) are not detected, the template will automatically download and install them during setup.
 > This ensures you can use advanced version control tools without manual pre-installation.
+
 ---
 </details>
 
@@ -346,6 +352,7 @@ source activate.sh
 #Deactivate
 source deactivate.sh
 ```
+
 ---
 </details>
 
@@ -434,6 +441,7 @@ backup types
 ```
 
 📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
+
 ---
 </details>
 
@@ -467,6 +475,7 @@ set-dataset
 
 > 💡 Dataset metadata is stored in `datasets.json` using a normalized schema.  
 > 🔍 All dataset remapping logic happens inside the `utils.set_dataset` module.
+
 ---
 </details>
 
@@ -505,6 +514,7 @@ update-dependencies
 ✅ requirements.txt updated with platform tags
 ✅ Updated environment.yml with Conda-style platform tags
 ```
+
 ---
 </details>
 
@@ -550,6 +560,7 @@ seaborn==0.12.2
 ```
 
 > ⚠️ This command installs **only Python dependencies**. R, MATLAB, and Stata dependencies are handled by other scripts (`update-dependencies`, `setup_renv`, etc.)
+
 ---
 </details>
 
@@ -585,6 +596,7 @@ update-readme
 
 > 🧠 File and folder annotations are pulled from `file_descriptions.json`  
 > 🗂️ Files ignored by `.treeignore` or `pyproject.toml → treeignore.patterns` are excluded from the directory tree
+
 ---
 </details>
 
@@ -618,6 +630,7 @@ code-examples
 > 🧠 Uses templates from: `j2_templates/example_templates`  
 > 🗂️ Script locations depend on your selected programming language  
 > ⚠️ Existing files will be **overwritten** if they share the same name
+
 ---
 </details>
 
@@ -657,6 +670,7 @@ reset-templates
 
 > 🧩 Uses Jinja2 templates stored in `j2_templates/code_templates`  
 > 🔄 Existing scripts with the same name may be overwritten!
+
 ---
 </details>
 
@@ -696,6 +710,7 @@ git-config
 > 🧪 Remote login and repo creation are tested via platform-specific APIs  
 > 📁 Pushes both root repo and data repo (if applicable)  
 > 🧰 Can auto-install `gh` or `glab` if not found locally
+
 ---
 </details>
 
@@ -740,8 +755,10 @@ ci-control --off    # Disable CI
 - Will auto-install CI templates from `j2_templates/ci_templates/`  
 - Only runs if a valid `CODE_REPO` is set  
 - CI files can be removed manually using `remove_ci_configs()` in code
+
 ---
 </details>
+
 ---
 </details>
 
@@ -771,6 +788,7 @@ The following configuration files are intentionally placed at the root of the re
 | `[tool.treeignore]`       | Specifies which files and folders to exclude from directory tree visualizations.             |
 | `[tool.platform_rules]`   | Maps Python packages to operating systems for conditional installations.                     |
 | `[tool.file_descriptions]`| Contains descriptions of files and directories for automation, UI labels, and documentation. |
+
 ---
 </details>
 
@@ -810,6 +828,7 @@ Each script is structured to:
 - Support reproducible workflows by default
 
 > 🧩 Scripts are designed to be flexible and modular: you can run them individually, chain them in `main.*`, or explore them interactively using Jupyter or RMarkdown.
+
 ---
 </details>
 
@@ -868,6 +887,7 @@ pytest
 Example: `s05_modeling.R` → `test-s05_modeling.R`
 
 > ✅ Your tests don’t have to be exhaustive. Focus on **critical functions** and **key workflow branches**.
+
 ---
 </details>
 
@@ -933,6 +953,7 @@ Use this Git alias to skip CI on minor commits:
 ```
 git commit-skip "Updated documentation"
 ```
+
 ---
 </details>
 
@@ -991,6 +1012,7 @@ backup list
 ```
 backup types
 ```
+
 ---
 </details>
 
@@ -1082,6 +1104,7 @@ This template uses a modular folder layout that promotes transparency, reproduci
 ```
 
 > ✳️ Script extensions (`.py`, `.R`, `.do`, `.m`) depend on the language selected during project setup.
+
 ---
 </details>
 
@@ -1111,6 +1134,7 @@ This format is consistent with the [AEA Data Editor’s guidance](https://aeadat
 For a full list of supporting journals, visit the [DCAS website](https://datacodestandard.org/journals/).
 
 > 📝 Journal-specific requirements may vary—always consult their latest submission guidelines to ensure full compliance.
+
 ---
 </details>
 
