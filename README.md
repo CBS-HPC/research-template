@@ -606,11 +606,8 @@ backup add --remote deic-storage  # (or erda, dropbox, onedrive, local)
 backup push --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
 This command performs the following:
-
 - Commits and pushes the root Git project (if version control is enabled)
-
 - Commits and pushes the data/ Git repository
-
 - Syncs the project, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
 
 **📥 Pull Backup from Remote**
