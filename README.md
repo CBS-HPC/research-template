@@ -354,35 +354,395 @@ source deactivate.sh
 <details>
 <summary><strong>🔧 CLI Tools</strong></summary><br>
 
-The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
+The `setup` Python package provides a collection of command-line tools to support project setup, dependency management, documentation, version control, and backup automation.
 
-> ℹ️ **Note**: The `setup` package is **automatically installed** during project setup.  
-> You can also manually install or reinstall it using:  
+> ℹ️ **Note**: The CLI tools are automatically installed as part of the project environment.  
+> You can also manually install or reinstall them using:  
 > `pip install -e ./setup`
 
-Once installed, the following CLI commands become available from the terminal:
+Once installed, the following commands are available from the terminal:
 
-| Command                     | Description                                                                                       |
-|-----------------------------|---------------------------------------------------------------------------------------------------|
-| `push-backup`                | Executes a full project backup using preconfigured rules and paths.                               |
-| `set-dataset`               | Initializes or registers datasets (e.g., add metadata, sync folders).                            |
-| `update-dependencies`       | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`.                   |
-| `run-setup` *(in progress)* | Main entry point to initialize or reconfigure the project environment.                           |
-| `update-readme`             | Regenerates the `README.md` with updated metadata and file structure.                            |
-| `reset-templates`           | Resets or regenerates script templates in `src/` based on project language.                      |
-| `code-examples`             | Generates language-specific example code and notebooks (Python, R, etc.).                   |
+| Command                  | Description                                                                 |
+|--------------------------|-----------------------------------------------------------------------------|
+| `backup`                 | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
+| `set-dataset`            | Initializes or registers datasets (e.g., add metadata, sync folders).       |
+| `update-dependencies`    | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`. |
+| `install-dependencies`   | Installs all dependencies for Python and R environments.                    |
+| `update-readme`          | Regenerates the `README.md` from current project metadata and structure.    |
+| `reset-templates`        | Regenerates script templates based on selected language.                    |
+| `code-examples`          | Generates realistic example scripts and notebooks.                          |
+| `git-config`             | Applies Git configuration (e.g., user.name, user.email).                    |
+| `ci-control`             | Enables/disables Continuous Integration (CI) pipelines.                     |
 | `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
 
 #### 🛠️ Usage
 
-After activating your environment, run commands like:
+After activating your environment (see [🚀 Project Activation](#-project-activation)), run any command directly:
 
 ```bash
-run-setup
+backup push --remote deic-storage
+update-dependencies
 set-dataset
-update-requirements
+reset-templates
+```
+---
+
+### <a id="backup"></a>
+<details>
+<summary><strong>🧰 CLI Backup Commands: `backup`</strong></summary>
+
+The backup CLI is exposed as the `backup` command via the Python package defined in `pyproject.toml`:
+
+```toml
+[project.scripts]
+backup = "utils.backup_tools:main"
 ```
 
+Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can run the following commands from the terminal:
+
+**📌 Setup a Remote**
+```
+backup add --remote deic-storage  # (or erda, dropbox, onedrive, local)
+```
+**🚀 Push to Remote**
+```
+backup push --remote deic-storage  # (or erda, dropbox, onedrive, local)
+```
+This command performs the following:
+- Commits and pushes the root Git project (if version control is enabled)
+- Commits and pushes the data/ Git repository
+- Syncs the project, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
+
+**📥 Pull Backup from Remote**
+```
+backup pull --remote deic-storage  # (or erda, dropbox, onedrive, local)
+```
+**📊 View Differences Before Sync**
+```
+backup diff --remote deic-storage  # (or erda, dropbox, onedrive, local)
+```
+**🧹 Remove Remote**
+```
+backup delete --remote deic-storage  # (or erda, dropbox, onedrive, local)
+```
+**📋 List Configured Remotes and Sync Status**
+```
+backup list
+```
+**📦 View Supported Remote Types**
+```
+backup types
+```
+
+📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
+
+</details>
+
+### <a id="set-dataset"></a>
+<details>
+<summary><strong>🗃️ CLI Command: `set-dataset`</strong></summary>
+
+The `set-dataset` command scans your `./data/` folder and registers each dataset into a structured metadata file (`datasets.json`). This helps track the location, structure, and reproducibility of datasets in your project.
+
+It also:
+- Removes entries from `datasets.json` if the target file or folder no longer exists.
+- Captures metadata such as file size, number of files, formats, and optional provenance info.
+- Updates the `README.md` and `DCAS template/dataset_list.md` with dataset tables.
+
+> 📁 This command is automatically run as part of the setup process but can be rerun manually to resync metadata.
+
+#### 🔧 Usage
+
+```bash
+set-dataset
+```
+
+#### ✅ What it does:
+
+- Walks through subfolders in `./data/`
+- Registers or updates metadata for each dataset folder or file
+- Runs any defined data-generation commands (if present)
+- Extracts Git commit hashes for version tracking
+- Updates the dataset table in your `README.md`
+- Regenerates a DCAS-compatible dataset list (`dataset_list.md`)
+
+> 💡 Dataset metadata is stored in `datasets.json` using a normalized schema.  
+> 🔍 All dataset remapping logic happens inside the `utils.set_dataset` module.
+
+</details>
+
+### <a id="update-dependencies"></a>
+<details>
+<summary><strong>📦 CLI Command: `update-dependencies`</strong></summary>
+
+The `update-dependencies` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across both `setup/` and `src/` (or `R/`, `stata/do/`).
+
+This command is useful for keeping your project environment reproducible and ensuring that all scripts and notebooks reference installable dependencies.
+
+#### 🔧 Usage
+
+```bash
+update-dependencies
+```
+
+#### ✅ What it does:
+
+- 📄 Regenerates `requirements.txt` using `pip freeze`
+- 📦 Ensures missing packages are added to `uv.lock` (if used)
+- 🧪 Scans the `setup/` and `src/` directories for imports and writes dependency lists:
+  - `setup/dependencies.txt`
+  - `src/dependencies.txt` (or `R/`, `stata/`)
+- 📑 Updates and tags `environment.yml` and `requirements.txt` with platform-specific selectors (via `platform_rules`)
+- 🧠 Runs `renv` for R, or language-specific setup scripts for MATLAB and Stata
+
+> 🛠 The command adapts to your selected programming language as defined in `.cookiecutter`  
+> 🔍 Paths and rules are derived from the `pyproject.toml` and `platform_rules.json` config
+
+#### Example output:
+
+```bash
+📄 requirements.txt has been created successfully.
+✅ Conda environment file created: environment.yml
+✅ requirements.txt updated with platform tags
+✅ Updated environment.yml with Conda-style platform tags
+```
+
+</details>
+
+### <a id="install-dependencies"></a>
+<details>
+<summary><strong>CLI Command: `install-dependencies`</strong></summary>
+
+The `install-dependencies` command reads a plain text dependency list (typically `dependencies.txt`) and installs all required Python packages using `pip`.
+
+This is useful after scanning your code with `update-dependencies` and before pushing to CI or collaborating with others.
+
+#### 🔧 Usage
+
+```bash
+install-dependencies
+```
+
+> You can optionally specify a different dependency file:  
+> `install-dependencies path/to/dependencies.txt`
+
+#### ✅ What it does:
+
+- Reads the `Dependencies:` section of the given file (default: `dependencies.txt`)
+- Skips standard libraries and packages marked as "Not available"
+- Checks which packages are already installed
+- Installs missing packages using `pip`
+
+#### 📝 Example format of `dependencies.txt`:
+```
+Software version:
+Python 3.11.3
+
+Timestamp: 2024-07-12 15:43:21
+
+Files checked:
+src/s00_main.py
+src/s05_modeling.py
+
+Dependencies:
+pandas==2.2.2
+matplotlib==3.7.1
+seaborn==0.12.2
+```
+
+> ⚠️ This command installs **only Python dependencies**. R, MATLAB, and Stata dependencies are handled by other scripts (`update-dependencies`, `setup_renv`, etc.)
+
+</details>
+
+### <a id="update-readme"></a>
+<details>
+<summary><strong>📝 CLI Command: `update-readme`</strong></summary>
+
+The `update-readme` command regenerates your `README.md` with up-to-date project information, including:
+
+- ✅ Code metadata and environment details
+- 📁 Project folder structure as a tree diagram
+- 📦 Software dependencies (from `dependencies.txt`)
+- 📑 Auto-generated descriptions for core files and scripts
+
+This helps maintain a professional and standardized `README.md` that aligns with reproducibility and publication requirements (e.g., DCAS).
+
+#### 🔧 Usage
+
+```bash
+update-readme
+```
+
+#### ✅ What it does:
+
+- Reads the selected programming language from `.cookiecutter`
+- Parses existing files and structure to infer documentation
+- Updates or inserts:
+  - Code dependency section (`code_dependencies` fenced block)
+  - File descriptions from `file_descriptions.json`
+  - Directory structure (`tree` block in README)
+- Regenerates the `README.md` with consistent formatting
+- Automatically creates `README.md` if it doesn’t exist
+
+> 🧠 File and folder annotations are pulled from `file_descriptions.json`  
+> 🗂️ Files ignored by `.treeignore` or `pyproject.toml → treeignore.patterns` are excluded from the directory tree
+
+</details>
+
+### <a id="code-examples"></a>
+<details>
+<summary><strong>💡 CLI Command: `code-examples`</strong></summary>
+
+The `code-examples` command generates realistic starter scripts and notebooks for your selected programming language using predefined Jinja2 templates.
+
+This is useful for quickly bootstrapping a project with well-structured, language-appropriate examples for each analysis stage.
+
+#### 🔧 Usage
+
+```bash
+code-examples
+```
+
+#### ✅ What it does:
+
+- Detects your project language from `.cookiecutter`
+- Renders realistic example scripts for:
+  - `s00_main.*` – pipeline entry point
+  - `s01_install_dependencies.*` – dependency setup
+  - `s02_utils.*` – helper functions
+  - `s03_data_collection.*` to `s06_visualization.*` – typical data workflow stages
+- Saves outputs in the appropriate `src/`, `R/`, `stata/do/`, etc.
+- Calls:
+  - `get_dependencies` to update `dependencies.txt`
+  - `update-readme` to regenerate project metadata
+
+> 🧠 Uses templates from: `j2_templates/example_templates`  
+> 🗂️ Script locations depend on your selected programming language  
+> ⚠️ Existing files will be **overwritten** if they share the same name
+
+</details>
+
+### <a id="reset-templates"></a>
+<details>
+<summary><strong>🧱 CLI Command: `reset-templates`</strong></summary>
+
+The `reset-templates` command regenerates all core analysis and test scripts using predefined Jinja2 templates. It ensures a consistent structure and coding pattern across different scripting languages.
+
+This command is useful for initializing or resetting project scripts to their default structure.
+
+#### 🔧 Usage
+
+```bash
+reset-templates
+```
+
+#### ✅ What it does:
+
+- Automatically detects your selected programming language from `.cookiecutter`
+- Regenerates standard source scripts:
+  - `s00_main.*` – orchestrates the pipeline
+  - `s01_install_dependencies.*` – handles package installation
+  - `s02_utils.*` – shared utilities
+  - `s03_data_collection.*` to `s06_visualization.*` – core analysis stages
+  - `get_dependencies.*` – collects project dependencies
+- Generates:
+  - `s00_workflow.*` – interactive notebook (.ipynb or .Rmd)
+  - `test_*.*` – unit test scaffolds for each script
+
+#### 📁 Output Paths
+
+- Scripts are placed in:
+  - `src/`, `R/`, `stata/do/`, or equivalent source directory
+- Test templates are placed in:
+  - `tests/`, `tests/testthat/`, etc., depending on language
+
+> 🧩 Uses Jinja2 templates stored in `j2_templates/code_templates`  
+> 🔄 Existing scripts with the same name may be overwritten!
+
+</details>
+
+### <a id="git-config"></a>
+<details>
+<summary><strong>🌐 CLI Command: `git-config`</strong></summary>
+
+The `git-config` command sets up your version control system and configures a remote Git repository on **GitHub**, **GitLab**, or **Codeberg** based on environment settings.
+
+This command streamlines the process of remote repo creation, authentication, Git setup, and CI pipeline configuration.
+
+#### 🔧 Usage
+
+```bash
+git-config
+```
+
+#### ✅ What it does:
+
+- Reads repository settings from `.cookiecutter` and environment variables:
+  - `REPO_NAME`, `CODE_REPO`, `VERSION_CONTROL`, `PROJECT_DESCRIPTION`
+- Configures Git remotes using platform APIs:
+  - [GitHub REST API](https://docs.github.com/en/rest)
+  - [GitLab API](https://docs.gitlab.com/ee/api/)
+  - [Codeberg API](https://docs.gitea.io/en-us/)
+- Authenticates using personal access tokens (`GITHUB_TOKEN`, `GITLAB_TOKEN`, etc.)
+- Initializes remote repositories and sets the correct `origin` URL
+- Pushes the local repo to the remote and sets the tracking branch
+- Automatically sets up CI configuration via `ci_config()`
+
+#### 🔐 Supports:
+
+- `GitHub` (requires `gh` CLI or PAT)
+- `GitLab` (installs and uses `glab` CLI or token)
+- `Codeberg` (via Gitea API + token)
+
+> 🧪 Remote login and repo creation are tested via platform-specific APIs  
+> 📁 Pushes both root repo and data repo (if applicable)  
+> 🧰 Can auto-install `gh` or `glab` if not found locally
+
+</details>
+
+### <a id="ci-control"></a>
+<details>
+<summary><strong>⚙️ CLI Command: `ci-control`</strong></summary>
+
+The `ci-control` command lets you enable or disable Continuous Integration (CI) for your project, and generates default CI configurations for your selected language and Git platform (GitHub, GitLab, or Codeberg).
+
+This tool is helpful for bootstrapping or adjusting your CI setup without manually editing `.yml` files.
+
+#### 🔧 Usage
+
+```bash
+ci-control --on     # Enable CI
+ci-control --off    # Disable CI
+```
+
+> You must specify one flag: `--on` or `--off`.  
+> This command is safe to run multiple times and won't overwrite existing CI files.
+
+#### ✅ What it does:
+
+- Automatically generates CI config based on:
+  - Programming language (from `.cookiecutter`)
+  - Git hosting service (`CODE_REPO`)
+- Supports:
+  - `.github/workflows/ci.yml` for GitHub
+  - `.gitlab-ci.yml` for GitLab
+  - `.woodpecker.yml` for Codeberg
+- Adds a `git commit-skip` alias for bypassing CI on minor commits:
+  ```bash
+  git commit-skip "Update docs"
+  ```
+- Enables/disables CI by renaming files:
+  - `ci.yml.disabled ↔ ci.yml`  
+  - `.gitlab-ci.yml.disabled ↔ .gitlab-ci.yml`  
+  - `.woodpecker.yml.disabled ↔ .woodpecker.yml`
+
+#### 📁 Notes
+
+- Will auto-install CI templates from `j2_templates/ci_templates/`  
+- Only runs if a valid `CODE_REPO` is set  
+- CI files can be removed manually using `remove_ci_configs()` in code
+
+</details>
 </details>
 
 <details>
