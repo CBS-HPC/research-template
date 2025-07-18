@@ -606,6 +606,55 @@ Supported backup targets include:
 > 🔐 All credentials are stored in `rclone.conf`.  
 > ☁️ `rclone` is automatically downloaded and installed if not already available on your system.
 
+#### 🧰 CLI Backup Commands
+
+The backup CLI is exposed as the `backup` command via the Python package defined in `pyproject.toml`:
+
+```toml
+[project.scripts]
+backup = "utils.backup_tools:main"
+```
+
+Once your environment is activated and the setup module is installed (e.g. `pip install -e ./setup`), you can run the following commands from the terminal:
+
+##### 📌 Setup a Remote
+```bash
+backup add --remote deic-storage
+```
+
+##### 🚀 Push to Remote
+```bash
+backup push --remote deic-storage
+```
+
+##### 📥 Pull Backup from Remote
+```bash
+backup pull --remote deic-storage
+```
+
+##### 📊 View Differences Before Sync
+```bash
+backup diff --remote deic-storage
+```
+
+##### 🧹 Remove Remote + Metadata
+```bash
+backup delete --remote deic-storage
+```
+
+##### 📋 List Configured Remotes and Sync Status
+```bash
+backup list
+```
+
+##### 📦 View Supported Remote Types
+```bash
+backup types
+```
+
+> 💡 Be sure to activate your environment and install the setup package in editable mode (`pip install -e ./setup`) before using the `backup` command.  
+> 📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
+
 </details>
 
 <details>
