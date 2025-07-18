@@ -2,6 +2,8 @@ import os
 import re
 import platform
 from datetime import datetime
+import pathlib
+import fnmatch
 
 from .general_tools import *
 from .toml_tools import *
@@ -13,6 +15,13 @@ import psutil
 import cpuinfo
 
 
+extension_map = {
+        "r": (".R", ".Rmd"),
+        "python": (".py", ".ipynb"),
+        "stata": (".do", ".ipynb"),
+        "matlab": (".m", [".ipynb", ".mlx"]),
+        "sas": (".sas", ".ipynb")
+}
 
 def main_text(json_file, code_path):
     
@@ -46,9 +55,9 @@ def main_text(json_file, code_path):
     uv_version = get_version("uv")
 
     install = set_setup(programming_language, py_version, software_version, conda_version, pip_version, uv_version, repo_name, repo_user, hostname)
-    activate = set_project()
+    activate = set_activate()
     contact = set_contact(authors, orcids, emails)
-    usage, run_command = set_script_structure(programming_language, software_version, code_path, json_file)
+    usage, run_command = set_scripts(programming_language, code_path, json_file)
     config = set_config_table(programming_language)
     cli_tools = set_cli_tools(programming_language)
     dcas = set_dcas()
@@ -57,6 +66,9 @@ def main_text(json_file, code_path):
 
     system_spec = set_specs()
     ci_tools = set_ci_tools(programming_language, code_repo)
+    unit_tests = set_unit_tests(programming_language)
+
+
     dataset = set_dataset()
 
     if programming_language.lower() != "python":
@@ -71,7 +83,12 @@ def main_text(json_file, code_path):
 
 {contact}
 
+<details>
+<summary><strong>🖥️ System Specifications </strong></summary><br>
+
 {system_spec}
+
+</details>
 
 <details>
 <summary><strong>🔧 Initial Setup</strong></summary><br>
@@ -84,6 +101,8 @@ def main_text(json_file, code_path):
 
 <details>
 <summary><strong>⚡Project Activation</strong></summary><br>
+
+To configure the project's environment—including project paths, environment variables, and virtual environments—run the activation script for your operating system. These scripts read settings from the `.env` file.
 
 {activate}
 
@@ -103,12 +122,22 @@ To execute the full workflow pipeline, run the main orchestration script from th
 ```
 
 <details>
-<summary><strong>Expand for more details</strong></summary>
+<summary><strong>Expand for showing detected Scripts:</strong></summary>
 
 {usage}
 
 </details>
 </details>
+
+<details>
+<summary><strong>🧪 Unit Testing</strong></summary><br>
+
+{unit_tests}
+
+</details>
+
+<details>
+<summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
 
 {ci_tools}
 
@@ -148,7 +177,7 @@ The current repository structure is shown below. Descriptions can be edited in `
 """
     return header
 
-def set_project():
+def set_activate():
 
     os_type = platform.system().lower()
     if os_type == "windows":
@@ -161,8 +190,7 @@ def set_project():
         
         # Deactivate
         ./deactivate.ps1
-        ```
-        """
+        ```"""
     elif os_type in ("darwin", "linux"):
 
         usage =f"""**On Linux/macOS (bash)**
@@ -173,8 +201,7 @@ def set_project():
         
         # Deactivate
         source deactivate.sh
-        ```
-        """
+        ```"""
            
     return usage
 
@@ -346,7 +373,53 @@ def set_contact(authors, orcids, emails):
     
     return contact
 
-def set_script_structure(programming_language, software_version, folder_path, json_file="./file_description.json"):
+def find_scripts(folder_path, source_ext, notebook_ext):
+    if isinstance(notebook_ext, str):
+        notebook_exts = [notebook_ext.lower()]
+    else:
+        notebook_exts = [ext.lower() for ext in notebook_ext]
+
+    #prefix_pattern = re.compile(r'^s(\d{2})_', re.IGNORECASE)
+    found = []
+
+    for root, _, files in os.walk(folder_path):
+        for fn in files:
+            ext = os.path.splitext(fn)[1].lower()
+            if ext == source_ext.lower():
+                kind = "source"
+            elif ext in notebook_exts:
+                kind = "notebook"
+            else:
+                continue
+
+            #m = prefix_pattern.match(fn)
+            #if not m:
+            #    continue
+            #prefix = int(m.group(1))
+            found.append((kind, os.path.join(root, fn)))
+
+    #found.sort(key=lambda x: x[0])
+    #return [(kind, path) for _, kind, path in found]
+    return found
+
+def get_run_command(orchestrator, programming_language):
+    if not orchestrator:
+        return None
+
+    script_name = os.path.relpath(orchestrator).replace("\\", "/")
+    base_name = os.path.splitext(os.path.basename(script_name))[0]
+
+    command_map = {
+        "python": lambda s: f"python {s}",
+        "r": lambda s: f"Rscript {s}",
+        "stata": lambda s: f"stata-mp -b do {s}",
+        "matlab": lambda s: f'matlab -batch "{base_name}"',
+        "sas": lambda s: f"sas {s}",
+    }
+
+    return command_map.get(programming_language.lower(), lambda s: f"<run {s}>")(script_name)
+
+def set_scripts(programming_language,folder_path, json_file="./file_description.json"):
     """
     Generate the README section for Script Structure and Usage based on the programming language,
     and return the appropriate run command for the main orchestration script.
@@ -355,240 +428,51 @@ def set_script_structure(programming_language, software_version, folder_path, js
         tuple[str, str]: (Formatted markdown for README, run command string)
     """
 
-    def find_scripts(folder_path, source_ext, notebook_ext):
-        if isinstance(notebook_ext, str):
-            notebook_exts = [notebook_ext.lower()]
-        else:
-            notebook_exts = [ext.lower() for ext in notebook_ext]
-
-        prefix_pattern = re.compile(r'^s(\d{2})_', re.IGNORECASE)
-        found = []
-
-        for root, _, files in os.walk(folder_path):
-            for fn in files:
-                ext = os.path.splitext(fn)[1].lower()
-                if ext == source_ext.lower():
-                    kind = "source"
-                elif ext in notebook_exts:
-                    kind = "notebook"
-                else:
-                    continue
-
-                m = prefix_pattern.match(fn)
-                if not m:
-                    continue
-                prefix = int(m.group(1))
-                found.append((prefix, kind, os.path.join(root, fn)))
-
-        found.sort(key=lambda x: x[0])
-        return [(kind, path) for _, kind, path in found]
-
-    file_descriptions = read_toml_json(json_filename=json_file, tool_name="file_descriptions", toml_path="pyproject.toml")
-    if not file_descriptions:
-        file_descriptions = {}
-
     programming_language = programming_language.lower()
     if programming_language not in ["r", "python", "stata", "matlab", "sas"]:
         raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
 
     # Set extensions
-    if programming_language == "r":
-        source_ext, notebook_ext = ".R", ".Rmd"
-    elif programming_language == "python":
-        source_ext, notebook_ext = ".py", ".ipynb"
-    elif programming_language == "stata":
-        source_ext, notebook_ext = ".do", ".ipynb"
-    elif programming_language == "matlab":
-        source_ext, notebook_ext = ".m", [".ipynb", ".mlx"]
-    else:
-        source_ext, notebook_ext = ".sas", ".ipynb"
+    source_ext, notebook_ext = extension_map.get(programming_language.lower(), (".txt", ".txt"))
 
     scripts = find_scripts(folder_path, source_ext, notebook_ext)
 
-    # Orchestration candidates
-    orch_candidates = [
-        path for kind, path in scripts
-        if kind == "source" and os.path.basename(path).lower().startswith("s00_")
-    ]
-    orchestrator = orch_candidates[0] if orch_candidates else None
-
-    # Notebook candidates
-    nb_candidates = [
-        path for kind, path in scripts
-        if kind == "notebook" and os.path.basename(path).lower().startswith("s00_")
-    ]
-    notebook = nb_candidates[0] if nb_candidates else None
-
-    code_path = language_dirs.get(programming_language)
+    # Dectect Scripts
+    file_descriptions = read_toml_json(json_filename=json_file, tool_name="file_descriptions", toml_path="pyproject.toml")
+    if not file_descriptions:
+        file_descriptions = {}
     md = []
-    md.append("##### Scripts Detected in Workflow:\n")
-
-    for kind, path in scripts:
+    for _, path in scripts:
         name = os.path.basename(path)
         display = os.path.splitext(name)[0].replace("_", " ").title()
         desc = file_descriptions.get(name)
         if desc:
             md.append(f"- **{display}** (`{name}`) — {desc}")
         else:
-            md.append(f"- **{display}** (`{name}`) — `{path}`")
+            md.append(f"- **{display}** (`{name}`)")
 
     md.append("")
 
     if any("utils" in os.path.basename(p).lower() for _, p in scripts):
         md.append("🛠️ **Note**: `utils` does not define a `main()` function and should not be executed directly.\n")
 
-    md.append("##### Execution Options:\n")
-    if orchestrator:
-        md.append(f"**Run the full pipeline via the orchestration script `{os.path.basename(orchestrator)}` shown below:**\n")
-        try:
-            code = open(orchestrator, encoding="utf-8").read().rstrip()
-            md.append(f"```{programming_language.lower()}\n{code}\n```")
-        except Exception as e:
-            md.append(f"_Failed to read orchestrator script: {e}_")
-    else:
-        md.append("_No orchestration script (`s00_...`) found._")
+    orch_candidates = [path for kind, path in scripts if kind == "source" and os.path.basename(path).lower().startswith("s00_")] or \
+                  [path for kind, path in scripts if kind == "source" and os.path.basename(path).lower().startswith("main")]
 
-    # Determine run command for README
-    run_command = None
-    if orchestrator:
-        script_name = os.path.relpath(orchestrator).replace("\\", "/")
-        if programming_language == "python":
-            run_command = f"python {script_name}"
-        elif programming_language == "r":
-            run_command = f"Rscript {script_name}"
-        elif programming_language == "stata":
-            run_command = f"stata-mp -b do {script_name}"
-        elif programming_language == "matlab":
-            run_command = f'matlab -batch "{os.path.splitext(os.path.basename(script_name))[0]}"'
-        elif programming_language == "sas":
-            run_command = f"sas {script_name}"
-        else:
-            run_command = f"<run {script_name}>"
-
-    return "\n".join(md), run_command
-
-def set_script_structure_old(programming_language, software_version, folder_path, json_file = "./file_description.json"):
-    """
-    Generate the README section for Script Structure and Usage based on the programming language.
-
-    Args:
-        programming_language (str): One of ['r', 'python', 'stata', 'matlab', 'sas']
-        software_version (str): Version string for the language/runtime (e.g. "Python 3.11")
-        folder_path (str): Path to search for numbered scripts
-
-    Returns:
-        str: Formatted markdown for inclusion in your README
-    """
-
-    def find_scripts(folder_path, source_ext, notebook_ext):
-        """
-        Recursively find and return ordered scripts in folder_path matching the given
-        source and notebook extensions. Scripts are sorted by their two-digit numeric prefix.
-        
-        Returns a list of tuples: (kind, full_path), where kind is 'source' or 'notebook'.
-        """
-        # Ensure notebook_exts is a list
-        if isinstance(notebook_ext, str):
-            notebook_exts = [notebook_ext.lower()]
-        else:
-            notebook_exts = [ext.lower() for ext in notebook_ext]
-
-        prefix_pattern = re.compile(r'^s(\d{2})_', re.IGNORECASE)
-        found = []
-
-        for root, _, files in os.walk(folder_path):
-            for fn in files:
-                ext = os.path.splitext(fn)[1].lower()
-                if ext == source_ext.lower():
-                    kind = "source"
-                elif ext in notebook_exts:
-                    kind = "notebook"
-                else:
-                    continue
-
-                m = prefix_pattern.match(fn)
-                if not m:
-                    continue
-                prefix = int(m.group(1))
-                found.append((prefix, kind, os.path.join(root, fn)))
-
-        # sort by prefix then drop prefix
-        found.sort(key=lambda x: x[0])
-        return [(kind, path) for _, kind, path in found]
-
-            # Load descriptions JSON
-    
-    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")  
-
-    if not file_descriptions:
-        file_descriptions = {}
-
-    programming_language = programming_language.lower()
-    if programming_language not in ["r", "python", "stata", "matlab", "sas"]:
-        raise ValueError("Supported programming languages are: r, python, stata, matlab, sas.")
-
-    # set extensions
-    if programming_language == "r":
-        source_ext, notebook_ext = ".R", ".Rmd"
-    elif programming_language == "python":
-        source_ext, notebook_ext = ".py", ".ipynb"
-    elif programming_language == "stata":
-        source_ext, notebook_ext = ".do", ".ipynb"
-    elif programming_language == "matlab":
-        source_ext, notebook_ext = ".m", [".ipynb", ".mlx"]
-    else:  # sas
-        source_ext, notebook_ext = ".sas", ".ipynb"
-
-    scripts = find_scripts(folder_path, source_ext, notebook_ext)
-
-    # collect all orchestration candidates, then pick the first
-    orch_candidates = [
-        path for kind, path in scripts
-        if kind == "source" and os.path.basename(path).lower().startswith("s00_")
-    ]
     orchestrator = orch_candidates[0] if orch_candidates else None
 
-    # collect all notebook candidates, then pick the first
-    nb_candidates = [
-        path for kind, path in scripts
-        if kind == "notebook" and os.path.basename(path).lower().startswith("s00_")
-    ]
-    notebook = nb_candidates[0] if nb_candidates else None
-
-    code_path = language_dirs.get(programming_language)
-
-    md = []
-    #md.append(f"The project is written in **{software_version}** and includes modular scripts for standardized workflows, organized under `{code_path}`.\n")
-    md.append("#### Scripts Detected in Workflow:\n")
-    for kind, path in scripts:
-        name = os.path.basename(path)
-        display = os.path.splitext(os.path.basename(path))[0]
-        display = display.replace("_", " ").title()
-        filename = os.path.basename(path)
-        desc = file_descriptions.get(filename)
-        if desc:
-            md.append(f"- **{display}** (`{name}`) — {desc}")
-        else:
-            md.append(f"- **{display}** (`{name}`) — `{path}`")
-    md.append("")
-
-    if any("utils" in os.path.basename(p).lower() for _, p in scripts):
-        md.append("🛠️ **Note**: `utils` does not define a `main()` function and should not be executed directly.\n")
-
-    md.append("##### Execution Options:\n")
     if orchestrator:
-        md.append(f"**Run the full pipeline via the orchestration script `{os.path.basename(orchestrator)}` shown below::**\n")
+        md.append(f"**The Content of the orchestration script `{os.path.basename(orchestrator)}` shown below:**\n")
         try:
             code = open(orchestrator, encoding="utf-8").read().rstrip()
             md.append(f"```{programming_language.lower()}\n{code}\n```")
         except Exception as e:
             md.append(f"_Failed to read orchestrator script: {e}_")
 
-        
-    else:
-        md.append("_No orchestration script (`00_…`) found._")
-    
-    return "\n".join(md)
+    # Determine run command for README
+    run_command = get_run_command(orchestrator, programming_language)
+
+    return "\n".join(md), run_command
 
 def set_config_table(programming_language, project_root="."):
     base_config = """The following configuration files are intentionally placed at the root of the repository. These are used by various tools for environment setup, dependency management, templating, and reproducibility.
@@ -665,9 +549,7 @@ update-requirements
 """
     return cli_tools
 
-def set_ci_tools(programming_language: str, code_repo: str):
-    pl = programming_language.lower()
-    repo = code_repo.lower()
+def set_unit_tests(programming_language: str) -> str:
 
     lang_info = {
         "python": {
@@ -676,93 +558,93 @@ def set_ci_tools(programming_language: str, code_repo: str):
             "test_folder": "`tests/`",
             "test_format": "`test_*.py`",
             "package_file": "`requirements.txt`",
-            "example": """Project structure:
+            "example": """**Example layout:**
 
 ```
 src/s00_main.py
 tests/test_s00_main.py
 ```
 
-Run tests:
+**Run tests:**
 
 ```
 pytest
 ```
 """
-},
+        },
         "r": {
             "test_framework": "`testthat`",
             "code_folder": "`R/`",
             "test_folder": "`tests/testthat/`",
             "test_format": "`test-*.R`",
             "package_file": "`renv.lock`",
-            "example": """Project structure:
+            "example": """**Example layout:**
 
 ```
 R/s00_main.R
 tests/testthat/test-s00_main.R
 ```
 
-Run tests:
+**Run tests:**
 
 ```
 testthat::test_dir("tests/testthat")
 ```
 
-From command line:
+**From command line:**
 
 ```
 Rscript -e 'testthat::test_dir("tests/testthat")'
 ```
 """
-    },
+        },
         "matlab": {
             "test_framework": "`matlab.unittest`",
             "code_folder": "`src/`",
             "test_folder": "`tests/`",
             "test_format": "`test_*.m`",
             "package_file": "",
-            "example": """Project structure:
+            "example": """**Example layout:**
 
 ```
 src/s00_main.m
 tests/test_s00_main.m
 ```
 
-Run tests in MATLAB:
+**Run tests in MATLAB:**
 
 ```
 results = runtests('tests');
 assert(all([results.Passed]), 'Some tests failed')
 ```
 
-From command line:
+**From command line:**
 
 ```
 matlab -batch "results = runtests('tests'); assert(all([results.Passed]), 'Some tests failed')"
 ```
 """
-    },
+        },
         "stata": {
             "test_framework": "`.do` script-based",
             "code_folder": "`stata/do/`",
             "test_folder": "`tests/`",
             "test_format": "`test_*.do`",
             "package_file": "",
-            "example": """Project structure:
+            "example": """**Example layout:**
 
 ```
 stata/do/s00_main.do
 tests/test_s00_main.do
 ```
 
-Run tests in Stata:
+**Run tests in Stata:**
 
 ```
 do tests/test_s00_main.do
 ```
 
-Or in batch mode:
+**From command line:**
 
 ```
 stata -b do tests/test_s00_main.do
@@ -771,6 +653,43 @@ stata -b do tests/test_s00_main.do
         }
     }
 
+    if programming_language.lower() not in lang_info:
+        return f"Unsupported language: {programming_language}"
+
+    lang = lang_info[programming_language.lower()]
+    
+    folder_path = pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(lang["test_folder"].replace("`", ""))
+    md = f"""
+
+This template includes built-in support for **unit testing** in {programming_language.capitalize()} to promote research reliability and reproducibility.
+
+| Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
+| -------- | ------------------ | ----------- | ----------------- | ---------------- |
+| {programming_language.capitalize()}   | {lang['test_framework']} | {lang['code_folder']} | {lang['test_folder']} | {lang['test_format']} |
+
+
+{lang['example']}
+
+""".strip()
+
+    if not folder_path.exists():
+        md += f"⚠️ Test folder not found: `{lang['test_folder']}`"
+    else:
+        # Filter test scripts based on naming convention
+        test_pattern = lang["test_format"].replace("`", "")
+        test_scripts = [file for file in os.listdir(str(folder_path)) if fnmatch.fnmatch(file, test_pattern)]
+
+        if not test_scripts:
+            md +=f"\n\n⚠️ No valid test scripts were detected in `{lang['test_folder']}`.\nMake sure test files follow the expected format: `{lang['test_format']}`"
+        else:
+            md +=f"\n\nThe following test scripts were detected in `{lang['test_folder']}`:\n"
+            for name in test_scripts:
+                md +=f"- **{name}**\n"
+
+    return md
+
+def set_ci_tools(programming_language: str, code_repo: str) -> str:
+    
     ci_matrix = {
         "github": {
             "supports": ["python", "r", "matlab"],
@@ -791,49 +710,42 @@ More information: [Codeberg CI docs](https://docs.codeberg.org/ci/)"""
         }
     }
 
-    if pl not in lang_info:
+    lang_info = {
+        "python": {"package_file": "`requirements.txt`"},
+        "r": {"package_file": "`renv.lock`"},
+        "matlab": {"package_file": ""},
+        "stata": {"package_file": ""}
+    }
+
+    if programming_language.lower() not in lang_info:
         return f"Unsupported language: {programming_language}"
-    if repo not in ci_matrix:
+    if code_repo.lower() not in ci_matrix:
         return f"Unsupported code repository: {code_repo}"
-    if pl not in ci_matrix[repo]["supports"]:
+    if programming_language.lower() not in ci_matrix[code_repo.lower()]["supports"]:
         return f"{programming_language.capitalize()} is not supported on {code_repo.capitalize()}."
 
-    lang = lang_info[pl]
-    ci = ci_matrix[repo]
+    lang = lang_info[programming_language.lower()]
+    ci = ci_matrix[code_repo.lower()]
 
-    if lang['package_file']:
+    if lang["package_file"]:
         pipeline = f"""##### Each pipeline:
-1. Installs language runtime and dependencies
-2. Installs project packages using {lang['package_file']}
-3. Runs tests in `tests/`
+1. Installs language runtime and dependencies  
+2. Installs project packages using {lang['package_file']}  
+3. Runs tests in `tests/`  
 4. Outputs results and logs"""
     else:
         pipeline = f"""##### Each pipeline:
-1. Installs language runtime and dependencies
-2. Runs tests in `tests/`
+1. Installs language runtime and dependencies  
+2. Runs tests in `tests/`  
 3. Outputs results and logs"""
 
-    section = f"""<details>
-<summary><strong>🧪 Unit Testing</strong></summary><br>
+    config_file = pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(ci['config_file'])
 
-This template includes built-in support for **unit testing** in {programming_language.capitalize()} to promote research reliability and reproducibility.
-
-| Language | Test Framework     | Code Folder | Test Folder       | Test File Format |
-| -------- | ------------------ | ----------- | ----------------- | ---------------- |
-| {programming_language.capitalize()}   | {lang['test_framework']} | {lang['code_folder']} | {lang['test_folder']} | {lang['test_format']} |
-
-Tests are automatically scaffolded to match your workflow scripts (e.g., `s00_main`, `s04_preprocessing`). They can be run locally, in CI, or as part of a pipeline.
-
-{lang['example']}
-
-</details>
-
-<details>
-<summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
+    md = f"""
 
 CI is configured for **{code_repo.capitalize()}** (`{ci['config_file']}`) with **{programming_language.capitalize()}** support.
 
-✅ Even without writing **unit tests**, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
+✅ Even without writing **unit tests**, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS). This provides early detection of broken dependencies, incompatible packages, or missing setup steps — critical for collaboration and long-term reproducibility.
 
 ##### 🔄 CI Control via CLI
 
@@ -856,9 +768,9 @@ To skip CI on a commit, use the built-in Git alias:
 ```
 git commit-skip "Updated documentation"
 ```
-</details>
-"""
-    return section.strip()
+""".strip()
+
+    return md
 
 def set_dcas():
     dcas = """To create a replication package that adheres to the [DCAS (Data and Code Sharing) standard](https://datacodestandard.org/), follow the guidelines ([AEA Data Editor's guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)) provided by the Social Science Data Editors. This ensures your research code and data are shared in a clear, reproducible format.
@@ -940,7 +852,7 @@ def set_specs():
 
     system_spec = get_system_specs()
 
-    specs = f"""## System Specifications
+    specs = f"""
     
 The project was developed and tested on the following operating system:
 
