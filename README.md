@@ -597,39 +597,39 @@ Supported backup targets include:
 
 Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can use the `backup` CLI tool:
 
-📌 Setup a Remote
+**📌 Setup a Remote**
 ```
 backup add --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
-🚀 Push to Remote
+**🚀 Push to Remote**
 ```
 backup push --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
-- This command performs the following:
+This command performs the following:
 
-  - Commits and pushes the root Git project (if version control is enabled)
+- Commits and pushes the root Git project (if version control is enabled)
 
-  - Commits and pushes the data/ Git repository
+- Commits and pushes the data/ Git repository
 
-  - Syncs the full project to the configured remote using rclone, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
+- Syncs the project, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
 
-📥 Pull Backup from Remote
+**📥 Pull Backup from Remote**
 ```
 backup pull --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
-📊 View Differences Before Sync
+**📊 View Differences Before Sync**
 ```
 backup diff --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
-🧹 Remove Remote
+**🧹 Remove Remote**
 ```
 backup delete --remote deic-storage  # (or erda, dropbox, onedrive, local)
 ```
-📋 List Configured Remotes and Sync Status
+**📋 List Configured Remotes and Sync Status**
 ```
 backup list
 ```
-📦 View Supported Remote Types
+**📦 View Supported Remote Types**
 ```
 backup types
 ```
