@@ -58,7 +58,7 @@ This section walks you through how to create and configure a new project using t
 
 To create a new project, run the `cookiecutter` command **from the folder where you want your project directory to be created**. You can use the template either online (with Git) or offline (via manual download).
 
-<a name="online-installation"></a>
+### <a id="online-installation"></a>
 <details>
 <summary><strong>📦 Online (with Git)</strong></summary><br>
 
@@ -71,7 +71,7 @@ cookiecutter gh:CBS-HPC/research-template
 ---
 </details>
 
-<a name="offline-installation"></a>
+### <a id="offline-installation"></a>
 <details>
 <summary><strong>📁 Offline (Local Installation)</strong></summary><br>
 
@@ -95,7 +95,7 @@ cookiecutter path/to/research-template
 
 This template guides you through a series of interactive prompts to configure your project:
 
-<a name="project-metadata"></a>
+### <a id="project-metadata"></a>
 <details>
 <summary><strong>📦 Project Metadata</strong></summary><br>
 
@@ -121,7 +121,7 @@ This information is used to auto-generate:
 ---
 </details>
 
-<a name="license"></a>
+### <a id="license"></a>
 <details>
 <summary><strong>🔑 License</strong></summary><br>
 
@@ -158,7 +158,7 @@ This information is used to auto-generate:
 ---
 </details>
 
-<a name="language-environment"></a>
+### <a id="language-environment"></a>
 <details>
 <summary><strong>🧬 Language & Environment</strong></summary><br>
 
@@ -225,7 +225,7 @@ Regardless of your choice, the following files are generated to document your en
 ---
 </details>
 
-<a name="version-control"></a>
+### <a id="version-control"></a>
 <details>
 <summary><strong>🗃️ Version Control</strong></summary><br>
 
@@ -281,7 +281,7 @@ This template supports several version control systems to suit different workflo
 ---
 </details>
 
-<a name="remote-repo-setup"></a>
+### <a id="remote-repo-setup"></a>
 <details>
 <summary><strong>📡 Remote Repository Setup</strong></summary><br>
 
@@ -331,7 +331,7 @@ A Personal Access Token (PAT) is needed to:
 
 This template generates a standardized, reproducible project layout. It separates raw data, code, documentation, setup scripts, and outputs to support collaboration, transparency, and automation.
 
-<a name="project-activation"></a>
+### <a id="project-activation"></a>
 <details>
 <summary><strong>🚀 Project Activation</strong></summary><br>
 
@@ -360,7 +360,7 @@ source deactivate.sh
 ---
 </details>
 
-<a name="cli-tools"></a>
+### <a id="cli-tools"></a>
 <details>
 <summary><strong>🔧 CLI Tools</strong></summary><br>
 
@@ -767,7 +767,7 @@ ci-control --off    # Disable CI
 ---
 </details>
 
-<a name="config-files"></a>
+### <a id="config-files"></a>
 <details>
 <summary><strong>🗂️ Configuration Files (Root-Level)</strong></summary><br>
 
@@ -798,7 +798,7 @@ The following configuration files are intentionally placed at the root of the re
 ---
 </details>
 
-<a name="script-templates"></a>
+### <a id="script-templates"></a>
 <details>
 <summary><strong>🛠️ Script Templates</strong></summary><br>
 
@@ -839,7 +839,7 @@ Each script is structured to:
 ---
 </details>
 
-<a name="unit-testing"></a>
+### <a id="unit-testing"></a>
 <details>
 <summary><strong>🧪 Unit Testing</strong></summary><br>
 
@@ -899,7 +899,7 @@ Example: `s05_modeling.R` → `test-s05_modeling.R`
 ---
 </details>
 
-<a name="ci"></a>
+### <a id="ci"></a>
 <details>
 <summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
 
@@ -966,7 +966,7 @@ git commit-skip "Updated documentation"
 ---
 </details>
 
-<a name="backup-rclone"></a>
+### <a id="backup-rclone"></a>
 <details>
 <summary><strong>☁️ Backup with Rclone</strong></summary><br>
 
@@ -1026,7 +1026,7 @@ backup types
 ---
 </details>
 
-<a name="directory-structure"></a>
+### <a id="directory-structure"></a>
 <details>
 <summary><strong>📁 Directory Structure</strong></summary><br>
 
@@ -1119,7 +1119,7 @@ This template uses a modular folder layout that promotes transparency, reproduci
 ---
 </details>
 
-<a name="dcas"></a>
+### <a id="dcas"></a>
 <details>
 <summary><strong>📚 DCAS Compatibility</strong></summary><br>
 
