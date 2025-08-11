@@ -184,24 +184,24 @@ def set_activate():
 
         usage =f"""**On Windows (PowerShell)**
         
-        ```powershell
-        # Activate
-        ./activate.ps1
-        
-        # Deactivate
-        ./deactivate.ps1
-        ```"""
+```powershell
+# Activate
+./activate.ps1
+
+# Deactivate
+./deactivate.ps1
+```"""
     elif os_type in ("darwin", "linux"):
 
         usage =f"""**On Linux/macOS (bash)**
         
-        ```bash
-        # Activate
-        source activate.sh
-        
-        # Deactivate
-        source deactivate.sh
-        ```"""
+```bash
+# Activate
+source activate.sh
+
+# Deactivate
+source deactivate.sh
+```"""
            
     return usage
 
@@ -268,7 +268,7 @@ uv pip install --strict uv.lock
     setup +=f"""<details>
 <summary><strong>Pip Installation:</strong></summary><br>
 
-You can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`::
+You can install the Python dependencies using **{py_version}** and **{pip_version}** and the provided`requirements.txt`:
 
 ```
 pip install -r requirements.txt
@@ -826,11 +826,11 @@ def read_dependencies(dependencies_file):
         
         return software_dependencies, package, version
 
-    software_requirements_section = ""
+    dependencies_section = ""
 
     # Check if the dependencies file exists
     if not os.path.exists(dependencies_file):
-        return software_requirements_section
+        return dependencies_section
 
     # Read the content from the dependencies file
     with open(dependencies_file, "r") as f:
@@ -842,11 +842,9 @@ def read_dependencies(dependencies_file):
     for software, details in software_dependencies.items():
             
         for package, version in details["dependencies"]:
-            software_requirements_section += f"{package}: {version}\n"
+            dependencies_section += f"{package}: {version}\n"
 
-    software_requirements_section += "\n\n"
-
-    return software_requirements_section
+    return dependencies_section
 
 def set_specs():
 
