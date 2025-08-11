@@ -59,7 +59,7 @@ def main_text(json_file, code_path):
     contact = set_contact(authors, orcids, emails)
     usage, run_command = set_scripts(programming_language, code_path, json_file)
     config = set_config_table(programming_language)
-    cli_tools = set_cli_tools(programming_language)
+    cli_tools = set_cli_tools()
     dcas = set_dcas()
     code_path = language_dirs.get(programming_language.lower())
 
@@ -513,9 +513,7 @@ def set_config_table(programming_language, project_root="."):
 
     return base_config
 
-def set_cli_tools(programming_language):
-
-    code_path = language_dirs.get(programming_language.lower())
+def set_cli_tools():
 
     cli_tools = f"""
 The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
@@ -527,25 +525,32 @@ Refer to the [Installation](#installation) section for details on how to install
 After installing the setup package, the following commands become available from the terminal:
 
 
-| Command                  | Description                                                                                 |
-|--------------------------|---------------------------------------------------------------------------------------------|
-| `push-backup`             | Executes a full project backup using preconfigured rules and paths.                         |
-| `set-dataset`            | Initializes or registers datasets for use in the project (e.g., adds metadata or links).    |
-| `update-dependencies`    | Retrieves current dependencies required by the project `./setup` and `{code_path}`.               |
-| `run-setup` (in progress)| Main entry point to initialize or reconfigure the project environment.                      |
-| `update-readme`          | Automatically updates the main `README.md` file with current metadata and structure.        |
-| `reset-templates`        | Resets or regenerates the code templates for `{code_path}`.                                       |
-| `code-examples`          | Generates example code and notebooks for supported languages (Python, R, SAS, etc.).        |
-| `dcas-migrate`(in progress)| Migrates and validates the project structure for DCAS (Data and Code Availability Standard) compliance.|
+| Command                  | Description                                                                 |
+|--------------------------|-----------------------------------------------------------------------------|
+| `backup`                 | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
+| `set-dataset`            | Initializes or registers datasets (e.g., add metadata, sync folders).       |
+| `update-dependencies`    | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`. |
+| `install-dependencies`   | Installs all dependencies for Python and R environments.                    |
+| `update-readme`          | Regenerates the `README.md` from current project metadata and structure.    |
+| `reset-templates`        | Regenerates script templates based on selected language.                    |
+| `code-examples`          | Generates realistic example scripts and notebooks.                          |
+| `git-config`             | Applies Git configuration (e.g., user.name, user.email).                    |
+| `ci-control`             | Enables/disables Continuous Integration (CI) pipelines.                     |
+| `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
 
+#### 🛠️ Usage
 
-After activating your environment, run commands like:
+After activating your environment (see [🚀 Project Activation](#-project-activation)), run any command directly:
 
-```
-run-setup
+```bash
+backup push --remote deic-storage
+update-dependencies
 set-dataset
-update-requirements
+reset-templates
 ```
+
+A detailed description of each available CLI command — including usage, behavior, and example output — is provided [here](https://github.com/CBS-HPC/research-template?tab=readme-ov-file#cli-tools).
+
 """
     return cli_tools
 
