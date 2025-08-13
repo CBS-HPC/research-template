@@ -9,7 +9,6 @@ from collections import defaultdict
 from .readme_templates import *
 from .versioning_tools import *
 
-
 # ──────────────────────────────
 # Helpers for new JSON structure
 # ──────────────────────────────
@@ -29,12 +28,10 @@ def load_json_with_metadata(json_file_path: str):
         data["__hide_fields__"] = []
     return data
 
-
 def save_json_with_metadata(json_file_path: str, data: dict):
     with open(json_file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
-    print(f"Metadata saved to {json_file_path}")
-
+    #print(f"Metadata saved to {json_file_path}")
 
 # ──────────────────────────────
 # Core functions
@@ -55,7 +52,6 @@ def get_file_info(file_paths):
 
     return number_of_files, total_size, file_formats, individual_sizes
 
-
 def get_all_files(destination):
     all_files = set()
     for root, dirs, files in os.walk(destination):
@@ -63,7 +59,6 @@ def get_all_files(destination):
             full_path = os.path.join(root, file)
             all_files.add(full_path)
     return all_files
-
 
 def add_to_json(json_file_path="./datasets.json", entry=None):
     json_file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file_path))
@@ -99,7 +94,6 @@ def add_to_json(json_file_path="./datasets.json", entry=None):
     save_json_with_metadata(json_file_path, data)
     return json_file_path
 
-
 def remove_missing_datasets(data_files, json_file_path="./datasets.json", base_data_dir="./data"):
     json_file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file_path))
     data = load_json_with_metadata(json_file_path)
@@ -122,7 +116,6 @@ def remove_missing_datasets(data_files, json_file_path="./datasets.json", base_d
     save_json_with_metadata(json_file_path, data)
     return json_file_path
 
-
 def normalize_dataset_fields(json_file_path="./datasets.json"):
     json_file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file_path))
     data = load_json_with_metadata(json_file_path)
@@ -138,7 +131,6 @@ def normalize_dataset_fields(json_file_path="./datasets.json"):
     data["datasets"] = datasets
     save_json_with_metadata(json_file_path, data)
     return json_file_path
-
 
 def set_dataset(data_name, destination, source=None, run_command=None, json_file_path="./datasets.json", doi=None, citation=None, license=None):
     destination = check_path_format(destination)
@@ -180,6 +172,7 @@ def set_dataset(data_name, destination, source=None, run_command=None, json_file
         "data_name": data_name or os.path.basename(destination),
         "data_type": os.path.basename(os.path.dirname(destination)),
         "destination": destination,
+        "zip_file": license,
         "hash": hash,
         "number_of_files": number_of_files,
         "total_size_mb": int(total_size),
@@ -315,28 +308,36 @@ def generate_dataset_table(json_file_path: str):
 
     return "".join(summary_blocks), "".join(detail_blocks)
 
-
 def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     section_title = "**The following datasets are included in the project:**"
-    readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
-    new_section = f"{section_title}\n\n{markdown_table.strip()}\n"
+    readme_path = (pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
 
+    new_section = f"{section_title}\n\n{markdown_table.strip()}\n"
+    new_section += "</details>"
     try:
-        with open(readme_file, "r", encoding="utf-8") as f:
-            content = f.read()
+        content = readme_path.read_text(encoding="utf-8")
         if section_title in content:
             start = content.find(section_title)
-            end = content.find("\n## ", start + len(section_title))
-            end = end if end != -1 else len(content)
+
+            # NEW: end is the first "</details>" after the section title (inclusive)
+            closing_tag = "</details>"
+            close_idx = content.find(closing_tag, start)
+            if close_idx != -1:
+                end = close_idx + len(closing_tag)
+            else:
+                # Fallbacks if there's no closing tag
+                end = content.find("\n## ", start + len(section_title))
+                end = end if end != -1 else len(content)
+
             updated = content[:start] + new_section + content[end:]
         else:
-            updated = content.strip() + "\n\n" + new_section
+            updated = content.rstrip() + "\n\n" + new_section
     except FileNotFoundError:
         updated = new_section
 
-    with open(readme_file, "w", encoding="utf-8") as f:
-        f.write(updated.strip())
-    print(f"{readme_file} successfully updated with dataset section.")
+    readme_path.parent.mkdir(parents=True, exist_ok=True)
+    readme_path.write_text(updated.strip(), encoding="utf-8")
+    print(f"{readme_path} successfully updated with dataset section.")
 
 
 @ensure_correct_kernel
@@ -373,9 +374,9 @@ def main():
         normalize_dataset_fields(json_file_path)
         markdown_table, full_table = generate_dataset_table(json_file_path)
         dataset_to_readme(markdown_table)
-        dcas_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./DCAS template/dataset_list.md"))
-        with open(dcas_path, 'w') as out_md:
-            out_md.write(full_table)
+        #dcas_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./DCAS template/dataset_list.md"))
+        #with open(dcas_path, 'w') as out_md:
+        #    out_md.write(full_table)
     except Exception as e:
         print(f"Error: {e}")
 

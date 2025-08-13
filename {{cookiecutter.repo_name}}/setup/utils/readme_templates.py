@@ -1,14 +1,83 @@
+from __future__ import annotations
 import os
+import json
 import re
 import pathlib
 import platform
+from typing import List
+import pathspec
+
 
 from .readme_sections import *
+from .set_dataset import generate_dataset_table, dataset_to_readme
 
 package_installer(required_libraries =  ['pyyaml','requests'])
 
 import yaml
 import requests
+
+
+def merge_pathspecs(spec_a: pathspec.PathSpec,
+                    spec_b: pathspec.PathSpec,
+                    style: str = "gitwildmatch",
+                    dedupe: bool = True) -> pathspec.PathSpec:
+    # Pull the raw pattern text out of each compiled Pattern
+    patterns = [p.pattern for p in getattr(spec_a, "patterns", [])] + \
+               [p.pattern for p in getattr(spec_b, "patterns", [])]
+
+    if dedupe:
+        seen = set()
+        patterns = [x for x in patterns if not (x in seen or seen.add(x))]
+
+    return pathspec.PathSpec.from_lines(style, patterns)
+
+def datasets_ignore(
+    datasets_json: str | pathlib.Path,
+    base: str | pathlib.Path | None = None,
+) -> pathspec.PathSpec:
+    """
+    Read datasets.json and build a gitwildmatch PathSpec containing ONLY
+    directory destinations. Patterns are:
+      - relative to `base` (if provided)
+      - forward-slashed
+      - guaranteed to end with "/"
+      - deduplicated (order-preserving)
+    """
+    def _to_dir_pattern(p: str | pathlib.Path, base: str | pathlib.Path | None) -> str:
+        p = pathlib.Path(p)
+        if base is not None:
+            base = pathlib.Path(base).resolve()
+            p = (base / p).resolve().relative_to(base)
+        s = p.as_posix()
+        if s.startswith("./"):
+            s = s[2:]
+        if not s.endswith("/"):
+            s += "/"
+        return s
+
+    datasets_json = pathlib.Path(datasets_json)
+    with open(datasets_json, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+
+    patterns: list[str] = []
+    seen: set[str] = set()
+
+    for ds in payload.get("datasets", []):
+        dest = str(ds.get("destination", "")).strip()
+        if not dest:
+            continue
+        # treat as directory if it either ends with a separator or has no file extension
+        is_dir = dest.endswith(("\\", "/")) or pathlib.Path(dest).suffix == ""
+        if not is_dir:
+            continue
+        pat = _to_dir_pattern(dest, base=base)
+        if pat not in seen:
+            seen.add(pat)
+            patterns.append(pat)
+
+    # Build and return a PathSpec using gitwildmatch
+    return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+
 
 # README.md
 def creating_readme(programming_language = "None"):
@@ -26,11 +95,14 @@ def creating_readme(programming_language = "None"):
     code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(code_path))
     
     update_file_descriptions(programming_language, readme_file, file_descriptions)
-
     generate_readme(readme_file, code_path, file_descriptions)
 
-    ignore_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
-    
+    markdown_table, _ = generate_dataset_table("./datasets.json")
+    dataset_to_readme(markdown_table)
+
+    toml_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
+    dataset_list = datasets_ignore(datasets_json = "datasets.json")
+    ignore_list = merge_pathspecs(toml_list,dataset_list)
     create_tree(readme_file,ignore_list ,file_descriptions)
     
 def generate_readme(readme_file = "./README.md", code_path = None,json_file="./file_descriptions.json"):
@@ -92,7 +164,8 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
             tree.append(f"{prefix}{tree_symbol}{item}{description}")
 
             if os.path.isdir(item_path):
-                child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
+                child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
+                #child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
                 tree.extend(generate_tree(item_path, file_descriptions, ignore_spec=ignore_spec, prefix=child_prefix, root_path=root_path))
 
         return tree

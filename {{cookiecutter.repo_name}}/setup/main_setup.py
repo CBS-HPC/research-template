@@ -47,6 +47,7 @@ def intro():
 
     # Create Data folders
     create_folders()
+    
     # Create scripts and notebook
     create_scripts(programming_language)
     
