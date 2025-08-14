@@ -515,30 +515,6 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
     with open(file, "w") as cff_file:
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
-# Download Readme template:
-def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", readme_file:str = "./README_DCAS_template.md"):
-    
-    readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
-
-     # Check if the local file already exists
-    if os.path.exists(readme_file):
-        return
-    
-    # Ensure the parent directory exists
-    folder_path = os.path.dirname(readme_file)
-    os.makedirs(folder_path, exist_ok=True)
-
-    # Send GET request to the raw file URL
-    response = requests.get(url)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Save the content to a file
-        with open(readme_file, 'wb') as file:
-            file.write(response.content)
-    else:
-        print(f"Failed to download {readme_file} from {url}")
-
 def update_requirements(programming_language, readme_file):
     
     def write_to_readme(readme_file, code_dependencies):
