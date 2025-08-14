@@ -98,7 +98,9 @@ def creating_readme(programming_language = "None"):
     generate_readme(readme_file, code_path, file_descriptions)
 
     markdown_table, _ = generate_dataset_table("./datasets.json")
-    dataset_to_readme(markdown_table)
+
+    if markdown_table:
+        dataset_to_readme(markdown_table)
 
     toml_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
     dataset_list = datasets_ignore(datasets_json = "datasets.json")
