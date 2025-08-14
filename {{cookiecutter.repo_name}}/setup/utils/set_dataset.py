@@ -193,7 +193,7 @@ def generate_dataset_table(json_file_path: str):
     from collections import defaultdict
 
     if not os.path.exists(json_file_path):
-        return None
+        return None, None
 
     with open(json_file_path, "r", encoding="utf-8") as fh:
         json_data = json.load(fh)
