@@ -52,6 +52,9 @@ def create_example(project_language):
 
 @ensure_correct_kernel
 def main():
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
     
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
   
@@ -63,9 +66,4 @@ def main():
 
     
 if __name__ == "__main__":
-
-    # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-
     main()

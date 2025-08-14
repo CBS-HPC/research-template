@@ -18,3 +18,4 @@ from .deic_storage_download import *
 from .get_dependencies import *
 from .install_dependencies import *
 from .set_dataset import *
+from .dcas_migration import *

@@ -120,11 +120,12 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
     return installed_packages
 
 def main():
-   _ = get_setup_dependencies()
-
-if __name__ == "__main__":
     # Ensure the working directory is the project root
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
+	
+   _ = get_setup_dependencies()
+
+if __name__ == "__main__":
     main()
 {% endraw %}

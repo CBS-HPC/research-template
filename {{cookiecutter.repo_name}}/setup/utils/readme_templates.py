@@ -580,15 +580,14 @@ def update_requirements(programming_language, readme_file):
     write_to_readme(readme_file,code_dependencies)
 
 def main():
+    # Change to project root directory
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     creating_readme(programming_language = programming_language)
     readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
     update_requirements(programming_language, readme_file)
 
 if __name__ == "__main__":
-    
-    # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-    
     main()

@@ -400,6 +400,9 @@ def update_code_dependency():
 
 @ensure_correct_kernel
 def main():
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
     
     print("Updating 'requirements.txt','environment.yml'")
     update_env_files()
@@ -409,7 +412,4 @@ def main():
     update_code_dependency()
 
 if __name__ == "__main__":
-    # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
     main()

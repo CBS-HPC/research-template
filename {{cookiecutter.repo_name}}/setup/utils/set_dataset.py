@@ -1,10 +1,8 @@
 import os
 import json
-import argparse
 import subprocess
 from datetime import datetime
 import pathlib
-from collections import defaultdict
 
 from .readme_templates import *
 from .versioning_tools import *
@@ -339,7 +337,6 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     readme_path.write_text(updated.strip(), encoding="utf-8")
     print(f"{readme_path} successfully updated with dataset section.")
 
-
 @ensure_correct_kernel
 def main():
     def get_data_files(base_dir='./data', ignore=None, recursive=False):
@@ -361,9 +358,11 @@ def main():
                         all_files.append(os.path.join(root, fn))
         return all_files
 
-    json_file_path = "./datasets.json"
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     data_files = get_data_files()
-    json_file_path = remove_missing_datasets(data_files, json_file_path=json_file_path)
+    json_file_path = remove_missing_datasets(data_files, json_file_path="./datasets.json")
 
     for f in data_files:
         json_file_path = set_dataset(data_name=None, destination=f, source=None,
@@ -372,16 +371,10 @@ def main():
 
     try:
         normalize_dataset_fields(json_file_path)
-        markdown_table, full_table = generate_dataset_table(json_file_path)
+        markdown_table, _ = generate_dataset_table(json_file_path)
         dataset_to_readme(markdown_table)
-        #dcas_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./DCAS template/dataset_list.md"))
-        #with open(dcas_path, 'w') as out_md:
-        #    out_md.write(full_table)
     except Exception as e:
         print(f"Error: {e}")
 
-
 if __name__ == "__main__":
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
     main()

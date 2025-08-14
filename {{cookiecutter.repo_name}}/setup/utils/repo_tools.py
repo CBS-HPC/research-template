@@ -337,6 +337,10 @@ def install_gh(install_path=None):
 
 @ensure_correct_kernel
 def main():
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
@@ -351,9 +355,4 @@ def main():
 
  
 if __name__ == "__main__":
-    
-    # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-    
     main()

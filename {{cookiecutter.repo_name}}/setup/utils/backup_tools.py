@@ -320,6 +320,7 @@ def push_backup(remote_name):
 
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
+    
     if not install_rclone("./bin"):
         return
     if remote_name.lower() == "all":

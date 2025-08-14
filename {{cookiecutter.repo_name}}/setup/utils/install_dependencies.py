@@ -77,6 +77,11 @@ def install_dependencies(required_libraries):
 
 @ensure_correct_kernel
 def main(dependencies_file="dependencies.txt"):
+    
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)
     
@@ -88,9 +93,4 @@ def main(dependencies_file="dependencies.txt"):
 
 
 if __name__ == "__main__":
-    
-    # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-
     main()  # Specify the dependencies file here

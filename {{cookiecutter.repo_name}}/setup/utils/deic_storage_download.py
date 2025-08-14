@@ -104,6 +104,10 @@ def deic_storage_download(link, save_dir, n_workers=1):
 
 @ensure_correct_kernel
 def main():
+    # Ensure the working directory is the project root
+    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    os.chdir(project_root)
+    
     # Command-line argument parser
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")
     parser.add_argument("remote_path", help="URL link to the dataset")
@@ -113,12 +117,7 @@ def main():
     deic_storage_download(args.remote_path, args.destination)
   
 
-if __name__ == "__main__":
-    
-    # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
-    
+if __name__ == "__main__":    
     main()
 
 #link = "https://sid.storage.deic.dk/cgi-sid/ls.py?share_id=CyOR8W3h2f"
