@@ -57,8 +57,6 @@ def intro():
     # Creating README
     creating_readme(programming_language)
                
-    download_README_template(readme_file = "./DCAS template/README.md")
-
 def version_setup():
 
     # Ensure the working directory is the project root
