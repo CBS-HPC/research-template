@@ -56,6 +56,10 @@ def datasets_ignore(
         return s
 
     datasets_json = pathlib.Path(datasets_json)
+
+    if not os.path.exists(datasets_json):
+        return None
+
     with open(datasets_json, "r", encoding="utf-8") as f:
         payload = json.load(f)
 
@@ -101,10 +105,13 @@ def creating_readme(programming_language = "None"):
 
     if markdown_table:
         dataset_to_readme(markdown_table)
-
-    toml_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
+        
+    ignore_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
     dataset_list = datasets_ignore(datasets_json = "datasets.json")
-    ignore_list = merge_pathspecs(toml_list,dataset_list)
+
+    if dataset_list:
+        ignore_list = merge_pathspecs(ignore_list,dataset_list)
+    
     create_tree(readme_file,ignore_list ,file_descriptions)
     
 def generate_readme(readme_file = "./README.md", code_path = None,json_file="./file_descriptions.json"):
