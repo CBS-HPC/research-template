@@ -3,7 +3,8 @@ import json
 import subprocess
 from datetime import datetime
 import pathlib
-
+from typing import Optional, Tuple, Dict, List
+from collections import defaultdict
 from .readme_templates import *
 from .versioning_tools import *
 
@@ -58,7 +59,30 @@ def get_all_files(destination):
             all_files.add(full_path)
     return all_files
 
-def add_to_json(json_file_path="./datasets.json", entry=None):
+
+def get_data_files(base_dir='./data', ignore=None, recursive=False):
+    if ignore is None:
+        ignore = {'.git', '.gitignore', '.gitkeep', '.gitlog'}
+    all_files = []
+    try:
+        subdirs = [name for name in os.listdir(base_dir)
+                    if name not in ignore and not name.startswith('.')]
+    except FileNotFoundError:
+        return []
+    subdirs = sorted(subdirs)
+    for sub in subdirs:
+        sub_path = os.path.join(base_dir, sub)
+        if os.path.isdir(sub_path):
+            for root, dirs, files in os.walk(sub_path) if recursive else [(sub_path, [], os.listdir(sub_path))]:
+                dirs[:] = [d for d in dirs if d not in ignore and not d.startswith('.')]
+                for fn in files:
+                    if fn not in ignore and not fn.startswith('.'):
+                        all_files.append(os.path.join(root, fn))
+    
+    return all_files, subdirs 
+
+
+def datasets_to_json(json_file_path="./datasets.json", entry=None):
     json_file_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_file_path))
     data = load_json_with_metadata(json_file_path)
     datasets = data["datasets"]
@@ -170,36 +194,59 @@ def set_dataset(data_name, destination, source=None, run_command=None, json_file
         "data_name": data_name or os.path.basename(destination),
         "data_type": os.path.basename(os.path.dirname(destination)),
         "destination": destination,
-        "zip_file": license,
+        "zip_file": None,
         "hash": hash,
         "number_of_files": number_of_files,
         "total_size_mb": int(total_size),
         "file_formats": list(file_formats),
         "created": created,
         "lastest_change": None,
-        "data_files": data_files,
-        "data_size": individual_sizes,
+        "description":None,
         "source": source,
-        "run_command": " ".join(run_command.split()) if run_command else None,
         "DOI": doi,
         "citation": citation,
-        "license": license
+        "license": license,
+        "run_command": " ".join(run_command.split()) if run_command else None,
+        "data_files": data_files,
+        "data_size": individual_sizes,
     }
 
-    return add_to_json(json_file_path=json_file_path, entry=entry)
+    return datasets_to_json(json_file_path=json_file_path, entry=entry)
 
-def generate_dataset_table(json_file_path: str):
-    import json, os
-    from collections import defaultdict
+def generate_dataset_table(
+    json_file_path: str,
+    file_descriptions: Optional[Dict[str, str]] = None,
+    include_hash: bool = False,
+) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Build markdown summary & detail tables from datasets.json.
 
+    Parameters
+    ----------
+    json_file_path : str
+        Path to datasets.json.
+    file_descriptions : dict | None
+        Optional mapping from data_type to a short description shown in the section header.
+    include_hash : bool
+        If False, the 'Hash' column is excluded from both summary and detail tables.
+
+    Returns
+    -------
+    (summary_md, detail_md) : tuple[str|None, str|None]
+        Markdown strings for the summary and detail tables. (None, None) if file missing.
+    """
     if not os.path.exists(json_file_path):
         return None, None
 
     with open(json_file_path, "r", encoding="utf-8") as fh:
         json_data = json.load(fh)
 
-    datasets = json_data["datasets"]
+    datasets = json_data.get("datasets", [])
     hidden_fields = set(json_data.get("__hide_fields__", []))
+
+    # If caller wants to hide hash, enforce it consistently
+    if not include_hash:
+        hidden_fields.add("hash")
 
     def is_nonempty(val):
         return val not in (None, "", [], {}, "N/A", "Not provided")
@@ -207,47 +254,59 @@ def generate_dataset_table(json_file_path: str):
     def safe_str(val):
         return "N/A" if val in (None, "", [], {}, "Not provided") else str(val)
 
+    # Group by data_type
     grouped = defaultdict(list)
     for ds in datasets:
         dtype = ds.get("data_type", "Uncategorised")
         grouped[dtype].append(ds)
 
+    # Column labels (summary table)
     standard_fields = {
         "data_name": "Name",
         "destination": "Location",
         "created": "Created",
         "lastest_change": "Lastest Change",
-        "hash":"Hash",
+        "hash": "Hash",
         "provided": "Provided",
         "run_command": "Run Command",
         "number_of_files": "Number of Files",
         "total_size_mb": "Total Size (MB)",
         "file_formats": "File Formats",
+        "zip_file": "Zip File",
         "source": "Source",
         "DOI": "DOI",
         "citation": "Citation",
         "license": "License",
-        "notes": "Notes"
+        "description": "Description",
+        "notes": "Notes",
     }
+    if not include_hash:
+        standard_fields.pop("hash", None)
 
-    fixed_detail_fields = [
+    # Fixed columns for detail table
+    fixed_detail_fields: List[str] = [
         "data_name", "data_files", "destination", "created", "lastest_change",
-        "hash", "provided", "data_size", "run_command", "source",
-        "DOI", "citation", "license", "notes"
+        "provided", "data_size", "run_command", "source",
+        "DOI", "citation", "license", "notes",
     ]
+    if include_hash:
+        fixed_detail_fields.insert(5, "hash")  # after lastest_change, before provided
 
-    def get_field_label(key):
+    def get_field_label(key: str) -> str:
         return standard_fields.get(key, key.replace("_", " ").title())
 
+    # Active summary columns = visible standard fields that are populated somewhere
     active_fields = [
         k for k in standard_fields
         if k not in hidden_fields and any(is_nonempty(ds.get(k)) for ds in datasets)
     ]
 
+    # Extra (non-standard) fields present in the JSON
     all_seen_keys = {k for ds in datasets for k in ds.keys()}
     excluded_keys = set(standard_fields) | {"data_type", "data_files", "data_size", "hash"}
     extra_fields = sorted(all_seen_keys - excluded_keys - hidden_fields)
 
+    # Build headers
     all_summary_keys = active_fields + extra_fields
     summary_header = "| " + " | ".join([get_field_label(k) for k in all_summary_keys]) + " |\n"
     summary_divider = "| " + " | ".join(["-" * len(get_field_label(k)) for k in all_summary_keys]) + " |\n"
@@ -261,16 +320,26 @@ def generate_dataset_table(json_file_path: str):
     detail_header = "| " + " | ".join([k.replace("_", " ").title() for k in all_detail_keys]) + " |\n"
     detail_divider = "| " + " | ".join(["-" * len(k) for k in all_detail_keys]) + " |\n"
 
-    summary_blocks = []
-    detail_blocks = []
+    summary_blocks: List[str] = []
+    detail_blocks: List[str] = []
 
     for dtype, entries in sorted(grouped.items()):
-        summary_blocks.append(f"### {dtype}\n{summary_header}{summary_divider}")
+        desc = f" <- {file_descriptions.get(dtype, '')}" if (file_descriptions and dtype in file_descriptions) else None
+
+        if desc:
+            summary_blocks.append(f"### {dtype} {desc}\n{summary_header}{summary_divider}")
+        else:
+            summary_blocks.append(f"### {dtype}\n{summary_header}{summary_divider}")
+
         need_detail = any(len(ds.get("data_files", [])) > 1 for ds in entries)
         if need_detail:
-            detail_blocks.append(f"### {dtype}\n{detail_header}{detail_divider}")
+            if desc:
+                detail_blocks.append(f"### {dtype} {desc}\n{detail_header}{detail_divider}")
+            else:
+                detail_blocks.append(f"### {dtype}\n{detail_header}{detail_divider}")
 
         for ds in entries:
+            # Summary row
             row = []
             for k in all_summary_keys:
                 if k == "provided":
@@ -282,6 +351,7 @@ def generate_dataset_table(json_file_path: str):
                 row.append(safe_str(val))
             summary_blocks.append("| " + " | ".join(row) + " |\n")
 
+            # Detail rows (one per file if >1)
             if need_detail:
                 files = ds.get("data_files", [])
                 sizes = ds.get("data_size", [])
@@ -339,39 +409,24 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
 
 @ensure_correct_kernel
 def main():
-    def get_data_files(base_dir='./data', ignore=None, recursive=False):
-        if ignore is None:
-            ignore = {'.git', '.gitignore', '.gitkeep', '.gitlog'}
-        all_files = []
-        try:
-            subdirs = [name for name in os.listdir(base_dir)
-                       if os.path.isdir(os.path.join(base_dir, name))
-                       and name not in ignore and not name.startswith('.')]
-        except FileNotFoundError:
-            return []
-        for sub in sorted(subdirs):
-            sub_path = os.path.join(base_dir, sub)
-            for root, dirs, files in os.walk(sub_path) if recursive else [(sub_path, [], os.listdir(sub_path))]:
-                dirs[:] = [d for d in dirs if d not in ignore and not d.startswith('.')]
-                for fn in files:
-                    if fn not in ignore and not fn.startswith('.'):
-                        all_files.append(os.path.join(root, fn))
-        return all_files
 
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
     
-    data_files = get_data_files()
-    json_file_path = remove_missing_datasets(data_files, json_file_path="./datasets.json")
+    data_files, subdir = get_data_files()
+    print(subdir)
+    json_path = remove_missing_datasets(data_files, json_file_path="./datasets.json")
+
+    file_descriptions = read_toml_json(folder = project_root, json_filename =  "./file_descriptions.json" , tool_name = "file_descriptions", toml_path = "pyproject.toml")
 
     for f in data_files:
-        json_file_path = set_dataset(data_name=None, destination=f, source=None,
-                                     run_command=None, json_file_path=json_file_path,
+        json_path = set_dataset(data_name=None, destination=f, source=None,
+                                     run_command=None, json_file_path=json_path,
                                      doi=None, citation=None, license=None)
 
     try:
-        normalize_dataset_fields(json_file_path)
-        markdown_table, _ = generate_dataset_table(json_file_path)
+        normalize_dataset_fields(json_path)
+        markdown_table, _ = generate_dataset_table(json_path,file_descriptions)
         dataset_to_readme(markdown_table)
     except Exception as e:
         print(f"Error: {e}")

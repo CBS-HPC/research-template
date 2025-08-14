@@ -99,9 +99,11 @@ def creating_readme(programming_language = "None"):
     code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(code_path))
     
     update_file_descriptions(programming_language, readme_file, file_descriptions)
+    
     generate_readme(readme_file, code_path, file_descriptions)
 
-    markdown_table, _ = generate_dataset_table("./datasets.json")
+    file_descriptions = read_toml_json(folder = str(pathlib.Path(__file__).resolve().parent.parent.parent), json_filename =  file_descriptions , tool_name = "file_descriptions", toml_path = "pyproject.toml")
+    markdown_table, _ = generate_dataset_table("./datasets.json",file_descriptions)
 
     if markdown_table:
         dataset_to_readme(markdown_table)
@@ -131,7 +133,7 @@ def generate_readme(readme_file = "./README.md", code_path = None,json_file="./f
         file.write(header)
     print(f"README.md created at: {readme_file}")
 
-def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptions.json", root_folder=None):
+def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, root_folder=None):
     """
     Updates the "Project Tree" section in a README.md file with the project structure.
 
@@ -242,8 +244,6 @@ def create_tree(readme_file=None, ignore_list=None, json_file="./file_descriptio
 
     if ignore_list is None:
         ignore_list = []  # Default to an empty list if not provided
-
-    file_descriptions = read_toml_json(folder = root_folder, json_filename =  json_file , tool_name = "file_descriptions", toml_path = "pyproject.toml")
 
     update_readme_tree_section(readme_file, root_folder, file_descriptions, ignore_list)
     

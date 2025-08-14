@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Union, Iterable, Dict, Any, List,Optional
 
 from .general_tools import *
+from .set_dataset import get_data_files
 
 package_installer(required_libraries =  ['requests'])
 
@@ -317,20 +318,117 @@ def copy_items(
 
     return results
 
+def copy_data_items(
+    items: Iterable[Union[str, Path]],
+    dest_base: Union[str, Path] = "./DCAS template/data",
+    overwrite: bool = True,
+    create_missing_dirs: bool = True,
+) -> List[Dict[str, str]]:
+    """
+    For each path in `items`:
+      - If it's a directory: create the corresponding directory under `dest_base`
+        (does NOT copy contents).
+      - If it's a file: copy the file under `dest_base`, preserving its path
+        relative to the nearest 'data' segment if present.
+      - If the source path does not exist and `create_missing_dirs` is True AND
+        the item looks like a directory (trailing slash or no extension),
+        create the destination directory anyway.
+
+    Returns a list of {"src","dst","status",("error")} per item.
+    """
+    def _rel_under_data(p: Path) -> Path:
+        # If the path contains a 'data' segment, keep the part after 'data/'
+        parts = p.parts
+        if "data" in parts:
+            i = parts.index("data")
+            remainder = parts[i+1:]
+            return Path(*remainder) if remainder else Path()
+        # If it's already relative, keep as-is; if absolute, fallback to basename
+        return p if not p.is_absolute() else Path(p.name)
+
+    def _looks_like_dir(raw: Union[str, Path]) -> bool:
+        s = str(raw)
+        # Treat as directory if it ends with a path separator, or has no suffix
+        # (works for typical names like '00_raw', '01_interim/', etc.)
+        return s.endswith(("/", "\\")) or (Path(s).suffix == "")
+
+    base = Path(dest_base)
+    base.mkdir(parents=True, exist_ok=True)
+
+    results: List[Dict[str, str]] = []
+
+    for item in items:
+        src = Path(item)
+        rec: Dict[str, str] = {"src": str(src), "status": "pending"}
+
+        rel = _rel_under_data(src)
+        dst = base / rel
+        rec["dst"] = str(dst)
+
+        # Handle missing sources first (optionally create dir)
+        if not src.exists():
+            if create_missing_dirs and _looks_like_dir(item):
+                try:
+                    dst.mkdir(parents=True, exist_ok=True)
+                    rec["status"] = "dir_created_missing_src"
+                except Exception as e:
+                    rec["status"] = "error"
+                    rec["error"] = f"{type(e).__name__}: {e}"
+            else:
+                rec.update(status="missing", error=f"Not found: {src}")
+            results.append(rec)
+            continue
+
+        try:
+            if src.is_dir():
+                # Create the directory (no content copy)
+                dst.mkdir(parents=True, exist_ok=True)
+                rec["status"] = "dir_created"
+            else:
+                # It's a file -> copy
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                if dst.exists():
+                    if not overwrite:
+                        rec["status"] = "skipped_exists"
+                        results.append(rec)
+                        continue
+                    if dst.is_dir():
+                        shutil.rmtree(dst)
+                    else:
+                        dst.unlink()
+                shutil.copy2(src, dst)
+                rec["status"] = "file_copied"
+
+        except Exception as e:
+            rec["status"] = "error"
+            rec["error"] = f"{type(e).__name__}: {e}"
+
+        results.append(rec)
+
+    return results
+
 def main():
     # Change to project root directory
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
 
-    download_README_template(readme_file = "./DCAS template/README.md")
+    download_README_template(readme_file = "./DCAS template/README_template.md")
     
     _ = migrate_datasets(dataset_json="./datasets.json",
                          source_root = project_root,
                            dest_root="./DCAS template",
                            zip_threshold=1000,
                            overwrite=True)
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
+    code_path = language_dirs.get(programming_language.lower())
     
-    _ = copy_items(items=["./src", "./requirements.txt"],
+
+    _, items = get_data_files()   # second value is the mixed list of dirs/files
+
+    copy_data_items(items, dest_base="./DCAS template/data", overwrite=True)
+
+
+    _ = copy_items(items=["./README.md",code_path,"./docs","./results","./uv.lock","./environment.yml","./requirements.txt","./datasets.json"],
                    dest_root="./DCAS template",
                    source_root=project_root,
                    base=None,
