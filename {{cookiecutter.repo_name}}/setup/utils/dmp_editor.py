@@ -3,6 +3,14 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+
+from .general_tools import package_installer
+from .dmp_tools import *
+
+package_installer(required_libraries = ['streamlit'])
+
+
 import streamlit as st
 from streamlit.web.cli import main as st_main
 
