@@ -1,4 +1,3 @@
-from __future__ import annotations
 import sys
 import json
 from copy import deepcopy
@@ -411,12 +410,6 @@ def main() -> None:
             file_name="dmp.json",
             mime="application/json",
         )
-
-
-from __future__ import annotations
-
-import sys
-from pathlib import Path
 
 def cli() -> None:
     """
