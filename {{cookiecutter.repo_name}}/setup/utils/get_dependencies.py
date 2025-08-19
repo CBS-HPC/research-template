@@ -362,12 +362,12 @@ def setup_stata(programming_language,msg:str):
 
 def update_env_files():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    requirements_file = load_from_env("REQUIREMENT_FILE",".cookiecutter")
+    python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")
     create_requirements_txt("requirements.txt")
-    if requirements_file == "requirements.txt":
+    if python_env_manager.lower() == "venv":
         create_conda_environment_yml(repo_name, r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
-    elif requirements_file == "environment.yml": 
+    elif python_env_manager.lower() == "conda": 
         export_conda_env(repo_name)
 
     tag_requirements_txt(requirements_file="requirements.txt")

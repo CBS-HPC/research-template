@@ -73,7 +73,7 @@ def set_packages(version_control,programming_language):
     if not programming_language or not version_control:
         return []
 
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil','py-cpuinfo','jinja2']
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil','py-cpuinfo','jinja2','streamlit']
 
     # Add toml package if Python version < 3.11
     if sys.version_info < (3, 11):
