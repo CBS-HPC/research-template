@@ -25,7 +25,7 @@ code-examples = "utils.example_templates:main"
 git-config = "utils.repo_tools:main"
 ci-control = "utils.ci_tools:ci_control"
 dcas-migration = "utils.dcas_migration:main"
-dmp-update = "utils.dmp_tools:main
+dmp-update = "utils.dmp_tools:main"
 dmp-editor = "utils.dmp_editor:cli"
 
 [tool.setuptools.packages.find]
