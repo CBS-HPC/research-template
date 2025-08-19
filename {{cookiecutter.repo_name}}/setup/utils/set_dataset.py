@@ -10,10 +10,6 @@ from .versioning_tools import *
 from .dmp_tools import *  # assumes ensure_dmp_shape, load_json, save_json, norm_rel_urlish, now_iso_minute, data_type_from_path, to_bytes_mb, make_dataset_id, get_git_hash exist
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Small helpers for RDA-DMP "extension" payloads
-# ──────────────────────────────────────────────────────────────────────────────
-
 def _get_ext_payload(obj: Dict, key: str) -> Optional[Dict]:
     """
     Return the dict stored under extension item {key: {...}}, or None.
@@ -23,11 +19,6 @@ def _get_ext_payload(obj: Dict, key: str) -> Optional[Dict]:
         if isinstance(item, dict) and key in item and isinstance(item[key], dict):
             return item[key]
     return None
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# File discovery helpers (unchanged)
-# ──────────────────────────────────────────────────────────────────────────────
 
 def get_file_info(file_paths):
     number_of_files = 0
@@ -69,11 +60,6 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
                     if fn not in ignore and not fn.startswith('.'):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Upsert into {"dmp": {"dataset": [...]}} respecting extension/x_dcas
-# ──────────────────────────────────────────────────────────────────────────────
 
 def datasets_to_json(json_path="./datasets.json", entry=None):
     """
@@ -168,11 +154,6 @@ def datasets_to_json(json_path="./datasets.json", entry=None):
     save_json(json_path, data)
     return json_path
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Remove missing datasets (checks extension/x_dcas.destination)
-# ──────────────────────────────────────────────────────────────────────────────
-
 def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
                             base_data_dir: str | os.PathLike = "./data",
                             autocreate: bool = True):
@@ -232,11 +213,6 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
     dmp["modified"] = now_iso_minute()
     save_json(json_path, data)
     return json_path
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Create a dataset entry (writes x_dcas under extension)
-# ──────────────────────────────────────────────────────────────────────────────
 
 def set_dataset(destination, json_path="./datasets.json"):
 
@@ -312,11 +288,6 @@ def set_dataset(destination, json_path="./datasets.json"):
     }
 
     return datasets_to_json(json_path=json_path, entry=entry)
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Markdown table generation (reads x_ui from root extension; x_dcas from dataset)
-# ──────────────────────────────────────────────────────────────────────────────
 
 def generate_dataset_table(
     json_path: str,
@@ -449,11 +420,6 @@ def generate_dataset_table(
 
     return "".join(summary_blocks), "".join(detail_blocks)
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# README injection (unchanged)
-# ──────────────────────────────────────────────────────────────────────────────
-
 def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     section_title = "**The following datasets are included in the project:**"
     readme_path = (pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
@@ -478,11 +444,6 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     readme_path.parent.mkdir(parents=True, exist_ok=True)
     readme_path.write_text(updated.strip(), encoding="utf-8")
     print(f"{readme_path} successfully updated with dataset section.")
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# CLI entry
-# ──────────────────────────────────────────────────────────────────────────────
 
 @ensure_correct_kernel
 def main():

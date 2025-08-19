@@ -163,7 +163,6 @@ def outro():
     os.chdir(project_root)
 
     print('Running "Outro"')
-    print(project_root)
 
     os_type = platform.system().lower()
     if os_type == "windows":
