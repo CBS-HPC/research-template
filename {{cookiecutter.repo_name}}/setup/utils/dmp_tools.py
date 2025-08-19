@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import os
 import urllib.request
@@ -8,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# ⬇️ add this import so we can read cookiecutter
 from .toml_tools import read_toml_json
 
 
@@ -28,12 +25,25 @@ RDA_DMP_SCHEMA_URL = (
 )
 
 DEFAULT_SCHEMA_CACHE = Path("./bin/maDMP-schema-1.0.json")
+
 DEFAULT_DMP_PATH = Path("./datasets.json")
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Time/IO helpers
-# ──────────────────────────────────────────────────────────────────────────────
+DMP_KEY_ORDER = [
+    "schema",
+    "title",
+    "description",
+    "language",
+    "created",
+    "modified",
+    "ethical_issues_exist",
+    "ethical_issues_description",
+    "ethical_issues_report",
+    "dmp_id",
+    "contact",
+    "project",
+    "dataset",
+    "extension",
+]
 
 def now_iso_minute() -> str:
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M")
@@ -48,11 +58,6 @@ def save_json(path: Path, data: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Schema fetch/caching + $ref utilities
-# ──────────────────────────────────────────────────────────────────────────────
 
 def fetch_schema(schema_url: str = SCHEMA_URL,
                  cache_path: Path = DEFAULT_SCHEMA_CACHE,
@@ -96,11 +101,6 @@ def _resolve_first(schema: Dict[str, Any], candidates: List[str]) -> Dict[str, A
             return node
     return {}
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Small helpers (paths, ids, extension handling)
-# ──────────────────────────────────────────────────────────────────────────────
-
 def to_bytes_mb(mb) -> Optional[int]:
     try:
         return int(round(float(mb) * 1024 * 1024))
@@ -131,8 +131,6 @@ def make_dataset_id(title: str, access_or_download_url: Optional[str]) -> dict:
     ident_src = norm_rel_urlish(access_or_download_url) or norm_rel_urlish(title) or "untitled"
     return {"identifier": f"local:{ident_src}", "type": "other"}
 
-# ----- extension helpers (general; usable at root or dataset level) ----------
-
 def _ensure_extension(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     obj.setdefault("extension", [])
     return obj["extension"]
@@ -161,11 +159,6 @@ def _set_extension_payload(obj: Dict[str, Any], key: str, payload: Dict[str, Any
             ext[i][key] = dict(payload)
         else:
             ext[i][key].update({k: v for k, v in payload.items()})
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Build defaults from schema shapes (best-effort)
-# ──────────────────────────────────────────────────────────────────────────────
 
 def _default_for_schema(schema: Dict[str, Any], node: Dict[str, Any]) -> Any:
     """
@@ -220,11 +213,6 @@ def _ensure_object_fields_from_schema(target: Dict[str, Any],
     if prefill:
         for k, v in prefill.items():
             target.setdefault(k, v)
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Schema-aware shaping of DMP (create or normalize) + root normalization
-# ──────────────────────────────────────────────────────────────────────────────
 
 def ensure_dmp_shape(data: Dict[str, Any],
                      schema: Optional[Dict[str, Any]] = None,
@@ -374,7 +362,6 @@ def ensure_dmp_shape(data: Dict[str, Any],
         }
     }
 
-
 def normalize_root_in_place(data: Dict[str, Any],
                             schema: Optional[Dict[str, Any]]) -> None:
     """
@@ -422,11 +409,6 @@ def normalize_root_in_place(data: Dict[str, Any],
             prj.setdefault("start", None)
             prj.setdefault("end", None)
             prj.setdefault("funding", [])
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Dataset & Distribution normalization (preserve populated values)
-# ──────────────────────────────────────────────────────────────────────────────
 
 def normalize_datasets_in_place(data: Dict[str, Any],
                                 schema: Optional[Dict[str, Any]]) -> None:
@@ -499,11 +481,6 @@ def normalize_datasets_in_place(data: Dict[str, Any],
             x.setdefault(k, None)
         _set_extension_payload(ds, "x_dcas", x)
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Cookiecutter integration (fills title/description/contact/project/x_project)
-# ──────────────────────────────────────────────────────────────────────────────
-
 def _split_multi(val: Optional[str]) -> List[str]:
     if not val or not isinstance(val, str):
         return []
@@ -570,28 +547,6 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any]) -> None:
     if cookie:
         _set_extension_payload(dmp, "x_project", cookie)
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Ordering: make top-level "dmp" keys match your requested order
-# ──────────────────────────────────────────────────────────────────────────────
-
-DMP_KEY_ORDER = [
-    "schema",
-    "title",
-    "description",
-    "language",
-    "created",
-    "modified",
-    "ethical_issues_exist",
-    "ethical_issues_description",
-    "ethical_issues_report",
-    "dmp_id",
-    "contact",
-    "project",
-    "dataset",
-    "extension",
-]
-
 def reorder_dmp_keys(data: Dict[str, Any]) -> Dict[str, Any]:
     """Return a new dict where data['dmp'] keys follow DMP_KEY_ORDER; extras appended afterwards."""
     dmp = data.get("dmp", {})
@@ -603,11 +558,6 @@ def reorder_dmp_keys(data: Dict[str, Any]) -> Dict[str, Any]:
         if k not in ordered:
             ordered[k] = v
     return {"dmp": ordered}
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Public: create/normalize using the official 1.0 schema
-# ──────────────────────────────────────────────────────────────────────────────
 
 def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
                                      schema_url: str = SCHEMA_URL,
@@ -648,11 +598,6 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
 
     save_json(dmp_path, data)
     return dmp_path
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# CLI entry
-# ──────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
