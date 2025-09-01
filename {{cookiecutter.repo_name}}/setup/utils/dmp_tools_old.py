@@ -24,7 +24,7 @@ RDA_DMP_SCHEMA_URL = (
     "tree/master/examples/JSON/JSON-schema/1.2"
 )
 
-DEFAULT_SCHEMA_CACHE = Path("./bin/maDMP-schema-1.2.json")
+DEFAULT_SCHEMA_CACHE = Path("./bin/maDMP-schema-1.0.json")
 
 DEFAULT_DMP_PATH = Path("./datasets.json")
 
@@ -45,10 +45,8 @@ DMP_KEY_ORDER = [
     "extension",
 ]
 
-
 def now_iso_minute() -> str:
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M")
-
 
 def load_json(path: Path) -> Dict[str, Any]:
     if not path.exists():
@@ -56,12 +54,10 @@ def load_json(path: Path) -> Dict[str, Any]:
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def save_json(path: Path, data: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
-
 
 def fetch_schema(schema_url: str = SCHEMA_URL,
                  cache_path: Path = DEFAULT_SCHEMA_CACHE,
@@ -78,23 +74,6 @@ def fetch_schema(schema_url: str = SCHEMA_URL,
         json.dump(data, f, indent=2, ensure_ascii=False)
     return data
 
-
-# --- shared, soft-dependency validator ---------------------------------------
-def validate_against_schema(data: Dict[str, Any],
-                            schema: Optional[Dict[str, Any]] = None) -> List[str]:
-    """
-    Return a list of error messages. If jsonschema is unavailable, returns [].
-    """
-    try:
-        from jsonschema import Draft7Validator
-    except Exception:
-        return []
-    schema = schema or fetch_schema()
-    v = Draft7Validator(schema)
-    errs = sorted(v.iter_errors(data), key=lambda e: list(e.path))
-    return [f"{'/'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in errs]
-
-
 def _resolve_ref(schema: Dict[str, Any], ref: str) -> Dict[str, Any]:
     """Resolve an internal JSON Pointer like '#/definitions/Dataset'."""
     if not ref.startswith("#/"):
@@ -105,7 +84,6 @@ def _resolve_ref(schema: Dict[str, Any], ref: str) -> Dict[str, Any]:
         node = node.get(part, {})
     return node if isinstance(node, dict) else {}
 
-
 def _deref(schema: Dict[str, Any], node: Dict[str, Any]) -> Dict[str, Any]:
     """Return node with $ref resolved (one level); shallow merge with local overrides."""
     if "$ref" in node:
@@ -115,7 +93,6 @@ def _deref(schema: Dict[str, Any], node: Dict[str, Any]) -> Dict[str, Any]:
         return merged
     return node
 
-
 def _resolve_first(schema: Dict[str, Any], candidates: List[str]) -> Dict[str, Any]:
     """Try multiple $ref candidates and return the first that resolves."""
     for c in candidates:
@@ -124,13 +101,11 @@ def _resolve_first(schema: Dict[str, Any], candidates: List[str]) -> Dict[str, A
             return node
     return {}
 
-
 def to_bytes_mb(mb) -> Optional[int]:
     try:
         return int(round(float(mb) * 1024 * 1024))
     except Exception:
         return None
-
 
 def norm_rel_urlish(p: Optional[str]) -> Optional[str]:
     if not p or not isinstance(p, str):
@@ -140,7 +115,6 @@ def norm_rel_urlish(p: Optional[str]) -> Optional[str]:
         p2 = p2[2:]
     return p2 or None
 
-
 def data_type_from_path(p: str) -> str:
     parts = Path(p.replace("\\", "/")).parts
     if "data" in parts:
@@ -148,7 +122,6 @@ def data_type_from_path(p: str) -> str:
         if i + 1 < len(parts):
             return parts[i + 1]
     return "Uncategorised"
-
 
 def make_dataset_id(title: str, access_or_download_url: Optional[str]) -> dict:
     """
@@ -158,11 +131,9 @@ def make_dataset_id(title: str, access_or_download_url: Optional[str]) -> dict:
     ident_src = norm_rel_urlish(access_or_download_url) or norm_rel_urlish(title) or "untitled"
     return {"identifier": f"local:{ident_src}", "type": "other"}
 
-
 def _ensure_extension(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     obj.setdefault("extension", [])
     return obj["extension"]
-
 
 def _find_extension_index(obj: Dict[str, Any], key: str) -> int:
     ext = obj.get("extension") or []
@@ -171,14 +142,12 @@ def _find_extension_index(obj: Dict[str, Any], key: str) -> int:
             return i
     return -1
 
-
 def get_extension_payload(obj: Dict[str, Any], key: str) -> Optional[Dict[str, Any]]:
     i = _find_extension_index(obj, key)
     if i == -1:
         return None
     payload = obj["extension"][i].get(key)
     return payload if isinstance(payload, dict) else None
-
 
 def set_extension_payload(obj: Dict[str, Any], key: str, payload: Dict[str, Any]) -> None:
     ext = _ensure_extension(obj)
@@ -190,7 +159,6 @@ def set_extension_payload(obj: Dict[str, Any], key: str, payload: Dict[str, Any]
             ext[i][key] = dict(payload)
         else:
             ext[i][key].update({k: v for k, v in payload.items()})
-
 
 def _default_for_schema(schema: Dict[str, Any], node: Dict[str, Any]) -> Any:
     """
@@ -227,7 +195,6 @@ def _default_for_schema(schema: Dict[str, Any], node: Dict[str, Any]) -> Any:
 
     return None
 
-
 def _ensure_object_fields_from_schema(target: Dict[str, Any],
                                       schema: Dict[str, Any],
                                       obj_schema: Dict[str, Any],
@@ -246,7 +213,6 @@ def _ensure_object_fields_from_schema(target: Dict[str, Any],
     if prefill:
         for k, v in prefill.items():
             target.setdefault(k, v)
-
 
 def ensure_dmp_shape(data: Dict[str, Any],
                      schema: Optional[Dict[str, Any]] = None,
@@ -272,14 +238,12 @@ def ensure_dmp_shape(data: Dict[str, Any],
         dmp.setdefault("ethical_issues_description", "")
         dmp.setdefault("ethical_issues_report", "https://example.org/ethics-report")
         dmp.setdefault("dmp_id", {"identifier": "https://example.org/dmp", "type": "url"})
-        dmp.setdefault("contact", {"name": "Unknown", "mbox": "example@example.com",
-                                   "contact_id": {"identifier": "https://orcid.org/0000-0000-0000-0000",
-                                                  "type": "orcid"}})
+        dmp.setdefault("contact", {"name": "Unknown", "mbox": "example@example.com", "contact_id": {"identifier": "https://orcid.org/0000-0000-0000-0000", "type": "orcid"}})
         dmp.setdefault("project", [])
         dmp.setdefault("dataset", [])
         dmp["schema"] = RDA_DMP_SCHEMA_URL  # enforce exact link
 
-        # Migrate top-level custom fields to root extension
+        # Migrate top-level custom fields to root extension   
         if isinstance(dmp.get("x_project"), dict):
             set_extension_payload(dmp, "x_project", dmp.pop("x_project"))
 
@@ -303,15 +267,12 @@ def ensure_dmp_shape(data: Dict[str, Any],
             "ethical_issues_description": "",
             "ethical_issues_report": "https://example.org/ethics-report",
             "dmp_id": {"identifier": "https://example.org/dmp", "type": "url"},
-            "contact": {"name": "Unknown", "mbox": "example@example.com",
-                        "contact_id": {"identifier": "https://orcid.org/0000-0000-0000-0000",
-                                       "type": "orcid"}},
+            "contact": {"name": "Unknown", "mbox": "example@example.com", "contact_id": {"identifier": "https://orcid.org/0000-0000-0000-0000", "type": "orcid"}},
             "project": [],
             "dataset": [],
             "extension": [],
         }
     }
-
 
 def normalize_root_in_place(data: Dict[str, Any],
                             schema: Optional[Dict[str, Any]]) -> None:
@@ -354,7 +315,6 @@ def normalize_root_in_place(data: Dict[str, Any],
             prj.setdefault("end", None)
             prj.setdefault("funding", [])
 
-
 def normalize_datasets_in_place(data: Dict[str, Any],
                                 schema: Optional[Dict[str, Any]]) -> None:
     """
@@ -389,11 +349,10 @@ def normalize_datasets_in_place(data: Dict[str, Any],
             ds.setdefault("sensitive_data", "unknown")
             ds.setdefault("preservation_statement", "")
             ds.setdefault("data_quality_assurance", [])
-            ds.setdefault("metadata", [{"language": "eng",
-                                        "metadata_standard_id": {"identifier": "", "type": "url"},
-                                        "description": ""}])
+            ds.setdefault("metadata", [{"language": "eng", "metadata_standard_id": {"identifier": "", "type": "url"}, "description": ""}])
             ds.setdefault("security_and_privacy", [{"title": "", "description": ""}])
             ds.setdefault("technical_resource", [{"name": "", "description": ""}])
+
 
         if not isinstance(ds.get("dataset_id"), dict) or not ds["dataset_id"].get("identifier"):
             dist0 = (ds.get("distribution") or [{}])[0]
@@ -414,15 +373,10 @@ def normalize_datasets_in_place(data: Dict[str, Any],
                 dist.setdefault("format", [])
                 dist.setdefault("byte_size", None)
                 dist.setdefault("data_access", "open")
-                # host requires title + url in the schema; provide both
-                dist.setdefault("host", {"title": "Project repository", "url": "https://example.org"})
+                dist.setdefault("host", {"title": "Project repository"})
                 dist.setdefault("available_until", None)
                 dist.setdefault("description", None)
-                # license requires at least one item with uri+date; give a sane default
-                dist.setdefault("license", [{
-                    "license_ref": "https://creativecommons.org/publicdomain/zero/1.0/",
-                    "start_date": now_iso_minute()[:10],
-                }])
+                dist.setdefault("license", [])
 
         x = get_extension_payload(ds, "x_dcas") or {}
         if not x.get("data_type"):
@@ -433,13 +387,11 @@ def normalize_datasets_in_place(data: Dict[str, Any],
             x.setdefault(k, None)
         set_extension_payload(ds, "x_dcas", x)
 
-
 def _split_multi(val: Optional[str]) -> List[str]:
     if not val or not isinstance(val, str):
         return []
     raw = [p.strip() for p in val.replace(";", ",").split(",")]
     return [p for p in raw if p]
-
 
 def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any]) -> None:
     """
@@ -450,6 +402,7 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any]) -> None:
       - dmp.project[0].title/description
       - dmp.extension[x_project] = full cookiecutter dict
     """
+    # read cookiecutter via your helper
     cookie = read_toml_json(
         folder=str(project_root),
         json_filename="cookiecutter.json",
@@ -463,24 +416,22 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any]) -> None:
     proj_title = cookie.get("PROJECT_NAME") or cookie.get("REPO_NAME")
     if proj_title:
         dmp["title"] = proj_title
-
+    
     proj_desc = cookie.get("PROJECT_DESCRIPTION")
     if proj_desc:
         dmp["description"] = proj_desc
 
     # contact
     authors = _split_multi(cookie.get("AUTHORS"))
-    emails = _split_multi(cookie.get("EMAIL"))
-    orcids = _split_multi(cookie.get("ORCIDS"))
+    emails  = _split_multi(cookie.get("EMAIL"))
+    orcids  = _split_multi(cookie.get("ORCIDS"))
 
     name = authors[0] if authors else None
     mbox = emails[0] if emails else None
     if name or mbox:
         contact: Dict[str, Any] = {}
-        if name:
-            contact["name"] = name
-        if mbox:
-            contact["mbox"] = mbox
+        if name: contact["name"] = name
+        if mbox: contact["mbox"] = mbox
         if orcids:
             contact["contact_id"] = {"type": "orcid", "identifier": orcids[0]}
         dmp["contact"] = contact
@@ -490,7 +441,7 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any]) -> None:
     if not projects:
         projects.append({})
     prj0 = projects[0]
-
+    
     if proj_title:
         prj0["title"] = proj_title
     if proj_desc:
@@ -503,7 +454,6 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any]) -> None:
     if cookie:
         set_extension_payload(dmp, "x_project", cookie)
 
-
 def reorder_dmp_keys(data: Dict[str, Any]) -> Dict[str, Any]:
     """Return a new dict where data['dmp'] keys follow DMP_KEY_ORDER; extras appended afterwards."""
     dmp = data.get("dmp", {})
@@ -515,7 +465,6 @@ def reorder_dmp_keys(data: Dict[str, Any]) -> Dict[str, Any]:
         if k not in ordered:
             ordered[k] = v
     return {"dmp": ordered}
-
 
 def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
                                      schema_url: str = SCHEMA_URL,
@@ -534,15 +483,9 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
 
     if not dmp_path.exists():
         shaped = ensure_dmp_shape({}, schema=schema)
+        # Apply cookiecutter immediately so a new file gets meta, too
         _apply_cookiecutter_meta(project_root=Path.cwd(), data=shaped)
         shaped = reorder_dmp_keys(shaped)
-
-        errs = validate_against_schema(shaped, schema=schema)
-        if errs:
-            print("⚠️ Schema validation issues (new file):")
-            for e in errs[:50]:
-                print(" -", e)
-
         save_json(dmp_path, shaped)
         return dmp_path
 
@@ -551,22 +494,17 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
     normalize_root_in_place(data, schema=schema)
     normalize_datasets_in_place(data, schema=schema)
 
+    # ⬇️ fill from cookiecutter (does not overwrite existing populated values)
     _apply_cookiecutter_meta(project_root=Path.cwd(), data=data)
 
     data["dmp"]["schema"] = RDA_DMP_SCHEMA_URL  # enforce requested value
     data["dmp"]["modified"] = now_iso_minute()
 
+    # Reorder top-level keys to match your example
     data = reorder_dmp_keys(data)
-
-    errs = validate_against_schema(data, schema=schema)
-    if errs:
-        print("⚠️ Schema validation issues:")
-        for e in errs[:50]:
-            print(" -", e)
 
     save_json(dmp_path, data)
     return dmp_path
-
 
 def main() -> None:
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -578,7 +516,6 @@ def main() -> None:
         force_schema_refresh=False,
     )
     print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP 1.2 schema (ordered).")
-
 
 if __name__ == "__main__":
     main()

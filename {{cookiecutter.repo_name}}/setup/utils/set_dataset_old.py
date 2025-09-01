@@ -7,7 +7,7 @@ from collections import defaultdict
 
 from .readme_templates import *
 from .versioning_tools import *
-from .dmp_tools import *  # ensure_dmp_shape, load_json, save_json, norm_rel_urlish, now_iso_minute, data_type_from_path, to_bytes_mb, make_dataset_id, validate_against_schema, fetch_schema
+from .dmp_tools import *  # assumes ensure_dmp_shape, load_json, save_json, norm_rel_urlish, now_iso_minute, data_type_from_path, to_bytes_mb, make_dataset_id, get_git_hash exist
 
 
 def _get_ext_payload(obj: Dict, key: str) -> Optional[Dict]:
@@ -19,7 +19,6 @@ def _get_ext_payload(obj: Dict, key: str) -> Optional[Dict]:
         if isinstance(item, dict) and key in item and isinstance(item[key], dict):
             return item[key]
     return None
-
 
 def get_file_info(file_paths):
     number_of_files = 0
@@ -34,14 +33,12 @@ def get_file_info(file_paths):
         file_formats.add(os.path.splitext(path)[1].lower())
     return number_of_files, total_size, file_formats, individual_sizes_mb
 
-
 def get_all_files(destination):
     all_files = set()
     for root, _, files in os.walk(destination):
         for file in files:
             all_files.add(os.path.join(root, file))
     return all_files
-
 
 def get_data_files(base_dir='./data', ignore=None, recursive=False):
     if ignore is None:
@@ -63,7 +60,6 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
                     if fn not in ignore and not fn.startswith('.'):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
-
 
 def datasets_to_json(json_path="./datasets.json", entry=None):
     """
@@ -156,19 +152,7 @@ def datasets_to_json(json_path="./datasets.json", entry=None):
     dmp["dataset"] = datasets
     dmp["modified"] = now_iso_minute()
     save_json(json_path, data)
-
-    # Validate and warn (non-fatal) so callers see problems
-    try:
-        errs = validate_against_schema(data, schema=fetch_schema())
-        if errs:
-            print("⚠️ Schema validation issues after upsert:")
-            for e in errs[:50]:
-                print(" -", e)
-    except Exception:
-        pass
-
     return json_path
-
 
 def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
                             base_data_dir: str | os.PathLike = "./data",
@@ -184,12 +168,13 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
     # 1) Ensure file exists + minimal DMP shape
     if not json_path.exists():
         if not autocreate:
+            # Nothing to do; return the intended path unchanged
             return json_path
-        shaped = ensure_dmp_shape({})
-        save_json(json_path, shaped)
+        shaped = ensure_dmp_shape({})              # from dmp_tools
+        save_json(json_path, shaped)           # from dmp_tools
 
     # 2) Load (already shaped by loader)
-    data = load_json(json_path)
+    data = load_json(json_path)                # returns ensure_dmp_shape({...})
     dmp = data.get("dmp") or {}
     datasets = dmp.get("dataset")
     if not isinstance(datasets, list):
@@ -204,6 +189,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
             p = dist.get("access_url") or dist.get("download_url")
             if not p:
                 continue
+            # normalize win/unix style
             if os.path.exists(p) or os.path.exists(p.replace("/", os.sep)):
                 return True
 
@@ -228,7 +214,6 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
     save_json(json_path, data)
     return json_path
 
-
 def set_dataset(destination, json_path="./datasets.json"):
 
     destination = check_path_format(destination)
@@ -247,7 +232,7 @@ def set_dataset(destination, json_path="./datasets.json"):
     name = os.path.basename(destination)
     data_type = data_type_from_path(destination)
 
-    # distribution (complete RDA-DMP shape with defaults; 1.2-compliant)
+    # distribution (complete RDA-DMP shape with defaults)
     distribution = {
         "title": name,
         "access_url": norm_rel_urlish(destination),
@@ -255,13 +240,10 @@ def set_dataset(destination, json_path="./datasets.json"):
         "format": [ext.strip(".") for ext in sorted(file_formats)],
         "byte_size": to_bytes_mb(total_size_mb),
         "data_access": "open" if data_files else "closed",
-        "host": {"title": "Project repository", "url": "https://example.org"},
+        "host": {"title": "Project repository"},
         "available_until": None,
         "description": None,
-        "license": [{
-            "license_ref": "https://creativecommons.org/publicdomain/zero/1.0/",
-            "start_date": datetime.now().strftime("%Y-%m-%d")
-        }],
+        "license": [{"license_ref": "", "start_date": ""}],
     }
 
     # required dataset_id (local, stable)
@@ -288,20 +270,13 @@ def set_dataset(destination, json_path="./datasets.json"):
         "language": "eng",               # ISO 639-3 code like "eng"
         "keyword": [],
         "type": "",
-        "is_reused": False,
+        "is_reused": None,
         "personal_data": "unknown",
         "sensitive_data": "unknown",
         "preservation_statement": "",
         "data_quality_assurance": [],
-        "metadata": [{
-            "language": "eng",
-            "metadata_standard_id": {
-                "identifier": "http://www.dublincore.org/specifications/dublin-core/dcmi-terms/",
-                "type": "url"
-            },
-            "description": ""
-        }],
-        "security_and_privacy":  [{"title": "Security & Privacy", "description": ""}],
+        "metadata": [{"language": "eng", "metadata_standard_id": {"identifier": "", "type": "url"}, "description": ""}],
+        "security_and_privacy":  [{"title": "", "description": ""}],
         "technical_resource": [{"name": "", "description": ""}],
         "dataset_id": dataset_id,
         "distribution": [distribution],
@@ -313,7 +288,6 @@ def set_dataset(destination, json_path="./datasets.json"):
     }
 
     return datasets_to_json(json_path=json_path, entry=entry)
-
 
 def generate_dataset_table(
     json_path: str,
@@ -389,6 +363,7 @@ def generate_dataset_table(
     summary_header = "| " + " | ".join([standard_fields[k] for k in active_fields]) + " |\n"
     summary_divider = "| " + " | ".join(["-" * len(standard_fields[k]) for k in active_fields]) + " |\n"
 
+    # Build detail columns dynamically, hiding empty ones
     base_detail = ["data_name", "data_files", "destination", "created", "lastest_change",
                    "provided", "data_size"]
     if include_hash and "hash" not in hidden_fields and any(is_nonempty(r.get("hash")) for r in rows):
@@ -443,7 +418,6 @@ def generate_dataset_table(
 
     return "".join(summary_blocks), "".join(detail_blocks)
 
-
 def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     section_title = "**The following datasets are included in the project:**"
     readme_path = (pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
@@ -469,7 +443,6 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     readme_path.write_text(updated.strip(), encoding="utf-8")
     print(f"{readme_path} successfully updated with dataset section.")
 
-
 @ensure_correct_kernel
 def main():
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -483,7 +456,7 @@ def main():
         schema_cache=DEFAULT_SCHEMA_CACHE,
         force_schema_refresh=False,
     )
-    print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP 1.2 schema (ordered).")
+    print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP 1.0 schema (ordered).")
 
     json_path = remove_missing_datasets(json_path="./datasets.json")
 
@@ -498,12 +471,13 @@ def main():
         json_path = set_dataset(destination=f, json_path=json_path)
 
     try:
+        # If you use a newer normalizer that works on loaded dicts, keep it there.
+        # Otherwise, if you still rely on a path-based normalizer, call it here.
+        # normalize_dataset_fields(json_path)  # if you still have this function elsewhere
         markdown_table, _ = generate_dataset_table(json_path, file_descriptions)
-        if markdown_table:
-            dataset_to_readme(markdown_table)
+        dataset_to_readme(markdown_table)
     except Exception as e:
         print(f"Error: {e}")
-
 
 if __name__ == "__main__":
     main()

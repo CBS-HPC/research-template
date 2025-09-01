@@ -14,12 +14,10 @@ except ImportError:
     from utils.general_tools import package_installer
     from utils.dmp_tools import *
 
-package_installer(required_libraries=["streamlit", "jsonschema"])
+package_installer(required_libraries=["streamlit"])
 
 import streamlit as st
 from streamlit.web.cli import main as st_main
-from jsonschema import Draft7Validator
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Keys & simple detectors
@@ -38,6 +36,9 @@ def _looks_like_string_list(arr: List[Any], path: tuple) -> bool:
 def _is_dataset_root_path(path: tuple) -> bool:
     return len(path) >= 3 and path[0] == "dmp" and path[1] == "dataset" and isinstance(path[2], int)
 
+def _is_bool_field(path: tuple) -> bool:
+    return bool(path) and path[-1] == "is_reused"
+
 def _coerce_to_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
@@ -49,7 +50,6 @@ def _coerce_to_bool(value: Any) -> bool:
         return value != 0
     return False
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Schema navigation (runtime; uses fetch_schema() provided in dmp_tools)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -58,36 +58,15 @@ def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
     schema = fetch_schema()
     if not schema:
         return None
-
-    node: Dict[str, Any] = schema
-
-    def _resolve_ref(ref: str) -> Dict[str, Any]:
-        if not (isinstance(ref, str) and ref.startswith("#/")):
-            return {}
-        cur: Any = schema
-        for part in ref[2:].split("/"):
-            part = part.replace("~1", "/").replace("~0", "~")
-            cur = cur.get(part, {})
-        return cur if isinstance(cur, dict) else {}
-
-    def _deref_once(n: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(n, dict) and "$ref" in n:
-            base = _resolve_ref(n["$ref"])
-            merged = dict(base)
-            merged.update({k: v for k, v in n.items() if k != "$ref"})
-            return merged
-        return n
-
+    node = schema
     for comp in path:
         if isinstance(comp, str):
-            node = _deref_once(node)
             props = node.get("properties")
             if isinstance(props, dict) and comp in props:
                 node = props[comp]
             else:
                 if node.get("type") == "array" and isinstance(node.get("items"), dict):
                     node = node["items"]
-                    node = _deref_once(node)
                     props = node.get("properties")
                     if isinstance(props, dict) and comp in props:
                         node = props[comp]
@@ -100,8 +79,7 @@ def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
                 node = node["items"]
             else:
                 return None
-    return _deref_once(node)
-
+    return node
 
 def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
     node = _schema_node_for_path(path)
@@ -115,19 +93,13 @@ def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
             return ("multi", list(it["enum"]))
     return (None, [])
 
-
-def _is_boolean_schema(path: tuple) -> bool:
-    node = _schema_node_for_path(path)
-    return bool(node and node.get("type") == "boolean")
-
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Generic editors (schema-aware)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
-    # Boolean by schema (or keep 'is_reused' for backward-compat)
-    if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
+    # Force boolean checkbox for specific fields
+    if _is_bool_field(path):
         keyb = _key_for(*path, ns, "bool")
         return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
 
@@ -164,7 +136,6 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
             return value
     txt = st.text_input(label, "" if value is None else str(value), key=key)
     return None if txt == "" else txt
-
 
 def edit_array(
     arr: List[Any],
@@ -211,7 +182,6 @@ def edit_array(
         del arr[i]
     return arr
 
-
 def _render_extension_read_only(ext: List[Any], path: tuple, ns: Optional[str] = None) -> None:
     st.markdown("**extension (read-only)**")
     for idx, item in enumerate(ext):
@@ -222,7 +192,6 @@ def _render_extension_read_only(ext: List[Any], path: tuple, ns: Optional[str] =
         else:
             with st.expander(f"extension[{idx}]", expanded=False):
                 st.json(item)
-
 
 def edit_extension(obj: Dict[str, Any], path: tuple, ns: Optional[str] = None) -> None:
     ext: List[Any] = obj.setdefault("extension", [])
@@ -250,7 +219,6 @@ def edit_extension(obj: Dict[str, Any], path: tuple, ns: Optional[str] = None) -
     for i in reversed(to_delete):
         del ext[i]
     obj["extension"] = ext
-
 
 def edit_object(
     obj: Dict[str, Any],
@@ -298,7 +266,7 @@ def edit_object(
                 txt = st.text_area(label, initial, key=wkey)
                 obj[key] = [ln.strip() for ln in txt.splitlines() if ln.strip()]
 
-            # Unwrap arrays that contain exactly one dict (no "Item #1")
+            # NEW: unwrap arrays that contain exactly one dict (no "Item #1")
             elif len(val) == 1 and isinstance(val[0], dict):
                 with st.expander(key, expanded=False):
                     val[0] = edit_any(val[0], path=(*path, key, 0), ns=ns)
@@ -326,14 +294,12 @@ def edit_object(
         obj.pop(k, None)
     return obj
 
-
 def edit_any(value: Any, path: tuple, ns: Optional[str] = None) -> Any:
     if isinstance(value, dict):
         return edit_object(value, path, allow_remove_keys=False, ns=ns)
     if isinstance(value, list):
         return edit_array(value, path, title_singular="Item", removable_items=False, ns=ns)
     return edit_primitive("value", value, path, ns=ns)
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # High-level sections (Root, Projects, Datasets)
@@ -347,12 +313,10 @@ def find_default_dmp_path(start: Optional[Path] = None) -> Path:
             return p
     return Path(DEFAULT_DMP_PATH)
 
-
 def draw_root_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Root")
     dmp_root.setdefault("schema", dmp_root.get("schema") or RDA_DMP_SCHEMA_URL)
     edit_object(dmp_root, path=("dmp",), allow_remove_keys=False, ns=None)
-
 
 def draw_projects_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Projects")
@@ -365,11 +329,9 @@ def draw_projects_section(dmp_root: Dict[str, Any]) -> None:
         projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None
     )
 
-
 def _dataset_label(i: int, ds: Dict[str, Any]) -> str:
     t = ds.get("title") or "Dataset"
     return f"Dataset #{i+1}: {t}"
-
 
 def draw_datasets_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Datasets")
@@ -396,7 +358,6 @@ def draw_datasets_section(dmp_root: Dict[str, Any]) -> None:
                 del datasets[i]
                 st.stop()
             datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # App
@@ -480,16 +441,6 @@ def main() -> None:
                 st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
 
                 out = reorder_dmp_keys(deepcopy(st.session_state["data"]))
-
-                # ✅ validate against live schema
-                schema = fetch_schema()
-                errs = list(Draft7Validator(schema).iter_errors(out))
-                if errs:
-                    st.error("Schema validation failed:")
-                    for e in errs[:50]:
-                        st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
-                    st.stop()
-
                 p = Path(save_to_str)
                 p.parent.mkdir(parents=True, exist_ok=True)
                 with p.open("w", encoding="utf-8") as f:
@@ -498,19 +449,9 @@ def main() -> None:
             except Exception as e:
                 st.error(f"Failed to save: {e}")
 
+
     with colC:
-        # Also bump modified on download; warn if invalid (but allow)
-        st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
         out = reorder_dmp_keys(deepcopy(st.session_state["data"]))
-        try:
-            schema = fetch_schema()
-            errs = list(Draft7Validator(schema).iter_errors(out))
-            if errs:
-                st.warning("Download will contain validation errors; fix these first:")
-                for e in errs[:10]:
-                    st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
-        except Exception:
-            pass
         st.download_button(
             "⬇️ Download JSON",
             data=json.dumps(out, indent=4, ensure_ascii=False).encode("utf-8"),
@@ -519,12 +460,10 @@ def main() -> None:
             key="download",
         )
 
-
 def cli() -> None:
     app_path = Path(__file__).resolve()
     sys.argv = ["streamlit", "run", str(app_path), *sys.argv[1:]]
     sys.exit(st_main())
-
 
 if __name__ == "__main__":
     main()
