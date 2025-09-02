@@ -7,7 +7,7 @@ from collections import defaultdict
 
 from .readme_templates import *
 from .versioning_tools import *
-from .dmp_tools import *  # ensure_dmp_shape, load_json, save_json, norm_rel_urlish, now_iso_minute, data_type_from_path, to_bytes_mb, make_dataset_id, validate_against_schema, fetch_schema
+from .dmp_tools import *  
 
 
 def _get_ext_payload(obj: Dict, key: str) -> Optional[Dict]:
@@ -19,7 +19,6 @@ def _get_ext_payload(obj: Dict, key: str) -> Optional[Dict]:
         if isinstance(item, dict) and key in item and isinstance(item[key], dict):
             return item[key]
     return None
-
 
 def get_file_info(file_paths):
     number_of_files = 0
@@ -34,14 +33,12 @@ def get_file_info(file_paths):
         file_formats.add(os.path.splitext(path)[1].lower())
     return number_of_files, total_size, file_formats, individual_sizes_mb
 
-
 def get_all_files(destination):
     all_files = set()
     for root, _, files in os.walk(destination):
         for file in files:
             all_files.add(os.path.join(root, file))
     return all_files
-
 
 def get_data_files(base_dir='./data', ignore=None, recursive=False):
     if ignore is None:
@@ -63,7 +60,6 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
                     if fn not in ignore and not fn.startswith('.'):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
-
 
 def datasets_to_json(json_path="./datasets.json", entry=None):
     """
@@ -169,7 +165,6 @@ def datasets_to_json(json_path="./datasets.json", entry=None):
 
     return json_path
 
-
 def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
                             base_data_dir: str | os.PathLike = "./data",
                             autocreate: bool = True):
@@ -228,9 +223,18 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
     save_json(json_path, data)
     return json_path
 
-
 def set_dataset(destination, json_path="./datasets.json"):
+    
+    project_root = Path(__file__).resolve().parent.parent.parent
 
+    cookie = read_toml_json(
+        folder=str(project_root),
+        json_filename="cookiecutter.json",
+        tool_name="cookiecutter",
+        toml_path="pyproject.toml",
+    ) or {}
+
+ 
     destination = check_path_format(destination)
 
     if os.path.isfile(destination):
@@ -243,7 +247,7 @@ def set_dataset(destination, json_path="./datasets.json"):
     if number_of_files > 1000:
         print("WARNING: Consider zipping datasets >1000 files.")
 
-    created = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    created = now_iso_minute() 
     name = os.path.basename(destination)
     data_type = data_type_from_path(destination)
 
@@ -251,15 +255,15 @@ def set_dataset(destination, json_path="./datasets.json"):
     distribution = {
         "title": name,
         "access_url": norm_rel_urlish(destination),
-        "download_url": None,
+        "download_url": "",
         "format": [ext.strip(".") for ext in sorted(file_formats)],
         "byte_size": to_bytes_mb(total_size_mb),
         "data_access": "open" if data_files else "closed",
-        "host": {"title": "Project repository", "url": "https://example.org"},
-        "available_until": None,
-        "description": None,
+        "host": {"title": "Project repository", "url": ""},
+        "available_until": "",
+        "description": "",
         "license": [{
-            "license_ref": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "license_ref": LICENSE_LINKS.get(cookie.get("DATA_LICENSE"), ""),
             "start_date": datetime.now().strftime("%Y-%m-%d")
         }],
     }
@@ -282,9 +286,9 @@ def set_dataset(destination, json_path="./datasets.json"):
     entry = {
         # RDA-DMP dataset
         "title": name,
-        "description": None,
+        "description": "",
         "issued": created,
-        "modified": None,
+        "modified": created,
         "language": "eng",               # ISO 639-3 code like "eng"
         "keyword": [],
         "type": "",
@@ -313,7 +317,6 @@ def set_dataset(destination, json_path="./datasets.json"):
     }
 
     return datasets_to_json(json_path=json_path, entry=entry)
-
 
 def generate_dataset_table(
     json_path: str,
@@ -443,7 +446,6 @@ def generate_dataset_table(
 
     return "".join(summary_blocks), "".join(detail_blocks)
 
-
 def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     section_title = "**The following datasets are included in the project:**"
     readme_path = (pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
@@ -468,7 +470,6 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     readme_path.parent.mkdir(parents=True, exist_ok=True)
     readme_path.write_text(updated.strip(), encoding="utf-8")
     print(f"{readme_path} successfully updated with dataset section.")
-
 
 @ensure_correct_kernel
 def main():

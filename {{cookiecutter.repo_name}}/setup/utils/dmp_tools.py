@@ -2,6 +2,7 @@ import json
 import os
 import urllib.request
 import pathlib
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -40,14 +41,251 @@ DMP_KEY_ORDER = [
     "ethical_issues_report",
     "dmp_id",
     "contact",
+    "contributor",
     "project",
     "dataset",
     "extension",
 ]
 
+# Central license mapping: short code → canonical URL
+LICENSE_LINKS: Dict[str, str] = {
+    "CC-BY-4.0": "https://creativecommons.org/licenses/by/4.0/",
+    "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "None": "",
+}
+
+# Extra enums we want the editor to offer in addition to (or instead of) schema-provided enums
+EXTRA_ENUMS: Dict[str, List[str]] = {
+    # For dataset.distribution[].license[].license_ref we want the *URL* values as the choices
+    "dmp.dataset[].distribution[].license[].license_ref": list(LICENSE_LINKS.values()),
+}
+
+# Minimal offline fallbacks for the common triads
+LOCAL_FALLBACK_ENUMS: Dict[str, List[str]] = {
+    "dmp.dataset[].personal_data": ["yes", "no", "unknown"],
+    "dmp.dataset[].sensitive_data": ["yes", "no", "unknown"],
+    # You can add more safe fallbacks here if useful
+}
+
+
+
+def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = None) -> dict:
+    """
+    Single source of truth for default values.
+    Returns dict with keys: root, project, dataset, distribution, x_dcas.
+    All optional strings default to "", booleans are true bools,
+    and date/time fields match the schema's formats.
+    """
+    now_dt = now_dt or now_iso_minute()  # date-time with Z
+    today = today or today_iso()
+
+    return {
+        "root": {
+            "schema": RDA_DMP_SCHEMA_URL,
+            "title": "",
+            "description": "",
+            "language": "eng",
+            "created": now_dt,               # required date-time
+            "modified": now_dt,              # required date-time
+            "ethical_issues_exist": "unknown",
+            "ethical_issues_description": "",
+            "ethical_issues_report": "https://example.org/ethics-report",
+            "dmp_id": {                      # required (identifier, type)
+                "identifier": "https://example.org/dmp",
+                "type": "url",
+            },
+            "contact": {                     # required (contact_id, mbox, name)
+                "name": "",
+                "mbox": "",
+                "contact_id": {
+                    "identifier": "https://orcid.org/0000-0000-0000-0000",
+                    "type": "orcid",
+                },
+            },
+            #"contributor": {                    # required (contact_id, mbox, name)
+            #    "name": "",
+            #    "mbox": "",
+            #    "contributor_id": {
+            #        "identifier": "https://orcid.org/0000-0000-0000-0000",
+            #        "type": "orcid",
+            #    },
+            #},
+            "project": [],                   # array
+            "dataset": [],                   # required array
+            "extension": [],
+        },
+        "project": {                         # items must have title
+            "title": "",
+            "description": "",
+            "start": "",                     # format: date if set
+            "end": "",                       # format: date if set
+            "funding": [],
+            #"funding": [{"funder_id": "", "funder_status": "","grant_id": {"identifier": "", "type": ""}}],
+        },
+        "dataset": {
+            "title": "Dataset",              # required
+            "description": "",
+            "issued": today,                 # format: date
+            "modified": "",                  # optional string if you use it
+            "language": "eng",
+            "keyword": [],
+            "type": "",
+            "is_reused": False,              # boolean
+            "personal_data": "unknown",      # enum
+            "sensitive_data": "unknown",     # enum
+            "preservation_statement": "",
+            "data_quality_assurance": [],
+            "metadata": [{
+                "language": "eng",
+                "metadata_standard_id": {"identifier": "", "type": "url"},
+                "description": "",
+            }],
+            "security_and_privacy": [{"title": "", "description": ""}],
+            "technical_resource": [{"name": "", "description": ""}],
+            "dataset_id": {
+                "identifier": "",
+                "type": "other",
+            },
+            "distribution": [],
+            "extension": [],
+        },
+        "distribution": {
+            "title": "Dataset",              # required
+            "access_url": "",                # string (url if you have one)
+            "download_url": "",              # string (url if you have one)
+            "format": [],
+            "byte_size": 0,                  # integer
+            "data_access": "open",           # enum
+            "host": {                        # required object: title+url
+                "title": "Project repository",
+                "url": "https://example.org",
+            },
+            "available_until": "",           # format: date if set
+            "description": "",               # string
+            "license": [{
+                "license_ref": "https://creativecommons.org/publicdomain/zero/1.0/",
+                "start_date": today,
+            }],
+        },
+        "x_dcas": {  # extension payload (not part of RDA schema; free-form)
+            "data_type": "Uncategorised",
+            "destination": "",
+            "number_of_files": 0,
+            "total_size_mb": 0,
+            "file_formats": [],
+            "data_files": [],
+            "data_size_mb": [],
+            "hash": "",
+        },
+    }
+
+
+def _split_multi(val: Optional[str]) -> List[str]:
+    if not val or not isinstance(val, str):
+        return []
+    raw = [p.strip() for p in val.replace(";", ",").split(",")]
+    return [p for p in raw if p]
+
+
+def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:bool=False) -> None:
+    """
+    Read cookiecutter and fill DMP meta iff missing:
+      - dmp.title (PROJECT_NAME/REPO_NAME)
+      - dmp.description (PROJECT_DESCRIPTION)
+      - dmp.contact (first author/email[/orcid])
+      - dmp.project[0].title/description
+      - dmp.extension[x_project] = full cookiecutter dict
+    """
+    print(project_root)
+    cookie = read_toml_json(
+        folder=str(project_root),
+        json_filename="cookiecutter.json",
+        tool_name="cookiecutter",
+        toml_path="pyproject.toml",
+    ) or {}
+
+    dmp = data.setdefault("dmp", {})
+    templates = dmp_default_templates()
+
+    # ensure base defaults are present before applying cookiecutter hints
+    apply_defaults_in_place(dmp, templates["root"])
+
+    # title / description (do not overwrite if already populated)
+    proj_title = cookie.get("PROJECT_NAME") or cookie.get("REPO_NAME")
+    if proj_title:
+        if overwrite:
+            dmp["title"] = proj_title
+        else:
+            dmp["title"] = dmp.get("title") or proj_title
+
+    proj_desc = cookie.get("PROJECT_DESCRIPTION")
+    if proj_desc:
+        if overwrite:
+            dmp["description"] = proj_desc
+        else:    
+            dmp["description"] = dmp.get("description") or proj_desc
+
+    # contact
+    
+    authors = _split_multi(cookie.get("AUTHORS"))
+    emails = _split_multi(cookie.get("EMAIL"))
+    orcids = _split_multi(cookie.get("ORCIDS"))
+
+    name = authors[0] if authors else None
+    mbox = emails[0] if emails else None
+    orcid = orcids[0] if orcids else None
+
+    if overwrite or ((name or mbox or orcid)  and not dmp.get("contact")):
+        info: Dict[str, Any] = {}
+        if name:
+            info["name"] = name
+        if mbox:
+            info["mbox"] = mbox
+        if orcid:
+            info["contact_id"] = {"type": "orcid", "identifier": orcid}
+        dmp["contact"] = info
+
+   # contributor
+    name = authors[1] if len(authors)>1 else None
+    mbox = emails[1] if len(emails)>1 else None
+    orcid = orcids[1] if len(orcids)>1 else None
+
+    if overwrite or ((name or mbox or orcid) and not dmp.get("contributor")):
+        info: Dict[str, Any] = {}
+        if name:
+            info["name"] = name
+        if mbox:
+            info["mbox"] = mbox
+        if orcid:
+            info["contributor_id"] = {"type": "orcid", "identifier": orcid}
+        
+        if info:
+            dmp["contributor"] = info
+        else:
+            dmp.pop("contributor", None)
+
+
+    # project[0] (minimal)
+    projects: List[Dict[str, Any]] = dmp.setdefault("project", [])
+    if not projects:
+        projects.append(deepcopy(templates["project"]))
+    prj0 = projects[0]
+
+    if proj_title and not prj0.get("title"):
+        prj0["title"] = proj_title
+    if proj_desc and not prj0.get("description"):
+        prj0["description"] = proj_desc
+    apply_defaults_in_place(prj0, templates["project"])
+
+    # stash the full cookiecutter under extension[x_project]
+    if cookie:
+        set_extension_payload(dmp, "x_project", cookie)
+
+
 
 def now_iso_minute() -> str:
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M")
+    """RFC 3339 / JSON Schema 'date-time' with UTC 'Z' and seconds precision."""
+    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def load_json(path: Path) -> Dict[str, Any]:
@@ -192,125 +430,301 @@ def set_extension_payload(obj: Dict[str, Any], key: str, payload: Dict[str, Any]
             ext[i][key].update({k: v for k, v in payload.items()})
 
 
-def _default_for_schema(schema: Dict[str, Any], node: Dict[str, Any]) -> Any:
+# ──────────────────────────────────────────────────────────────────────────────
+# CENTRALIZED DEFAULTS
+# ──────────────────────────────────────────────────────────────────────────────
+
+def today_iso() -> str:
+    """JSON Schema 'date' string."""
+    return datetime.utcnow().strftime("%Y-%m-%d")
+
+def _deep_apply_defaults(target: Any, template: Any) -> Any:
     """
-    Best-effort default constructor from a JSON Schema node.
+    Deep, non-destructive default overlay.
+
+    Rules (conservative, editor-safe):
+    - dict vs dict: add ONLY missing keys (recursively for dicts); do not overwrite existing values.
+    - list: if target is a list, ALWAYS keep it as-is (even if empty). Never inject template list items.
+    - type mismatch: if target exists and is not the same container type as template, keep target as-is.
+    - primitives: if target is None, use template; otherwise keep target.
+    """
+    # dicts
+    if isinstance(template, dict):
+        if not isinstance(target, dict):
+            # target already has a non-dict value; preserve it
+            return target
+        # add only missing keys from template
+        out = dict(target)
+        for k, v in template.items():
+            if k in out:
+                # recurse only if both sides are dicts; otherwise preserve user's value
+                if isinstance(out[k], dict) and isinstance(v, dict):
+                    out[k] = _deep_apply_defaults(out[k], v)
+                else:
+                    # keep user's existing non-dict (or list) value
+                    pass
+            else:
+                out[k] = deepcopy(v)
+        return out
+
+    # lists
+    if isinstance(template, list):
+        # If the user already has a list (even empty), keep it verbatim.
+        if isinstance(target, list):
+            return target
+        # If user has some other value, keep it; otherwise fall back to template for "missing"
+        return target if target is not None else deepcopy(template)
+
+    # primitives
+    return target if target is not None else deepcopy(template)
+
+
+def apply_defaults_in_place(target: dict, template: dict) -> None:
+    """
+    In-place wrapper using conservative overlay: only add missing keys;
+    never replace existing lists or primitives.
+    """
+    merged = _deep_apply_defaults(target, template)
+    target.clear()
+    target.update(merged)
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Enum defaulting (project rules) + schema-driven default constructor
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _enum_default(prop_name: Optional[str], options: List[Any]) -> Any:
+    """
+    Choose a default for enum fields using project rules:
+    - language -> 'eng'
+    - {'yes','no','unknown'} -> 'unknown'
+    - contact.contact_id.type -> 'orcid'
+    - dmp_id.type -> 'doi'
+    - otherwise: first option
+    """
+    str_opts = [o for o in options if isinstance(o, str)]
+    lower = {o.lower() for o in str_opts}
+
+    # language code
+    if prop_name and prop_name.lower().endswith("language") and "eng" in lower:
+        return "eng"
+
+    # yes/no/unknown triad
+    if {"yes", "no", "unknown"}.issubset(lower):
+        return "unknown"
+
+    # specific typed IDs via full path hints
+    if prop_name:
+        p = prop_name.lower()
+        if p.endswith("contact_id.type") and "orcid" in lower:
+            return "orcid"
+        if p.endswith("dmp_id.type") and "doi" in lower:
+            return "doi"
+
+    # generic 'type' fallbacks (if path isn't specific)
+    if "orcid" in lower:
+        return "orcid"
+    if "doi" in lower:
+        return "doi"
+
+    # final fallback
+    return options[0] if options else None
+
+
+def _default_for_schema(schema: Dict[str, Any], node: Dict[str, Any], prop_name: Optional[str] = None) -> Any:
+    """
+    Best-effort default constructor from a JSON Schema node (schema-driven).
     - objects  -> {}
     - arrays   -> []
-    - string/number/integer/boolean -> None (unknown)
-    - enums -> None (let caller decide)
-    - $ref resolved one level
+    - string   -> ""
+    - integer  -> 0
+    - number   -> 0.0
+    - boolean  -> False
+    - enums    -> pick via _enum_default(...) using project rules
+    - respects 'default' if present, resolves $ref one level
     """
     node = _deref(schema, node)
 
+    # explicit schema default wins
     if "default" in node:
-        return node["default"]
+        return deepcopy(node["default"])
 
+    # enum handling (multiple choice)
+    if "enum" in node and isinstance(node["enum"], list):
+        choice = _enum_default(prop_name, node["enum"])
+        if choice is not None:
+            return deepcopy(choice)
+
+    # Resolve type (could be list like ["null","string"])
     typ = node.get("type")
     if isinstance(typ, list):
-        if "object" in typ:
-            typ = "object"
-        elif "array" in typ:
-            typ = "array"
-        else:
-            typ = typ[0]
+        for t in ("object", "array", "string", "integer", "number", "boolean"):
+            if t in typ:
+                typ = t
+                break
+        if isinstance(typ, list):
+            typ = typ[0]  # fallback
 
     if typ == "object":
         return {}
     if typ == "array":
         return []
-    if typ in {"string", "number", "integer", "boolean"}:
-        return None
+    if typ == "string":
+        return ""
+    if typ == "integer":
+        return 0
+    if typ == "number":
+        return 0.0
+    if typ == "boolean":
+        return False
 
+    # If only $ref given, resolve again
     if "$ref" in node:
-        return _default_for_schema(schema, node)
+        return _default_for_schema(schema, node, prop_name=prop_name)
 
     return None
 
 
-def _ensure_object_fields_from_schema(target: Dict[str, Any],
-                                      schema: Dict[str, Any],
-                                      obj_schema: Dict[str, Any],
-                                      prefill: Dict[str, Any] | None = None) -> None:
+def repair_empty_enums(obj: Any, schema: Dict[str, Any], node: Dict[str, Any], path: Optional[str] = None) -> None:
     """
-    Ensure keys exist on target based on 'properties' of obj_schema.
-    Values are best-effort defaults; existing values are preserved.
+    Traverse existing object and if a property is an enum but current value is "",
+    replace it with the enum default according to project rules.
     """
-    obj_schema = _deref(schema, obj_schema)
-    props = obj_schema.get("properties", {})
-    for key, prop_schema in props.items():
-        if key not in target:
-            target[key] = _default_for_schema(schema, prop_schema)
-    for key in obj_schema.get("required", []):
-        target.setdefault(key, None)
-    if prefill:
-        for k, v in prefill.items():
-            target.setdefault(k, v)
+    node = _deref(schema, node)
+    if isinstance(obj, dict):
+        props = node.get("properties", {})
+        for k, v in obj.items():
+            pnode = _deref(schema, props.get(k, {}))
+            key_path = f"{path}.{k}" if path else k
+            # repair empty string on enums
+            if isinstance(v, str) and v == "" and "enum" in pnode:
+                obj[k] = _enum_default(key_path, pnode["enum"]) or v
+            # recurse
+            repair_empty_enums(v, schema, pnode, path=key_path)
+    elif isinstance(obj, list):
+        items = _deref(schema, node.get("items", {}))
+        for i, it in enumerate(obj):
+            repair_empty_enums(it, schema, items, path=f"{path}[{i}]" if path else f"[{i}]")
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Schema-driven required-field filling
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _ensure_required_object_from_schema(
+    obj: Dict[str, Any],
+    schema: Dict[str, Any],
+    obj_schema: Dict[str, Any],
+    path: Optional[str] = None,
+) -> None:
+    """
+    Ensure that every key listed in obj_schema['required'] exists on obj,
+    initializing with schema-driven defaults (with enum rules). Recurse into
+    nested structures. Also traverse existing non-required object/array fields
+    to satisfy their nested requireds.
+    """
+    s = _deref(schema, obj_schema)
+    props: Dict[str, Any] = s.get("properties", {})
+    required = s.get("required", [])
+
+    # Fill required keys (and recurse)
+    for key in required:
+        prop_schema = props.get(key, {})
+        key_path = f"{path}.{key}" if path else key
+        if key not in obj or obj[key] is None:
+            obj[key] = _default_for_schema(schema, prop_schema, prop_name=key_path)
+
+        if isinstance(obj[key], dict):
+            _ensure_required_object_from_schema(obj[key], schema, prop_schema, path=key_path)
+
+        elif isinstance(obj[key], list):
+            prop_s = _deref(schema, prop_schema)
+            items_schema = _deref(schema, prop_s.get("items", {}))
+            min_items = prop_s.get("minItems", 0)
+
+            # If minItems > 0 and list empty, seed one default item
+            if min_items and not obj[key]:
+                default_item = _default_for_schema(schema, items_schema, prop_name=f"{key_path}[]")
+                obj[key].append(default_item if default_item is not None else {})
+
+            # For any existing items that are objects, ensure their requireds
+            for i, it in enumerate(obj[key]):
+                if isinstance(it, dict):
+                    _ensure_required_object_from_schema(it, schema, items_schema, path=f"{key_path}[{i}]")
+
+    # Traverse existing non-required object/array properties to satisfy nested requireds
+    for key, val in list(obj.items()):
+        if key not in props:
+            continue
+        prop_schema = props[key]
+        key_path = f"{path}.{key}" if path else key
+        prop_s = _deref(schema, prop_schema)
+
+        if isinstance(val, dict):
+            _ensure_required_object_from_schema(val, schema, prop_s, path=key_path)
+        elif isinstance(val, list):
+            items_schema = _deref(schema, prop_s.get("items", {}))
+            for i, it in enumerate(val):
+                if isinstance(it, dict):
+                    _ensure_required_object_from_schema(it, schema, items_schema, path=f"{key_path}[{i}]")
+
+
+def ensure_required_by_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> None:
+    """
+    Ensure required fields exist for the root 'dmp' object (and nested objects)
+    by reading ONLY from the JSON Schema. No field names are hardcoded.
+    """
+    # Locate the top-level 'dmp' property schema
+    root_props = schema.get("properties", {})
+    dmp_schema_node = root_props.get("dmp")
+    if not isinstance(dmp_schema_node, dict):
+        return  # nothing to do if schema shape is unexpected
+
+    dmp_obj = data.setdefault("dmp", {})
+    _ensure_required_object_from_schema(dmp_obj, schema, dmp_schema_node, path="dmp")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Shaping & normalization (using centralized defaults + migrations)
+# ──────────────────────────────────────────────────────────────────────────────
 
 def ensure_dmp_shape(data: Dict[str, Any],
                      schema: Optional[Dict[str, Any]] = None,
                      **_: Any) -> Dict[str, Any]:
     """
-    Ensure a well-formed RDA-DMP container. We always set dmp["schema"] to the
-    GitHub 'tree' URL for the 1.2 schema (as requested).
+    Ensure a well-formed RDA-DMP container.
+    Uses centralized defaults and preserves existing values where present.
     Also migrates legacy:
       - dataset["x_dcas"]  -> dataset["extension"] [{"x_dcas": {...}}]
       - dmp["x_project"]   -> dmp["extension"] [{"x_project": {...}}]
     """
-    now = now_iso_minute()
+    templates = dmp_default_templates()
 
-    # Case 1: already DMP-shaped
+    # Already DMP-shaped?
     if isinstance(data.get("dmp"), dict):
         dmp = data["dmp"]
-        dmp.setdefault("title", "Replication Package DMP")
-        dmp.setdefault("description", "")
-        dmp.setdefault("language", "eng")
-        dmp.setdefault("created", now)
-        dmp.setdefault("modified", now)
-        dmp.setdefault("ethical_issues_exist", "unknown")
-        dmp.setdefault("ethical_issues_description", "")
-        dmp.setdefault("ethical_issues_report", "https://example.org/ethics-report")
-        dmp.setdefault("dmp_id", {"identifier": "https://example.org/dmp", "type": "url"})
-        dmp.setdefault("contact", {"name": "Unknown", "mbox": "example@example.com",
-                                   "contact_id": {"identifier": "https://orcid.org/0000-0000-0000-0000",
-                                                  "type": "orcid"}})
-        dmp.setdefault("project", [])
-        dmp.setdefault("dataset", [])
+        apply_defaults_in_place(dmp, templates["root"])
         dmp["schema"] = RDA_DMP_SCHEMA_URL  # enforce exact link
 
-        # Migrate top-level custom fields to root extension
+        # project must be an array
+        if not isinstance(dmp.get("project"), list):
+            dmp["project"] = []
+
+        # migrate top-level custom field into extension
         if isinstance(dmp.get("x_project"), dict):
             set_extension_payload(dmp, "x_project", dmp.pop("x_project"))
 
-        # Migrate legacy dataset.x_dcas => dataset.extension[{"x_dcas": {...}}]
+        # migrate legacy dataset.x_dcas
         for ds in dmp.get("dataset", []):
             if isinstance(ds.get("x_dcas"), dict):
                 set_extension_payload(ds, "x_dcas", ds.pop("x_dcas"))
 
         return {"dmp": dmp}
 
-    # Case 3: fresh
-    return {
-        "dmp": {
-            "schema": RDA_DMP_SCHEMA_URL,
-            "title": "Replication Package DMP",
-            "description": None,
-            "language": "eng",
-            "created": now,
-            "modified": now,
-            "ethical_issues_exist": "unknown",
-            "ethical_issues_description": "",
-            "ethical_issues_report": "https://example.org/ethics-report",
-            "dmp_id": {"identifier": "https://example.org/dmp", "type": "url"},
-            "contact": {"name": "Unknown", "mbox": "example@example.com",
-                        "contact_id": {"identifier": "https://orcid.org/0000-0000-0000-0000",
-                                       "type": "orcid"}},
-            "project": [],
-            "dataset": [],
-            "extension": [],
-        }
-    }
+    # Fresh container
+    root = deepcopy(templates["root"])
+    return {"dmp": root}
 
 
 def normalize_root_in_place(data: Dict[str, Any],
@@ -319,7 +733,9 @@ def normalize_root_in_place(data: Dict[str, Any],
     Normalize root-level structures and keep extensions under dmp.extension.
     Also ensure/shape the dmp.project array.
     """
+    templates = dmp_default_templates()
     dmp = data.setdefault("dmp", {})
+    apply_defaults_in_place(dmp, templates["root"])
     dmp["schema"] = RDA_DMP_SCHEMA_URL  # enforce
 
     # Migrate legacy top-level custom fields into extension
@@ -328,31 +744,28 @@ def normalize_root_in_place(data: Dict[str, Any],
 
     # Project array (shape or create a stub)
     projects: List[Dict[str, Any]] = dmp.setdefault("project", [])
+    if not isinstance(projects, list):
+        projects = []
+        dmp["project"] = projects
     if not projects:
-        projects.append({
-            "title": dmp.get("title") or "Project",
-            "description": None,
-            "start": None,
-            "end": None,
-            "funding": [],
-        })
+        # seed a single project using defaults; title mirrors dmp.title if present
+        prj = deepcopy(templates["project"])
+        prj["title"] = dmp.get("title") or "Project"
+        projects.append(prj)
 
-    proj_schema = None
+    # Optionally complement from schema if available
     if schema:
-        proj_schema = _resolve_first(schema, [
-            "#/definitions/Project", "#/definitions/project"
-        ]) or None
-
-    if proj_schema:
-        for prj in projects:
-            _ensure_object_fields_from_schema(prj, schema, proj_schema)
+        proj_schema = _resolve_first(schema, ["#/definitions/Project", "#/definitions/project"]) or None
+        if proj_schema:
+            for prj in projects:
+                _ensure_object_fields_from_schema(prj, schema, proj_schema, path="dmp.project[]")
+                apply_defaults_in_place(prj, templates["project"])
+        else:
+            for prj in projects:
+                apply_defaults_in_place(prj, templates["project"])
     else:
         for prj in projects:
-            prj.setdefault("title", dmp.get("title") or "Project")
-            prj.setdefault("description", None)
-            prj.setdefault("start", None)
-            prj.setdefault("end", None)
-            prj.setdefault("funding", [])
+            apply_defaults_in_place(prj, templates["project"])
 
 
 def normalize_datasets_in_place(data: Dict[str, Any],
@@ -361,147 +774,82 @@ def normalize_datasets_in_place(data: Dict[str, Any],
     Ensure presence of expected RDA-DMP fields on each dataset & distribution.
     Also ensures dataset-level custom fields are under dataset.extension.x_dcas.
     """
+    templates = dmp_default_templates()
     dmp = data.setdefault("dmp", {})
     datasets: List[Dict[str, Any]] = dmp.setdefault("dataset", [])
+    if not isinstance(datasets, list):
+        dmp["dataset"] = datasets = []
 
     ds_schema = dist_schema = None
     if schema:
-        ds_schema = _resolve_first(schema, [
-            "#/definitions/Dataset", "#/definitions/dataset"
-        ]) or None
-        dist_schema = _resolve_first(schema, [
-            "#/definitions/Distribution", "#/definitions/distribution"
-        ]) or None
+        ds_schema = _resolve_first(schema, ["#/definitions/Dataset", "#/definitions/dataset"]) or None
+        dist_schema = _resolve_first(schema, ["#/definitions/Distribution", "#/definitions/distribution"]) or None
 
     for ds in datasets:
+        # legacy migration
         if isinstance(ds.get("x_dcas"), dict):
             set_extension_payload(ds, "x_dcas", ds.pop("x_dcas"))
 
-        if ds_schema:
-            _ensure_object_fields_from_schema(ds, schema, ds_schema)
-        else:
-            ds.setdefault("title", "Dataset")
-            ds.setdefault("language", "eng")
-            ds.setdefault("keyword", [])
-            ds.setdefault("type", "")
-            ds.setdefault("is_reused", None)
-            ds.setdefault("personal_data", "unknown")
-            ds.setdefault("sensitive_data", "unknown")
-            ds.setdefault("preservation_statement", "")
-            ds.setdefault("data_quality_assurance", [])
-            ds.setdefault("metadata", [{"language": "eng",
-                                        "metadata_standard_id": {"identifier": "", "type": "url"},
-                                        "description": ""}])
-            ds.setdefault("security_and_privacy", [{"title": "", "description": ""}])
-            ds.setdefault("technical_resource", [{"name": "", "description": ""}])
+        # dataset defaults (central)
+        apply_defaults_in_place(ds, templates["dataset"])
 
+        # schema-top up (optional)
+        if ds_schema:
+            _ensure_object_fields_from_schema(ds, schema, ds_schema, path="dmp.dataset[]")
+
+        # ensure dataset_id
         if not isinstance(ds.get("dataset_id"), dict) or not ds["dataset_id"].get("identifier"):
             dist0 = (ds.get("distribution") or [{}])[0]
             urlish = dist0.get("access_url") or dist0.get("download_url")
             ds["dataset_id"] = make_dataset_id(ds.get("title") or "untitled", urlish)
 
+        # distribution array + defaults for each distribution
         ds.setdefault("distribution", [])
         if not ds["distribution"]:
-            ds["distribution"].append({"title": ds.get("title") or "Dataset"})
+            # create one distribution seeded with dataset title
+            dist = deepcopy(templates["distribution"])
+            dist["title"] = ds.get("title") or dist["title"]
+            ds["distribution"].append(dist)
 
         for dist in ds["distribution"]:
+            apply_defaults_in_place(dist, templates["distribution"])
+            # schema-top up (optional)
             if dist_schema:
-                _ensure_object_fields_from_schema(dist, schema, dist_schema)
-            else:
-                dist.setdefault("title", ds.get("title") or "Dataset")
-                dist.setdefault("access_url", None)
-                dist.setdefault("download_url", None)
-                dist.setdefault("format", [])
-                dist.setdefault("byte_size", None)
-                dist.setdefault("data_access", "open")
-                # host requires title + url in the schema; provide both
-                dist.setdefault("host", {"title": "Project repository", "url": "https://example.org"})
-                dist.setdefault("available_until", None)
-                dist.setdefault("description", None)
-                # license requires at least one item with uri+date; give a sane default
-                dist.setdefault("license", [{
-                    "license_ref": "https://creativecommons.org/publicdomain/zero/1.0/",
-                    "start_date": now_iso_minute()[:10],
-                }])
+                _ensure_object_fields_from_schema(
+                    dist, schema, dist_schema, path="dmp.dataset[].distribution[]"
+                )
 
+        # x_dcas payload
         x = get_extension_payload(ds, "x_dcas") or {}
+        apply_defaults_in_place(x, templates["x_dcas"])
         if not x.get("data_type"):
             hint = (ds.get("distribution") or [{}])[0].get("access_url") or ""
             x["data_type"] = data_type_from_path(hint)
-        for k in ["destination", "number_of_files", "total_size_mb",
-                  "file_formats", "data_files", "data_size_mb", "hash"]:
-            x.setdefault(k, None)
         set_extension_payload(ds, "x_dcas", x)
 
 
-def _split_multi(val: Optional[str]) -> List[str]:
-    if not val or not isinstance(val, str):
-        return []
-    raw = [p.strip() for p in val.replace(";", ",").split(",")]
-    return [p for p in raw if p]
-
-
-def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any]) -> None:
+def _ensure_object_fields_from_schema(target: Dict[str, Any],
+                                      schema: Dict[str, Any],
+                                      obj_schema: Dict[str, Any],
+                                      prefill: Optional[Dict[str, Any]] = None,
+                                      path: Optional[str] = None) -> None:
     """
-    Read cookiecutter and fill DMP meta iff missing:
-      - dmp.title (PROJECT_NAME/REPO_NAME)
-      - dmp.description (PROJECT_DESCRIPTION)
-      - dmp.contact (first author/email[/orcid])
-      - dmp.project[0].title/description
-      - dmp.extension[x_project] = full cookiecutter dict
+    Ensure keys exist on target based on 'properties' of obj_schema.
+    Values are best-effort defaults; existing values are preserved.
     """
-    cookie = read_toml_json(
-        folder=str(project_root),
-        json_filename="cookiecutter.json",
-        tool_name="cookiecutter",
-        toml_path="pyproject.toml",
-    ) or {}
-
-    dmp = data.setdefault("dmp", {})
-
-    # title / description (do not overwrite if already populated)
-    proj_title = cookie.get("PROJECT_NAME") or cookie.get("REPO_NAME")
-    if proj_title:
-        dmp["title"] = proj_title
-
-    proj_desc = cookie.get("PROJECT_DESCRIPTION")
-    if proj_desc:
-        dmp["description"] = proj_desc
-
-    # contact
-    authors = _split_multi(cookie.get("AUTHORS"))
-    emails = _split_multi(cookie.get("EMAIL"))
-    orcids = _split_multi(cookie.get("ORCIDS"))
-
-    name = authors[0] if authors else None
-    mbox = emails[0] if emails else None
-    if name or mbox:
-        contact: Dict[str, Any] = {}
-        if name:
-            contact["name"] = name
-        if mbox:
-            contact["mbox"] = mbox
-        if orcids:
-            contact["contact_id"] = {"type": "orcid", "identifier": orcids[0]}
-        dmp["contact"] = contact
-
-    # project[0] (minimal)
-    projects: List[Dict[str, Any]] = dmp.setdefault("project", [])
-    if not projects:
-        projects.append({})
-    prj0 = projects[0]
-
-    if proj_title:
-        prj0["title"] = proj_title
-    if proj_desc:
-        prj0["description"] = proj_desc
-    prj0.setdefault("start", prj0.get("start") or None)
-    prj0.setdefault("end", prj0.get("end") or None)
-    prj0.setdefault("funding", prj0.get("funding") or [])
-
-    # stash the full cookiecutter under extension[x_project]
-    if cookie:
-        set_extension_payload(dmp, "x_project", cookie)
+    obj_schema = _deref(schema, obj_schema)
+    props = obj_schema.get("properties", {})
+    for key, prop_schema in props.items():
+        if key not in target:
+            key_path = f"{path}.{key}" if path else key
+            target[key] = _default_for_schema(schema, prop_schema, prop_name=key_path)
+    for key in obj_schema.get("required", []):
+        if key not in target:
+            key_path = f"{path}.{key}" if path else key
+            target[key] = _default_for_schema(schema, props.get(key, {}), prop_name=key_path)
+    if prefill:
+        for k, v in prefill.items():
+            target.setdefault(k, v)
 
 
 def reorder_dmp_keys(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -532,35 +880,51 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
     """
     schema = fetch_schema(schema_url, schema_cache, force=force_schema_refresh)
 
+    project_root = Path(__file__).resolve().parent.parent.parent
+
     if not dmp_path.exists():
+        # Fresh shape
         shaped = ensure_dmp_shape({}, schema=schema)
-        _apply_cookiecutter_meta(project_root=Path.cwd(), data=shaped)
+        _apply_cookiecutter_meta(project_root=project_root, data=shaped,overwrite=True)
+        normalize_root_in_place(shaped, schema=schema)
+        normalize_datasets_in_place(shaped, schema=schema)
+
+        # Fill required fields based purely on the schema (no hardcoding)
+        ensure_required_by_schema(shaped, schema)
+        # Also repair any existing empty enums ("") to rule-compliant defaults
+        repair_empty_enums(shaped.get("dmp", {}), schema, schema.get("properties", {}).get("dmp", {}), path="dmp")
+
         shaped = reorder_dmp_keys(shaped)
 
+        # Validate after auto-repair
         errs = validate_against_schema(shaped, schema=schema)
         if errs:
-            print("⚠️ Schema validation issues (new file):")
+            print("⚠️ Schema validation issues (new file, after schema-driven auto-fix):")
             for e in errs[:50]:
                 print(" -", e)
 
         save_json(dmp_path, shaped)
         return dmp_path
 
+    # Update/normalize existing
     data = load_json(dmp_path)
     data = ensure_dmp_shape(data, schema=schema)
     normalize_root_in_place(data, schema=schema)
     normalize_datasets_in_place(data, schema=schema)
-
-    _apply_cookiecutter_meta(project_root=Path.cwd(), data=data)
+    _apply_cookiecutter_meta(project_root=project_root, data=data,overwrite=False)
 
     data["dmp"]["schema"] = RDA_DMP_SCHEMA_URL  # enforce requested value
-    data["dmp"]["modified"] = now_iso_minute()
+    data["dmp"]["modified"] = now_iso_minute()  # ensure date-time with Z
+
+    # Schema-driven required-field filling + enum repair
+    ensure_required_by_schema(data, schema)
+    repair_empty_enums(data.get("dmp", {}), schema, schema.get("properties", {}).get("dmp", {}), path="dmp")
 
     data = reorder_dmp_keys(data)
 
     errs = validate_against_schema(data, schema=schema)
     if errs:
-        print("⚠️ Schema validation issues:")
+        print("⚠️ Schema validation issues (after schema-driven auto-fix):")
         for e in errs[:50]:
             print(" -", e)
 

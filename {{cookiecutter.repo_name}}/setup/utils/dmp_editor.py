@@ -7,18 +7,43 @@ from typing import Any, Dict, List, Optional, Tuple
 # --- Robust imports whether run as a package (CLI) or as a bare script (streamlit run) ---
 try:
     from .general_tools import package_installer
-    from .dmp_tools import *
+    from .dmp_tools import *  # noqa: F401,F403  (imports: fetch_schema, ensure_dmp_shape, reorder_dmp_keys, now_iso_minute, EXTRA_ENUMS, etc.)
 except ImportError:
     pkg_root = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(pkg_root))
     from utils.general_tools import package_installer
-    from utils.dmp_tools import *
+    from utils.dmp_tools import *  # noqa: F401,F403
 
 package_installer(required_libraries=["streamlit", "jsonschema"])
 
 import streamlit as st
 from streamlit.web.cli import main as st_main
 from jsonschema import Draft7Validator
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Schema access with caching (prevents blank UI on intermittent failures)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _get_schema_cached() -> Optional[Dict[str, Any]]:
+    """
+    Cache schema in session_state so we don't lose enums if network blips.
+    """
+    key = "__rda_schema__"
+    if key in st.session_state:
+        return st.session_state[key]
+    try:
+        sch = fetch_schema()
+        st.session_state[key] = sch
+        return sch
+    except Exception:
+        st.session_state[key] = None
+        return None
+
+
+def safe_fetch_schema() -> Optional[Dict[str, Any]]:
+    """Alias used throughout."""
+    return _get_schema_cached()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -51,11 +76,11 @@ def _coerce_to_bool(value: Any) -> bool:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Schema navigation (runtime; uses fetch_schema() provided in dmp_tools)
+# Schema navigation (runtime; uses safe_fetch_schema)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
-    schema = fetch_schema()
+    schema = safe_fetch_schema()
     if not schema:
         return None
 
@@ -103,17 +128,135 @@ def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
     return _deref_once(node)
 
 
-def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
+# ──────────────────────────────────────────────────────────────────────────────
+# Custom mapping & injected enums
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _path_signature(path: tuple) -> str:
+    """
+    Convert tuple path to a dotted signature, using [] for any int index.
+    Example:
+      ('dmp','dataset',0,'distribution',0,'license',0,'license_ref')
+      -> "dmp.dataset[].distribution[].license[].license_ref"
+    """
+    parts = []
+    for p in path:
+        if isinstance(p, int):
+            parts.append("[]")
+        else:
+            parts.append(str(p))
+    return ".".join(parts)
+
+
+def _enum_info_for_path_old(path: tuple) -> Tuple[Optional[str], List[str]]:
+    """
+    Return ("single"|"multi"|None, options)
+    Combines: live schema ENUMs + EXTRA_ENUMS (from dmp_tools) + LOCAL_FALLBACK_ENUMS.
+    """
     node = _schema_node_for_path(path)
-    if not node:
+    base_mode: Optional[str] = None
+    base_options: List[str] = []
+
+    if node:
+        if isinstance(node.get("enum"), list) and node.get("type") == "string":
+            base_mode = "single"
+            base_options = list(node["enum"])
+        elif node.get("type") == "array":
+            it = node.get("items")
+            if isinstance(it, dict) and isinstance(it.get("enum"), list) and it.get("type") == "string":
+                base_mode = "multi"
+                base_options = list(it["enum"])
+
+    sig = _path_signature(path)
+    # extras from dmp_tools (preferred place to add app-specific enumerations)
+    extra_defs = EXTRA_ENUMS.get(sig, []) if "EXTRA_ENUMS" in globals() else []
+    extra_values = [d["value"] for d in extra_defs]
+
+    # local fallbacks for when schema is missing and no EXTRA_ENUMS supplied
+    fallback_values = LOCAL_FALLBACK_ENUMS.get(sig, [])
+
+    # Decide mode: if we have an array node explicitly -> "multi", else "single".
+    inferred_mode = "multi" if (node and node.get("type") == "array") else "single"
+
+    # Merge in the order: schema options first (if any), then EXTRA_ENUMS, then LOCAL fallbacks
+    merged = list(dict.fromkeys(base_options + extra_values + fallback_values))
+
+    mode = base_mode or (("multi" if (node and node.get("type") == "array") else ("single" if merged else None)))
+    if mode is None and merged:
+        mode = inferred_mode
+    if not merged:
         return (None, [])
-    if isinstance(node.get("enum"), list) and node.get("type") == "string":
-        return ("single", list(node["enum"]))
-    if node.get("type") == "array":
-        it = node.get("items")
-        if isinstance(it, dict) and isinstance(it.get("enum"), list) and it.get("type") == "string":
-            return ("multi", list(it["enum"]))
-    return (None, [])
+    return (mode, merged)
+
+def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
+    """
+    Return ("single"|"multi"|None, options)
+
+    Priority of sources:
+      1) Live schema enums (if available)
+      2) EXTRA_ENUMS[path_signature]  (provided by dmp_tools)
+      3) LOCAL_FALLBACK_ENUMS[path_signature]  (editor-local)
+      4) Field-name safety net for common DMP fields when all else fails
+    """
+    node = _schema_node_for_path(path)
+    base_mode: Optional[str] = None
+    base_options: List[str] = []
+
+    # 1) Schema-derived enums
+    if node:
+        if isinstance(node.get("enum"), list) and node.get("type") == "string":
+            base_mode = "single"
+            base_options = list(node["enum"])
+        elif node.get("type") == "array":
+            it = node.get("items")
+            if isinstance(it, dict) and isinstance(it.get("enum"), list) and it.get("type") == "string":
+                base_mode = "multi"
+                base_options = list(it["enum"])
+
+    # 2) App-provided extra enums (from dmp_tools)
+    sig = _path_signature(path)
+    extra_defs = EXTRA_ENUMS.get(sig, []) if "EXTRA_ENUMS" in globals() else []
+    extra_values = [d.get("value") for d in extra_defs if isinstance(d, dict) and "value" in d]
+
+    # 3) Local, editor-only fallback enums (define LOCAL_FALLBACK_ENUMS elsewhere if you want)
+    fallback_values = LOCAL_FALLBACK_ENUMS.get(sig, []) if "LOCAL_FALLBACK_ENUMS" in globals() else []
+
+    # Merge (preserve order, dedupe)
+    merged = list(dict.fromkeys(base_options + extra_values + fallback_values))
+
+    # Decide mode: schema preference -> else infer from node -> else single if we have options
+    if base_mode:
+        mode = base_mode
+    else:
+        if node and node.get("type") == "array":
+            mode = "multi"
+        else:
+            mode = "single" if merged else None
+
+    # 4) Safety net for critical dataset/project fields when nothing was found
+    if not merged:
+        last = path[-1] if path else None
+        # Common RDA-DMP fields that should always be selectable
+        if last in ("personal_data", "sensitive_data"):
+            return ("single", ["yes", "no", "unknown"])
+        if last == "language":
+            # Minimal language codes; schema/EXTRA_ENUMS take precedence when present
+            return ("single", ["eng", "deu", "fra"])
+        # If we still can't determine options, signal "no enum"
+        return (None, [])
+
+    return (mode, merged)
+
+
+def _enum_label_for(path: tuple, option_value: str) -> str:
+    sig = _path_signature(path)
+    # Prefer labels from EXTRA_ENUMS
+    extra_defs = EXTRA_ENUMS.get(sig, []) if "EXTRA_ENUMS" in globals() else []
+    for d in extra_defs:
+        if d.get("value") == option_value:
+            return d.get("label", option_value)
+    # Otherwise identity
+    return str(option_value)
 
 
 def _is_boolean_schema(path: tuple) -> bool:
@@ -136,14 +279,26 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
     if mode == "single" and options:
         sel_key = _key_for(*path, ns, "enum")
         options_ui = list(options)
+
+        # If current value isn't in options, show a custom placeholder to preserve it
         custom_label = None
         if value not in (None, "") and value not in options_ui:
             custom_label = f"(custom) {value}"
             options_ui = [custom_label] + options_ui
             default_index = 0
         else:
-            default_index = options_ui.index(value) if value in options_ui else 0
-        selected = st.selectbox(label, options_ui, index=default_index, key=sel_key)
+            try:
+                default_index = options_ui.index(value)
+            except Exception:
+                default_index = 0
+
+        selected = st.selectbox(
+            label,
+            options_ui,
+            index=default_index,
+            key=sel_key,
+            format_func=lambda opt: _enum_label_for(path, opt if opt != custom_label else value),
+        )
         return value if (custom_label and selected == custom_label) else selected
 
     # Non-enum primitives
@@ -163,7 +318,8 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
         except Exception:
             return value
     txt = st.text_input(label, "" if value is None else str(value), key=key)
-    return None if txt == "" else txt
+
+    return txt
 
 
 def edit_array(
@@ -179,7 +335,13 @@ def edit_array(
         label = f"{path[-1] if path else title_singular} (choose any)"
         wkey = _key_for(*path, ns, "enum_multi")
         current = [x for x in arr if isinstance(x, str) and x in options]
-        selected = st.multiselect(label, options, default=current, key=wkey)
+        selected = st.multiselect(
+            label,
+            options,
+            default=current,
+            key=wkey,
+            format_func=lambda opt: _enum_label_for(path, opt),
+        )
         return selected
 
     # Plain list[str] -> one-per-line textarea
@@ -289,7 +451,13 @@ def edit_object(
                 label = f"{key} (choose any)"
                 wkey = _key_for(*path, key, ns, "enum_multi")
                 current = [x for x in val if isinstance(x, str) and x in options]
-                obj[key] = st.multiselect(label, options, default=current, key=wkey)
+                obj[key] = st.multiselect(
+                    label,
+                    options,
+                    default=current,
+                    key=wkey,
+                    format_func=lambda opt: _enum_label_for(path, opt),
+                )
 
             elif _looks_like_string_list(val, (*path, key)):
                 label = f"{key} (one per line; saved as array)"
@@ -340,12 +508,19 @@ def edit_any(value: Any, path: tuple, ns: Optional[str] = None) -> Any:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def find_default_dmp_path(start: Optional[Path] = None) -> Path:
-    start = start or Path.cwd()
+    """
+    Prefer dmp.json if present; otherwise fall back to datasets.json.
+    Finally, fall back to DEFAULT_DMP_PATH from dmp_tools.
+    """
+    start = start or Path(__file__).resolve().parent.parent.parent
+    print(start)
+    candidates = ["dmp.json", "datasets.json"]
     for base in [start, *start.parents]:
-        p = base / "datasets.json"
-        if p.exists():
-            return p
-    return Path(DEFAULT_DMP_PATH)
+        for name in candidates:
+            p = base / name
+            if p.exists():
+                return p
+    return Path("dmp.json") if not Path(DEFAULT_DMP_PATH).exists() else Path(DEFAULT_DMP_PATH)
 
 
 def draw_root_section(dmp_root: Dict[str, Any]) -> None:
@@ -402,22 +577,49 @@ def draw_datasets_section(dmp_root: Dict[str, Any]) -> None:
 # App
 # ──────────────────────────────────────────────────────────────────────────────
 
+def _schema_fixups_in_place(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Apply schema-driven fixes before validate/save:
+    - normalize root/datasets (keeps user data)
+    - ensure required-by-schema (when schema loaded)
+    - repair empty enums ("") to project defaults (when schema loaded)
+    """
+    schema = safe_fetch_schema()
+
+    # normalization works even without schema
+    normalize_root_in_place(data, schema=schema)
+    normalize_datasets_in_place(data, schema=schema)
+
+    if schema:
+        ensure_required_by_schema(data, schema)
+        repair_empty_enums(
+            data.get("dmp", {}),
+            schema,
+            schema.get("properties", {}).get("dmp", {}),
+            path="dmp",
+        )
+    return data
+
+
 def main() -> None:
-    st.set_page_config(page_title="RDA-DMP 1.2 Editor", layout="wide")
+    st.set_page_config(page_title="RDA-DMP 1.2 JSON Editor", layout="wide")
     st.title("RDA-DMP 1.2 JSON Editor")
 
-    # Ensure schema is loaded so enum lookups work
-    _ = fetch_schema()
+    # Ensure schema is loaded if available; cache result
+    schema_now = safe_fetch_schema()
 
     default_path = find_default_dmp_path()
+
     with st.sidebar:
         st.header("Load / Save")
-        path_input = st.text_input("Default file path", str(default_path), key="default_path")
+        st.caption(f"Schema: {'✅ loaded' if schema_now else '⚠️ unavailable (enums via extras/fallbacks)'}")
+        path_input = st.text_input("File path", str(default_path), key="default_path")
         target_path = Path(path_input)
         uploaded = st.file_uploader("Open JSON (optional)", type=["json"])
         btn_new = st.button("New empty DMP")
         btn_load_disk = st.button("Load from disk")
 
+    # First-time load: try the detected default file (dmp.json preferred)
     if "data" not in st.session_state:
         if default_path.exists():
             try:
@@ -430,10 +632,12 @@ def main() -> None:
         else:
             st.session_state["data"] = ensure_dmp_shape({})
 
+    # New empty scaffold
     if btn_new:
         st.session_state["data"] = ensure_dmp_shape({})
         st.session_state.pop("ds_selected", None)
 
+    # Uploaded JSON
     if uploaded is not None:
         try:
             data = json.loads(uploaded.getvalue().decode("utf-8"))
@@ -443,12 +647,13 @@ def main() -> None:
         except Exception as e:
             st.error(f"Failed to load uploaded JSON: {e}")
 
+    # Load from disk (using the sidebar path)
     if btn_load_disk:
         try:
             if target_path.exists():
                 with target_path.open("r", encoding="utf-8") as f:
                     st.session_state["data"] = ensure_dmp_shape(json.load(f))
-                st.success(f"Loaded from {target_path}")
+                st.success(f"Loaded from {target_path.resolve()}")
                 st.session_state.pop("ds_selected", None)
             else:
                 st.warning(f"{target_path} not found, created new structure.")
@@ -456,9 +661,9 @@ def main() -> None:
         except Exception as e:
             st.error(f"Failed to load: {e}")
 
+    # Work on a shaped copy
     data = ensure_dmp_shape(st.session_state["data"])
     dmp_root = data["dmp"]
-
     draw_root_section(dmp_root)
     draw_projects_section(dmp_root)
     draw_datasets_section(dmp_root)
@@ -468,27 +673,32 @@ def main() -> None:
 
     with colA:
         if st.button("Reorder keys & Update modified", key="reorder"):
+            # RFC3339 Z per schema
             data["dmp"]["modified"] = now_iso_minute()
-            st.session_state["data"] = reorder_dmp_keys(deepcopy(data))
-            st.success("Key order applied.")
+            fixed = _schema_fixups_in_place(deepcopy(data))
+            st.session_state["data"] = reorder_dmp_keys(fixed)
+            st.success("Key order applied & modified timestamp updated.")
 
     with colB:
         save_to_str = st.text_input("Save to path", str(default_path), key="save_path")
         if st.button("Save to disk", key="save"):
             try:
-                # ⏱️ bump modified timestamp on every save
+                # Bump modified to RFC3339 Z
                 st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
 
-                out = reorder_dmp_keys(deepcopy(st.session_state["data"]))
+                out = reorder_dmp_keys(_schema_fixups_in_place(deepcopy(st.session_state["data"])))
 
-                # ✅ validate against live schema
-                schema = fetch_schema()
-                errs = list(Draft7Validator(schema).iter_errors(out))
-                if errs:
-                    st.error("Schema validation failed:")
-                    for e in errs[:50]:
-                        st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
-                    st.stop()
+                # Validate against live schema if available
+                schema = safe_fetch_schema()
+                if schema:
+                    errs = list(Draft7Validator(schema).iter_errors(out))
+                    if errs:
+                        st.error("Schema validation failed:")
+                        for e in errs[:50]:
+                            st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
+                        st.stop()
+                else:
+                    st.warning("Schema unavailable (offline?). Skipping validation.")
 
                 p = Path(save_to_str)
                 p.parent.mkdir(parents=True, exist_ok=True)
@@ -501,20 +711,27 @@ def main() -> None:
     with colC:
         # Also bump modified on download; warn if invalid (but allow)
         st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
-        out = reorder_dmp_keys(deepcopy(st.session_state["data"]))
+        out = reorder_dmp_keys(_schema_fixups_in_place(deepcopy(st.session_state["data"])))
         try:
-            schema = fetch_schema()
-            errs = list(Draft7Validator(schema).iter_errors(out))
-            if errs:
-                st.warning("Download will contain validation errors; fix these first:")
-                for e in errs[:10]:
-                    st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
+            schema = safe_fetch_schema()
+            if schema:
+                errs = list(Draft7Validator(schema).iter_errors(out))
+                if errs:
+                    st.warning("Download will contain validation errors; fix these first:")
+                    for e in errs[:10]:
+                        st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
+            else:
+                st.info("Schema unavailable; skipping validation on download.")
         except Exception:
             pass
+        # Name the file based on what you're editing
+        suggested = Path(st.session_state.get("default_path", str(default_path))).name
+        if suggested.lower() not in {"dmp.json", "datasets.json"}:
+            suggested = "dmp.json"
         st.download_button(
             "⬇️ Download JSON",
             data=json.dumps(out, indent=4, ensure_ascii=False).encode("utf-8"),
-            file_name="dmp.json",
+            file_name=suggested,
             mime="application/json",
             key="download",
         )
