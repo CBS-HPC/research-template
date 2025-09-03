@@ -3,6 +3,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from datetime import date, datetime
 
 # --- Robust imports whether run as a package (CLI) or as a bare script (streamlit run) ---
 try:
@@ -19,6 +20,22 @@ package_installer(required_libraries=["streamlit", "jsonschema"])
 import streamlit as st
 from streamlit.web.cli import main as st_main
 from jsonschema import Draft7Validator
+
+
+def _is_format_schema(path: tuple, fmt: str) -> bool:
+    node = _schema_node_for_path(path)
+    return bool(node and node.get("type") == "string" and node.get("format") == fmt)
+
+def _parse_iso_date(s: Any) -> Optional[date]:
+    if isinstance(s, date) and not isinstance(s, datetime):
+        return s
+    if isinstance(s, str) and s:
+        try:
+            return datetime.strptime(s, "%Y-%m-%d").date()
+        except Exception:
+            return None
+    return None
+
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -138,30 +155,27 @@ def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Custom mapping & injected enums
+# Path signature, enum discovery (schema + EXTRA_ENUMS), and labeling
 # ──────────────────────────────────────────────────────────────────────────────
-
 
 def _path_signature(path: tuple) -> str:
     """
-    Convert tuple path to a dotted signature, attaching [] to the preceding key
-    for any int index.
-
+    Convert tuple path to a dotted signature, using [] for any int index.
     Example:
       ('dmp','dataset',0,'distribution',0,'license',0,'license_ref')
       -> "dmp.dataset[].distribution[].license[].license_ref"
     """
-    segs: List[str] = []
-    for comp in path:
-        if isinstance(comp, int):
-            if segs:
-                segs[-1] = segs[-1] + "[]"
+    parts: List[str] = []
+    for p in path:
+        if isinstance(p, int):
+            # append [] to the previous segment (no extra dot)
+            if parts:
+                parts[-1] = parts[-1] + "[]"
             else:
-                # Edge case: path starts with an index (unlikely in this app)
-                segs.append("[]")
+                parts.append("[]")
         else:
-            segs.append(str(comp))
-    return ".".join(segs)
+            parts.append(str(p))
+    return ".".join(parts)
 
 
 def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
@@ -189,12 +203,18 @@ def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
                 base_mode = "multi"
                 base_options = list(it["enum"])
 
-    # Inject extras from dmp_tools.EXTRA_ENUMS (list[str])
+    # Inject extras from dmp_tools.EXTRA_ENUMS
     sig = _path_signature(path)
     extra_values: List[str] = []
     try:
-        # EXTRA_ENUMS is imported from dmp_tools via the star import
-        extra_values = list(EXTRA_ENUMS.get(sig, []))  # type: ignore[name-defined]
+        # EXTRA_ENUMS is expected to be defined in dmp_tools
+        extras = EXTRA_ENUMS.get(sig, [])  # type: ignore[name-defined]
+        # supports both List[str] and List[{"value": str, "label": str}]
+        if extras and isinstance(extras, list):
+            if extras and isinstance(extras[0], dict):
+                extra_values = [d.get("value", "") for d in extras if isinstance(d, dict) and d.get("value")]
+            else:
+                extra_values = [str(x) for x in extras]
     except Exception:
         extra_values = []
 
@@ -202,7 +222,7 @@ def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
     # - If schema says array -> "multi"
     # - Else if node exists and is string -> "single"
     # - Else if we have any options at all -> default to "single" (force enum UI)
-    inferred_mode = None
+    inferred_mode: Optional[str] = None
     if node and node.get("type") == "array":
         inferred_mode = "multi"
     elif node and node.get("type") == "string":
@@ -220,13 +240,22 @@ def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
 
 
 def _enum_label_for(path: tuple, option_value: str) -> str:
+    """
+    Pretty label for injected extras (if they are dicts with {"value","label"}).
+    Falls back to the raw option_value otherwise.
+    """
     sig = _path_signature(path)
-    # Prefer labels from EXTRA_ENUMS
-    extra_defs = EXTRA_ENUMS.get(sig, []) if "EXTRA_ENUMS" in globals() else []
-    for d in extra_defs:
-        if d.get("value") == option_value:
-            return d.get("label", option_value)
-    # Otherwise identity
+    try:
+        extras = EXTRA_ENUMS.get(sig, [])  # type: ignore[name-defined]
+    except Exception:
+        extras = []
+
+    if isinstance(extras, list):
+        for d in extras:
+            if isinstance(d, dict):
+                if d.get("value") == option_value:
+                    return d.get("label", option_value)
+            # if extras are just strings, no special label
     return str(option_value)
 
 
@@ -239,8 +268,75 @@ def _is_boolean_schema(path: tuple) -> bool:
 # Generic editors (schema-aware)
 # ──────────────────────────────────────────────────────────────────────────────
 
-
 def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
+    # 1) JSON Schema booleans (or keep 'is_reused' for backward-compat)
+    if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
+        keyb = _key_for(*path, ns, "bool")
+        return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
+
+    # 2) JSON Schema dates -> date picker returning ISO "YYYY-MM-DD" or ""
+    if _is_format_schema(path, "date"):
+        key = _key_for(*path, ns, "date")
+        clear_key = _key_for(*path, ns, "date", "clear")
+        # sensible default for empty/invalid -> today (display), but allow Clear -> ""
+        cur = _parse_iso_date(value) or date.today()
+        c1, c2 = st.columns([4, 1])
+        with c1:
+            picked = st.date_input(label, value=cur, key=key)
+        with c2:
+            st.markdown("<div style='height:0.1rem'></div>", unsafe_allow_html=True)
+            #st.write("")
+            cleared = st.button("Clear", key=clear_key)
+        return "" if cleared else (picked.isoformat() if isinstance(picked, date) else "")
+
+    # 3) Enum-backed single value -> selectbox with all acceptable inputs
+    mode, options = _enum_info_for_path(path)
+    if mode == "single" and options:
+        sel_key = _key_for(*path, ns, "enum")
+        options_ui = list(options)
+
+        # If current value isn't in options, show a custom placeholder to preserve it
+        custom_label = None
+        if value not in (None, "") and value not in options_ui:
+            custom_label = f"(custom) {value}"
+            options_ui = [custom_label] + options_ui
+            default_index = 0
+        else:
+            try:
+                default_index = options_ui.index(value)
+            except Exception:
+                default_index = 0
+
+        selected = st.selectbox(
+            label,
+            options_ui,
+            index=default_index,
+            key=sel_key,
+            format_func=lambda opt: _enum_label_for(path, opt if opt != custom_label else value),
+        )
+        return value if (custom_label and selected == custom_label) else selected
+
+    # 4) Non-enum primitives (keep your existing behavior, but never return None for strings)
+    key = _key_for(*path, ns, "prim")
+    if isinstance(value, bool):
+        return st.checkbox(label, value=value, key=key)
+    if isinstance(value, int):
+        txt = st.text_input(label, str(value), key=key)
+        try:
+            return int(txt) if txt != "" else None
+        except Exception:
+            return value
+    if isinstance(value, float):
+        txt = st.text_input(label, str(value), key=key)
+        try:
+            return float(txt) if txt != "" else None
+        except Exception:
+            return value
+    txt = st.text_input(label, "" if value is None else str(value), key=key)
+    return txt
+
+
+def edit_primitive_old(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
     # Boolean by schema (or keep 'is_reused' for backward-compat)
     if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
         keyb = _key_for(*path, ns, "bool")
@@ -286,6 +382,7 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
     txt = st.text_input(label, "" if value is None else str(value), key=key)
 
     return txt
+
 
 
 def edit_array(
@@ -498,9 +595,12 @@ def draw_projects_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Projects")
     projects: List[Dict[str, Any]] = dmp_root.setdefault("project", [])
     cols = st.columns(2)
+
+    templates = dmp_default_templates()
+
     with cols[0]:
         if st.button("➕ Add project", key=_key_for("project", "add")):
-            projects.append({"title": dmp_root.get("title") or "Project"})
+            projects.append(templates["project"])
     dmp_root["project"] = edit_array(
         projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None
     )
@@ -515,14 +615,12 @@ def draw_datasets_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Datasets")
     datasets: List[Dict[str, Any]] = dmp_root.setdefault("dataset", [])
     top = st.columns([1, 3])
+
+    templates = dmp_default_templates()
+
     with top[0]:
         if st.button("➕ Add dataset", key=_key_for("dataset", "add")):
-            datasets.append({
-                "title": "Dataset",
-                "is_reused": False,
-                "distribution": [{"title": "Dataset"}],
-                "extension": []
-            })
+            datasets.append(templates["dataset"])
             st.success("Dataset added")
     indices = list(range(len(datasets)))
     for i in indices:

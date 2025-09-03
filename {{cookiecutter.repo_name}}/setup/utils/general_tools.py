@@ -10,8 +10,7 @@ import pathlib
 import getpass
 import importlib.metadata
 import importlib.util
-import json
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import pathlib
 import subprocess
@@ -22,7 +21,7 @@ import importlib.util
 
 def split_multi(val: Optional[str]) -> List[str]:
     if not val or not isinstance(val, str):
-        return []
+        return None
     raw = [p.strip() for p in val.replace(";", ",").split(",")]
     return [p for p in raw if p]
 
@@ -596,13 +595,10 @@ def get_relative_path(target_path):
 def git_user_info(version_control):
     if version_control.lower() in ["git", "datalad", "dvc"]:
         # Load defaults
-        #default_name = load_from_env("AUTHORS", ".cookiecutter")
-        #default_email = load_from_env("EMAIL", ".cookiecutter")
+
 
         default_names = split_multi(load_from_env("AUTHORS", ".cookiecutter"))
         default_emails = split_multi(load_from_env("EMAIL", ".cookiecutter"))
-
-        print(default_names)
 
         default_name =  default_names[0]
         default_email = default_emails[0]   
@@ -612,11 +608,11 @@ def git_user_info(version_control):
 
         while not git_name or not git_email:
             # Prompt with defaults
-            name_prompt = f"Enter your Git user name [{default_name}]: "
-            email_prompt = f"Enter your Git user email [{default_email}]: "
+            name_prompt = f"Enter your Git user name [{default_names[0]}]: "
+            email_prompt = f"Enter your Git user email [{default_emails[0]}]: "
 
-            git_name = input(name_prompt).strip() or default_name
-            git_email = input(email_prompt).strip() or default_email
+            git_name = input(name_prompt).strip() or default_names[0]
+            git_email = input(email_prompt).strip() or default_emails[0]
 
             # Check if inputs are valid
             if not git_name or not git_email:

@@ -151,17 +151,18 @@ def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = N
         },
         "distribution": {
             "title": "Dataset",              # required
+            "description": "",               # string
             "access_url": "",                # string (url if you have one)
-            "download_url": "",              # string (url if you have one)
+            #"download_url": "",              # string (url if you have one)
             "format": [],
             "byte_size": 0,                  # integer
             "data_access": "open",           # enum
-            "host": {                        # required object: title+url
-                "title": "Project repository",
-                "url": "https://example.org",
-            },
+            #"host": {                        # required object: title+url
+            #    "title": "Project repository",
+            #    "url": "https://example.org",
+            #},
             "available_until": "",           # format: date if set
-            "description": "",               # string
+
             "license": [{
                 "license_ref": "https://creativecommons.org/publicdomain/zero/1.0/",
                 "start_date": today,
