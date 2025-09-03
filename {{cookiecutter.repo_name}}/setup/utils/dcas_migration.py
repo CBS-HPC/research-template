@@ -42,10 +42,10 @@ def migrate_datasets(dataset_json: Union[str, Path],
                      zip_threshold: int = 1000,
                      overwrite: bool = True) -> List[Dict[str, Any]]:
     """
-    Migrate datasets from source_root to dest_root according to datasets.json,
+    Migrate datasets from source_root to dest_root according to dmp.json,
     preserving the subpath in each 'destination'. If number_of_files > zip_threshold,
     zip the *source* dataset folder and place '<folder>.zip' under the destination's parent.
-    Also updates 'zip_file' in datasets.json with the relative zip path (or null if not zipped).
+    Also updates 'zip_file' in dmp.json with the relative zip path (or null if not zipped).
     """
 
     def _normalize_relpath(p: str) -> Path:
@@ -80,7 +80,7 @@ def migrate_datasets(dataset_json: Union[str, Path],
     dest_root = Path(dest_root).resolve()
     dest_root.mkdir(parents=True, exist_ok=True)
 
-    # Resolve datasets.json sensibly
+    # Resolve dmp.json sensibly
     dataset_json = Path(dataset_json)
     if not dataset_json.is_absolute():
         candidate = source_root / dataset_json
@@ -414,7 +414,7 @@ def main():
 
     download_README_template(readme_file = "./DCAS template/README_template.md")
     
-    _ = migrate_datasets(dataset_json="./datasets.json",
+    _ = migrate_datasets(dataset_json="./dmp.json",
                          source_root = project_root,
                            dest_root="./DCAS template",
                            zip_threshold=1000,
@@ -428,7 +428,7 @@ def main():
     copy_data_items(items, dest_base="./DCAS template/data", overwrite=True)
 
 
-    _ = copy_items(items=["./README.md",code_path,"./docs","./results","./uv.lock","./environment.yml","./requirements.txt","./datasets.json"],
+    _ = copy_items(items=["./README.md",code_path,"./docs","./results","./uv.lock","./environment.yml","./requirements.txt","./dmp.json"],
                    dest_root="./DCAS template",
                    source_root=project_root,
                    base=None,

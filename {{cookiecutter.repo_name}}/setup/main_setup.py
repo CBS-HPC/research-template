@@ -12,6 +12,7 @@ from utils.versioning_tools import *
 from utils.repo_tools import *
 from utils.get_dependencies import *
 from utils.ci_tools import *
+from utils.dmp_tools import main as dmp_update
 
 def intro():
 
@@ -56,6 +57,9 @@ def intro():
 
     # Creating README
     creating_readme(programming_language)
+
+    # Init dmp.json
+    dmp_update()
                
 def version_setup():
 

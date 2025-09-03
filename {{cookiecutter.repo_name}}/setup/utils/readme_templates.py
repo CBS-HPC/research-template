@@ -36,7 +36,7 @@ def datasets_ignore(
     base: str | pathlib.Path | None = None,
 ) -> pathspec.PathSpec:
     """
-    Read datasets.json and build a gitwildmatch PathSpec containing ONLY
+    Read dmp.json and build a gitwildmatch PathSpec containing ONLY
     directory destinations. Patterns are:
       - relative to `base` (if provided)
       - forward-slashed
@@ -103,13 +103,13 @@ def creating_readme(programming_language = "None"):
     generate_readme(readme_file, code_path, file_descriptions)
 
     file_descriptions = read_toml_json(folder = str(pathlib.Path(__file__).resolve().parent.parent.parent), json_filename =  file_descriptions , tool_name = "file_descriptions", toml_path = "pyproject.toml")
-    markdown_table, _ = generate_dataset_table("./datasets.json",file_descriptions)
+    markdown_table, _ = generate_dataset_table("./dmp.json",file_descriptions)
 
     if markdown_table:
         dataset_to_readme(markdown_table)
         
     ignore_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
-    dataset_list = datasets_ignore(datasets_json = "datasets.json")
+    dataset_list = datasets_ignore(datasets_json = "dmp.json")
 
     if dataset_list:
         ignore_list = merge_pathspecs(ignore_list,dataset_list)

@@ -454,10 +454,10 @@ backup types
 <details>
 <summary><strong>🗃️ `set-dataset`</strong></summary>
 
-The `set-dataset` command scans your `./data/` folder and registers each dataset into a structured metadata file (`datasets.json`). This helps track the location, structure, and reproducibility of datasets in your project.
+The `set-dataset` command scans your `./data/` folder and registers each dataset into a structured metadata file (`dmp.json`). This helps track the location, structure, and reproducibility of datasets in your project.
 
 It also:
-- Removes entries from `datasets.json` if the target file or folder no longer exists.
+- Removes entries from `dmp.json` if the target file or folder no longer exists.
 - Captures metadata such as file size, number of files, formats, and optional provenance info.
 - Updates the `README.md` and `DCAS template/dataset_list.md` with dataset tables.
 
@@ -478,7 +478,7 @@ set-dataset
 - Updates the dataset table in your `README.md`
 - Regenerates a DCAS-compatible dataset list (`dataset_list.md`)
 
-> 💡 Dataset metadata is stored in `datasets.json` using a normalized schema.  
+> 💡 Dataset metadata is stored in `dmp.json` using a normalized schema.  
 > 🔍 All dataset remapping logic happens inside the `utils.set_dataset` module.
 
 ---

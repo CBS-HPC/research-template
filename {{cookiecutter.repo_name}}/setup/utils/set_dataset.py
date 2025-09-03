@@ -10,15 +10,6 @@ from .versioning_tools import *
 from .dmp_tools import *  
 
 
-def _get_ext_payload(obj: Dict, key: str) -> Optional[Dict]:
-    """
-    Return the dict stored under extension item {key: {...}}, or None.
-    """
-    ext = obj.get("extension") or []
-    for item in ext:
-        if isinstance(item, dict) and key in item and isinstance(item[key], dict):
-            return item[key]
-    return None
 
 def get_file_info(file_paths):
     number_of_files = 0
@@ -61,7 +52,7 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
 
-def datasets_to_json(json_path="./datasets.json", entry=None):
+def datasets_to_json(json_path="./dmp.json", entry=None):
     """
     Upsert a dataset entry into {"dmp": {"dataset": [...]}}.
     Matches existing entries by the relative URL inside distribution
@@ -107,8 +98,8 @@ def datasets_to_json(json_path="./datasets.json", entry=None):
         entry["issued"] = existing.get("issued", entry.get("issued") or now_iso_minute())
 
         # Compare distributions and the x_dcas payload inside extension
-        existing_x = _get_ext_payload(existing, "x_dcas") or {}
-        entry_x = _get_ext_payload(entry, "x_dcas") or {}
+        existing_x = get_extension_payload(existing, "x_dcas") or {}
+        entry_x = get_extension_payload(entry, "x_dcas") or {}
 
         changed_flag = (
             json.dumps(existing.get("distribution", []), sort_keys=True) !=
@@ -123,7 +114,7 @@ def datasets_to_json(json_path="./datasets.json", entry=None):
         if entry.get("extension"):
             merged_ext = list(existing.get("extension") or [])
             # replace/insert x_dcas payload
-            e_x = _get_ext_payload(entry, "x_dcas")
+            e_x = get_extension_payload(entry, "x_dcas")
             if e_x is not None:
                 # remove any old x_dcas
                 merged_ext = [it for it in merged_ext if not (isinstance(it, dict) and "x_dcas" in it)]
@@ -145,7 +136,7 @@ def datasets_to_json(json_path="./datasets.json", entry=None):
 
     # Sort by x_dcas.data_type then title
     def _sort_key(ds):
-        x = _get_ext_payload(ds, "x_dcas") or {}
+        x = get_extension_payload(ds, "x_dcas") or {}
         return (x.get("data_type") or "", ds.get("title") or "")
     datasets.sort(key=_sort_key)
 
@@ -165,7 +156,7 @@ def datasets_to_json(json_path="./datasets.json", entry=None):
 
     return json_path
 
-def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
+def remove_missing_datasets(json_path: str | os.PathLike = "./dmp.json",
                             base_data_dir: str | os.PathLike = "./data",
                             autocreate: bool = True):
     """
@@ -203,7 +194,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
                 return True
 
         # extension.x_dcas.destination
-        x = _get_ext_payload(ds, "x_dcas") or {}
+        x = get_extension_payload(ds, "x_dcas") or {}
         dest = x.get("destination")
         if dest and os.path.exists(dest):
             return True
@@ -223,7 +214,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./datasets.json",
     save_json(json_path, data)
     return json_path
 
-def set_dataset(destination, json_path="./datasets.json"):
+def set_dataset(destination, json_path="./dmp.json"):
     
     project_root = Path(__file__).resolve().parent.parent.parent
 
@@ -344,7 +335,7 @@ def generate_dataset_table(
 
     rows = []
     for ds in datasets:
-        x = _get_ext_payload(ds, "x_dcas") or {}
+        x = get_extension_payload(ds, "x_dcas") or {}
         dist = (ds.get("distribution") or [{}])[0]
         rows.append({
             "data_name": ds.get("title"),
@@ -486,7 +477,7 @@ def main():
     )
     print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP 1.2 schema (ordered).")
 
-    json_path = remove_missing_datasets(json_path="./datasets.json")
+    json_path = remove_missing_datasets(json_path="./dmp.json")
 
     file_descriptions = read_toml_json(
         folder=project_root,

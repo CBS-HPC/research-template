@@ -27,7 +27,7 @@ RDA_DMP_SCHEMA_URL = (
 
 DEFAULT_SCHEMA_CACHE = Path("./bin/maDMP-schema-1.2.json")
 
-DEFAULT_DMP_PATH = Path("./datasets.json")
+DEFAULT_DMP_PATH = Path("./dmp.json")
 
 DMP_KEY_ORDER = [
     "schema",
@@ -66,7 +66,6 @@ LOCAL_FALLBACK_ENUMS: Dict[str, List[str]] = {
     "dmp.dataset[].sensitive_data": ["yes", "no", "unknown"],
     # You can add more safe fallbacks here if useful
 }
-
 
 
 def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = None) -> dict:
@@ -280,7 +279,6 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:
     # stash the full cookiecutter under extension[x_project]
     if cookie:
         set_extension_payload(dmp, "x_project", cookie)
-
 
 
 def now_iso_minute() -> str:

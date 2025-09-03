@@ -79,173 +79,144 @@ def _coerce_to_bool(value: Any) -> bool:
 # Schema navigation (runtime; uses safe_fetch_schema)
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
+    """
+    Walk the JSON Schema following the given path.
+    Handles arrays (via 'items') and resolves $ref at each step.
+    Returns the fully dereferenced node for the last path component, or None.
+    """
     schema = safe_fetch_schema()
     if not schema:
         return None
 
-    node: Dict[str, Any] = schema
-
-    def _resolve_ref(ref: str) -> Dict[str, Any]:
-        if not (isinstance(ref, str) and ref.startswith("#/")):
+    def _resolve_ref(n: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(n, dict):
             return {}
-        cur: Any = schema
-        for part in ref[2:].split("/"):
-            part = part.replace("~1", "/").replace("~0", "~")
-            cur = cur.get(part, {})
-        return cur if isinstance(cur, dict) else {}
-
-    def _deref_once(n: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(n, dict) and "$ref" in n:
-            base = _resolve_ref(n["$ref"])
-            merged = dict(base)
-            merged.update({k: v for k, v in n.items() if k != "$ref"})
-            return merged
+        if "$ref" in n:
+            ref = n["$ref"]
+            if not (isinstance(ref, str) and ref.startswith("#/")):
+                return {}
+            cur: Any = schema
+            for part in ref[2:].split("/"):
+                part = part.replace("~1", "/").replace("~0", "~")
+                cur = cur.get(part, {})
+            n = cur if isinstance(cur, dict) else {}
         return n
 
+    node: Dict[str, Any] = schema
     for comp in path:
+        node = _resolve_ref(node)
+
         if isinstance(comp, str):
-            node = _deref_once(node)
+            # Move into property if available; otherwise, if this is an array schema,
+            # dive into items (deref), then look for the property there.
             props = node.get("properties")
             if isinstance(props, dict) and comp in props:
                 node = props[comp]
-            else:
-                if node.get("type") == "array" and isinstance(node.get("items"), dict):
-                    node = node["items"]
-                    node = _deref_once(node)
-                    props = node.get("properties")
-                    if isinstance(props, dict) and comp in props:
-                        node = props[comp]
-                    else:
-                        return None
-                else:
-                    return None
+                continue
+
+            if node.get("type") == "array" and isinstance(node.get("items"), dict):
+                items = _resolve_ref(node["items"])
+                props = items.get("properties")
+                if isinstance(props, dict) and comp in props:
+                    node = props[comp]
+                    continue
+                # property not found
+                return None
+
+            return None  # not a property path
+
         else:
+            # integer index -> if node is an array, go to items; otherwise fail
             if node.get("type") == "array" and isinstance(node.get("items"), dict):
                 node = node["items"]
-            else:
-                return None
-    return _deref_once(node)
+                continue
+            return None
+
+    return _resolve_ref(node)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Custom mapping & injected enums
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _path_signature(path: tuple) -> str:
     """
-    Convert tuple path to a dotted signature, using [] for any int index.
+    Convert tuple path to a dotted signature, attaching [] to the preceding key
+    for any int index.
+
     Example:
       ('dmp','dataset',0,'distribution',0,'license',0,'license_ref')
       -> "dmp.dataset[].distribution[].license[].license_ref"
     """
-    parts = []
-    for p in path:
-        if isinstance(p, int):
-            parts.append("[]")
+    segs: List[str] = []
+    for comp in path:
+        if isinstance(comp, int):
+            if segs:
+                segs[-1] = segs[-1] + "[]"
+            else:
+                # Edge case: path starts with an index (unlikely in this app)
+                segs.append("[]")
         else:
-            parts.append(str(p))
-    return ".".join(parts)
+            segs.append(str(comp))
+    return ".".join(segs)
 
-
-def _enum_info_for_path_old(path: tuple) -> Tuple[Optional[str], List[str]]:
-    """
-    Return ("single"|"multi"|None, options)
-    Combines: live schema ENUMs + EXTRA_ENUMS (from dmp_tools) + LOCAL_FALLBACK_ENUMS.
-    """
-    node = _schema_node_for_path(path)
-    base_mode: Optional[str] = None
-    base_options: List[str] = []
-
-    if node:
-        if isinstance(node.get("enum"), list) and node.get("type") == "string":
-            base_mode = "single"
-            base_options = list(node["enum"])
-        elif node.get("type") == "array":
-            it = node.get("items")
-            if isinstance(it, dict) and isinstance(it.get("enum"), list) and it.get("type") == "string":
-                base_mode = "multi"
-                base_options = list(it["enum"])
-
-    sig = _path_signature(path)
-    # extras from dmp_tools (preferred place to add app-specific enumerations)
-    extra_defs = EXTRA_ENUMS.get(sig, []) if "EXTRA_ENUMS" in globals() else []
-    extra_values = [d["value"] for d in extra_defs]
-
-    # local fallbacks for when schema is missing and no EXTRA_ENUMS supplied
-    fallback_values = LOCAL_FALLBACK_ENUMS.get(sig, [])
-
-    # Decide mode: if we have an array node explicitly -> "multi", else "single".
-    inferred_mode = "multi" if (node and node.get("type") == "array") else "single"
-
-    # Merge in the order: schema options first (if any), then EXTRA_ENUMS, then LOCAL fallbacks
-    merged = list(dict.fromkeys(base_options + extra_values + fallback_values))
-
-    mode = base_mode or (("multi" if (node and node.get("type") == "array") else ("single" if merged else None)))
-    if mode is None and merged:
-        mode = inferred_mode
-    if not merged:
-        return (None, [])
-    return (mode, merged)
 
 def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
     """
-    Return ("single"|"multi"|None, options)
+    Return ("single"|"multi"|None, options).
 
-    Priority of sources:
-      1) Live schema enums (if available)
-      2) EXTRA_ENUMS[path_signature]  (provided by dmp_tools)
-      3) LOCAL_FALLBACK_ENUMS[path_signature]  (editor-local)
-      4) Field-name safety net for common DMP fields when all else fails
+    Behavior:
+    - If the schema defines an enum (string or array of string): use those options.
+    - If EXTRA_ENUMS[path] exists: merge those options in (dedup) and
+      FORCE enum UI even if the schema doesn't list an enum.
+    - If the node is an array, mode is "multi"; otherwise "single".
     """
     node = _schema_node_for_path(path)
     base_mode: Optional[str] = None
     base_options: List[str] = []
 
-    # 1) Schema-derived enums
+    # Read strict enum from schema (if any)
     if node:
-        if isinstance(node.get("enum"), list) and node.get("type") == "string":
+        if node.get("type") == "string" and isinstance(node.get("enum"), list):
             base_mode = "single"
             base_options = list(node["enum"])
         elif node.get("type") == "array":
             it = node.get("items")
-            if isinstance(it, dict) and isinstance(it.get("enum"), list) and it.get("type") == "string":
+            if isinstance(it, dict) and it.get("type") == "string" and isinstance(it.get("enum"), list):
                 base_mode = "multi"
                 base_options = list(it["enum"])
 
-    # 2) App-provided extra enums (from dmp_tools)
+    # Inject extras from dmp_tools.EXTRA_ENUMS (list[str])
     sig = _path_signature(path)
-    extra_defs = EXTRA_ENUMS.get(sig, []) if "EXTRA_ENUMS" in globals() else []
-    extra_values = [d.get("value") for d in extra_defs if isinstance(d, dict) and "value" in d]
+    extra_values: List[str] = []
+    try:
+        # EXTRA_ENUMS is imported from dmp_tools via the star import
+        extra_values = list(EXTRA_ENUMS.get(sig, []))  # type: ignore[name-defined]
+    except Exception:
+        extra_values = []
 
-    # 3) Local, editor-only fallback enums (define LOCAL_FALLBACK_ENUMS elsewhere if you want)
-    fallback_values = LOCAL_FALLBACK_ENUMS.get(sig, []) if "LOCAL_FALLBACK_ENUMS" in globals() else []
+    # Determine intended mode:
+    # - If schema says array -> "multi"
+    # - Else if node exists and is string -> "single"
+    # - Else if we have any options at all -> default to "single" (force enum UI)
+    inferred_mode = None
+    if node and node.get("type") == "array":
+        inferred_mode = "multi"
+    elif node and node.get("type") == "string":
+        inferred_mode = "single"
+    elif (base_options or extra_values):
+        inferred_mode = "single"
 
-    # Merge (preserve order, dedupe)
-    merged = list(dict.fromkeys(base_options + extra_values + fallback_values))
+    # Merge schema + extras (dedup, preserve order: schema first, then extras)
+    merged = list(dict.fromkeys(base_options + extra_values))
 
-    # Decide mode: schema preference -> else infer from node -> else single if we have options
-    if base_mode:
-        mode = base_mode
-    else:
-        if node and node.get("type") == "array":
-            mode = "multi"
-        else:
-            mode = "single" if merged else None
-
-    # 4) Safety net for critical dataset/project fields when nothing was found
     if not merged:
-        last = path[-1] if path else None
-        # Common RDA-DMP fields that should always be selectable
-        if last in ("personal_data", "sensitive_data"):
-            return ("single", ["yes", "no", "unknown"])
-        if last == "language":
-            # Minimal language codes; schema/EXTRA_ENUMS take precedence when present
-            return ("single", ["eng", "deu", "fra"])
-        # If we still can't determine options, signal "no enum"
         return (None, [])
 
-    return (mode, merged)
+    return (base_mode or inferred_mode or "single", merged)
 
 
 def _enum_label_for(path: tuple, option_value: str) -> str:
@@ -268,40 +239,35 @@ def _is_boolean_schema(path: tuple) -> bool:
 # Generic editors (schema-aware)
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
     # Boolean by schema (or keep 'is_reused' for backward-compat)
     if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
         keyb = _key_for(*path, ns, "bool")
         return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
 
-    # Enum-backed single value -> selectbox with all acceptable inputs
+    # Force enum-backed values to use locked choices
     mode, options = _enum_info_for_path(path)
     if mode == "single" and options:
         sel_key = _key_for(*path, ns, "enum")
-        options_ui = list(options)
 
-        # If current value isn't in options, show a custom placeholder to preserve it
-        custom_label = None
-        if value not in (None, "") and value not in options_ui:
-            custom_label = f"(custom) {value}"
-            options_ui = [custom_label] + options_ui
-            default_index = 0
+        # Choose a safe default if current value is not in the options
+        if value not in options:
+            # Prefer empty string if present; else first option
+            default_value = "" if "" in options else options[0]
         else:
-            try:
-                default_index = options_ui.index(value)
-            except Exception:
-                default_index = 0
+            default_value = value
 
-        selected = st.selectbox(
-            label,
-            options_ui,
-            index=default_index,
-            key=sel_key,
-            format_func=lambda opt: _enum_label_for(path, opt if opt != custom_label else value),
-        )
-        return value if (custom_label and selected == custom_label) else selected
+        # Streamlit needs an index
+        try:
+            default_index = options.index(default_value)
+        except ValueError:
+            default_index = 0
 
-    # Non-enum primitives
+        selected = st.selectbox(label, options, index=default_index, key=sel_key)
+        return selected
+
+    # Non-enum primitives -> regular inputs
     key = _key_for(*path, ns, "prim")
     if isinstance(value, bool):
         return st.checkbox(label, value=value, key=key)
@@ -509,12 +475,11 @@ def edit_any(value: Any, path: tuple, ns: Optional[str] = None) -> Any:
 
 def find_default_dmp_path(start: Optional[Path] = None) -> Path:
     """
-    Prefer dmp.json if present; otherwise fall back to datasets.json.
+    Prefer dmp.json if present; otherwise fall back to dmp.json.
     Finally, fall back to DEFAULT_DMP_PATH from dmp_tools.
     """
     start = start or Path(__file__).resolve().parent.parent.parent
-    print(start)
-    candidates = ["dmp.json", "datasets.json"]
+    candidates = ["dmp.json"]
     for base in [start, *start.parents]:
         for name in candidates:
             p = base / name
@@ -726,7 +691,7 @@ def main() -> None:
             pass
         # Name the file based on what you're editing
         suggested = Path(st.session_state.get("default_path", str(default_path))).name
-        if suggested.lower() not in {"dmp.json", "datasets.json"}:
+        if suggested.lower() not in {"dmp.json", "dmp.json"}:
             suggested = "dmp.json"
         st.download_button(
             "⬇️ Download JSON",
