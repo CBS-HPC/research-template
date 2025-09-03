@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .general_tools import split_multi
 from .toml_tools import read_toml_json
 
 
@@ -179,13 +180,6 @@ def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = N
     }
 
 
-def _split_multi(val: Optional[str]) -> List[str]:
-    if not val or not isinstance(val, str):
-        return []
-    raw = [p.strip() for p in val.replace(";", ",").split(",")]
-    return [p for p in raw if p]
-
-
 def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:bool=False) -> None:
     """
     Read cookiecutter and fill DMP meta iff missing:
@@ -226,9 +220,9 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:
 
     # contact
     
-    authors = _split_multi(cookie.get("AUTHORS"))
-    emails = _split_multi(cookie.get("EMAIL"))
-    orcids = _split_multi(cookie.get("ORCIDS"))
+    authors = split_multi(cookie.get("AUTHORS"))
+    emails = split_multi(cookie.get("EMAIL"))
+    orcids = split_multi(cookie.get("ORCIDS"))
 
     name = authors[0] if authors else None
     mbox = emails[0] if emails else None

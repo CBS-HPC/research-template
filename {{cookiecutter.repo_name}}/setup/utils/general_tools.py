@@ -19,6 +19,12 @@ import importlib
 import importlib.util
 
 
+def split_multi(val: Optional[str]) -> List[str]:
+    if not val or not isinstance(val, str):
+        return []
+    raw = [p.strip() for p in val.replace(";", ",").split(",")]
+    return [p for p in raw if p]
+
 def ask_yes_no(question):
     """
     Prompt the user with a yes/no question and validate the input.
@@ -589,8 +595,16 @@ def get_relative_path(target_path):
 def git_user_info(version_control):
     if version_control.lower() in ["git", "datalad", "dvc"]:
         # Load defaults
-        default_name = load_from_env("AUTHORS", ".cookiecutter")
-        default_email = load_from_env("EMAIL", ".cookiecutter")
+        #default_name = load_from_env("AUTHORS", ".cookiecutter")
+        #default_email = load_from_env("EMAIL", ".cookiecutter")
+
+        default_names = split_multi(load_from_env("AUTHORS", ".cookiecutter"))
+        default_emails = split_multi(load_from_env("EMAIL", ".cookiecutter"))
+
+        print(default_names)
+
+        default_name =  default_names[0]
+        default_email = default_emails[0]   
 
         git_name = None
         git_email = None
