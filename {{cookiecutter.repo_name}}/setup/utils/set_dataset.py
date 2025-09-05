@@ -52,7 +52,7 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
 
-def datasets_to_json(json_path="./dmp.json", entry=None):
+def datasets_to_json(json_path=DEFAULT_DMP_PATH, entry=None):
     """
     Upsert a dataset entry into {"dmp": {"dataset": [...]}}.
     Matches existing entries by the relative URL inside distribution
@@ -156,117 +156,108 @@ def datasets_to_json(json_path="./dmp.json", entry=None):
 
     return json_path
 
-def remove_missing_datasets_not_working(json_path: str | os.PathLike = "./dmp.json"):
+def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
     """
     Ensure the DMP file exists and is shaped. For any dataset whose
     access/download URL (or extension.x_dcas.destination) no longer exists on disk,
     DO NOT delete the dataset; instead set:
-      - extension.x_dcas = {}
+      - extension.x_dcas = {}  (as {"x_dcas": {}} in a list-shaped extension)
       - distribution[*].access_url = ""
 
     Returns the absolute Path to the JSON file.
     """
-    
+    import os
+    import pathlib
 
     # Resolve path relative to project root (3 levels up from this file)
     root = pathlib.Path(__file__).resolve().parent.parent.parent
     json_path = (root / pathlib.Path(json_path)).resolve()
 
-    # Load + shape
+    # ---- Load & shape ----
     data = load_json(json_path) or {}
     if not isinstance(data, dict):
         data = {}
 
-    dmp = data.get("dmp")
-    if not isinstance(dmp, dict):
-        dmp = {}
-    # CRITICAL: reattach so mutations persist into `data`
-    data["dmp"] = dmp
-
+    dmp = data.get("dmp") or {}
+    data["dmp"] = dmp  # reattach so mutations persist
     datasets = dmp.get("dataset")
     if not isinstance(datasets, list):
         datasets = []
     dmp["dataset"] = datasets  # ensure list exists
 
-    # ---- helpers ----
-    def _set_x_dcas(ds: dict, payload: dict) -> None:
-        # Use project helper if present
-        try:
-            set_extension_payload  # type: ignore[name-defined]
-        except NameError:
-            pass
-        else:
-            set_extension_payload(ds, "x_dcas", payload)
-            return
-
-        # Fallback: normalize via extension list
-        exts = ds.get("extension")
-        if not isinstance(exts, list):
-            exts = []
-            ds["extension"] = exts
-
-        for ext in exts:
-            # normalized
-            if ext.get("name") == "x_dcas":
-                ext["value"] = payload
-                return
-            # alt shapes
-            if ext.get("extension") == "x_dcas":
-                if "payload" in ext:
-                    ext["payload"] = payload
-                else:
-                    ext["value"] = payload
-                return
-            if "x_dcas" in ext:
-                ext["x_dcas"] = payload
-                return
-
-        exts.append({"name": "x_dcas", "value": payload})
-
+    # ---- Helpers ----
     def _exists_on_disk(ds: dict) -> bool:
         # any distribution URL that resolves on local FS
         for dist in ds.get("distribution") or []:
             if not isinstance(dist, dict):
                 continue
             p = dist.get("access_url") or dist.get("download_url")
-            if not p:
-                continue
-            if os.path.exists(p) or os.path.exists(p.replace("/", os.sep)):
+            if p and (os.path.exists(p) or os.path.exists(p.replace("/", os.sep))):
                 return True
-
         # extension.x_dcas.destination
         x = get_extension_payload(ds, "x_dcas") or {}
         dest = x.get("destination")
-        if dest and os.path.exists(dest):
-            return True
+        return bool(dest and os.path.exists(dest))
 
-        return False
+    def _set_x_dcas_to_empty(ds: dict) -> None:
+        """
+        Ensure extension has exactly ONE x_dcas entry formed as {"x_dcas": {}}.
+        - If extension is a dict: extension["x_dcas"] = {}
+        - If extension is a list: remove any x_dcas variants and append {"x_dcas": {}}
+          Variants removed: {"x_dcas": ...}, {"name":"x_dcas",...}, {"extension":"x_dcas",...}
+        """
+        exts = ds.get("extension")
 
-    # ---- main pass ----
+        # Dict-shaped extension
+        if isinstance(exts, dict):
+            exts["x_dcas"] = {}
+            return
+
+        # List-shaped (or missing): normalize to list and enforce single {"x_dcas": {}}
+        if not isinstance(exts, list):
+            ds["extension"] = [{"x_dcas": {}}]
+            return
+
+        new_exts = []
+        for ext in exts:
+            if not isinstance(ext, dict):
+                new_exts.append(ext)
+                continue
+            # Drop any prior x_dcas in any known shape
+            if (
+                "x_dcas" in ext
+                or ext.get("name") == "x_dcas"
+                or ext.get("extension") == "x_dcas"
+            ):
+                continue
+            new_exts.append(ext)
+
+        new_exts.append({"x_dcas": {}})
+        ds["extension"] = new_exts
+
+    # ---- Main pass ----
     updated = 0
     for ds in datasets:
         if not _exists_on_disk(ds):
-            _set_x_dcas(ds, {})
-            dists = ds.get("distribution")
-            if isinstance(dists, list):
-                for dist in dists:
-                    if isinstance(dist, dict) and dist.get("access_url", None) != "":
-                        dist["access_url"] = ""
+            _set_x_dcas_to_empty(ds)
+            # Clear access_url in all distributions
+            for dist in ds.get("distribution") or []:
+                if isinstance(dist, dict):
+                    dist["access_url"] = ""
             updated += 1
 
+    # Save and report
+    dmp["modified"] = now_iso_minute()
+    save_json(json_path, data)
+
     if updated:
-        print(f"Updated {updated} dataset(s): set x_dcas={{}} and cleared access_url due to missing paths.")
+        print(f"Updated {updated} dataset(s): set x_dcas={{}} and cleared access_url.")
     else:
         print("No missing dataset paths found.")
 
-    # touch modified timestamp (always, like your original)
-    dmp["modified"] = now_iso_minute()
-
-    save_json(json_path, data)
-    
     return json_path
 
-def remove_missing_datasets(json_path: str | os.PathLike = "./dmp.json"):
+def remove_missing_datasets_old(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
     """
     Ensure the DMP file exists and is shaped, then remove datasets whose
     access/download URL (or extension.x_dcas.destination) no longer exists on disk.
@@ -315,7 +306,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = "./dmp.json"):
     save_json(json_path, data)
     return json_path
 
-def set_dataset(destination, json_path="./dmp.json"):
+def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
     
     project_root = Path(__file__).resolve().parent.parent.parent
 
@@ -361,7 +352,7 @@ def set_dataset(destination, json_path="./dmp.json"):
     }
 
     # required dataset_id (local, stable)
-    dataset_id = make_dataset_id(name, distribution["access_url"])
+    #dataset_id = make_dataset_id(name, distribution["access_url"])
 
     # DCAS payload wrapped under dataset.extension
     x_dcas_payload = {
@@ -399,7 +390,10 @@ def set_dataset(destination, json_path="./dmp.json"):
         }],
         "security_and_privacy":  [{"title": "Security & Privacy", "description": ""}],
         "technical_resource": [{"name": "", "description": ""}],
-        "dataset_id": dataset_id,
+        "dataset_id": {
+                "identifier": "",
+                "type": "other",
+            },
         "distribution": [distribution],
 
         # Extensions: x_dcas lives under dataset.extension
@@ -570,15 +564,9 @@ def main():
 
     data_files, _ = get_data_files()
 
-    create_or_update_dmp_from_schema(
-        dmp_path=DEFAULT_DMP_PATH,
-        schema_url=SCHEMA_URL,
-        schema_cache=DEFAULT_SCHEMA_CACHE,
-        force_schema_refresh=False,
-    )
-    print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP 1.2 schema (ordered).")
+    create_or_update_dmp_from_schema(dmp_path=DEFAULT_DMP_PATH)
 
-    json_path = remove_missing_datasets(json_path="./dmp.json")
+    json_path = remove_missing_datasets(json_path=DEFAULT_DMP_PATH)
 
     file_descriptions = read_toml_json(
         folder=project_root,

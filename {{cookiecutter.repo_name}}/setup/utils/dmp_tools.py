@@ -11,25 +11,87 @@ from .general_tools import split_multi
 from .toml_tools import read_toml_json
 
 
+def load_json(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_json(path: Path, data: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+
 # ──────────────────────────────────────────────────────────────────────────────
-# Config (RDA-DMP 1.2)
+# Config (RDA-DMP 1.)
 # ──────────────────────────────────────────────────────────────────────────────
 
-SCHEMA_URL = (
-    "https://raw.githubusercontent.com/RDA-DMP-Common/RDA-DMP-Common-Standard/"
-    "master/examples/JSON/JSON-schema/1.2/maDMP-schema-1.2.json"
-)
+
+SCHEMA_DOWNLOAD_URLS: Dict[str, str] = {
+    "1.0": (
+        "https://raw.githubusercontent.com/RDA-DMP-Common/"
+        "RDA-DMP-Common-Standard/master/examples/JSON/JSON-schema/"
+        "1.0/maDMP-schema-1.0.json"
+    ),
+    "1.1": (
+        "https://raw.githubusercontent.com/RDA-DMP-Common/"
+        "RDA-DMP-Common-Standard/master/examples/JSON/JSON-schema/"
+        "1.1/maDMP-schema-1.1.json"
+    ),
+    "1.2": (
+        "https://raw.githubusercontent.com/RDA-DMP-Common/"
+        "RDA-DMP-Common-Standard/master/examples/JSON/JSON-schema/"
+        "1.2/maDMP-schema-1.2.json"
+    ),
+}
+
+SCHEMA_CACHE_FILES: Dict[str, Path] = {
+    "1.0": Path("./bin/maDMP-schema-1.0.json"),
+    "1.1": Path("./bin/maDMP-schema-1.1.json"),
+    "1.2": Path("./bin/maDMP-schema-1.2.json"),
+}
 
 # Always store this exact value in dmp["schema"]
-RDA_DMP_SCHEMA_URL = (
-    "https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard/"
-    "tree/master/examples/JSON/JSON-schema/1.2"
-)
+SCHEMA_URLS: Dict[str, str] = {
+    "1.0": (
+        "https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard/"
+        "tree/master/examples/JSON/JSON-schema/1.0"
+    ),
+    "1.1": (
+        "https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard/"
+        "tree/master/examples/JSON/JSON-schema/1.1"
+    ),
+    "1.2": (
+        "https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard/"
+        "tree/master/examples/JSON/JSON-schema/1.2"
+    ),
+}
 
-DEFAULT_SCHEMA_CACHE = Path("./bin/maDMP-schema-1.2.json")
 
 DEFAULT_DMP_PATH = Path("./dmp.json")
 
+def schema_version_from_url(url: str, default: str = "1.2") -> str:
+    """
+    Return the schema version (e.g. "1.0", "1.1", "1.2") if the URL
+    exactly matches one of the known SCHEMA_URLS values.
+    Otherwise, return the default ("1.2").
+    """
+    if not isinstance(url, str):
+        return default
+    for ver, known_url in SCHEMA_URLS.items():
+        if url.strip() == known_url:
+            return ver
+    return default
+
+dmp = load_json(DEFAULT_DMP_PATH)
+
+schema_url = dmp.get("dmp", {}).get("schema")
+if schema_url:
+    SCHEMA_VERSION = schema_version_from_url(schema_url)
+else:
+    SCHEMA_VERSION = "1.2"
+    
 DMP_KEY_ORDER = [
     "schema",
     "title",
@@ -69,6 +131,61 @@ LOCAL_FALLBACK_ENUMS: Dict[str, List[str]] = {
 }
 
 
+    # Minimal, readable mapping. Add/adjust as needed.
+
+DK_UNI_MAP = {
+    # Copenhagen Business School
+    "cbs.dk": {
+        "name": "Copenhagen Business School",
+        "abbreviation": "CBS",
+        "ror": "https://ror.org/04sppb023",
+    },
+    # University of Copenhagen
+    "ku.dk": {
+        "name": "University of Copenhagen",
+        "abbreviation": "KU",
+        "ror": "https://ror.org/035b05819",
+    },
+    # University of Southern Denmark
+    "sdu.dk": {
+        "name": "University of Southern Denmark",
+        "abbreviation": "SDU",
+        "ror": "https://ror.org/03yrrjy16",
+    },
+    # Aarhus University
+    "au.dk": {
+        "name": "Aarhus University",
+        "abbreviation": "AU",
+        "ror": "https://ror.org/01aj84f44",
+    },
+    # Technical University of Denmark
+    "dtu.dk": {
+        "name": "Technical University of Denmark",
+        "abbreviation": "DTU",
+        "ror": "https://ror.org/04qtj9h94",
+    },
+    # Aalborg University
+    "aau.dk": {
+        "name": "Aalborg University",
+        "abbreviation": "AAU",
+        "ror": "https://ror.org/04m5j1k67",
+    },
+    # Roskilde University
+    "ruc.dk": {
+        "name": "Roskilde University",
+        "abbreviation": "RUC",
+        "ror": "https://ror.org/014axpa37",
+    },
+    # IT University of Copenhagen
+    "itu.dk": {
+        "name": "IT University of Copenhagen",
+        "abbreviation": "ITU",
+        "ror": "https://ror.org/02309jg23",
+    },
+}
+
+
+
 def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = None) -> dict:
     """
     Single source of truth for default values.
@@ -81,7 +198,7 @@ def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = N
 
     return {
         "root": {
-            "schema": RDA_DMP_SCHEMA_URL,
+            "schema": SCHEMA_URLS[SCHEMA_VERSION],
             "title": "",
             "description": "",
             "language": "eng",
@@ -101,15 +218,32 @@ def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = N
                     "identifier": "https://orcid.org/0000-0000-0000-0000",
                     "type": "orcid",
                 },
+                "affiliation": {
+                "name": "",
+                "abbreviation": "",
+                "region": None,
+                "affiliation_id": {
+                    "type": "ror",
+                    "identifier": ""
+                }
+            }
             },
-            #"contributor": {                    # required (contact_id, mbox, name)
+            #"contributor": [{                    # required (contact_id, mbox, name)
             #    "name": "",
             #    "mbox": "",
             #    "contributor_id": {
             #        "identifier": "https://orcid.org/0000-0000-0000-0000",
             #        "type": "orcid",
             #    },
-            #},
+                #"affiliation": {
+                #"name": "Copenhagen Business School",
+                #"abbreviation": "CBS",
+                #"region": None,
+                #"affiliation_id": {
+                #    "type": "ror",
+                #    "identifier": "https://ror.org/04sppb023"
+                #}
+            #}],
             "project": [],                   # array
             "dataset": [],                   # required array
             "extension": [],
@@ -180,6 +314,101 @@ def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = N
         },
     }
 
+def _affiliation_from_email(email: str) -> Optional[dict]:
+    """
+    Guess affiliation from a Danish university email.
+    Returns an 'affiliation' dict like your DMP schema expects, or None if unknown.
+
+    Example return:
+    {
+        "name": "Copenhagen Business School",
+        "abbreviation": "CBS",
+        "region": None,
+        "affiliation_id": {"type": "ror", "identifier": "https://ror.org/04sppb023"}
+    }
+    """
+    if not isinstance(email, str) or "@" not in email:
+        return None
+
+    domain = email.split("@", 1)[1].strip().lower()
+
+    def _matches_suffix(dom: str, suffix: str) -> bool:
+        # handles "dept.ku.dk", "student.cbs.dk", etc.
+        return dom == suffix or dom.endswith("." + suffix)
+
+    for suffix, org in DK_UNI_MAP.items():
+        if _matches_suffix(domain, suffix):
+            return {
+                "name": org["name"],
+                "abbreviation": org["abbreviation"],
+                "region": None,
+                "affiliation_id": {
+                    "type": "ror",
+                    "identifier": org["ror"],
+                } if org.get("ror") else None,
+            }
+
+    return  {
+            "name": "",
+            "abbreviation": "",
+            "region": None,
+            "affiliation_id": {
+                "type": "ror",
+                "identifier": ""
+            }}
+
+def _set_contacts(dmp:dict,cookie:dict,overwrite:bool=False):
+    authors = split_multi(cookie.get("AUTHORS"))
+    emails = split_multi(cookie.get("EMAIL"))
+    orcids = split_multi(cookie.get("ORCIDS"))
+
+    name = authors[0] if authors else None
+    mbox = emails[0] if emails else None
+    orcid = orcids[0] if orcids else None
+
+    if overwrite or ((name or mbox or orcid)  and not dmp.get("contact")):
+        info: Dict[str, Any] = {}
+        if name:
+            info["name"] = name
+        if mbox:
+            info["mbox"] = mbox
+        if orcid:
+            info["contact_id"] = {"type": "orcid", "identifier": orcid}
+        if mbox:
+            info["affiliation"] = _affiliation_from_email(mbox)
+        
+        dmp["contact"] = info
+
+    # contributors (idx 1..end)
+    contributors = []
+    max_len = max(len(authors), len(emails), len(orcids)) if (authors or emails or orcids) else 0
+
+    for i in range(1, max_len):
+        name = authors[i] if i < len(authors) else None
+        mbox = emails[i] if i < len(emails) else None
+        orcid = orcids[i] if i < len(orcids) else None
+
+        if not (name or mbox or orcid):
+            continue
+
+        info: Dict[str, Any] = {}
+        if name:
+            info["name"] = name
+        if mbox:
+            info["mbox"] = mbox
+            info["affiliation"] = _affiliation_from_email(mbox)
+        if orcid:
+            info["contributor_id"] = {"type": "orcid", "identifier": orcid}
+
+        contributors.append(info)
+
+    if overwrite or (contributors and not dmp.get("contributor")):
+        if not contributors:
+            dmp.pop("contributor", None)
+        else:
+            dmp["contributor"] = contributors      # list of dicts
+
+    return dmp
 
 def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:bool=False) -> None:
     """
@@ -219,45 +448,8 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:
         else:    
             dmp["description"] = dmp.get("description") or proj_desc
 
-    # contact
-    
-    authors = split_multi(cookie.get("AUTHORS"))
-    emails = split_multi(cookie.get("EMAIL"))
-    orcids = split_multi(cookie.get("ORCIDS"))
-
-    name = authors[0] if authors else None
-    mbox = emails[0] if emails else None
-    orcid = orcids[0] if orcids else None
-
-    if overwrite or ((name or mbox or orcid)  and not dmp.get("contact")):
-        info: Dict[str, Any] = {}
-        if name:
-            info["name"] = name
-        if mbox:
-            info["mbox"] = mbox
-        if orcid:
-            info["contact_id"] = {"type": "orcid", "identifier": orcid}
-        dmp["contact"] = info
-
-   # contributor
-    name = authors[1] if len(authors)>1 else None
-    mbox = emails[1] if len(emails)>1 else None
-    orcid = orcids[1] if len(orcids)>1 else None
-
-    if overwrite or ((name or mbox or orcid) and not dmp.get("contributor")):
-        info: Dict[str, Any] = {}
-        if name:
-            info["name"] = name
-        if mbox:
-            info["mbox"] = mbox
-        if orcid:
-            info["contributor_id"] = {"type": "orcid", "identifier": orcid}
-        
-        if info:
-            dmp["contributor"] = info
-        else:
-            dmp.pop("contributor", None)
-
+    # contact & contributor
+    dmp = _set_contacts(dmp,cookie,overwrite)
 
     # project[0] (minimal)
     projects: List[Dict[str, Any]] = dmp.setdefault("project", [])
@@ -275,27 +467,12 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:
     if cookie:
         set_extension_payload(dmp, "x_project", cookie)
 
-
 def now_iso_minute() -> str:
     """RFC 3339 / JSON Schema 'date-time' with UTC 'Z' and seconds precision."""
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-
-def load_json(path: Path) -> Dict[str, Any]:
-    if not path.exists():
-        return {}
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_json(path: Path, data: Dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-
-
-def fetch_schema(schema_url: str = SCHEMA_URL,
-                 cache_path: Path = DEFAULT_SCHEMA_CACHE,
+def fetch_schema(schema_url: str = SCHEMA_DOWNLOAD_URLS[SCHEMA_VERSION],
+                 cache_path: Path = SCHEMA_CACHE_FILES[SCHEMA_VERSION],
                  force: bool = False) -> Dict[str, Any]:
     """Download the schema (or use cached copy)."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -324,7 +501,6 @@ def validate_against_schema(data: Dict[str, Any],
     v = Draft7Validator(schema)
     errs = sorted(v.iter_errors(data), key=lambda e: list(e.path))
     return [f"{'/'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in errs]
-
 
 def _resolve_ref(schema: Dict[str, Any], ref: str) -> Dict[str, Any]:
     """Resolve an internal JSON Pointer like '#/definitions/Dataset'."""
@@ -381,7 +557,7 @@ def data_type_from_path(p: str) -> str:
     return "Uncategorised"
 
 
-def make_dataset_id(title: str, access_or_download_url: Optional[str]) -> dict:
+def make_dataset_id_old(title: str, access_or_download_url: Optional[str]) -> dict:
     """
     Always return a valid dataset_id {identifier, type}.
     Uses a stable local-style identifier if no DOI/URL exists.
@@ -430,6 +606,7 @@ def set_extension_payload(obj: Dict[str, Any], key: str, payload: Dict[str, Any]
 def today_iso() -> str:
     """JSON Schema 'date' string."""
     return datetime.utcnow().strftime("%Y-%m-%d")
+
 
 def _deep_apply_defaults(target: Any, template: Any) -> Any:
     """
@@ -683,7 +860,6 @@ def ensure_required_by_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> N
 # ──────────────────────────────────────────────────────────────────────────────
 
 def ensure_dmp_shape(data: Dict[str, Any],
-                     schema: Optional[Dict[str, Any]] = None,
                      **_: Any) -> Dict[str, Any]:
     """
     Ensure a well-formed RDA-DMP container.
@@ -698,7 +874,7 @@ def ensure_dmp_shape(data: Dict[str, Any],
     if isinstance(data.get("dmp"), dict):
         dmp = data["dmp"]
         apply_defaults_in_place(dmp, templates["root"])
-        dmp["schema"] = RDA_DMP_SCHEMA_URL  # enforce exact link
+        dmp["schema"] = SCHEMA_URLS[SCHEMA_VERSION]  # enforce exact link
 
         # project must be an array
         if not isinstance(dmp.get("project"), list):
@@ -729,7 +905,7 @@ def normalize_root_in_place(data: Dict[str, Any],
     templates = dmp_default_templates()
     dmp = data.setdefault("dmp", {})
     apply_defaults_in_place(dmp, templates["root"])
-    dmp["schema"] = RDA_DMP_SCHEMA_URL  # enforce
+    dmp["schema"] = SCHEMA_URLS[SCHEMA_VERSION]  # enforce
 
     # Migrate legacy top-level custom fields into extension
     if isinstance(dmp.get("x_project"), dict):
@@ -791,10 +967,10 @@ def normalize_datasets_in_place(data: Dict[str, Any],
             _ensure_object_fields_from_schema(ds, schema, ds_schema, path="dmp.dataset[]")
 
         # ensure dataset_id
-        if not isinstance(ds.get("dataset_id"), dict) or not ds["dataset_id"].get("identifier"):
-            dist0 = (ds.get("distribution") or [{}])[0]
-            urlish = dist0.get("access_url") or dist0.get("download_url")
-            ds["dataset_id"] = make_dataset_id(ds.get("title") or "untitled", urlish)
+        #if not isinstance(ds.get("dataset_id"), dict) or not ds["dataset_id"].get("identifier"):
+        #    dist0 = (ds.get("distribution") or [{}])[0]
+        #    urlish = dist0.get("access_url") or dist0.get("download_url")
+        #    ds["dataset_id"] = make_dataset_id(ds.get("title") or "untitled", urlish)
 
         # distribution array + defaults for each distribution
         ds.setdefault("distribution", [])
@@ -858,26 +1034,26 @@ def reorder_dmp_keys(data: Dict[str, Any]) -> Dict[str, Any]:
     return {"dmp": ordered}
 
 
-def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
-                                     schema_url: str = SCHEMA_URL,
-                                     schema_cache: Path = DEFAULT_SCHEMA_CACHE,
-                                     force_schema_refresh: bool = False) -> Path:
+def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
     """
     - If DMP doesn't exist: create a fresh DMP scaffold.
     - If it exists: load it, normalize root & project & datasets (preserving values).
-    - Always set dmp["schema"] to the GitHub 'tree' URL for 1.2.
+    - Always set dmp["schema"] to the GitHub 'tree' URL for 1.X.
     - Wrap root custom fields (x_project) and dataset custom fields (x_dcas)
       under their respective 'extension' arrays.
     - Pull metadata from cookiecutter (title, description, contact, project).
     - Ensure the top-level 'dmp' object is saved in the exact key order you specified.
     """
-    schema = fetch_schema(schema_url, schema_cache, force=force_schema_refresh)
+
 
     project_root = Path(__file__).resolve().parent.parent.parent
+    schema = fetch_schema()
 
     if not dmp_path.exists():
+
+        schema = fetch_schema()
         # Fresh shape
-        shaped = ensure_dmp_shape({}, schema=schema)
+        shaped = ensure_dmp_shape({})
         _apply_cookiecutter_meta(project_root=project_root, data=shaped,overwrite=True)
         normalize_root_in_place(shaped, schema=schema)
         normalize_datasets_in_place(shaped, schema=schema)
@@ -901,12 +1077,12 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
 
     # Update/normalize existing
     data = load_json(dmp_path)
-    data = ensure_dmp_shape(data, schema=schema)
+    data = ensure_dmp_shape(data)
     normalize_root_in_place(data, schema=schema)
     normalize_datasets_in_place(data, schema=schema)
     _apply_cookiecutter_meta(project_root=project_root, data=data,overwrite=False)
 
-    data["dmp"]["schema"] = RDA_DMP_SCHEMA_URL  # enforce requested value
+    data["dmp"]["schema"] = SCHEMA_URLS[SCHEMA_VERSION]  # enforce requested value
     data["dmp"]["modified"] = now_iso_minute()  # ensure date-time with Z
 
     # Schema-driven required-field filling + enum repair
@@ -922,19 +1098,14 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH,
             print(" -", e)
 
     save_json(dmp_path, data)
+    print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP {SCHEMA_VERSION} schema (ordered).")
     return dmp_path
 
 
 def main() -> None:
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
-    create_or_update_dmp_from_schema(
-        dmp_path=DEFAULT_DMP_PATH,
-        schema_url=SCHEMA_URL,
-        schema_cache=DEFAULT_SCHEMA_CACHE,
-        force_schema_refresh=False,
-    )
-    print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP 1.2 schema (ordered).")
+    create_or_update_dmp_from_schema(dmp_path=DEFAULT_DMP_PATH)
 
 
 if __name__ == "__main__":

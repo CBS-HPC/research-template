@@ -1,3 +1,20 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Streamlit RDA-DMP JSON editor with per-dataset publish buttons:
+- "Publish to Zenodo"
+- "Publish to DeiC Dataverse"
+
+Depends on:
+- utils/general_tools.py  (package_installer, load/save helpers if you use them)
+- utils/dmp_tools.py      (fetch_schema, ensure_dmp_shape, reorder_dmp_keys, now_iso_minute, etc.)
+- publish_from_dmp.py     (publisher with  mapping + streamlit wrappers)
+- streamlit_tokens.py     (token retrieval via secrets/env/sidebar)
+
+Run:
+  streamlit run dmp_editor.py
+"""
+
 import sys
 import json
 from copy import deepcopy
@@ -5,15 +22,24 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import date, datetime
 
-# --- Robust imports whether run as a package (CLI) or as a bare script (streamlit run) ---
+# --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
-    from .general_tools import package_installer
-    from .dmp_tools import *  # noqa: F401,F403  (imports: fetch_schema, ensure_dmp_shape, reorder_dmp_keys, now_iso_minute, EXTRA_ENUMS, etc.)
+    from .general_tools import package_installer, load_from_env, save_to_env 
+    from .dmp_tools import *  # noqa: F401,F403
+    from .publish_from_dmp import (
+        streamlit_publish_to_zenodo,
+        streamlit_publish_to_dataverse,
+    )
 except ImportError:
-    pkg_root = Path(__file__).resolve().parents[1]
+    pkg_root = Path(__file__).resolve().parent
+    sys.path.insert(0, str(pkg_root / "utils"))
     sys.path.insert(0, str(pkg_root))
-    from utils.general_tools import package_installer
+    from utils.general_tools import package_installer, load_from_env, save_to_env 
     from utils.dmp_tools import *  # noqa: F401,F403
+    from publish_from_dmp import (
+        streamlit_publish_to_zenodo,
+        streamlit_publish_to_dataverse,
+    )
 
 package_installer(required_libraries=["streamlit", "jsonschema"])
 
@@ -22,9 +48,13 @@ from streamlit.web.cli import main as st_main
 from jsonschema import Draft7Validator
 
 
-def _is_format_schema(path: tuple, fmt: str) -> bool:
-    node = _schema_node_for_path(path)
-    return bool(node and node.get("type") == "string" and node.get("format") == fmt)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Minimal helpers (schema-aware editors)  — unchanged parts from your editor
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _key_for(*parts: Any) -> str:
+    return "|".join(str(p) for p in parts if p is not None)
 
 def _parse_iso_date(s: Any) -> Optional[date]:
     if isinstance(s, date) and not isinstance(s, datetime):
@@ -36,16 +66,7 @@ def _parse_iso_date(s: Any) -> Optional[date]:
             return None
     return None
 
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Schema access with caching (prevents blank UI on intermittent failures)
-# ──────────────────────────────────────────────────────────────────────────────
-
 def _get_schema_cached() -> Optional[Dict[str, Any]]:
-    """
-    Cache schema in session_state so we don't lose enums if network blips.
-    """
     key = "__rda_schema__"
     if key in st.session_state:
         return st.session_state[key]
@@ -57,52 +78,10 @@ def _get_schema_cached() -> Optional[Dict[str, Any]]:
         st.session_state[key] = None
         return None
 
-
 def safe_fetch_schema() -> Optional[Dict[str, Any]]:
-    """Alias used throughout."""
     return _get_schema_cached()
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Keys & simple detectors
-# ──────────────────────────────────────────────────────────────────────────────
-
-def _key_for(*parts: Any) -> str:
-    return "|".join(str(p) for p in parts if p is not None)
-
-STRING_LIST_HINTS = {"data_quality_assurance", "keyword", "format", "pid_system", "role"}
-
-def _looks_like_string_list(arr: List[Any], path: tuple) -> bool:
-    if arr and all(isinstance(x, str) for x in arr):
-        return True
-    return (not arr) and bool(path) and (path[-1] in STRING_LIST_HINTS)
-
-def _is_dataset_root_path(path: tuple) -> bool:
-    return len(path) >= 3 and path[0] == "dmp" and path[1] == "dataset" and isinstance(path[2], int)
-
-def _coerce_to_bool(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value in (None, ""):
-        return False
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "1", "yes", "y"}
-    if isinstance(value, (int, float)):
-        return value != 0
-    return False
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Schema navigation (runtime; uses safe_fetch_schema)
-# ──────────────────────────────────────────────────────────────────────────────
-
-
 def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
-    """
-    Walk the JSON Schema following the given path.
-    Handles arrays (via 'items') and resolves $ref at each step.
-    Returns the fully dereferenced node for the last path component, or None.
-    """
     schema = safe_fetch_schema()
     if not schema:
         return None
@@ -124,51 +103,52 @@ def _schema_node_for_path(path: tuple) -> Optional[Dict[str, Any]]:
     node: Dict[str, Any] = schema
     for comp in path:
         node = _resolve_ref(node)
-
         if isinstance(comp, str):
-            # Move into property if available; otherwise, if this is an array schema,
-            # dive into items (deref), then look for the property there.
             props = node.get("properties")
             if isinstance(props, dict) and comp in props:
-                node = props[comp]
-                continue
-
+                node = props[comp]; continue
             if node.get("type") == "array" and isinstance(node.get("items"), dict):
                 items = _resolve_ref(node["items"])
                 props = items.get("properties")
                 if isinstance(props, dict) and comp in props:
-                    node = props[comp]
-                    continue
-                # property not found
-                return None
-
-            return None  # not a property path
-
-        else:
-            # integer index -> if node is an array, go to items; otherwise fail
-            if node.get("type") == "array" and isinstance(node.get("items"), dict):
-                node = node["items"]
-                continue
+                    node = props[comp]; continue
             return None
-
+        else:
+            if node.get("type") == "array" and isinstance(node.get("items"), dict):
+                node = node["items"]; continue
+            return None
     return _resolve_ref(node)
 
+def _is_format_schema(path: tuple, fmt: str) -> bool:
+    node = _schema_node_for_path(path)
+    return bool(node and node.get("type") == "string" and node.get("format") == fmt)
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Path signature, enum discovery (schema + EXTRA_ENUMS), and labeling
-# ──────────────────────────────────────────────────────────────────────────────
+def _is_boolean_schema(path: tuple) -> bool:
+    node = _schema_node_for_path(path)
+    return bool(node and node.get("type") == "boolean")
+
+def _coerce_to_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value in (None, ""):
+        return False
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes", "y"}
+    if isinstance(value, (int, float)):
+        return value != 0
+    return False
+
+STRING_LIST_HINTS = {"data_quality_assurance", "keyword", "format", "pid_system", "role"}
+
+def _looks_like_string_list(arr: List[Any], path: tuple) -> bool:
+    if arr and all(isinstance(x, str) for x in arr):
+        return True
+    return (not arr) and bool(path) and (path[-1] in STRING_LIST_HINTS)
 
 def _path_signature(path: tuple) -> str:
-    """
-    Convert tuple path to a dotted signature, using [] for any int index.
-    Example:
-      ('dmp','dataset',0,'distribution',0,'license',0,'license_ref')
-      -> "dmp.dataset[].distribution[].license[].license_ref"
-    """
     parts: List[str] = []
     for p in path:
         if isinstance(p, int):
-            # append [] to the previous segment (no extra dot)
             if parts:
                 parts[-1] = parts[-1] + "[]"
             else:
@@ -177,51 +157,29 @@ def _path_signature(path: tuple) -> str:
             parts.append(str(p))
     return ".".join(parts)
 
-
-def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
-    """
-    Return ("single"|"multi"|None, options).
-
-    Behavior:
-    - If the schema defines an enum (string or array of string): use those options.
-    - If EXTRA_ENUMS[path] exists: merge those options in (dedup) and
-      FORCE enum UI even if the schema doesn't list an enum.
-    - If the node is an array, mode is "multi"; otherwise "single".
-    """
+def _enum_info_for_path(path: tuple):
+    # Enums are loaded from schema + EXTRA_ENUMS (from dmp_tools)
     node = _schema_node_for_path(path)
     base_mode: Optional[str] = None
     base_options: List[str] = []
-
-    # Read strict enum from schema (if any)
     if node:
         if node.get("type") == "string" and isinstance(node.get("enum"), list):
-            base_mode = "single"
-            base_options = list(node["enum"])
+            base_mode = "single"; base_options = list(node["enum"])
         elif node.get("type") == "array":
             it = node.get("items")
             if isinstance(it, dict) and it.get("type") == "string" and isinstance(it.get("enum"), list):
-                base_mode = "multi"
-                base_options = list(it["enum"])
-
-    # Inject extras from dmp_tools.EXTRA_ENUMS
+                base_mode = "multi"; base_options = list(it["enum"])
     sig = _path_signature(path)
-    extra_values: List[str] = []
     try:
-        # EXTRA_ENUMS is expected to be defined in dmp_tools
         extras = EXTRA_ENUMS.get(sig, [])  # type: ignore[name-defined]
-        # supports both List[str] and List[{"value": str, "label": str}]
-        if extras and isinstance(extras, list):
-            if extras and isinstance(extras[0], dict):
-                extra_values = [d.get("value", "") for d in extras if isinstance(d, dict) and d.get("value")]
-            else:
-                extra_values = [str(x) for x in extras]
     except Exception:
-        extra_values = []
-
-    # Determine intended mode:
-    # - If schema says array -> "multi"
-    # - Else if node exists and is string -> "single"
-    # - Else if we have any options at all -> default to "single" (force enum UI)
+        extras = []
+    extra_values: List[str] = []
+    if isinstance(extras, list):
+        if extras and isinstance(extras[0], dict):
+            extra_values = [d.get("value", "") for d in extras if isinstance(d, dict) and d.get("value")]
+        else:
+            extra_values = [str(x) for x in extras]
     inferred_mode: Optional[str] = None
     if node and node.get("type") == "array":
         inferred_mode = "multi"
@@ -229,73 +187,43 @@ def _enum_info_for_path(path: tuple) -> Tuple[Optional[str], List[str]]:
         inferred_mode = "single"
     elif (base_options or extra_values):
         inferred_mode = "single"
-
-    # Merge schema + extras (dedup, preserve order: schema first, then extras)
     merged = list(dict.fromkeys(base_options + extra_values))
-
     if not merged:
         return (None, [])
-
     return (base_mode or inferred_mode or "single", merged)
 
-
 def _enum_label_for(path: tuple, option_value: str) -> str:
-    """
-    Pretty label for injected extras (if they are dicts with {"value","label"}).
-    Falls back to the raw option_value otherwise.
-    """
     sig = _path_signature(path)
     try:
         extras = EXTRA_ENUMS.get(sig, [])  # type: ignore[name-defined]
     except Exception:
         extras = []
-
     if isinstance(extras, list):
         for d in extras:
             if isinstance(d, dict):
                 if d.get("value") == option_value:
                     return d.get("label", option_value)
-            # if extras are just strings, no special label
     return str(option_value)
 
-
-def _is_boolean_schema(path: tuple) -> bool:
-    node = _schema_node_for_path(path)
-    return bool(node and node.get("type") == "boolean")
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Generic editors (schema-aware)
-# ──────────────────────────────────────────────────────────────────────────────
-
 def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
-    # 1) JSON Schema booleans (or keep 'is_reused' for backward-compat)
     if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
         keyb = _key_for(*path, ns, "bool")
         return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
-
-    # 2) JSON Schema dates -> date picker returning ISO "YYYY-MM-DD" or ""
     if _is_format_schema(path, "date"):
         key = _key_for(*path, ns, "date")
         clear_key = _key_for(*path, ns, "date", "clear")
-        # sensible default for empty/invalid -> today (display), but allow Clear -> ""
         cur = _parse_iso_date(value) or date.today()
         c1, c2 = st.columns([4, 1])
         with c1:
             picked = st.date_input(label, value=cur, key=key)
         with c2:
             st.markdown("<div style='height:0.1rem'></div>", unsafe_allow_html=True)
-            #st.write("")
             cleared = st.button("Clear", key=clear_key)
         return "" if cleared else (picked.isoformat() if isinstance(picked, date) else "")
-
-    # 3) Enum-backed single value -> selectbox with all acceptable inputs
     mode, options = _enum_info_for_path(path)
     if mode == "single" and options:
         sel_key = _key_for(*path, ns, "enum")
         options_ui = list(options)
-
-        # If current value isn't in options, show a custom placeholder to preserve it
         custom_label = None
         if value not in (None, "") and value not in options_ui:
             custom_label = f"(custom) {value}"
@@ -306,7 +234,6 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
                 default_index = options_ui.index(value)
             except Exception:
                 default_index = 0
-
         selected = st.selectbox(
             label,
             options_ui,
@@ -315,99 +242,31 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
             format_func=lambda opt: _enum_label_for(path, opt if opt != custom_label else value),
         )
         return value if (custom_label and selected == custom_label) else selected
-
-    # 4) Non-enum primitives (keep your existing behavior, but never return None for strings)
     key = _key_for(*path, ns, "prim")
     if isinstance(value, bool):
         return st.checkbox(label, value=value, key=key)
     if isinstance(value, int):
         txt = st.text_input(label, str(value), key=key)
-        try:
-            return int(txt) if txt != "" else None
-        except Exception:
-            return value
+        try: return int(txt) if txt != "" else None
+        except Exception: return value
     if isinstance(value, float):
         txt = st.text_input(label, str(value), key=key)
-        try:
-            return float(txt) if txt != "" else None
-        except Exception:
-            return value
+        try: return float(txt) if txt != "" else None
+        except Exception: return value
     txt = st.text_input(label, "" if value is None else str(value), key=key)
     return txt
 
-
-def edit_primitive_old(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
-    # Boolean by schema (or keep 'is_reused' for backward-compat)
-    if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
-        keyb = _key_for(*path, ns, "bool")
-        return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
-
-    # Force enum-backed values to use locked choices
-    mode, options = _enum_info_for_path(path)
-    if mode == "single" and options:
-        sel_key = _key_for(*path, ns, "enum")
-
-        # Choose a safe default if current value is not in the options
-        if value not in options:
-            # Prefer empty string if present; else first option
-            default_value = "" if "" in options else options[0]
-        else:
-            default_value = value
-
-        # Streamlit needs an index
-        try:
-            default_index = options.index(default_value)
-        except ValueError:
-            default_index = 0
-
-        selected = st.selectbox(label, options, index=default_index, key=sel_key)
-        return selected
-
-    # Non-enum primitives -> regular inputs
-    key = _key_for(*path, ns, "prim")
-    if isinstance(value, bool):
-        return st.checkbox(label, value=value, key=key)
-    if isinstance(value, int):
-        txt = st.text_input(label, str(value), key=key)
-        try:
-            return int(txt) if txt != "" else None
-        except Exception:
-            return value
-    if isinstance(value, float):
-        txt = st.text_input(label, str(value), key=key)
-        try:
-            return float(txt) if txt != "" else None
-        except Exception:
-            return value
-    txt = st.text_input(label, "" if value is None else str(value), key=key)
-
-    return txt
-
-
-
-def edit_array(
-    arr: List[Any],
-    path: tuple,
-    title_singular: str,
-    removable_items: bool,
-    ns: Optional[str] = None,
-) -> List[Any]:
-    # Array of enum'ed strings -> multiselect with all allowed values
+def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items: bool, ns: Optional[str] = None) -> List[Any]:
     mode, options = _enum_info_for_path(path)
     if mode == "multi" and options:
         label = f"{path[-1] if path else title_singular} (choose any)"
         wkey = _key_for(*path, ns, "enum_multi")
         current = [x for x in arr if isinstance(x, str) and x in options]
         selected = st.multiselect(
-            label,
-            options,
-            default=current,
-            key=wkey,
+            label, options, default=current, key=wkey,
             format_func=lambda opt: _enum_label_for(path, opt),
         )
         return selected
-
-    # Plain list[str] -> one-per-line textarea
     if _looks_like_string_list(arr, path):
         label = f"{path[-1] if path else title_singular} (one per line; saved as array)"
         key = _key_for(*path, ns, "textlist")
@@ -415,142 +274,73 @@ def edit_array(
         txt = st.text_area(label, initial, key=key)
         lines = [ln.strip() for ln in txt.splitlines() if ln.strip()]
         return lines
-
-    # Default UI for arrays of dicts/complex types
     to_delete: List[int] = []
     for i, item in enumerate(list(arr)):
         heading = f"{title_singular} #{i+1}"
         if isinstance(item, dict):
             for pick in ("title", "name", "identifier"):
                 if item.get(pick):
-                    heading = f"{title_singular} #{i+1}: {item[pick]}"
-                    break
+                    heading = f"{title_singular} #{i+1}: {item[pick]}"; break
         with st.expander(heading, expanded=False):
             arr[i] = edit_any(item, path=(*path, i), ns=ns)
-            if removable_items and st.button(
-                f"Remove this {title_singular.lower()}",
-                key=_key_for(*path, i, ns, "rm"),
-            ):
+            if removable_items and st.button(f"Remove this {title_singular.lower()}", key=_key_for(*path, i, ns, "rm")):
                 to_delete.append(i)
     for i in reversed(to_delete):
         del arr[i]
     return arr
 
-
-def _render_extension_read_only(ext: List[Any], path: tuple, ns: Optional[str] = None) -> None:
-    st.markdown("**extension (read-only)**")
-    for idx, item in enumerate(ext):
-        if isinstance(item, dict) and len(item) == 1:
-            k = next(iter(item))
-            with st.expander(k, expanded=False):
-                st.json(item[k])
+def edit_object_old(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: Optional[str] = None) -> Dict[str, Any]:
+    keys = list(obj.keys())
+    remove_keys: List[str] = []
+    for key in keys:
+        val = obj.get(key)
+        if path == ("dmp",) and key in ("project", "dataset"):
+            continue
+        if key == "extension" and isinstance(val, list):
+            with st.expander("extension", expanded=False):
+                # editable at non-dataset roots; read-only at dataset root if you prefer
+                obj["extension"] = edit_array(val, path=(*path, "extension"), title_singular="Entry", removable_items=True, ns=ns)
+            continue
+        if isinstance(val, dict):
+            with st.expander(key, expanded=False):
+                obj[key] = edit_any(val, path=(*path, key), ns=ns)
+        elif isinstance(val, list):
+            with st.expander(key, expanded=False):
+                obj[key] = edit_array(val, path=(*path, key), title_singular="Item", removable_items=False, ns=ns)
         else:
-            with st.expander(f"extension[{idx}]", expanded=False):
-                st.json(item)
+            obj[key] = edit_primitive(key, val, path=(*path, key), ns=ns)
+        if allow_remove_keys and st.button(f"Remove key: {key}", key=_key_for(*path, key, ns, "del")):
+            remove_keys.append(key)
+    for k in remove_keys:
+        obj.pop(k, None)
+    return obj
 
-
-def edit_extension(obj: Dict[str, Any], path: tuple, ns: Optional[str] = None) -> None:
-    ext: List[Any] = obj.setdefault("extension", [])
-    st.markdown("**Extension**")
-    with st.expander("Add extension entry", expanded=False):
-        new_key = st.text_input("Extension key", key=_key_for(*path, ns, "ext", "new"))
-        if st.button("Add", key=_key_for(*path, ns, "ext", "add")):
-            if new_key and not any(isinstance(it, dict) and new_key in it for it in ext):
-                ext.append({new_key: {}})
-    to_delete: List[int] = []
-    for idx, item in enumerate(ext):
-        if isinstance(item, dict) and len(item) == 1:
-            k = next(iter(item))
-            with st.expander(k, expanded=False):
-                inner = item[k]
-                edit_object(inner, path=(*path, "extension", idx, k), ns=ns, allow_remove_keys=False)
-                item[k] = inner
-                if st.button("Remove this extension entry", key=_key_for(*path, ns, "ext", idx, "rm")):
-                    to_delete.append(idx)
-        else:
-            with st.expander(f"extension[{idx}]", expanded=False):
-                ext[idx] = edit_any(item, path=(*path, "extension", idx), ns=ns)
-                if st.button("Remove this extension entry", key=_key_for(*path, ns, "ext", idx, "rm")):
-                    to_delete.append(idx)
-    for i in reversed(to_delete):
-        del ext[i]
-    obj["extension"] = ext
-
-
-def edit_object(
-    obj: Dict[str, Any],
-    path: tuple,
-    allow_remove_keys: bool,
-    ns: Optional[str] = None,
-) -> Dict[str, Any]:
+def edit_object(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: Optional[str] = None) -> Dict[str, Any]:
     keys = list(obj.keys())
     remove_keys: List[str] = []
     for key in keys:
         val = obj.get(key)
 
-        # Keep Projects/Datasets out of the root object editor
-        if path == ("dmp",) and key in ("project", "dataset"):
+        # Keep Projects/Datasets/Contributors out of the root object editor; they get bespoke UIs
+        if path == ("dmp",) and key in ("project", "dataset", "contributor"):
             continue
 
-        # Special-case: dataset-level extension is read-only
+        # Special-case: extension as before (optional)
         if key == "extension" and isinstance(val, list):
-            if _is_dataset_root_path(path):
-                with st.expander("extension", expanded=False):
-                    _render_extension_read_only(val, path=(*path, "extension"), ns=ns)
-                continue
-            else:
-                with st.expander("extension", expanded=False):
-                    edit_extension(obj, path=(*path,), ns=ns)
-                continue
+            with st.expander("extension", expanded=False):
+                obj["extension"] = edit_array(val, path=(*path, "extension"), title_singular="Entry", removable_items=True, ns=ns)
+            continue
 
         if isinstance(val, dict):
             with st.expander(key, expanded=False):
                 obj[key] = edit_any(val, path=(*path, key), ns=ns)
-
         elif isinstance(val, list):
-            # Prefer enum-driven UI if schema says this is an array-of-enum
-            mode, options = _enum_info_for_path((*path, key))
-            if mode == "multi" and options:
-                label = f"{key} (choose any)"
-                wkey = _key_for(*path, key, ns, "enum_multi")
-                current = [x for x in val if isinstance(x, str) and x in options]
-                obj[key] = st.multiselect(
-                    label,
-                    options,
-                    default=current,
-                    key=wkey,
-                    format_func=lambda opt: _enum_label_for(path, opt),
-                )
-
-            elif _looks_like_string_list(val, (*path, key)):
-                label = f"{key} (one per line; saved as array)"
-                wkey = _key_for(*path, key, ns, "textlist")
-                initial = "\n".join(x for x in val if isinstance(x, str))
-                txt = st.text_area(label, initial, key=wkey)
-                obj[key] = [ln.strip() for ln in txt.splitlines() if ln.strip()]
-
-            # Unwrap arrays that contain exactly one dict (no "Item #1")
-            elif len(val) == 1 and isinstance(val[0], dict):
-                with st.expander(key, expanded=False):
-                    val[0] = edit_any(val[0], path=(*path, key, 0), ns=ns)
-                obj[key] = val
-
-            else:
-                with st.expander(key, expanded=False):
-                    obj[key] = edit_array(
-                        val,
-                        path=(*path, key),
-                        title_singular="Item",
-                        removable_items=False,
-                        ns=ns,
-                    )
-
+            with st.expander(key, expanded=False):
+                obj[key] = edit_array(val, path=(*path, key), title_singular="Item", removable_items=False, ns=ns)
         else:
             obj[key] = edit_primitive(key, val, path=(*path, key), ns=ns)
 
-        if allow_remove_keys and st.button(
-            f"Remove key: {key}", key=_key_for(*path, key, ns, "del")
-        ):
+        if allow_remove_keys and st.button(f"Remove key: {key}", key=_key_for(*path, key, ns, "del")):
             remove_keys.append(key)
 
     for k in remove_keys:
@@ -571,187 +361,408 @@ def edit_any(value: Any, path: tuple, ns: Optional[str] = None) -> Any:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def find_default_dmp_path(start: Optional[Path] = None) -> Path:
-    """
-    Prefer dmp.json if present; otherwise fall back to dmp.json.
-    Finally, fall back to DEFAULT_DMP_PATH from dmp_tools.
-    """
-    start = start or Path(__file__).resolve().parent.parent.parent
+    start = start or Path(__file__).resolve().parent
     candidates = ["dmp.json"]
     for base in [start, *start.parents]:
         for name in candidates:
             p = base / name
             if p.exists():
                 return p
-    return Path("dmp.json") if not Path(DEFAULT_DMP_PATH).exists() else Path(DEFAULT_DMP_PATH)
+    return Path("./dmp.json") if not Path(DEFAULT_DMP_PATH).exists() else Path(DEFAULT_DMP_PATH)
 
+def draw_root_section_old(dmp_root: Dict[str, Any]) -> None:
+    st.subheader("Root")
+
+    # Ensure required keys exist
+    dmp_root.setdefault("schema", dmp_root.get("schema") or SCHEMA_URLS[SCHEMA_VERSION])
+    dmp_root.setdefault("contact", dmp_root.get("contact") or {
+        "name": "",
+        "mbox": "",
+        "contact_id": {"type": "orcid", "identifier": ""},
+    })
+ 
+
+    # Contributor template (use your templates if available, else minimal 1.2-compliant)
+    templates = dmp_default_templates() if "dmp_default_templates" in globals() else {}
+    default_contrib = deepcopy(templates.get("contributor")) if templates and "contributor" in templates else {
+        "name": "",
+        "mbox": "",
+        "contributor_id": {"type": "orcid", "identifier": ""},
+        "role": [],
+    }
+
+    # --- 3) The rest of the Root fields (excluding project/dataset/contact/contributor) ---
+    # Preserve insertion order of dict keys
+    for key in list(dmp_root.keys()):
+        if key in ("project", "dataset"):
+            continue
+
+        val = dmp_root.get(key)
+        # Render each remaining key similarly to edit_object, but one-by-one to keep order
+        if isinstance(val, dict):
+            with st.expander(key, expanded=False):
+                dmp_root[key] = edit_any(val, path=("dmp", key), ns=None)
+        elif isinstance(val, list):
+            with st.expander(key, expanded=False):
+                dmp_root[key] = edit_array(val, path=("dmp", key), title_singular="Item", removable_items=False, ns=None)
+        else:
+            dmp_root[key] = edit_primitive(key, val, path=("dmp", key), ns=None)
+
+    # --- 4) BUTTON AT THE VERY BOTTOM OF ROOT ---
+    add_col, _ = st.columns([1, 6])
+    with add_col:
+        if st.button("➕ Add contributor", key=_key_for("dmp", "contributor", "add", "bottom")):
+            dmp_root["contributor"].append(deepcopy(default_contrib))
+            st.success("Contributor added")
 
 def draw_root_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Root")
-    dmp_root.setdefault("schema", dmp_root.get("schema") or RDA_DMP_SCHEMA_URL)
-    edit_object(dmp_root, path=("dmp",), allow_remove_keys=False, ns=None)
 
+    # Ensure required keys exist
+    dmp_root.setdefault("schema", dmp_root.get("schema") or SCHEMA_URLS[SCHEMA_VERSION])
+    dmp_root.setdefault("contact", dmp_root.get("contact") or {
+        "name": "",
+        "mbox": "",
+        "contact_id": {"type": "orcid", "identifier": ""},
+    })
+    contributors: List[Dict[str, Any]] = dmp_root.setdefault("contributor", [])
+
+    # Template for a new contributor (use your template if available)
+    templates = dmp_default_templates() if "dmp_default_templates" in globals() else {}
+    default_contrib = deepcopy(templates.get("contributor")) if templates and "contributor" in templates else {
+        "name": "",
+        "mbox": "",
+        "contributor_id": {"type": "orcid", "identifier": ""},
+        "role": [],  # array of strings per 1.2 schema
+    }
+
+    # --- The rest of the Root fields (excluding project/dataset/contact/contributor) ---
+    for key in list(dmp_root.keys()):
+        if key in ("project", "dataset"):
+            continue
+        val = dmp_root.get(key)
+        if isinstance(val, dict):
+            with st.expander(key, expanded=False):
+                dmp_root[key] = edit_any(val, path=("dmp", key), ns=None)
+        elif isinstance(val, list):
+            with st.expander(key, expanded=False):
+                dmp_root[key] = edit_array(val, path=("dmp", key), title_singular="Item", removable_items=False, ns=None)
+        else:
+            dmp_root[key] = edit_primitive(key, val, path=("dmp", key), ns=None)
+
+    # --- ADD CONTRIBUTOR button (bottom of Root) ---
+    add_col, _ = st.columns([1, 6])
+    with add_col:
+        if st.button("➕ Add contributor", key=_key_for("dmp", "contributor", "add", "bottom")):
+            # Append and force an immediate rerun so it shows up right away
+            dmp_root["contributor"].append(deepcopy(default_contrib))
+            st.rerun()
 
 def draw_projects_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Projects")
     projects: List[Dict[str, Any]] = dmp_root.setdefault("project", [])
     cols = st.columns(2)
-
     templates = dmp_default_templates()
-
     with cols[0]:
         if st.button("➕ Add project", key=_key_for("project", "add")):
             projects.append(templates["project"])
-    dmp_root["project"] = edit_array(
-        projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None
-    )
+    dmp_root["project"] = edit_array(projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None)
 
-
-def _dataset_label(i: int, ds: Dict[str, Any]) -> str:
-    t = ds.get("title") or "Dataset"
-    return f"Dataset #{i+1}: {t}"
-
-
-def draw_datasets_section(dmp_root: Dict[str, Any]) -> None:
+def draw_datasets_section(dmp_root: dict) -> None:
     st.subheader("Datasets")
-    datasets: List[Dict[str, Any]] = dmp_root.setdefault("dataset", [])
+    datasets = dmp_root.setdefault("dataset", [])
     top = st.columns([1, 3])
-
     templates = dmp_default_templates()
-
     with top[0]:
         if st.button("➕ Add dataset", key=_key_for("dataset", "add")):
             datasets.append(templates["dataset"])
             st.success("Dataset added")
-    indices = list(range(len(datasets)))
-    for i in indices:
-        if i >= len(datasets):
-            break
-        ds = datasets[i]
-        ds.setdefault("is_reused", False)
-        header = _dataset_label(i, ds)
-        with st.expander(header, expanded=False):
-            if st.button("🗑️ Remove this dataset", key=_key_for("dataset", i, "rm")):
-                del datasets[i]
-                st.stop()
+
+    for i, ds in enumerate(list(datasets)):
+        with st.expander(f"Dataset #{i+1}: {ds.get('title') or 'Dataset'}", expanded=False):
+            cols = st.columns([1,1,1,6])
+            with cols[0]:
+                if st.button("🗑️ Remove this dataset", key=f"rm_ds_{i}"):
+                    del datasets[i]
+                    st.stop()
+            with cols[1]:
+                if st.button("Publish to Zenodo", key=f"pub_zen_{i}"):
+                    token = get_token_from_state("zenodo")
+                    if not token:
+                        st.warning("Please set a Zenodo token in the sidebar and press Save.")
+                        st.stop()
+                    streamlit_publish_to_zenodo(
+                        dataset=ds,
+                        dmp=st.session_state["data"],
+                        token=token,
+                        sandbox=True,   # change to False for production
+                        publish=False,
+                        )
+            with cols[2]:
+                if st.button("Publish to DeiC Dataverse", key=f"pub_dv_{i}"):
+                    token = get_token_from_state("dataverse")
+                    if not token:
+                        st.warning("Please set a Dataverse token in the sidebar and press Save.")
+                        st.stop()
+                    streamlit_publish_to_dataverse(
+                        dataset=ds,
+                        dmp=st.session_state["data"],
+                        token=token,
+                        base_url="https://dataverse.deic.dk",
+                        alias="tmpdemo",   # adjust to your collection
+                        publish=False,
+                        release_type="major",
+                        )
+
+            # show/edit dataset metadata
             datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
 
+TOKENS_STATE = {
+    "zenodo": {"env_key": "ZENODO_TOKEN", "state_key": "__token_zenodo__"},
+    "dataverse": {"env_key": "DATAVERSE_TOKEN", "state_key": "__token_dataverse__"},
+}
+
+def render_token_controls():
+    """Render a single sidebar section that:
+       - shows current token source (secrets/env)
+       - lets the user enter a token
+       - saves it to .env on submit
+       - mirrors it into st.session_state for immediate use
+    """
+    with st.sidebar:
+        st.header("Repository tokens")
+
+        for service in ("zenodo", "dataverse"):
+            env_key   = TOKENS_STATE[service]["env_key"]
+            state_key = TOKENS_STATE[service]["state_key"]
+
+            # 1) Prefer st.secrets if present
+            token = ""
+            try:
+                token = st.secrets[env_key]  # type: ignore[index]
+            except Exception:
+                token = ""
+
+            # 2) Then .env / process env
+            if not token:
+                token = os.environ.get(env_key) or (load_from_env(env_key) or "")
+
+            # 3) Mirror whatever we found into session (so buttons can use it)
+            if state_key not in st.session_state:
+                st.session_state[state_key] = token
+
+            st.subheader(service.capitalize())
+            # Buffered form — only commits on submit
+            with st.form(f"{service}_token_form", clear_on_submit=False):
+                entered = st.text_input(
+                    f"{service.capitalize()} API token",
+                    type="password",
+                    value=st.session_state[state_key],
+                    help="Click Save to write to .env and update session.",
+                )
+                submitted = st.form_submit_button("Save")
+                if submitted:
+                    if entered.strip():
+                        # Persist & reflect immediately
+                        save_to_env(entered.strip(), env_key)   # (value, key)
+                        os.environ[env_key] = entered.strip()   # immediate availability
+                        st.session_state[state_key] = entered.strip()
+                        st.success(f"Saved {env_key} to .env and updated session.")
+                    else:
+                        st.warning("Please enter a non-empty token.")
+
+def get_token_from_state(service: str) -> str:
+    """Read the best-known token without rendering UI."""
+    service = service.lower().strip()
+    env_key   = TOKENS_STATE[service]["env_key"]
+    state_key = TOKENS_STATE[service]["state_key"]
+
+    # priority: session (set by form) -> secrets -> env/.env
+    val = st.session_state.get(state_key, "")
+    if val:
+        return val
+    try:
+        val = st.secrets[env_key]  # type: ignore[index]
+        if val:
+            return val
+    except Exception:
+        pass
+    return os.environ.get(env_key) or (load_from_env(env_key) or "")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # App
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _schema_fixups_in_place(data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Apply schema-driven fixes before validate/save:
-    - normalize root/datasets (keeps user data)
-    - ensure required-by-schema (when schema loaded)
-    - repair empty enums ("") to project defaults (when schema loaded)
-    """
     schema = safe_fetch_schema()
-
-    # normalization works even without schema
     normalize_root_in_place(data, schema=schema)
     normalize_datasets_in_place(data, schema=schema)
-
     if schema:
         ensure_required_by_schema(data, schema)
         repair_empty_enums(
-            data.get("dmp", {}),
-            schema,
-            schema.get("properties", {}).get("dmp", {}),
-            path="dmp",
+            data.get("dmp", {}), schema, schema.get("properties", {}).get("dmp", {}), path="dmp",
         )
     return data
 
+def _ensure_data_initialized(default_path: Path) -> None:
+    """Ensure st.session_state['data'] exists and track its source + message."""
+    st.session_state.setdefault("__loaded_from__", "")
+    st.session_state.setdefault("__last_upload_hash__", None)
+    st.session_state.setdefault("__load_message__", "")
+    st.session_state.setdefault("save_path", str(default_path))  # default initial save target
+
+    if "data" in st.session_state and st.session_state["data"]:
+        st.session_state["data"] = ensure_dmp_shape(st.session_state["data"])
+        return
+
+    if default_path.exists():
+        try:
+            with default_path.open("r", encoding="utf-8") as f:
+                st.session_state["data"] = ensure_dmp_shape(json.load(f))
+            st.session_state["__loaded_from__"] = str(default_path.resolve())
+            st.session_state["__load_message__"] = f"✅ Loaded default DMP from {default_path.resolve()}"
+            st.session_state["save_path"] = str(default_path.resolve())
+            return
+        except Exception as e:
+            st.warning(f"Failed to load default DMP. Started empty. Error: {e}")
+
+    st.session_state["data"] = ensure_dmp_shape({})
+    st.session_state["__loaded_from__"] = "new"
+    st.session_state["__load_message__"] = "⚠️ Started with an empty DMP."
+    # still keep save_path pointing to default_path
+    st.session_state["save_path"] = str(default_path)
+
 
 def main() -> None:
-    st.set_page_config(page_title="RDA-DMP 1.2 JSON Editor", layout="wide")
-    st.title("RDA-DMP 1.2 JSON Editor")
+    st.set_page_config(page_title=f"RDA-DMP {SCHEMA_VERSION} JSON Editor", layout="wide")
+    st.title(f"RDA-DMP {SCHEMA_VERSION} JSON Editor")
 
-    # Ensure schema is loaded if available; cache result
+    # ---------------------------
+    # Session defaults (for UX)
+    # ---------------------------
+    st.session_state.setdefault("__loaded_from__", "")
+    st.session_state.setdefault("__load_message__", "")
+    st.session_state.setdefault("__last_upload_hash__", None)  # debounces same-file re-uploads
+    st.session_state.setdefault("__uploader_ver__", 0)         # bump to reset file_uploader widget
+    st.session_state.setdefault("save_path", "")               # current save target path
+
+    # ---------------------------
+    # Tokens UI (Zenodo / Dataverse)
+    # ---------------------------
+    render_token_controls()
+
+    # ---------------------------
+    # Schema & default DMP path
+    # ---------------------------
     schema_now = safe_fetch_schema()
-
     default_path = find_default_dmp_path()
 
+    # Initialize data (loads default file if present, sets load message/save_path)
+    _ensure_data_initialized(default_path)
+
+    # Show load message directly under title
+    if st.session_state.get("__load_message__"):
+        st.info(st.session_state["__load_message__"])
+
+    # Helper: produce ordered/validated output snapshot
+    def _current_ordered_output() -> Dict[str, Any]:
+        st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
+        return reorder_dmp_keys(_schema_fixups_in_place(deepcopy(st.session_state["data"])))
+
+    # Working folder for all files = directory of the default dmp
+    working_folder: Path = default_path.parent
+
+    # ---------------------------
+    # Sidebar: Load / Save
+    # ---------------------------
     with st.sidebar:
         st.header("Load / Save")
-        st.caption(f"Schema: {'✅ loaded' if schema_now else '⚠️ unavailable (enums via extras/fallbacks)'}")
-        path_input = st.text_input("File path", str(default_path), key="default_path")
-        target_path = Path(path_input)
-        uploaded = st.file_uploader("Open JSON (optional)", type=["json"])
-        btn_new = st.button("New empty DMP")
-        btn_load_disk = st.button("Load from disk")
+        st.caption(f"Schema: {'✅ loaded' if schema_now else '⚠️ unavailable (fallbacks)'}")
 
-    # First-time load: try the detected default file (dmp.json preferred)
-    if "data" not in st.session_state:
-        if default_path.exists():
+        # --- OPEN JSON: uploader that loads immediately, saves into working_folder, and syncs save_path ---
+        uploader_key = f"open_json_uploader_{st.session_state['__uploader_ver__']}"
+        uploaded = st.file_uploader(
+            "Open JSON",
+            type=["json"],
+            help=f"Uploads are saved to: {working_folder.resolve()}",
+            key=uploader_key,
+        )
+
+        # CASE A: user selected a file (and it's new content)
+        if uploaded is not None:
+            import hashlib
+            payload = uploaded.getvalue()
+            h = hashlib.sha256(payload).hexdigest()
+            if st.session_state.get("__last_upload_hash__") != h:
+                try:
+                    # Save uploaded file into working folder with its original filename
+                    working_folder.mkdir(parents=True, exist_ok=True)
+                    dst_path = (working_folder / uploaded.name).resolve()
+                    dst_path.write_bytes(payload)
+
+                    # Load into the app
+                    data = json.loads(payload.decode("utf-8"))
+                    st.session_state["data"] = ensure_dmp_shape(data)
+                    st.session_state["__last_upload_hash__"] = h
+                    st.session_state["__loaded_from__"] = str(dst_path)
+                    st.session_state["__load_message__"] = f"✅ Loaded DMP from {dst_path}"
+                    st.session_state["save_path"] = str(dst_path)  # keep Save to path in sync
+                    st.session_state.pop("ds_selected", None)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to load uploaded JSON: {e}")
+
+        # CASE B: user cleared the uploader after having uploaded before
+        elif st.session_state.get("__last_upload_hash__"):
+            # Reset hash marker so we don't loop
+            st.session_state["__last_upload_hash__"] = None
             try:
-                with default_path.open("r", encoding="utf-8") as f:
-                    st.session_state["data"] = ensure_dmp_shape(json.load(f))
-                st.success(f"Loaded default DMP from {default_path.resolve()}")
-            except Exception as e:
-                st.session_state["data"] = ensure_dmp_shape({})
-                st.warning(f"Failed to load default DMP. Started empty. Error: {e}")
-        else:
-            st.session_state["data"] = ensure_dmp_shape({})
-
-    # New empty scaffold
-    if btn_new:
-        st.session_state["data"] = ensure_dmp_shape({})
-        st.session_state.pop("ds_selected", None)
-
-    # Uploaded JSON
-    if uploaded is not None:
-        try:
-            data = json.loads(uploaded.getvalue().decode("utf-8"))
-            st.session_state["data"] = ensure_dmp_shape(data)
-            st.success("Loaded from upload.")
-            st.session_state.pop("ds_selected", None)
-        except Exception as e:
-            st.error(f"Failed to load uploaded JSON: {e}")
-
-    # Load from disk (using the sidebar path)
-    if btn_load_disk:
-        try:
-            if target_path.exists():
-                with target_path.open("r", encoding="utf-8") as f:
-                    st.session_state["data"] = ensure_dmp_shape(json.load(f))
-                st.success(f"Loaded from {target_path.resolve()}")
+                if default_path.exists():
+                    with default_path.open("r", encoding="utf-8") as f:
+                        st.session_state["data"] = ensure_dmp_shape(json.load(f))
+                    st.session_state["__loaded_from__"] = str(default_path.resolve())
+                    st.session_state["__load_message__"] = f"✅ Loaded default DMP from {default_path.resolve()}"
+                    st.session_state["save_path"] = str(default_path.resolve())
+                else:
+                    # No default DMP: start fresh, target new_dmp.json
+                    new_path = (working_folder / "new_dmp.json").resolve()
+                    st.session_state["data"] = ensure_dmp_shape({})
+                    st.session_state["__loaded_from__"] = "new"
+                    st.session_state["__load_message__"] = f"⚠️ Default DMP not found. Started a new DMP (will save to {new_path})"
+                    st.session_state["save_path"] = str(new_path)
                 st.session_state.pop("ds_selected", None)
-            else:
-                st.warning(f"{target_path} not found, created new structure.")
-                st.session_state["data"] = ensure_dmp_shape({})
-        except Exception as e:
-            st.error(f"Failed to load: {e}")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Failed to reload default DMP: {e}")
 
-    # Work on a shaped copy
-    data = ensure_dmp_shape(st.session_state["data"])
-    dmp_root = data["dmp"]
-    draw_root_section(dmp_root)
-    draw_projects_section(dmp_root)
-    draw_datasets_section(dmp_root)
+        # --- NEW DMP: create empty, set save path to default_path.parent / 'new_dmp.json', reset uploader ---
 
-    st.markdown("---")
-    colA, colB, colC = st.columns([1, 1, 2])
+        if st.button("➕ Create New DMP"):
+            st.session_state["data"] = ensure_dmp_shape({})
+            new_path = (working_folder / "new_dmp.json").resolve()
+            st.session_state["__loaded_from__"] = "new"
+            st.session_state["__load_message__"] = f"✅ Started a new DMP (will save to {new_path})"
+            st.session_state["save_path"] = str(new_path)
+            st.session_state["__last_upload_hash__"] = None
+            st.session_state.pop("ds_selected", None)
 
-    with colA:
-        if st.button("Reorder keys & Update modified", key="reorder"):
-            # RFC3339 Z per schema
-            data["dmp"]["modified"] = now_iso_minute()
-            fixed = _schema_fixups_in_place(deepcopy(data))
-            st.session_state["data"] = reorder_dmp_keys(fixed)
-            st.success("Key order applied & modified timestamp updated.")
+            # Reset/clear the file_uploader by bumping the key version
+            st.session_state["__uploader_ver__"] += 1
+            st.rerun()
 
-    with colB:
-        save_to_str = st.text_input("Save to path", str(default_path), key="save_path")
-        if st.button("Save to disk", key="save"):
+        # --- DOWNLOAD JSON: filename follows current save_path ---
+        out_for_dl = _current_ordered_output()
+        st.download_button(
+            "⬇️ Download JSON",
+            data=json.dumps(out_for_dl, indent=4, ensure_ascii=False).encode("utf-8"),
+            file_name=Path(st.session_state["save_path"]).name or "dmp.json",
+            mime="application/json",
+            key="download",
+        )
+
+        if st.button("💾 Save to disk", key="save"):
             try:
-                # Bump modified to RFC3339 Z
-                st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
-
-                out = reorder_dmp_keys(_schema_fixups_in_place(deepcopy(st.session_state["data"])))
-
-                # Validate against live schema if available
+                out = _current_ordered_output()
                 schema = safe_fetch_schema()
                 if schema:
                     errs = list(Draft7Validator(schema).iter_errors(out))
@@ -762,49 +773,28 @@ def main() -> None:
                         st.stop()
                 else:
                     st.warning("Schema unavailable (offline?). Skipping validation.")
-
-                p = Path(save_to_str)
+                p = Path(st.session_state["save_path"]).resolve()
                 p.parent.mkdir(parents=True, exist_ok=True)
-                with p.open("w", encoding="utf-8") as f:
-                    json.dump(out, f, indent=4, ensure_ascii=False)
-                st.success(f"Saved to {p.resolve()} (modified={out['dmp'].get('modified')})")
+                p.write_text(json.dumps(out, indent=4, ensure_ascii=False), encoding="utf-8")
+                st.success(f"Saved to {p} (modified={out['dmp'].get('modified')})")
             except Exception as e:
                 st.error(f"Failed to save: {e}")
 
-    with colC:
-        # Also bump modified on download; warn if invalid (but allow)
-        st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
-        out = reorder_dmp_keys(_schema_fixups_in_place(deepcopy(st.session_state["data"])))
-        try:
-            schema = safe_fetch_schema()
-            if schema:
-                errs = list(Draft7Validator(schema).iter_errors(out))
-                if errs:
-                    st.warning("Download will contain validation errors; fix these first:")
-                    for e in errs[:10]:
-                        st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
-            else:
-                st.info("Schema unavailable; skipping validation on download.")
-        except Exception:
-            pass
-        # Name the file based on what you're editing
-        suggested = Path(st.session_state.get("default_path", str(default_path))).name
-        if suggested.lower() not in {"dmp.json", "dmp.json"}:
-            suggested = "dmp.json"
-        st.download_button(
-            "⬇️ Download JSON",
-            data=json.dumps(out, indent=4, ensure_ascii=False).encode("utf-8"),
-            file_name=suggested,
-            mime="application/json",
-            key="download",
-        )
+
+    # ---------------------------
+    # Main editor area
+    # ---------------------------
+    data = ensure_dmp_shape(st.session_state["data"])
+    dmp_root = data["dmp"]
+    draw_root_section(dmp_root)
+    draw_projects_section(dmp_root)
+    draw_datasets_section(dmp_root)
 
 
 def cli() -> None:
     app_path = Path(__file__).resolve()
     sys.argv = ["streamlit", "run", str(app_path), *sys.argv[1:]]
     sys.exit(st_main())
-
 
 if __name__ == "__main__":
     main()

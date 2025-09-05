@@ -15,6 +15,7 @@ from .example_templates import *
 from .ci_tools import *
 from .dmp_tools import *
 from .dmp_editor import *
+from .publish_from_dmp import *
 
 from .deic_storage_download import *
 from .get_dependencies import *
