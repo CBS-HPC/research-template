@@ -26,20 +26,22 @@ from datetime import date, datetime
 try:
     from .general_tools import package_installer, load_from_env, save_to_env 
     from .dmp_tools import *  # noqa: F401,F403
-    from .publish_from_dmp import (
-        streamlit_publish_to_zenodo,
-        streamlit_publish_to_dataverse,
-    )
+    #from .publish_from_dmp import *
+    from .publish_common import *
+    from .publish_zenodo import *
+    from .publish_dataverse import *
+
+
 except ImportError:
     pkg_root = Path(__file__).resolve().parent
-    sys.path.insert(0, str(pkg_root / "utils"))
+    #sys.path.insert(0, str(pkg_root / "utils"))
     sys.path.insert(0, str(pkg_root))
     from utils.general_tools import package_installer, load_from_env, save_to_env 
     from utils.dmp_tools import *  # noqa: F401,F403
-    from publish_from_dmp import (
-        streamlit_publish_to_zenodo,
-        streamlit_publish_to_dataverse,
-    )
+    #from utils.publish_from_dmp import *
+    from utils.publish_common import *
+    from utils.publish_zenodo import *
+    from utils.publish_dataverse import *
 
 package_installer(required_libraries=["streamlit", "jsonschema"])
 
@@ -256,8 +258,11 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
     txt = st.text_input(label, "" if value is None else str(value), key=key)
     return txt
 
+
 def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items: bool, ns: Optional[str] = None) -> List[Any]:
     mode, options = _enum_info_for_path(path)
+
+    # Enum-multi arrays: use multiselect as before
     if mode == "multi" and options:
         label = f"{path[-1] if path else title_singular} (choose any)"
         wkey = _key_for(*path, ns, "enum_multi")
@@ -267,6 +272,8 @@ def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items
             format_func=lambda opt: _enum_label_for(path, opt),
         )
         return selected
+
+    # Simple string lists: textarea as before
     if _looks_like_string_list(arr, path):
         label = f"{path[-1] if path else title_singular} (one per line; saved as array)"
         key = _key_for(*path, ns, "textlist")
@@ -274,6 +281,19 @@ def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items
         txt = st.text_area(label, initial, key=key)
         lines = [ln.strip() for ln in txt.splitlines() if ln.strip()]
         return lines
+
+    # NEW: Inline rendering for single-object arrays
+    if len(arr) == 1 and isinstance(arr[0], dict):
+        # Small caption to indicate we're editing the single entry directly
+        label = path[-1] if path else title_singular
+        st.caption(f"{label} — single entry")
+        arr[0] = edit_any(arr[0], path=(*path, 0), ns=ns)
+        # Optional: allow removing the sole entry if the caller asked for it
+        if removable_items and st.button(f"Remove this {title_singular.lower()}", key=_key_for(*path, ns, "rm_single")):
+            arr.clear()
+        return arr
+
+    # Default: one expander per item
     to_delete: List[int] = []
     for i, item in enumerate(list(arr)):
         heading = f"{title_singular} #{i+1}"
@@ -288,32 +308,6 @@ def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items
     for i in reversed(to_delete):
         del arr[i]
     return arr
-
-def edit_object_old(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: Optional[str] = None) -> Dict[str, Any]:
-    keys = list(obj.keys())
-    remove_keys: List[str] = []
-    for key in keys:
-        val = obj.get(key)
-        if path == ("dmp",) and key in ("project", "dataset"):
-            continue
-        if key == "extension" and isinstance(val, list):
-            with st.expander("extension", expanded=False):
-                # editable at non-dataset roots; read-only at dataset root if you prefer
-                obj["extension"] = edit_array(val, path=(*path, "extension"), title_singular="Entry", removable_items=True, ns=ns)
-            continue
-        if isinstance(val, dict):
-            with st.expander(key, expanded=False):
-                obj[key] = edit_any(val, path=(*path, key), ns=ns)
-        elif isinstance(val, list):
-            with st.expander(key, expanded=False):
-                obj[key] = edit_array(val, path=(*path, key), title_singular="Item", removable_items=False, ns=ns)
-        else:
-            obj[key] = edit_primitive(key, val, path=(*path, key), ns=ns)
-        if allow_remove_keys and st.button(f"Remove key: {key}", key=_key_for(*path, key, ns, "del")):
-            remove_keys.append(key)
-    for k in remove_keys:
-        obj.pop(k, None)
-    return obj
 
 def edit_object(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: Optional[str] = None) -> Dict[str, Any]:
     keys = list(obj.keys())
@@ -347,7 +341,6 @@ def edit_object(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: O
         obj.pop(k, None)
     return obj
 
-
 def edit_any(value: Any, path: tuple, ns: Optional[str] = None) -> Any:
     if isinstance(value, dict):
         return edit_object(value, path, allow_remove_keys=False, ns=ns)
@@ -370,51 +363,6 @@ def find_default_dmp_path(start: Optional[Path] = None) -> Path:
                 return p
     return Path("./dmp.json") if not Path(DEFAULT_DMP_PATH).exists() else Path(DEFAULT_DMP_PATH)
 
-def draw_root_section_old(dmp_root: Dict[str, Any]) -> None:
-    st.subheader("Root")
-
-    # Ensure required keys exist
-    dmp_root.setdefault("schema", dmp_root.get("schema") or SCHEMA_URLS[SCHEMA_VERSION])
-    dmp_root.setdefault("contact", dmp_root.get("contact") or {
-        "name": "",
-        "mbox": "",
-        "contact_id": {"type": "orcid", "identifier": ""},
-    })
- 
-
-    # Contributor template (use your templates if available, else minimal 1.2-compliant)
-    templates = dmp_default_templates() if "dmp_default_templates" in globals() else {}
-    default_contrib = deepcopy(templates.get("contributor")) if templates and "contributor" in templates else {
-        "name": "",
-        "mbox": "",
-        "contributor_id": {"type": "orcid", "identifier": ""},
-        "role": [],
-    }
-
-    # --- 3) The rest of the Root fields (excluding project/dataset/contact/contributor) ---
-    # Preserve insertion order of dict keys
-    for key in list(dmp_root.keys()):
-        if key in ("project", "dataset"):
-            continue
-
-        val = dmp_root.get(key)
-        # Render each remaining key similarly to edit_object, but one-by-one to keep order
-        if isinstance(val, dict):
-            with st.expander(key, expanded=False):
-                dmp_root[key] = edit_any(val, path=("dmp", key), ns=None)
-        elif isinstance(val, list):
-            with st.expander(key, expanded=False):
-                dmp_root[key] = edit_array(val, path=("dmp", key), title_singular="Item", removable_items=False, ns=None)
-        else:
-            dmp_root[key] = edit_primitive(key, val, path=("dmp", key), ns=None)
-
-    # --- 4) BUTTON AT THE VERY BOTTOM OF ROOT ---
-    add_col, _ = st.columns([1, 6])
-    with add_col:
-        if st.button("➕ Add contributor", key=_key_for("dmp", "contributor", "add", "bottom")):
-            dmp_root["contributor"].append(deepcopy(default_contrib))
-            st.success("Contributor added")
-
 def draw_root_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Root")
 
@@ -425,7 +373,6 @@ def draw_root_section(dmp_root: Dict[str, Any]) -> None:
         "mbox": "",
         "contact_id": {"type": "orcid", "identifier": ""},
     })
-    contributors: List[Dict[str, Any]] = dmp_root.setdefault("contributor", [])
 
     # Template for a new contributor (use your template if available)
     templates = dmp_default_templates() if "dmp_default_templates" in globals() else {}
@@ -468,6 +415,7 @@ def draw_projects_section(dmp_root: Dict[str, Any]) -> None:
             projects.append(templates["project"])
     dmp_root["project"] = edit_array(projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None)
 
+
 def draw_datasets_section(dmp_root: dict) -> None:
     st.subheader("Datasets")
     datasets = dmp_root.setdefault("dataset", [])
@@ -478,44 +426,95 @@ def draw_datasets_section(dmp_root: dict) -> None:
             datasets.append(templates["dataset"])
             st.success("Dataset added")
 
+    def _is_unknown(v: Any) -> bool:
+        s = str(v or "").strip().lower()
+        return s in {"unknown", "unkown", ""}  # treat blank as unknown too
+
     for i, ds in enumerate(list(datasets)):
         with st.expander(f"Dataset #{i+1}: {ds.get('title') or 'Dataset'}", expanded=False):
-            cols = st.columns([1,1,1,6])
+            is_reused = _is_reused(ds)
+
+            # Disable publishing if personal/sensitive is unknown
+            has_unknown_privacy = _is_unknown(ds.get("personal_data")) or _is_unknown(ds.get("sensitive_data"))
+
+            # Read/maintain override flag from session
+            override_key = f"allow_reused_{i}"
+            allow_override = st.session_state.get(override_key, False)
+
+            # If not reused, force override off (prevents stale True)
+            if not is_reused and allow_override:
+                st.session_state[override_key] = False
+                allow_override = False
+
+            # Disable rules
+            zen_disabled = (is_reused and not allow_override) or has_unknown_privacy
+            dv_disabled  = (is_reused and not allow_override) or has_unknown_privacy
+
+            # Button row
+            cols = st.columns([1, 1, 1, 1, 6])
+
             with cols[0]:
                 if st.button("🗑️ Remove this dataset", key=f"rm_ds_{i}"):
                     del datasets[i]
                     st.stop()
+
             with cols[1]:
-                if st.button("Publish to Zenodo", key=f"pub_zen_{i}"):
+                if st.button("Publish to Zenodo", key=f"pub_zen_{i}", disabled=zen_disabled):
                     token = get_token_from_state("zenodo")
                     if not token:
                         st.warning("Please set a Zenodo token in the sidebar and press Save.")
                         st.stop()
-                    streamlit_publish_to_zenodo(
-                        dataset=ds,
-                        dmp=st.session_state["data"],
-                        token=token,
-                        sandbox=True,   # change to False for production
-                        publish=False,
+                    try:
+                        res = streamlit_publish_to_zenodo(
+                            dataset=ds,
+                            dmp=st.session_state["data"],
+                            token=token,
+                            sandbox=True,
+                            publish=False,
+                            allow_reused=allow_override,
                         )
+                    except PublishError as e:
+                        st.error(str(e))
+
             with cols[2]:
-                if st.button("Publish to DeiC Dataverse", key=f"pub_dv_{i}"):
+                if st.button("Publish to DeiC Dataverse", key=f"pub_dv_{i}", disabled=dv_disabled):
                     token = get_token_from_state("dataverse")
                     if not token:
                         st.warning("Please set a Dataverse token in the sidebar and press Save.")
                         st.stop()
-                    streamlit_publish_to_dataverse(
-                        dataset=ds,
-                        dmp=st.session_state["data"],
-                        token=token,
-                        base_url="https://dataverse.deic.dk",
-                        alias="tmpdemo",   # adjust to your collection
-                        publish=False,
-                        release_type="major",
+                    try:
+                        res = streamlit_publish_to_dataverse(
+                            dataset=ds,
+                            dmp=st.session_state["data"],
+                            token=token,
+                            base_url="https://dataverse.deic.dk",
+                            alias="tmpdemo",
+                            publish=False,
+                            release_type="major",
+                            allow_reused=allow_override,
                         )
+                    except PublishError as e:
+                        st.error(str(e))
+
+            # Only active if the dataset is marked as reused
+            with cols[3]:
+                st.checkbox(
+                    "Allow publish reused?",
+                    key=override_key,
+                    value=allow_override,
+                    disabled=not is_reused,  # <-- inactive unless reused
+                    help="Enabled only when 'is_reused' is set on this dataset.",
+                )
 
             # show/edit dataset metadata
             datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
+
+
+def _is_reused(ds: dict) -> bool:
+    """maDMP 1.2 `is_reused` means the data were not produced by this project."""
+    v = ds.get("is_reused")
+    # Be tolerant to truthy strings/values:
+    return str(v).strip().lower() in {"true", "1", "yes"}
 
 TOKENS_STATE = {
     "zenodo": {"env_key": "ZENODO_TOKEN", "state_key": "__token_zenodo__"},

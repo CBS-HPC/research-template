@@ -6,12 +6,15 @@ import shutil
 import pathlib
 import zipfile
 import glob
+import os
+import hashlib
 
 from .general_tools import *
 
-package_installer(required_libraries =  ['requests'])
+package_installer(required_libraries =  ['requests','dirhash'])
 
 import requests
+from dirhash import dirhash
 
 # Version Control
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):
@@ -358,32 +361,20 @@ def git_log_to_file(output_file_path):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-def get_git_hash(path):
+def get_git_hash(path, algo="sha256"):
     """
-    Get the Git hash of a file or folder.
-    For folders, the hashes of all files within the folder are combined.
-    If any exception occurs, it returns None.
+    Get the hash of a file or folder.
+    Uses hashlib for files and dirhash for directories.
     """
     try:
-        if not is_installed('git'):
-            return None
-        # Check if path is a file or directory
         if os.path.isfile(path):
-            # Get the Git hash of the file
-            result = subprocess.run(['git', 'hash-object', path], capture_output=True, text=True)
-            return result.stdout.strip()
+            h = hashlib.new(algo)
+            with open(path, "rb") as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    h.update(chunk)
+            return h.hexdigest()
         elif os.path.isdir(path):
-            # For directory, get the hash of each file inside it
-            hashes = []
-            for root, dirs, files in os.walk(path):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    result = subprocess.run(['git', 'hash-object', file_path], capture_output=True, text=True)
-                    hashes.append(result.stdout.strip())
-            # Combine all file hashes into a single string and get its hash
-            combined_hashes = "".join(hashes)
-            result = subprocess.run(['git', 'hash-object', '-w', '--stdin'], input=combined_hashes, capture_output=True, text=True)
-            return result.stdout.strip()
+            return dirhash(path, algo)
         else:
             raise ValueError(f"{path} does not exist or is not a valid file or directory.")
     except Exception as e:

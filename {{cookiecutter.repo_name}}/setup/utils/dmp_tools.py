@@ -419,7 +419,6 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:
       - dmp.project[0].title/description
       - dmp.extension[x_project] = full cookiecutter dict
     """
-    print(project_root)
     cookie = read_toml_json(
         folder=str(project_root),
         json_filename="cookiecutter.json",
@@ -555,15 +554,6 @@ def data_type_from_path(p: str) -> str:
         if i + 1 < len(parts):
             return parts[i + 1]
     return "Uncategorised"
-
-
-def make_dataset_id_old(title: str, access_or_download_url: Optional[str]) -> dict:
-    """
-    Always return a valid dataset_id {identifier, type}.
-    Uses a stable local-style identifier if no DOI/URL exists.
-    """
-    ident_src = norm_rel_urlish(access_or_download_url) or norm_rel_urlish(title) or "untitled"
-    return {"identifier": f"local:{ident_src}", "type": "other"}
 
 
 def _ensure_extension(obj: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -965,12 +955,6 @@ def normalize_datasets_in_place(data: Dict[str, Any],
         # schema-top up (optional)
         if ds_schema:
             _ensure_object_fields_from_schema(ds, schema, ds_schema, path="dmp.dataset[]")
-
-        # ensure dataset_id
-        #if not isinstance(ds.get("dataset_id"), dict) or not ds["dataset_id"].get("identifier"):
-        #    dist0 = (ds.get("distribution") or [{}])[0]
-        #    urlish = dist0.get("access_url") or dist0.get("download_url")
-        #    ds["dataset_id"] = make_dataset_id(ds.get("title") or "untitled", urlish)
 
         # distribution array + defaults for each distribution
         ds.setdefault("distribution", [])

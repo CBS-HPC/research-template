@@ -257,55 +257,6 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
 
     return json_path
 
-def remove_missing_datasets_old(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
-    """
-    Ensure the DMP file exists and is shaped, then remove datasets whose
-    access/download URL (or extension.x_dcas.destination) no longer exists on disk.
-    Returns the absolute Path to the JSON file.
-    """
-    root = pathlib.Path(__file__).resolve().parent.parent.parent
-    json_path = root / pathlib.Path(json_path)
-
-    data = load_json(json_path)
-    dmp = data.get("dmp") or {}
-    datasets = dmp.get("dataset")
-    if not isinstance(datasets, list):
-        dmp["dataset"] = []
-        save_json(json_path, data)
-        return json_path
-
-    # 3) Helper: check existence on disk
-    def _exists_on_disk(ds: dict) -> bool:
-        # any distribution URL that resolves on local FS
-        for dist in ds.get("distribution") or []:
-            p = dist.get("access_url") or dist.get("download_url")
-            if not p:
-                continue
-            if os.path.exists(p) or os.path.exists(p.replace("/", os.sep)):
-                return True
-
-        # extension.x_dcas.destination
-        x = get_extension_payload(ds, "x_dcas") or {}
-        dest = x.get("destination")
-        if dest and os.path.exists(dest):
-            return True
-
-        
-        return False
-
-    # 4) Filter + save
-    retained = [ds for ds in datasets if _exists_on_disk(ds)]
-    removed = len(datasets) - len(retained)
-    if removed:
-        print(f"Removed {removed} dataset(s) with missing paths).")
-    else:
-        print("No missing dataset paths found.")
-
-    dmp["dataset"] = retained
-    dmp["modified"] = now_iso_minute()
-    save_json(json_path, data)
-    return json_path
-
 def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
     
     project_root = Path(__file__).resolve().parent.parent.parent

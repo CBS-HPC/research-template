@@ -6,14 +6,22 @@ publish_from_dmp.py
 Publish a dataset using metadata extracted from an RDA maDMP (v1.2 JSON)
 to either **Zenodo** or **Dataverse** (e.g., DeiC Dataverse).
 
-- Improved Zenodo mapping:
-  * creators  = DMP contact (primary author), with ORCID & affiliation (+ ROR best-effort)
-  * contributors = DMP contributors (+ optional dataset.contributor), role-mapped, with ORCID & affiliation (+ ROR best-effort)
-  * preserves keywords, license, access_right, embargo_date, related_identifiers
-  * if dataset_id.type == "doi", it is added as isAlternateIdentifier
+Behavior:
+- If dataset has personal_data=="yes" or sensitive_data=="yes":
+  * Do NOT upload files (metadata-only record).
+  * Append a note to the description listing skipped filenames.
+  * Zenodo access_right is tightened to at least "restricted".
+  * Results include "sensitive_or_personal" and "skipped_files".
 
-- Dataverse builder remains compatible with your earlier code, with authors
-  coming from DMP contact + contributors as before.
+Mapping highlights (Zenodo):
+- creators     = DMP contact (primary author), ORCID, affiliation (+ ROR best-effort)
+- contributors = DMP contributors (+ dataset.contributor) → role-mapped with ORCID & affiliation (+ ROR best-effort)
+- keywords, license, access_right, embargo_date, related_identifiers, language
+- dataset_id.type == "doi" -> related_identifiers isAlternateIdentifier
+
+Dataverse:
+- authors = DMP contact + contributors (best-effort)
+- contacts, title, description, subjects
 
 CLI examples:
   # Zenodo (sandbox, draft by default)
@@ -36,8 +44,16 @@ import json
 import os
 import time
 from typing import Any, Dict, List, Optional, Tuple
+from datetime import date
+import tempfile
 
 import requests
+
+# Streamlit is optional at CLI time, but imported for the editor wrappers.
+try:
+    import streamlit as st  # type: ignore
+except Exception:
+    st = None  # type: ignore
 
 # =========================
 # Exceptions / constants
@@ -95,52 +111,45 @@ def _keywords_from_madmp(ds: dict) -> List[str]:
             seen.add(k.lower()); out.append(k)
     return out[:50]
 
+# --- sensitivity/personal-data flag ---
 
+def _has_personal_or_sensitive(ds: dict) -> bool:
+    def _yes(x):
+        return isinstance(x, str) and x.strip().lower() == "yes"
+    return _yes(ds.get("personal_data")) or _yes(ds.get("sensitive_data"))
+
+# --- license mapping (Zenodo short ids) ---
 
 def _license_from_madmp(ds: dict) -> Optional[str]:
     """
     Map maDMP license info to a Zenodo license identifier.
-    Acceptable values include (examples): cc-by-4.0, cc-by-sa-4.0, cc0-1.0, mit, gpl-3.0, apache-2.0, bsd-3-clause...
-    If we can't confidently map, return None (better to omit than 400).
+    If personal/sensitive data is present, prefer a closed placeholder unless an explicit closed license is provided.
     """
+    if _has_personal_or_sensitive(ds):
+        mapped = _license_from_madmp_nosensitive(ds)
+        return mapped or "other-closed"
+    return _license_from_madmp_nosensitive(ds)
 
+def _license_from_madmp_nosensitive(ds: dict) -> Optional[str]:
     def _map_text_to_zenodo_id(txt: str) -> Optional[str]:
         if not txt:
             return None
         t = txt.strip().lower()
 
-        # --- Common Creative Commons URL patterns ---
-        # Any of these map to Zenodo's "cc-..." short ids
+        # CC URLs → cc-... ids
         if "creativecommons.org" in t:
-            # normalize CC URLs
-            # examples:
-            #  https://creativecommons.org/licenses/by/4.0/           -> cc-by-4.0
-            #  https://creativecommons.org/licenses/by-sa/4.0/         -> cc-by-sa-4.0
-            #  https://creativecommons.org/licenses/by-nc/4.0/         -> cc-by-nc-4.0
-            #  https://creativecommons.org/licenses/by-nd/4.0/         -> cc-by-nd-4.0
-            #  https://creativecommons.org/licenses/by-nc-sa/4.0/      -> cc-by-nc-sa-4.0
-            #  https://creativecommons.org/licenses/by-nc-nd/4.0/      -> cc-by-nc-nd-4.0
-            #  https://creativecommons.org/publicdomain/zero/1.0/      -> cc0-1.0
             if "/publicdomain/zero/" in t or "/cc0/" in t:
                 return "cc0-1.0"
-            # licenses/by/.... capture the tail "by", "by-sa", etc, and version
-            # Try to pick last two segments: e.g. ".../by/4.0/" or ".../by-nc-sa/4.0/"
             parts = [p for p in t.split("/") if p]
             try:
-                kind = parts[-2]   # e.g. "by", "by-nc-sa"
-                ver  = parts[-1]   # e.g. "4.0"
+                kind = parts[-2]   # e.g. by, by-nc-sa
+                ver  = parts[-1]   # e.g. 4.0
                 if all(ch.isdigit() or ch == "." for ch in ver):
                     return f"cc-{kind}-{ver}"
             except Exception:
                 pass
 
-        # --- SPDX-like names or free text ---
-        # normalize separators to dashes, strip "license"
-        # examples: "CC-BY 4.0", "cc by 4.0", "CC BY-SA 4.0", "MIT", "Apache 2.0", "GPLv3"...
-        s = t.replace("_", "-").replace("license", "").strip()
-        s = s.replace(" ", "-")
-
-        # CC shorthands
+        s = t.replace("_", "-").replace("license", "").strip().replace(" ", "-")
         cc_map = {
             "cc-by-4.0": "cc-by-4.0",
             "cc-by-sa-4.0": "cc-by-sa-4.0",
@@ -155,12 +164,9 @@ def _license_from_madmp(ds: dict) -> Optional[str]:
         }
         if s in cc_map:
             return cc_map[s]
-
-        # Handle loose forms like "cc-by", "cc-by-sa" without version (assume 4.0)
         if s in {"cc-by", "cc-by-sa", "cc-by-nd", "cc-by-nc", "cc-by-nc-sa", "cc-by-nc-nd"}:
             return f"{s}-4.0"
 
-        # SPDX-ish common software licenses
         spdx_map = {
             "mit": "mit",
             "apache-2.0": "apache-2.0",
@@ -180,20 +186,16 @@ def _license_from_madmp(ds: dict) -> Optional[str]:
         }
         if s in spdx_map:
             return spdx_map[s]
-
-        # Detect "gplv3" etc inside text
         if "gpl" in s and "3" in s:
             return "gpl-3.0"
         if "gpl" in s and "2" in s:
             return "gpl-2.0"
         if "apache" in s and ("2" in s or "2.0" in s):
             return "apache-2.0"
-        if s == "cc-by-4":  # sloppy variant
+        if s == "cc-by-4":
             return "cc-by-4.0"
-
         return None
 
-    # Try distribution licenses first
     cand: Optional[str] = None
     for dist in _norm_list(ds.get("distribution", [])):
         for r in _norm_list(dist.get("license", [])):
@@ -206,7 +208,6 @@ def _license_from_madmp(ds: dict) -> Optional[str]:
         if cand:
             break
 
-    # Legacy places (rare)
     if not cand:
         for r in _norm_list(ds.get("rights", [])):
             if isinstance(r, dict):
@@ -218,41 +219,76 @@ def _license_from_madmp(ds: dict) -> Optional[str]:
             if cand:
                 break
 
-    return cand  # may be None; caller should omit 'license' if None
+    return cand
 
+# --- access_right mapping (Zenodo) ---
+
+def _has_downloadable_files(ds: dict) -> bool:
+    """Check if dataset has any real downloadable file references."""
+    for dist in _norm_list(ds.get("distribution", [])):
+        if any(
+            (dist.get(k) or "").strip()
+            for k in ("access_url", "download_url", "downloadURL", "path", "uri", "url")
+        ):
+            return True
+    return False
 
 def _access_right_from_madmp(ds: dict) -> Tuple[str, Optional[str]]:
     """
-    Inspect ds.distribution[*].data_access + license start_date for embargo cues.
-    Returns ("open" | "restricted" | "embargoed" | "closed", embargo_date?)
+    Decide Zenodo access_right and (optional) embargo_date.
+    Rules:
+      - If no raw data is uploaded OR data contains personal/sensitive info → closed
+      - If embargo_date is strictly in the future → embargoed
+      - Else → open/restricted according to access setting
     """
-    # prefer distribution-level access setting if available
-    access = None
-    embargo_date = None
+    access: Optional[str] = None
+    embargo_date: Optional[str] = None
+
+    # Extract access and embargo date (only keep future dates)
     for dist in _norm_list(ds.get("distribution", [])):
-        acc = (dist.get("data_access") or "").lower().strip() or None
+        acc = (dist.get("data_access") or "").strip().lower() or None
         if acc:
             access = acc
-        # If a license start_date is in the future, some communities infer embargo.
-        for r in _norm_list(dist.get("license", [])):
-            if isinstance(r, dict):
-                sd = r.get("start_date")
+        for lic in _norm_list(dist.get("license", [])):
+            if isinstance(lic, dict):
+                sd = (lic.get("start_date") or "").strip()
                 if sd:
-                    embargo_date = sd
-    ds_access = (ds.get("access") or ds.get("access_right") or "").lower().strip()
+                    try:
+                        if date.fromisoformat(sd) > date.today():
+                            embargo_date = sd
+                    except Exception:
+                        pass
+
+    ds_access = (ds.get("access") or ds.get("access_right") or "").strip().lower()
     if not access and ds_access:
         access = ds_access
 
+    files_available = _has_downloadable_files(ds)
+    has_sensitive = _has_personal_or_sensitive(ds)
+
+    # ✅ Core rule: if no files or sensitive → closed
+    if not files_available or has_sensitive:
+        return "closed", embargo_date
+
+    # Otherwise map declared access
     if access in {"open"}:
-        return "open", None
-    if access in {"shared", "restricted"}:
-        return "restricted", None
-    if "embargo" in (access or ""):
-        return "embargoed", embargo_date
-    if access in {"closed", "closedaccess"}:
-        return "closed", None
-    # default: open if unspecified
-    return "open", None
+        base = "open"
+    elif access in {"shared", "restricted"}:
+        base = "restricted"
+    elif access and "embargo" in access:
+        base = "embargoed"
+    elif access in {"closed", "closedaccess"}:
+        base = "closed"
+    else:
+        base = "open"
+
+    # Only embargo if embargo_date is in the future
+    if embargo_date and base not in {"closed"}:
+        base = "embargoed"
+    elif base == "embargoed" and not embargo_date:
+        base = "open"
+
+    return base, embargo_date
 
 def _description_from_madmp(dmp: dict, ds: dict) -> str:
     desc = ds.get("description") or _get(ds, ["description", "text"])
@@ -262,7 +298,6 @@ def _description_from_madmp(dmp: dict, ds: dict) -> str:
 
 def _related_identifiers(ds: dict) -> List[Dict[str, str]]:
     rels = []
-    # dataset-level related or reference
     for ref in _norm_list(ds.get("related_identifier", [])) + _norm_list(ds.get("reference", [])):
         if isinstance(ref, dict):
             idv = ref.get("identifier") or ref.get("id")
@@ -281,19 +316,19 @@ def _related_identifiers(ds: dict) -> List[Dict[str, str]]:
 # =========================
 
 def _normalize_orcid(raw: Optional[str]) -> Optional[str]:
-    """Return a clean ORCID '0000-0000-0000-0000' or with X checksum (or None)."""
+    """Return a clean ORCID '0000-0000-0000-0000' (last digit may be X) or None."""
     if not raw:
         return None
     s = str(raw).strip()
     s = s.replace("https://orcid.org/", "").replace("http://orcid.org/", "").strip()
     s = s.replace(" ", "").replace("-", "")
-    # allow final X
-    core, last = s[:-1], s[-1:] if s else ("", "")
-    if len(s) == 16 and (core.isdigit() and (last.isdigit() or last.upper() == "X")):
+    if len(s) != 16:
+        if len(s) == 19 and s.count("-") == 3:
+            return s
+        return None
+    core, last = s[:-1], s[-1:]
+    if core.isdigit() and (last.isdigit() or last.upper() == "X"):
         return f"{s[0:4]}-{s[4:8]}-{s[8:12]}-{s[12:16]}"
-    # already dashed?
-    if len(s) == 19 and s.count("-") == 3:
-        return s
     return None
 
 def _affiliation_from_node(node: Optional[dict]) -> Tuple[Optional[str], Optional[str]]:
@@ -315,7 +350,6 @@ def _affiliation_from_node(node: Optional[dict]) -> Tuple[Optional[str], Optiona
 def _primary_creator_from_contact(dmp: dict) -> Dict[str, Any]:
     """
     Build the *primary* Zenodo creator from dmp.contact.
-    Zenodo creators accept: name, affiliation, orcid (plus extra identifiers ignored if unknown).
     """
     c = _get(dmp, ["dmp", "contact"]) or dmp.get("contact") or {}
     name = c.get("name") or c.get("mbox") or "Unknown, Unknown"
@@ -323,8 +357,6 @@ def _primary_creator_from_contact(dmp: dict) -> Dict[str, Any]:
     cid = c.get("contact_id") or {}
     if (cid.get("type") or "").lower() == "orcid":
         orcid = _normalize_orcid(cid.get("identifier"))
-
-    # affiliation: prefer contact.affiliation, else contact.organization
     aff_name, aff_ror = _affiliation_from_node(c.get("affiliation") or c.get("organization"))
 
     creator = {"name": name}
@@ -332,12 +364,10 @@ def _primary_creator_from_contact(dmp: dict) -> Dict[str, Any]:
         creator["affiliation"] = aff_name
     if orcid:
         creator["orcid"] = orcid
-    # best-effort ROR (Zenodo may ignore if not supported)
     if aff_name and aff_ror:
         creator["affiliation_identifiers"] = [{"scheme": "ror", "identifier": aff_ror}]
     return creator
 
-# Free-text role to Zenodo contributor.type map (best-effort)
 _ZENODO_ROLE_MAP = {
     "creator": "Researcher",
     "author": "Researcher",
@@ -364,8 +394,7 @@ def _role_to_zenodo_type(role_texts: List[str]) -> str:
 
 def _contributors_for_zenodo_from_madmp(dmp: dict, ds: dict) -> List[Dict[str, Any]]:
     """
-    Build Zenodo 'contributors' from DMP's dmp.contributor (project-level) and dataset.contributor (if present).
-    Each entry: {name, type, affiliation?, orcid?, affiliation_identifiers?}
+    Build Zenodo 'contributors' from DMP's dmp.contributor and dataset.contributor.
     """
     out: List[Dict[str, Any]] = []
 
@@ -381,14 +410,10 @@ def _contributors_for_zenodo_from_madmp(dmp: dict, ds: dict) -> List[Dict[str, A
             continue
         roles = [x for x in _norm_list(c.get("role")) if isinstance(x, str)]
         ztype = _role_to_zenodo_type(roles)
-
-        # ORCID
         orcid = None
         cid = c.get("contributor_id") or c.get("contact_id") or {}
         if (cid.get("type") or "").lower() == "orcid":
             orcid = _normalize_orcid(cid.get("identifier"))
-
-        # affiliation
         aff_name, aff_ror = _affiliation_from_node(c.get("affiliation") or c.get("organization"))
 
         item: Dict[str, Any] = {"name": name, "type": ztype}
@@ -398,10 +423,8 @@ def _contributors_for_zenodo_from_madmp(dmp: dict, ds: dict) -> List[Dict[str, A
             item["orcid"] = orcid
         if aff_name and aff_ror:
             item["affiliation_identifiers"] = [{"scheme": "ror", "identifier": aff_ror}]
-
         out.append(item)
 
-    # de-duplicate by (name, type, affiliation)
     seen = set()
     deduped = []
     for x in out:
@@ -463,42 +486,29 @@ def _z_upload_file_to_bucket(token: str, bucket_url: str, filepath: str) -> None
 # Zenodo metadata builder (improved)
 # =========================
 
-def build_zenodo_metadata_from_madmp(dmp: dict, dataset_id: Optional[str] = None) -> Tuple[dict, dict]:
+def build_zenodo_metadata_from_madmp(
+    dmp: dict,
+    dataset_id: Optional[str] = None,
+    *,
+    sensitive_flag: Optional[bool] = None,
+    skipped_files: Optional[List[str]] = None,
+) -> Tuple[dict, dict]:
     """
-    Build a richer Zenodo metadata dict from RDA-DMP 1.2:
-
-      creators:
-        - ONLY the DMP contact (primary author) with:
-          * name
-          * affiliation (string)
-          * orcid (normalized)
-          * affiliation_identifiers (ROR URL; best-effort)
-
-      contributors:
-        - All DMP contributors (+ dataset-level contributors if present):
-          * name
-          * type (mapped from free-text role; fallback "Researcher")
-          * affiliation (string)
-          * orcid (normalized)
-          * affiliation_identifiers (ROR URL; best-effort)
-
-      Also passes:
-        keywords, license, access_right, embargo_date, related_identifiers, language
-
-      If dataset_id.type == 'doi', adds it as an isAlternateIdentifier related_identifier.
+    Build a richer Zenodo metadata dict from RDA-DMP 1.2.
+    If sensitive_flag is True, appends a note to description listing skipped_files.
     """
     ds = _guess_dataset(dmp, dataset_id)
 
     title = ds.get("title") or _get(dmp, ["dmp", "title"]) or "Untitled dataset"
     description = _description_from_madmp(dmp, ds)
 
-    # --- creators: ONLY the primary contact (as requested) ---
+    # creators: ONLY the primary contact
     creators = [_primary_creator_from_contact(dmp)]
 
-    # --- contributors: from DMP contributors (+ any dataset.contributor) ---
+    # contributors
     contributors = _contributors_for_zenodo_from_madmp(dmp, ds)
 
-    # --- keywords, license, access, language ---
+    # keywords, license, access, language
     keywords = _keywords_from_madmp(ds)
     license_id = _license_from_madmp(ds)
     access_right, embargo_date = _access_right_from_madmp(ds)
@@ -519,10 +529,27 @@ def build_zenodo_metadata_from_madmp(dmp: dict, dataset_id: Optional[str] = None
     lang = ds.get("language") or _get(dmp, ["dmp", "language"])
     language = lang.strip() if isinstance(lang, str) and lang.strip() else None
 
+    # sensitive note with skipped files
+    if sensitive_flag:
+        skipped = skipped_files or []
+        if skipped:
+            bullet = "\n".join(f"  - {os.path.basename(x)}" for x in skipped)
+            note = (
+                "\n\n[NOTICE] Files withheld due to personal/sensitive data. "
+                "A metadata-only record has been created. Skipped files:\n"
+                f"{bullet}"
+            )
+        else:
+            note = (
+                "\n\n[NOTICE] Files withheld due to personal/sensitive data. "
+                "A metadata-only record has been created."
+            )
+        description = (description or "No description provided.") + note
+
     metadata: Dict[str, Any] = {
         "title": title,
         "upload_type": "dataset",
-        "description": description,
+        "description": description or "No description provided.",
         "creators": creators,
     }
     if contributors:
@@ -540,7 +567,7 @@ def build_zenodo_metadata_from_madmp(dmp: dict, dataset_id: Optional[str] = None
     if language:
         metadata["language"] = language
 
-    # Optional: communities via various extension blocks
+    # Optional: communities via extension blocks
     communities = []
     for ext_name in ("extension", "extensions", "x_dcas", "x_project", "x_ui"):
         for ext in _norm_list(ds.get(ext_name, [])):
@@ -561,6 +588,20 @@ def build_zenodo_metadata_from_madmp(dmp: dict, dataset_id: Optional[str] = None
 # Zenodo publish flow
 # =========================
 
+def _candidate_files_from_ds(ds: dict, file_paths: Optional[List[str]]) -> List[str]:
+    uploads = list(file_paths) if file_paths else []
+    if not uploads:
+        for dist in _norm_list(ds.get("distribution", [])):
+            path = dist.get("path") or dist.get("access_url") or dist.get("file_path")
+            if path and os.path.exists(path):
+                uploads.append(path)
+    # unique, keep order
+    seen = set(); out = []
+    for p in uploads:
+        if p not in seen:
+            seen.add(p); out.append(p)
+    return out
+
 def publish_dataset_from_madmp_zenodo(
     dmp_path: str,
     token: str,
@@ -570,23 +611,28 @@ def publish_dataset_from_madmp_zenodo(
     publish: bool = False
 ) -> Dict[str, Any]:
     """
-    Create a Zenodo deposition, upload files, attach metadata from maDMP, and optionally publish.
-
-    Returns dict with deposition_id, doi (if published), links, metadata, etc.
+    Create a Zenodo deposition, upload files (unless sensitive/personal), attach metadata from maDMP, and optionally publish.
     """
     with open(dmp_path, "r", encoding="utf-8") as fh:
         dmp = json.load(fh)
 
-    metadata, extra = build_zenodo_metadata_from_madmp(dmp, dataset_id)
+    ds = _guess_dataset(dmp, dataset_id)
+    sensitive_or_personal = _has_personal_or_sensitive(ds)
 
-    uploads = list(file_paths) if file_paths else []
-    if not uploads:
-        ds = _guess_dataset(dmp, dataset_id)
-        for dist in _norm_list(ds.get("distribution", [])):
-            path = dist.get("path") or dist.get("access_url") or dist.get("file_path")
-            if path and os.path.exists(path):
-                uploads.append(path)
+    # Decide which files to upload
+    intended_uploads = _candidate_files_from_ds(ds, file_paths)
+    uploads = [] if sensitive_or_personal else intended_uploads
+    skipped_files = intended_uploads if sensitive_or_personal else []
 
+    # Build metadata (include sensitive note + skipped list if applicable)
+    metadata, extra = build_zenodo_metadata_from_madmp(
+        dmp,
+        dataset_id,
+        sensitive_flag=sensitive_or_personal,
+        skipped_files=skipped_files,
+    )
+
+    # Create deposition
     dep = _z_create_deposit(token, sandbox)
     deposition_id = dep.get("id")
     bucket_url = dep.get("links", {}).get("bucket")
@@ -608,6 +654,8 @@ def publish_dataset_from_madmp_zenodo(
         "links": final.get("links", {}),
         "metadata": metadata,
         "uploaded_files": uploaded,
+        "skipped_files": [os.path.basename(x) for x in skipped_files],
+        "sensitive_or_personal": sensitive_or_personal,
         "sandbox": sandbox,
         "dataset_title": extra.get("dataset_title"),
         "access_right": extra.get("access_right"),
@@ -623,7 +671,7 @@ def _dv_headers(token: str) -> dict:
     return {"X-Dataverse-key": token}
 
 def _dv_create_dataset(base_url: str, token: str, dataverse_alias: str, dataset_version_json: dict) -> dict:
-    url = f"{base_url}/api/dataverses/{dataverse_alias}/datasets"
+    url = f"{base_url.rstrip('/')}/api/dataverses/{dataverse_alias}/datasets"
     r = requests.post(url, headers=_dv_headers(token), json=dataset_version_json)
     if not r.ok:
         try: detail = r.json()
@@ -634,7 +682,7 @@ def _dv_create_dataset(base_url: str, token: str, dataverse_alias: str, dataset_
 def _dv_upload_file(base_url: str, token: str, dataset_id: int, filepath: str,
                     description: Optional[str] = None, directory_label: Optional[str] = None,
                     restrict: bool = False) -> dict:
-    url = f"{base_url}/api/datasets/{dataset_id}/add"
+    url = f"{base_url.rstrip('/')}/api/datasets/{dataset_id}/add"
     files = {"file": (os.path.basename(filepath), open(filepath, "rb"))}
     json_data = {"description": description or ""}
     if directory_label: json_data["directoryLabel"] = directory_label
@@ -649,7 +697,7 @@ def _dv_upload_file(base_url: str, token: str, dataset_id: int, filepath: str,
 
 def _dv_publish_dataset(base_url: str, token: str, dataset_id: int, release_type: str = "major") -> dict:
     assert release_type in {"major", "minor"}
-    url = f"{base_url}/api/datasets/{dataset_id}/actions/:publish?type={release_type}"
+    url = f"{base_url.rstrip('/')}/api/datasets/{dataset_id}/actions/:publish?type={release_type}"
     r = requests.post(url, headers=_dv_headers(token))
     if not r.ok:
         try: detail = r.json()
@@ -657,23 +705,25 @@ def _dv_publish_dataset(base_url: str, token: str, dataset_id: int, release_type
         raise PublishError(f"Dataverse publish failed: {r.status_code} {detail}")
     return r.json()
 
+# ---- Dataverse field builders ----
+
+def _dv_field(name, value, tclass="primitive", multiple=False):
+    return {"typeName": name, "typeClass": tclass, "multiple": multiple, "value": value}
+
 def _dv_authors_from_madmp(ds: dict, dmp: dict) -> List[dict]:
     """
     Dataverse 'author' compound from DMP contact + contributors (best-effort).
     """
-    def _field(name, value, tclass="primitive", multiple=False):
-        return {"typeName": name, "typeClass": tclass, "multiple": multiple, "value": value}
-
     authors = []
 
     # Primary: DMP contact
     c = _get(dmp, ["dmp", "contact"]) or dmp.get("contact") or {}
     cname = c.get("name") or c.get("mbox") or "Unknown, Unknown"
     aff_name, _ = _affiliation_from_node(c.get("affiliation") or c.get("organization"))
-    comp = {"authorName": _field("authorName", cname)}
+    comp = {"authorName": _dv_field("authorName", cname)}
     if aff_name:
-        comp["authorAffiliation"] = _field("authorAffiliation", aff_name)
-    authors.append(_field("author", comp, tclass="compound"))
+        comp["authorAffiliation"] = _dv_field("authorAffiliation", aff_name)
+    authors.append(_dv_field("author", comp, tclass="compound"))
 
     # Additional: DMP contributors
     for cont in _norm_list(_get(dmp, ["dmp", "contributor"]) or dmp.get("contributor")):
@@ -683,24 +733,22 @@ def _dv_authors_from_madmp(ds: dict, dmp: dict) -> List[dict]:
         if not nm:
             continue
         aff, _ = _affiliation_from_node(cont.get("affiliation") or cont.get("organization"))
-        comp = {"authorName": _field("authorName", nm)}
+        comp = {"authorName": _dv_field("authorName", nm)}
         if aff:
-            comp["authorAffiliation"] = _field("authorAffiliation", aff)
-        authors.append(_field("author", comp, tclass="compound"))
+            comp["authorAffiliation"] = _dv_field("authorAffiliation", aff)
+        authors.append(_dv_field("author", comp, tclass="compound"))
 
     return authors
 
 def _dv_contacts_from_madmp(ds: dict, dmp: dict) -> List[dict]:
-    def _field(name, value, tclass="primitive", multiple=False):
-        return {"typeName": name, "typeClass": tclass, "multiple": multiple, "value": value}
     contacts = []
     # dataset-level contacts if present
     for c in _norm_list(ds.get("contact", [])):
         email = c.get("mbox") or c.get("email") or c.get("contactEmail")
         name = c.get("name") or c.get("fullname") or email or "Unknown"
         if email:
-            comp = {"datasetContactEmail": _field("datasetContactEmail", email),
-                    "datasetContactName": _field("datasetContactName", name)}
+            comp = {"datasetContactEmail": _dv_field("datasetContactEmail", email),
+                    "datasetContactName": _dv_field("datasetContactName", name)}
             contacts.append({"typeName": "datasetContact", "typeClass": "compound", "multiple": False, "value": comp})
     if contacts:
         return contacts
@@ -709,8 +757,8 @@ def _dv_contacts_from_madmp(ds: dict, dmp: dict) -> List[dict]:
     email = c.get("mbox") or c.get("email")
     name = c.get("name") or email or "Unknown"
     if email:
-        comp = {"datasetContactEmail": _field("datasetContactEmail", email),
-                "datasetContactName": _field("datasetContactName", name)}
+        comp = {"datasetContactEmail": _dv_field("datasetContactEmail", email),
+                "datasetContactName": _dv_field("datasetContactName", name)}
         contacts.append({"typeName": "datasetContact", "typeClass": "compound", "multiple": False, "value": comp})
     return contacts
 
@@ -724,20 +772,45 @@ def _dv_subjects_from_madmp(ds: dict) -> List[dict]:
         subs.append({"typeName": "subject", "typeClass": "controlledVocabulary", "multiple": True, "value": "Other"})
     return subs
 
-def _dv_description_field(ds: dict, dmp: dict) -> dict:
-    desc = ds.get("description") or _get(ds, ["description", "text"]) or _get(dmp, ["dmp", "description"]) or "No description provided."
-    return {"typeName": "dsDescription", "typeClass": "compound", "multiple": True,
-            "value": {"dsDescriptionValue": {"typeName": "dsDescriptionValue", "typeClass": "primitive", "multiple": False, "value": desc}}}
+def _dv_description_value(ds: dict, dmp: dict, sensitive_flag: bool, skipped_files: List[str]) -> str:
+    base = ds.get("description") or _get(ds, ["description", "text"]) or _get(dmp, ["dmp", "description"]) or "No description provided."
+    if sensitive_flag:
+        if skipped_files:
+            bullet = "\n".join(f"  - {os.path.basename(x)}" for x in skipped_files)
+            note = (
+                "\n\n[NOTICE] Files withheld due to personal/sensitive data. "
+                "A metadata-only record has been created. Skipped files:\n"
+                f"{bullet}"
+            )
+        else:
+            note = "\n\n[NOTICE] Files withheld due to personal/sensitive data. A metadata-only record has been created."
+        return base + note
+    return base
 
-def build_dataverse_dataset_version_from_madmp(dmp: dict, dataset_id: Optional[str] = None) -> Tuple[dict, dict]:
+def build_dataverse_dataset_version_from_madmp(
+    dmp: dict,
+    dataset_id: Optional[str] = None,
+    *,
+    sensitive_flag: bool = False,
+    skipped_files: Optional[List[str]] = None,
+) -> Tuple[dict, dict]:
     ds = _guess_dataset(dmp, dataset_id)
     title = ds.get("title") or _get(dmp, ["dmp", "title"]) or "Untitled dataset"
+
     fields: List[dict] = []
     fields.append({"typeName": "title", "typeClass": "primitive", "multiple": False, "value": title})
     fields.extend(_dv_authors_from_madmp(ds, dmp))
     fields.extend(_dv_contacts_from_madmp(ds, dmp))
-    fields.append(_dv_description_field(ds, dmp))
+
+    desc_val = _dv_description_value(ds, dmp, sensitive_flag, skipped_files or [])
+    fields.append({
+        "typeName": "dsDescription",
+        "typeClass": "compound",
+        "multiple": True,
+        "value": {"dsDescriptionValue": _dv_field("dsDescriptionValue", desc_val)}
+    })
     fields.extend(_dv_subjects_from_madmp(ds))
+
     return {
         "datasetVersion": {"metadataBlocks": {"citation": {"displayName": "Citation Metadata", "fields": fields}}}
     }, {"dataset_title": title}
@@ -754,12 +827,20 @@ def publish_dataset_to_dataverse(
 ) -> Dict[str, Any]:
     """
     Create a Dataverse dataset from an maDMP JSON and optionally publish it.
-    Returns dict with dataset id, persistentId, landing page, etc.
     """
     with open(dmp_path, "r", encoding="utf-8") as fh:
         dmp = json.load(fh)
 
-    dataset_version, extra = build_dataverse_dataset_version_from_madmp(dmp, dataset_id_selector)
+    ds = _guess_dataset(dmp, dataset_id_selector)
+    sensitive_or_personal = _has_personal_or_sensitive(ds)
+
+    intended_uploads = _candidate_files_from_ds(ds, file_paths)
+    uploads = [] if sensitive_or_personal else intended_uploads
+    skipped_files = intended_uploads if sensitive_or_personal else []
+
+    dataset_version, extra = build_dataverse_dataset_version_from_madmp(
+        dmp, dataset_id_selector, sensitive_flag=sensitive_or_personal, skipped_files=skipped_files
+    )
 
     resp = _dv_create_dataset(base_url, token, dataverse_alias, dataset_version)
     data = resp.get("data") or {}
@@ -769,13 +850,6 @@ def publish_dataset_to_dataverse(
         raise PublishError(f"Dataverse: missing dataset id in response: {resp}")
 
     uploaded = []
-    uploads = list(file_paths) if file_paths else []
-    if not uploads:
-        ds = _guess_dataset(dmp, dataset_id_selector)
-        for dist in _norm_list(ds.get("distribution", [])):
-            path = dist.get("path") or dist.get("access_url") or dist.get("file_path")
-            if path and os.path.exists(path):
-                uploads.append(path)
     for p in uploads:
         _dv_upload_file(base_url, token, ds_id, p)
         uploaded.append(os.path.basename(p))
@@ -784,12 +858,14 @@ def publish_dataset_to_dataverse(
     if publish:
         publish_result = _dv_publish_dataset(base_url, token, ds_id, release_type=release_type)
 
-    landing = f"{base_url}/dataset.xhtml?persistentId={pid}" if pid else None
+    landing = f"{base_url.rstrip('/')}/dataset.xhtml?persistentId={pid}" if pid else None
     return {
         "dataset_id": ds_id,
         "persistentId": pid,
         "landing_page": landing,
         "uploaded_files": uploaded,
+        "skipped_files": [os.path.basename(x) for x in skipped_files],
+        "sensitive_or_personal": sensitive_or_personal,
         "published": bool(publish_result),
         "dataset_title": extra.get("dataset_title"),
     }
@@ -798,7 +874,6 @@ def publish_dataset_to_dataverse(
 # Streamlit convenience wrappers (used by the editor)
 # =========================
 
-
 def streamlit_publish_to_zenodo(
     *,
     dataset: dict,
@@ -806,14 +881,17 @@ def streamlit_publish_to_zenodo(
     token: str,
     sandbox: bool = True,
     publish: bool = False,
+    allow_reused: bool = False,
     file_paths: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Streamlit-friendly call: takes in-memory dmp + dataset, writes a temp DMP and publishes.
     """
-    import tempfile, json as _json, streamlit as st
+    if str(dataset.get("is_reused", "")).strip().lower() in {"true", "1", "yes"} and not allow_reused:
+        raise PublishError("Blocked: dataset is marked re-used (is_reused=true) in the DMP.")
+
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w", encoding="utf-8") as tf:
-        _json.dump(dmp, tf, ensure_ascii=False, indent=2)
+        json.dump(dmp, tf, ensure_ascii=False, indent=2)
         dmp_path = tf.name
     try:
         result = publish_dataset_from_madmp_zenodo(
@@ -824,13 +902,19 @@ def streamlit_publish_to_zenodo(
             sandbox=sandbox,
             publish=publish,
         )
-        # --- show link in Streamlit UI ---
-        links = result.get("links") or {}
-        url = links.get("html") or links.get("latest_html")
-        if url:
-            st.success(f"✅ Zenodo deposition created. [Open in Zenodo]({url})")
-        else:
-            st.info("Zenodo deposition created, but no link was returned.")
+        # Show link in Streamlit UI
+        if st is not None:
+            links = result.get("links") or {}
+            url = links.get("html") or links.get("latest_html")
+            if url:
+                msg = "published" if publish else "deposition created"
+                st.success(f"✅ Zenodo {msg}. [Open in Zenodo]({url})")
+            else:
+                st.info("Zenodo deposition created, but no link was returned.")
+            if result.get("sensitive_or_personal"):
+                skipped = result.get("skipped_files") or []
+                if skipped:
+                    st.warning(f"Files not uploaded due to personal/sensitive data: {', '.join(skipped)}")
         return result
     finally:
         try:
@@ -846,6 +930,7 @@ def streamlit_publish_to_dataverse(
     base_url: str = "https://dataverse.deic.dk",
     alias: str = "tmpdemo",
     publish: bool = False,
+    allow_reused: bool = False,
     release_type: str = "major",
     file_paths: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
@@ -853,11 +938,11 @@ def streamlit_publish_to_dataverse(
     Streamlit-friendly call: takes in-memory dmp + dataset, writes a temp DMP and publishes to Dataverse.
     Renders a clickable landing-page link upon success.
     """
-    import tempfile, json as _json, streamlit as st
+    if str(dataset.get("is_reused", "")).strip().lower() in {"true", "1", "yes"} and not allow_reused:
+        raise PublishError("Blocked: dataset is marked re-used (is_reused=true) in the DMP.")
 
-    # Write DMP to a temp file
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w", encoding="utf-8") as tf:
-        _json.dump(dmp, tf, ensure_ascii=False, indent=2)
+        json.dump(dmp, tf, ensure_ascii=False, indent=2)
         dmp_path = tf.name
 
     try:
@@ -872,20 +957,22 @@ def streamlit_publish_to_dataverse(
             release_type=release_type,
         )
 
-        # --- Render link(s) in UI ---
-        landing = result.get("landing_page")
-        pid = result.get("persistentId")
-        if not landing and pid:
-            # Fallback construction (matches what publish_dataset_to_dataverse does)
-            landing = f"{base_url.rstrip('/')}/dataset.xhtml?persistentId={pid}"
+        if st is not None:
+            landing = result.get("landing_page")
+            pid = result.get("persistentId")
+            if not landing and pid:
+                landing = f"{base_url.rstrip('/')}/dataset.xhtml?persistentId={pid}"
 
-        if landing:
-            if result.get("published"):
-                st.success(f"✅ Dataverse {'published' if publish else 'dataset created'} — [Open dataset]({landing})")
+            if landing:
+                msg = "published" if result.get("published") else "draft created"
+                st.success(f"✅ Dataverse {msg} — [Open dataset]({landing})")
             else:
-                st.success(f"✅ Dataverse draft created — [Open dataset]({landing})")
-        else:
-            st.info("Dataverse dataset created, but no landing page link was returned.")
+                st.info("Dataverse dataset created, but no landing page link was returned.")
+
+            if result.get("sensitive_or_personal"):
+                skipped = result.get("skipped_files") or []
+                if skipped:
+                    st.warning(f"Files not uploaded due to personal/sensitive data: {', '.join(skipped)}")
 
         return result
 
@@ -894,7 +981,6 @@ def streamlit_publish_to_dataverse(
             os.unlink(dmp_path)
         except Exception:
             pass
-
 
 # =========================
 # CLI
