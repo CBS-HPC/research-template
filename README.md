@@ -1039,18 +1039,18 @@ This template uses a modular folder layout that promotes transparency, reproduci
 ```
 ├── .git/                     # Git repository metadata
 ├── .gitignore                # Files/folders excluded from Git tracking
-├── .github/                 # GitHub Actions workflows for CI/CD
-├── .venv/                   # Local Python virtual environment
-├── .conda/                  # Local Conda environment (Python/R)
-├── LICENSE.txt              # License for code, data, and documentation
-├── CITATION.cff             # Citation metadata for scholarly reference
-├── README.md                # Main README with project usage and structure
-├── pyproject.toml           # Project metadata and CLI configuration
+├── .github/                  # GitHub Actions workflows for CI/CD
+├── .venv/                    # Local Python virtual environment
+├── .conda/                   # Local Conda environment (Python/R)
+├── LICENSE.txt               # License for code, data, and documentation
+├── CITATION.cff              # Citation metadata for scholarly reference
+├── README.md                 # Main README with project usage and structure
+├── pyproject.toml            # Project metadata and CLI configuration
 ├── activate.* / deactivate.* # Environment activation scripts (.ps1/.sh)
-├── environment.yml          # Conda environment definition
-├── requirements.txt         # pip-compatible Python dependency list
-├── renv.lock                # R package lock file created by renv
-├── uv.lock                # R package lock file created by renv
+├── environment.yml           # Conda environment definition
+├── requirements.txt          # pip-compatible Python dependency list
+├── renv.lock                 # R package lock file created by renv
+├── uv.lock                   # Python package lock file created by uv
 
 ```
 
