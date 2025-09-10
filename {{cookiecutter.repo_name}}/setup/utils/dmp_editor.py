@@ -19,6 +19,7 @@ import sys
 import json
 import getpass
 import socket
+import ipaddress
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -792,59 +793,107 @@ def main() -> None:
     draw_projects_section(dmp_root)
     draw_datasets_section(dmp_root)
 
+def _looks_internal(name_or_ip: str) -> bool:
+    s = (name_or_ip or "").lower()
+    if any(s.endswith(suf) for suf in (
+        ".local", ".localdomain", ".internal", ".svc.cluster.local", ".cluster", ".lan"
+    )):
+        return True
+    try:
+        ip = ipaddress.ip_address(s)
+        return not ip.is_global
+    except ValueError:
+        return False
 
-def cli() -> None:
-    app_path = Path(__file__).resolve()
-    sys.argv = ["streamlit", "run", str(app_path), *sys.argv[1:]]
-    sys.exit(st_main())
-
-def _ssh_hint(port: int) -> None:
+def _ssh_hint(app_port: int) -> None:
     """
-    Print a copy-pasteable SSH port-forward command for the user.
-    Uses SSH_CONNECTION to infer the server's SSH port; you can override the host
-    with SSH_SUGGEST_HOST if needed.
+    Print a copy-pasteable SSH port-forwarding command.
+    Prefers user overrides; avoids internal-only hostnames.
+    Environment overrides:
+      - SSH_SUGGEST_HOST=<gateway host>      (e.g. ssh.cloud.sdu.dk)
+      - SSH_SUGGEST_PORT=<gateway ssh port>  (e.g. 2414)
+      - SSH_SUGGEST_USER=<username>          (defaults to $LOGNAME)
     """
-    user = os.environ.get("LOGNAME") or getpass.getuser() or "user"
-    # Prefer an explicit hint for the host if you use a gateway name (e.g., ssh.cloud.sdu.dk)
-    host = os.environ.get("SSH_SUGGEST_HOST")
-    if not host:
-        # fallbacks: the actual node name/IP is fine for most setups
-        host = socket.getfqdn() or os.environ.get("HOSTNAME") or "your-ssh-host"
+    user = os.environ.get("SSH_SUGGEST_USER") or os.environ.get("LOGNAME") or getpass.getuser() or "user"
 
+    # Infer SSH daemon port from SSH_CONNECTION unless overridden
     ssh_conn = os.environ.get("SSH_CONNECTION", "")  # "<client_ip> <cport> <server_ip> <sport>"
-    ssh_port = None
+    inferred_port = None
     if ssh_conn:
         parts = ssh_conn.split()
         if len(parts) >= 4:
-            ssh_port = parts[3]  # server-side sshd port
-    port_flag = f" -p {ssh_port}" if ssh_port and ssh_port != "22" else ""
+            inferred_port = parts[3]
+    ssh_port = os.environ.get("SSH_SUGGEST_PORT") or inferred_port or "22"
+    port_flag = f" -p {ssh_port}" if ssh_port != "22" else ""
 
-    cmd = f"ssh -N -L {port}:localhost:{port} {user}@{host}{port_flag}"
+    # Host preference: explicit override → reverse DNS of server IP (if public) → placeholder
+    host = os.environ.get("SSH_SUGGEST_HOST")
+    if not host and ssh_conn:
+        parts = ssh_conn.split()
+        if len(parts) >= 3:
+            server_ip = parts[2]
+            # Only use if it looks public
+            try:
+                ip = ipaddress.ip_address(server_ip)
+                if ip.is_global:
+                    host = server_ip
+            except ValueError:
+                pass
+    if not host:
+        # Last resort: try FQDN, but discard obvious internal names
+        fqdn = socket.getfqdn()
+        host = None if _looks_internal(fqdn) else fqdn
+
+    if not host or _looks_internal(host):
+        host = "your-ssh-gateway.example.com"  # force user to override
+        need_override = True
+    else:
+        need_override = False
+
+    cmd = f"ssh -N -L {app_port}:localhost:{app_port} {user}@{host}{port_flag}"
+
     print("\n=== SSH port forwarding ===")
     print("Run this on your LOCAL machine, then open the URL below:")
     print(f"  {cmd}\n")
-    print(f"Then open:  http://localhost:{port}\n")
+    
+    if need_override:
+        print("Tip: I detected an internal compute-node hostname. Set these before launching the app on the server:")
+        print("  export SSH_SUGGEST_HOST=<your SSH gateway>    # e.g. ssh.cloud.sdu.dk")
+        print("  export SSH_SUGGEST_PORT=<ssh port if not 22>  # e.g. 2414")
+        print("  export SSH_SUGGEST_USER=<your username>       # optional\n")
+        # UCloud example:
+        print("For SDU UCloud specifically:")
+        print("  export SSH_SUGGEST_HOST=ssh.cloud.sdu.dk")
+        print("  export SSH_SUGGEST_PORT=2414\n")
 
-def cli_ssh() -> None:
+def cli() -> None:
     """
-    Run Streamlit bound to localhost (safe), print SSH tunnel instructions.
-    Set SSH_SUGGEST_HOST=<gateway-or-login-host> if the inferred host isn't what you ssh to.
-    You can also set DMP_PORT to change the app port (default 8501).
+    CLI entrypoint for the Streamlit DMP editor.
+    Usage:
+        python dmp_editor.py          # normal mode
+        python dmp_editor.py ssh      # SSH tunnel mode (prints port-forward instructions)
     """
-    port = int(os.environ.get("DMP_PORT", "8501"))
-    _ssh_hint(port)
     app_path = Path(__file__).resolve()
-    sys.argv = [
-        "streamlit",
-        "run",
-        str(app_path),
-        "--server.headless", "true",
-        "--server.address", "localhost",
-        "--server.port", str(port),
-        *sys.argv[1:],
-    ]
-    sys.exit(st_main())
 
+    # Did user request "ssh" mode?
+    ssh_mode = len(sys.argv) > 1 and sys.argv[1] == "ssh"
+    if ssh_mode:
+        # remove "ssh" so it doesn't confuse Streamlit
+        sys.argv.pop(1)
+
+        app_port = int(os.environ.get("DMP_PORT", "8501"))
+        _ssh_hint(app_port)
+        sys.argv = [
+            "streamlit", "run", str(app_path),
+            "--server.headless", "true",
+            "--server.address", "localhost",
+            "--server.port", str(app_port),
+            *sys.argv[1:],
+        ]
+    else:
+        sys.argv = ["streamlit", "run", str(app_path), *sys.argv[1:]]
+
+    sys.exit(st_main())
 
 
 if __name__ == "__main__":

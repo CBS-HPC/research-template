@@ -27,7 +27,6 @@ ci-control = "utils.ci_tools:ci_control"
 dcas-migration = "utils.dcas_migration:main"
 dmp-update = "utils.dmp_tools:main"
 dmp-editor = "utils.dmp_editor:cli"
-dmp-editor-ssh = "utils.dmp_editor:cli_ssh"
 
 [tool.setuptools.packages.find]
 where = ["."]
