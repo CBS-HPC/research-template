@@ -2,19 +2,26 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import annotations
-import argparse, json, os, requests, tempfile
+import argparse
+import json
+import os
+import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
-try:
-    import streamlit as st  # type: ignore
-except Exception:
-    st = None  # type: ignore
 
+
+from .general_tools import package_installer
 from publish_common import (
     PublishError, _get, _norm_list, _guess_dataset,
     _has_personal_or_sensitive, description_from_madmp,
     files_from_x_dcas, regular_files_existing
 )
+
+
+package_installer(required_libraries=["streamlit", "requests"])
+import requests
+import streamlit as st  # type: ignore
+
 
 # ========= Dataverse API =========
 

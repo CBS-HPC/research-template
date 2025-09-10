@@ -6,19 +6,15 @@ import argparse
 import json
 import os
 import time
-import requests
 import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
-try:
-    import streamlit as st  # type: ignore
-except Exception:
-    st = None  # type: ignore
 
-from publish_common import (
+from .general_tools import package_installer
+from .publish_common import (
     PublishError, RETRY_STATUS, DEFAULT_TIMEOUT,
     ZENODO_MAX_FILES, ZENODO_MAX_TOTAL,
     _get, _norm_list, _guess_dataset, _keywords_from_madmp,
@@ -29,6 +25,12 @@ from publish_common import (
     build_packaging_plan, realize_packaging_plan_parallel,
     build_packaging_plan_preserve_first_level,  # <-- structure-preserving plan
 )
+
+
+package_installer(required_libraries=["streamlit", "requests"])
+
+import requests
+import streamlit as st  # type: ignore
 
 # ========= Zenodo API =========
 

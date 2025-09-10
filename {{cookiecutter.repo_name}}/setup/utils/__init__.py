@@ -15,7 +15,7 @@ from .example_templates import *
 from .ci_tools import *
 from .dmp_tools import *
 from .dmp_editor import *
-#from .publish_from_dmp import *
+
 from .publish_common import *
 from .publish_zenodo import *
 from .publish_dataverse import *
