@@ -251,7 +251,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
     save_json(json_path, data)
 
     if updated:
-        print(f"Updated {updated} dataset(s): set x_dcas={{}} and cleared access_url.")
+        print(f"Updated {updated} dataset(s).")
     else:
         print("No missing dataset paths found.")
 

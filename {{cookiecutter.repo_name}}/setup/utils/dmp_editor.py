@@ -14,13 +14,16 @@ Depends on:
 Run:
   streamlit run dmp_editor.py
 """
-
+import os
 import sys
 import json
+import getpass
+import socket
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import date, datetime
+
 
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
@@ -794,6 +797,55 @@ def cli() -> None:
     app_path = Path(__file__).resolve()
     sys.argv = ["streamlit", "run", str(app_path), *sys.argv[1:]]
     sys.exit(st_main())
+
+def _ssh_hint(port: int) -> None:
+    """
+    Print a copy-pasteable SSH port-forward command for the user.
+    Uses SSH_CONNECTION to infer the server's SSH port; you can override the host
+    with SSH_SUGGEST_HOST if needed.
+    """
+    user = os.environ.get("LOGNAME") or getpass.getuser() or "user"
+    # Prefer an explicit hint for the host if you use a gateway name (e.g., ssh.cloud.sdu.dk)
+    host = os.environ.get("SSH_SUGGEST_HOST")
+    if not host:
+        # fallbacks: the actual node name/IP is fine for most setups
+        host = socket.getfqdn() or os.environ.get("HOSTNAME") or "your-ssh-host"
+
+    ssh_conn = os.environ.get("SSH_CONNECTION", "")  # "<client_ip> <cport> <server_ip> <sport>"
+    ssh_port = None
+    if ssh_conn:
+        parts = ssh_conn.split()
+        if len(parts) >= 4:
+            ssh_port = parts[3]  # server-side sshd port
+    port_flag = f" -p {ssh_port}" if ssh_port and ssh_port != "22" else ""
+
+    cmd = f"ssh -N -L {port}:localhost:{port} {user}@{host}{port_flag}"
+    print("\n=== SSH port forwarding ===")
+    print("Run this on your LOCAL machine, then open the URL below:")
+    print(f"  {cmd}\n")
+    print(f"Then open:  http://localhost:{port}\n")
+
+def cli_ssh() -> None:
+    """
+    Run Streamlit bound to localhost (safe), print SSH tunnel instructions.
+    Set SSH_SUGGEST_HOST=<gateway-or-login-host> if the inferred host isn't what you ssh to.
+    You can also set DMP_PORT to change the app port (default 8501).
+    """
+    port = int(os.environ.get("DMP_PORT", "8501"))
+    _ssh_hint(port)
+    app_path = Path(__file__).resolve()
+    sys.argv = [
+        "streamlit",
+        "run",
+        str(app_path),
+        "--server.headless", "true",
+        "--server.address", "localhost",
+        "--server.port", str(port),
+        *sys.argv[1:],
+    ]
+    sys.exit(st_main())
+
+
 
 if __name__ == "__main__":
     main()
