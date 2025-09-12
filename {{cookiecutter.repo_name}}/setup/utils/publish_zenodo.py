@@ -235,44 +235,60 @@ def _license_from_madmp(ds: dict) -> Optional[str]:
 
     return cand
 
+
 def _access_right_from_madmp(ds: dict, files_exist: bool) -> Tuple[str, Optional[str]]:
     """
-    - If no files exist (from x_dcas) OR sensitive/personal → closed
-    - Else map access; embargo only if a future date is present in ds.distribution.license[*].start_date
+    - If no files OR personal/sensitive → 'closed'
+    - Else read distribution.data_access ∈ {open, shared, closed}
+    - Embargo if license.start_date is a future date
     """
-    has_sensitive = _has_personal_or_sensitive(ds)
-    embargo_date: Optional[str] = None
 
-    for dist in _norm_list(ds.get("distribution", [])):
-        for lic in _norm_list(dist.get("license", [])):
-            if isinstance(lic, dict):
-                sd = (lic.get("start_date") or "").strip()
-                if sd:
-                    try:
-                        if date.fromisoformat(sd) > date.today():
-                            embargo_date = sd
-                    except Exception:
-                        pass
+    def _first_distribution(ds: dict) -> dict:
+        d = ds.get("distribution")
+        if isinstance(d, dict):
+            return d
+        if isinstance(d, list) and d:
+            return d[0]
+        return {}
 
-    if (not files_exist) or has_sensitive:
-        return "closed", embargo_date
+    def _first_license(dist: dict) -> dict:
+        l = dist.get("license")
+        if isinstance(l, dict):
+            return l
+        if isinstance(l, list) and l:
+            return l[0]
+        return {}
 
-    access = (ds.get("access") or ds.get("access_right") or "").strip().lower()
+
+    if (not files_exist) or _has_personal_or_sensitive(ds):
+        return "closed", None
+
+    dist = _first_distribution(ds)
+    access = (dist.get("data_access") or "").strip().lower()
+
+    # map to publisher vocabulary
     if access == "open":
         base = "open"
-    elif access in {"shared", "restricted"}:
+    elif access == "shared":
         base = "restricted"
-    elif "embargo" in (access or ""):
-        base = "embargoed"
-    elif access in {"closed", "closedaccess"}:
+    elif access == "closed":
         base = "closed"
     else:
-        base = "open"
+        base = "open"  # default
+
+    # single license, optional embargo
+    lic = _first_license(dist)
+    embargo_date = None
+    sd = (lic.get("start_date") or "").strip()
+    if sd:
+        try:
+            if date.fromisoformat(sd) > date.today():
+                embargo_date = sd
+        except Exception:
+            pass
 
     if embargo_date and base != "closed":
         base = "embargoed"
-    elif base == "embargoed" and not embargo_date:
-        base = "open"
 
     return base, embargo_date
 
@@ -346,7 +362,7 @@ def build_zenodo_metadata_from_madmp(
     if language: md["language"] = language
 
     communities = []
-    for ext_name in ("extension", "extensions", "x_dcas", "x_project", "x_ui"):
+    for ext_name in ("extension", "extensions", "x_dcas"):
         for ext in _norm_list(ds.get(ext_name, [])):
             if isinstance(ext, dict):
                 comm = ext.get("community") or ext.get("zenodo_community")

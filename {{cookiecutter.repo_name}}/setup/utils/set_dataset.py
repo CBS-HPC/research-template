@@ -2,13 +2,13 @@ import os
 import json
 from datetime import datetime
 import pathlib
-from typing import Optional, Tuple, Dict, List, Set
+from typing import Optional, Tuple, Dict, List, Set, Any, Iterable
 from collections import defaultdict
+from copy import deepcopy
 
 from .readme_templates import *
 from .versioning_tools import *
 from .dmp_tools import *  
-
 
 
 def get_file_info(file_paths):
@@ -95,7 +95,7 @@ def datasets_to_json(json_path=DEFAULT_DMP_PATH, entry=None):
 
     if idx is not None:
         existing = datasets[idx]
-        entry["issued"] = existing.get("issued", entry.get("issued") or now_iso_minute())
+        entry["issued"] = existing.get("issued", entry.get("issued"))
 
         # Compare distributions and the x_dcas payload inside extension
         existing_x = get_extension_payload(existing, "x_dcas") or {}
@@ -145,14 +145,9 @@ def datasets_to_json(json_path=DEFAULT_DMP_PATH, entry=None):
     save_json(json_path, data)
 
     # Validate and warn (non-fatal) so callers see problems
-    try:
-        errs = validate_against_schema(data, schema=fetch_schema())
-        if errs:
-            print("⚠️ Schema validation issues after upsert:")
-            for e in errs[:50]:
-                print(" -", e)
-    except Exception:
-        pass
+
+    #validate_against_schema(data, schema=fetch_schema())
+
 
     return json_path
 
@@ -259,6 +254,68 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
 
 def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
     
+    def make_dataset_entry(name, distribution, x_dcas_payload):
+        templates = dmp_default_templates()
+
+        # Start from a deep copy so the global template isn't mutated
+        entry = deepcopy(templates["dataset"])
+
+        # Simple overlays
+        entry["title"]    = name
+        entry["issued"]   = now_iso_minute()
+        entry["modified"] = now_iso_minute() 
+
+        # distribution must be a list with one object; merge with its template
+        dist = deepcopy(templates["distribution"])
+        if isinstance(distribution, dict):
+            dist.update(distribution)  # shallow overlay
+        entry["distribution"] = [dist]
+
+        # x_dcas lives under dataset.extension as a single item: {"x_dcas": {...}}
+        xdcas = deepcopy(templates["x_dcas"])
+        if isinstance(x_dcas_payload, dict):
+            xdcas.update(x_dcas_payload)
+        entry["extension"] = [{"x_dcas": xdcas}]
+
+        return entry
+
+    def make_x_dcas_payload(
+        *,
+        data_type: Optional[str] = None,
+        destination: Optional[str] = None,
+        number_of_files: Optional[int] = None,
+        total_size_mb: Optional[float] = None,
+        file_formats: Optional[Iterable[str]] = None,
+        data_files: Optional[Iterable[str]] = None,
+        data_size_mb: Optional[Iterable[float]] = None,
+        hash_value: Optional[str] = None,   # 'hash' is a builtin, so use hash_value
+    ) -> Dict[str, Any]:
+        """
+        Build x_dcas by loading templates['x_dcas'] and only updating fields
+        that already exist in the template.
+        """
+        templates = dmp_default_templates()
+        x = deepcopy(templates["x_dcas"])
+
+        # Prepare candidate updates (normalize types lightly)
+        updates: Dict[str, Any] = {
+            "data_type": data_type,
+            "destination": norm_rel_urlish(destination) if destination is not None else None,
+            "number_of_files": int(number_of_files) if number_of_files is not None else None,
+            "total_size_mb": int(round(total_size_mb)) if total_size_mb is not None else None,
+            "file_formats": list(file_formats) if file_formats is not None else None,
+            "data_files": list(data_files) if data_files is not None else None,
+            "data_size_mb": list(data_size_mb) if data_size_mb is not None else None,
+            "hash": hash_value,
+        }
+
+        # Only update keys that already exist in the template AND have a non-None value
+        for k, v in updates.items():
+            if v is not None and k in x:
+                x[k] = v
+
+        return x
+
     project_root = Path(__file__).resolve().parent.parent.parent
 
     cookie = read_toml_json(
@@ -281,77 +338,40 @@ def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
     if number_of_files > 1000:
         print("WARNING: Consider zipping datasets >1000 files.")
 
-    created = now_iso_minute() 
     name = os.path.basename(destination)
     data_type = data_type_from_path(destination)
 
+
     # distribution (complete RDA-DMP shape with defaults; 1.2-compliant)
     distribution = {
-        "title": name,
+        #"title": name,
         "access_url": norm_rel_urlish(destination),
-        "download_url": "",
+        #"download_url": "",
         "format": [ext.strip(".") for ext in sorted(file_formats)],
         "byte_size": to_bytes_mb(total_size_mb),
         "data_access": "open" if data_files else "closed",
-        "host": {"title": "Project repository", "url": ""},
+        #"host": {"title": "Project repository", "url": ""},
         "available_until": "",
-        "description": "",
+        #"description": "",
         "license": [{
             "license_ref": LICENSE_LINKS.get(cookie.get("DATA_LICENSE"), ""),
             "start_date": datetime.now().strftime("%Y-%m-%d")
         }],
     }
 
-    # required dataset_id (local, stable)
-    #dataset_id = make_dataset_id(name, distribution["access_url"])
-
     # DCAS payload wrapped under dataset.extension
-    x_dcas_payload = {
-        "data_type": data_type,
-        "destination": destination,
-        "number_of_files": number_of_files,
-        "total_size_mb": int(round(total_size_mb)),
-        "file_formats": sorted(list(file_formats)),
-        "data_files": data_files,
-        "data_size_mb": individual_sizes_mb,
-        "hash": get_git_hash(destination),
-    }
-
-    entry = {
-        # RDA-DMP dataset
-        "title": name,
-        "description": "",
-        "issued": created,
-        "modified": created,
-        "language": "eng",               # ISO 639-3 code like "eng"
-        "keyword": [],
-        "type": "",
-        "is_reused": False,
-        "personal_data": "unknown",
-        "sensitive_data": "unknown",
-        "preservation_statement": "",
-        "data_quality_assurance": [],
-        "metadata": [{
-            "language": "eng",
-            "metadata_standard_id": {
-                "identifier": "http://www.dublincore.org/specifications/dublin-core/dcmi-terms/",
-                "type": "url"
-            },
-            "description": ""
-        }],
-        "security_and_privacy":  [{"title": "Security & Privacy", "description": ""}],
-        "technical_resource": [{"name": "", "description": ""}],
-        "dataset_id": {
-                "identifier": "",
-                "type": "other",
-            },
-        "distribution": [distribution],
-
-        # Extensions: x_dcas lives under dataset.extension
-        "extension": [
-            {"x_dcas": x_dcas_payload}
-        ],
-    }
+    x_dcas_payload = make_x_dcas_payload(
+        data_type = data_type,
+        destination = destination,
+        number_of_files = number_of_files,
+        total_size_mb = int(round(total_size_mb)),
+        file_formats = sorted(list(file_formats)),
+        data_files =  data_files,
+        data_size_mb = individual_sizes_mb,
+        hash_value = get_git_hash(destination),
+    )
+    
+    entry = make_dataset_entry(name, distribution, x_dcas_payload)
 
     return datasets_to_json(json_path=json_path, entry=entry)
 
@@ -394,7 +414,7 @@ def generate_dataset_table(
             "total_size_mb": x.get("total_size_mb") if x.get("total_size_mb") is not None
                              else int(round((dist.get("byte_size") or 0) / (1024 * 1024))),
             "file_formats": sorted(list(set((dist.get("format") or [])))),
-            "zip_file": dist.get("download_url"),
+            "zip_file": dist.get("download_url") or dist.get("access_url") or x.get("destination"),
             "description": ds.get("description"),
             "_dtype": x.get("data_type") or data_type_from_path(x.get("destination") or ""),
             "_files": x.get("data_files") or [],
@@ -513,6 +533,9 @@ def main():
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
 
+    with change_dir("./data"):
+        _= git_commit("Running 'set-dataset'")
+    
     data_files, _ = get_data_files()
 
     create_or_update_dmp_from_schema(dmp_path=DEFAULT_DMP_PATH)

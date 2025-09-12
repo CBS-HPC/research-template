@@ -54,6 +54,124 @@ from streamlit.web.cli import main as st_main
 from jsonschema import Draft7Validator
 
 
+def _has_privacy_flags(ds: dict) -> bool:
+    return str(ds.get("personal_data", "")).lower() == "yes" or \
+           str(ds.get("sensitive_data", "")).lower() == "yes"
+
+def _enforce_privacy_access(ds: dict) -> bool:
+    """If personal/sensitive == yes, force all distributions to closed."""
+    changed = False
+    for dist in ds.get("distribution", []) or []:
+        if _has_privacy_flags(ds) and dist.get("data_access") != "closed":
+            dist["data_access"] = "closed"
+            changed = True
+    return changed
+
+def _normalize_license_by_access(ds: dict) -> bool:
+    """
+    If data_access is shared/closed, remove CC license URLs (misleading for non-open).
+    Allows non-CC/custom terms URLs to remain.
+    """
+    changed = False
+    for dist in ds.get("distribution", []) or []:
+        access = (dist.get("data_access") or "").lower()
+        if access in {"shared", "closed"}:
+            for lic in dist.get("license", []) or []:
+                ref = (lic or {}).get("license_ref") or ""
+                if "creativecommons.org" in ref:
+                    lic["license_ref"] = ""
+                    changed = True
+    return changed
+
+def _ensure_open_has_license(ds: dict) -> bool:
+    """
+    If data_access is open and license is empty, set a sensible default (e.g., CC-BY-4.0).
+    Skip if the user already put something in.
+    """
+    changed = False
+    default_ref = LICENSE_LINKS.get("CC-BY-4.0", "")
+    for dist in ds.get("distribution", []) or []:
+        if (dist.get("data_access") or "").lower() == "open":
+            lics = dist.get("license") or []
+            if not lics:
+                dist["license"] = [{"license_ref": default_ref, "start_date": today_iso()}]
+                changed = True
+            else:
+                for lic in lics:
+                    if not (lic or {}).get("license_ref"):
+                        lic["license_ref"] = default_ref
+                        changed = True
+    return changed
+
+def _inject_dist_css_once() -> None:
+    # Only add very light styling; keep expanders fully clickable.
+    if st.session_state.get("__dist_css__"):
+        return
+    st.session_state["__dist_css__"] = True
+    st.markdown(
+        """
+        <style>
+        /* Subtle background and left border for expander bodies (applies everywhere) */
+        [data-testid="stExpander"] > div {
+            border-left: 3px solid #c8d6e5;
+            background: rgba(0,0,0,.02);
+            padding: .6rem 1rem .8rem 1rem;
+            border-radius: 6px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+def _is_dataset_path(path: tuple) -> bool:
+    return (
+        isinstance(path, tuple)
+        and len(path) == 3
+        and path[0] == "dmp"
+        and path[1] == "dataset"
+        and isinstance(path[2], int)
+    )
+
+def _edit_distribution_inline(arr: List[Any], path: tuple, ns: Optional[str] = None) -> List[Any]:
+    if not isinstance(arr, list):
+        return arr
+
+    # If empty, seed one distribution so users can fill it in
+    if not arr:
+        templates = dmp_default_templates()
+        arr.append(deepcopy(templates["distribution"]))
+
+    # Single distribution → show inline under a normal, closable expander
+    if len(arr) == 1 and isinstance(arr[0], dict):
+        _inject_dist_css_once()
+        with st.expander("Distribution", expanded=True):
+            arr[0] = edit_any(arr[0], path=(*path, 0), ns=ns)
+        return arr
+
+    # 2+ distributions → default list UI
+    return edit_array(arr, path=path, title_singular="Distribution", removable_items=True, ns=ns)
+
+def _edit_dataset_id_inline(obj: Any, path: tuple, ns: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Render dataset_id inline (inside its own closable expander).
+    Seeds from templates if missing/empty.
+    """
+    if not isinstance(obj, dict) or not obj:
+        templates = dmp_default_templates()
+        obj = deepcopy(templates["dataset"]["dataset_id"])
+    with st.expander("Dataset ID", expanded=True):
+        obj = edit_any(obj, path=path, ns=ns)   # path already includes "dataset_id"
+    return obj
+
+def _ensure_dataset_id_before_distribution(keys: List[str]) -> List[str]:
+    # If both exist and dataset_id comes after distribution, move it just before.
+    if "dataset_id" in keys and "distribution" in keys:
+        di, dj = keys.index("dataset_id"), keys.index("distribution")
+        if di > dj:
+            k = keys.pop(di)
+            keys.insert(dj, k)
+    return keys
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Minimal helpers (schema-aware editors)  — unchanged parts from your editor
@@ -212,20 +330,72 @@ def _enum_label_for(path: tuple, option_value: str) -> str:
     return str(option_value)
 
 def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
+    
+
     if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
         keyb = _key_for(*path, ns, "bool")
         return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
+    
     if _is_format_schema(path, "date"):
-        key = _key_for(*path, ns, "date")
-        clear_key = _key_for(*path, ns, "date", "clear")
-        cur = _parse_iso_date(value) or date.today()
+        base_key    = _key_for(*path, ns, "date")           # date_input widget key
+        enable_key  = _key_for(*path, ns, "date_enabled")   # whether picker is enabled
+        pending_key = _key_for(*path, ns, "date_pending")   # one-shot flag to seed today after "Set date"
+        set_key     = _key_for(*path, ns, "date_set_btn")   # button: Set date
+        clear_key   = _key_for(*path, ns, "date_clear_btn") # button: Clear
+
+        # Current value from the DMP (string -> date or None)
+        existing = _parse_iso_date(value)
+
+        # Initialize enable flag on first render of this field
+        if enable_key not in st.session_state:
+            st.session_state[enable_key] = bool(existing)
+
+        enabled = bool(st.session_state[enable_key])
+
         c1, c2 = st.columns([4, 1])
-        with c1:
-            picked = st.date_input(label, value=cur, key=key)
+
+        # --- Right column: buttons FIRST (so we can update state before the widget is created)
         with c2:
-            st.markdown("<div style='height:0.1rem'></div>", unsafe_allow_html=True)
-            cleared = st.button("Clear", key=clear_key)
-        return "" if cleared else (picked.isoformat() if isinstance(picked, date) else "")
+            st.markdown("<div style='height:0.15rem'></div>", unsafe_allow_html=True)
+
+            if enabled:
+                # Only allow clearing if a date actually exists (in session or DMP)
+                has_date_now = (base_key in st.session_state) or bool(existing)
+                if st.button("Clear", key=clear_key, disabled=not has_date_now):
+                    # Remove any staged widget value *before* creating the widget
+                    st.session_state.pop(base_key, None)
+                    st.session_state[enable_key] = False
+                    enabled = False  # reflect immediately; no rerun required
+            else:
+                if st.button("Set date", key=set_key):
+                    # Arm a one-shot to seed the picker with today on this very run
+                    st.session_state[enable_key] = True
+                    st.session_state[pending_key] = True
+                    enabled = True  # reflect immediately; no rerun required
+
+        # --- Left column: the date picker (created AFTER button logic)
+        with c1:
+            # Decide default shown in the picker (this does not save to the DMP until we return)
+            seed_today = bool(st.session_state.pop(pending_key, False))
+            if seed_today and not existing:
+                cur = date.today()
+            else:
+                # Prefer any existing widget value (if present), else DMP value, else show today (UI only)
+                cur = st.session_state.get(base_key) or existing or date.today()
+
+            picked = st.date_input(
+                label,
+                value=cur,
+                key=base_key,
+                disabled=not enabled,
+            )
+
+        # Commit to DMP:
+        # - when disabled → keep empty string (no date in the JSON)
+        # - when enabled  → save whatever is picked
+        return "" if not enabled else (picked.isoformat() if isinstance(picked, date) else "")
+        
+
     mode, options = _enum_info_for_path(path)
     if mode == "single" and options:
         sel_key = _key_for(*path, ns, "enum")
@@ -261,7 +431,6 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
         except Exception: return value
     txt = st.text_input(label, "" if value is None else str(value), key=key)
     return txt
-
 
 def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items: bool, ns: Optional[str] = None) -> List[Any]:
     mode, options = _enum_info_for_path(path)
@@ -315,6 +484,11 @@ def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items
 
 def edit_object(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: Optional[str] = None) -> Dict[str, Any]:
     keys = list(obj.keys())
+
+    # NEW: keep dataset_id visually above distribution when editing a dataset
+    if _is_dataset_path(path):
+        keys = _ensure_dataset_id_before_distribution(keys)
+
     remove_keys: List[str] = []
     for key in keys:
         val = obj.get(key)
@@ -330,11 +504,23 @@ def edit_object(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: O
             continue
 
         if isinstance(val, dict):
+            # NEW: unfold dataset_id inline for datasets
+            if key == "dataset_id" and _is_dataset_path(path):
+                obj[key] = _edit_dataset_id_inline(val, path=(*path, key), ns=ns)
+                continue
+
             with st.expander(key, expanded=False):
                 obj[key] = edit_any(val, path=(*path, key), ns=ns)
+
         elif isinstance(val, list):
+            # Existing special-case for distribution
+            if key == "distribution" and _is_dataset_path(path):
+                obj[key] = _edit_distribution_inline(val, path=(*path, key), ns=ns)
+                continue
             with st.expander(key, expanded=False):
-                obj[key] = edit_array(val, path=(*path, key), title_singular="Item", removable_items=False, ns=ns)
+                title = "Distribution" if key == "distribution" else "Item"
+                obj[key] = edit_array(val, path=(*path, key), title_singular=title, removable_items=False, ns=ns)
+
         else:
             obj[key] = edit_primitive(key, val, path=(*path, key), ns=ns)
 
@@ -418,7 +604,6 @@ def draw_projects_section(dmp_root: Dict[str, Any]) -> None:
         if st.button("➕ Add project", key=_key_for("project", "add")):
             projects.append(templates["project"])
     dmp_root["project"] = edit_array(projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None)
-
 
 def draw_datasets_section(dmp_root: dict) -> None:
     st.subheader("Datasets")
@@ -513,6 +698,20 @@ def draw_datasets_section(dmp_root: dict) -> None:
             # show/edit dataset metadata
             datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
 
+            # Post-edit guardrails
+            changed = False
+            changed |= _enforce_privacy_access(datasets[i])          # force data_access="closed" if personal/sensitive == yes
+            changed |= _normalize_license_by_access(datasets[i])     # strip CC licenses when shared/closed
+            changed |= _ensure_open_has_license(datasets[i])         # add default CC for open (if empty)
+
+            if changed:
+                # optional toast after the rerun
+                st.session_state["__last_rule_msg__"] = (
+                    "Privacy flags require closed access; adjusted access/license fields."
+                    if _has_privacy_flags(datasets[i])
+                    else "Adjusted license to match access."
+                )
+                st.rerun()
 
 def _is_reused(ds: dict) -> bool:
     """maDMP 1.2 `is_reused` means the data were not produced by this project."""
@@ -635,10 +834,11 @@ def _ensure_data_initialized(default_path: Path) -> None:
     # still keep save_path pointing to default_path
     st.session_state["save_path"] = str(default_path)
 
-
 def main() -> None:
     st.set_page_config(page_title=f"RDA-DMP {SCHEMA_VERSION} JSON Editor", layout="wide")
     st.title(f"RDA-DMP {SCHEMA_VERSION} JSON Editor")
+
+    _inject_dist_css_once()
 
     # ---------------------------
     # Session defaults (for UX)
@@ -793,79 +993,6 @@ def main() -> None:
     draw_projects_section(dmp_root)
     draw_datasets_section(dmp_root)
 
-def _looks_internal(name_or_ip: str) -> bool:
-    s = (name_or_ip or "").lower()
-    if any(s.endswith(suf) for suf in (
-        ".local", ".localdomain", ".internal", ".svc.cluster.local", ".cluster", ".lan"
-    )):
-        return True
-    try:
-        ip = ipaddress.ip_address(s)
-        return not ip.is_global
-    except ValueError:
-        return False
-
-def _ssh_hint(app_port: int) -> None:
-    """
-    Print a copy-pasteable SSH port-forwarding command.
-    Prefers user overrides; avoids internal-only hostnames.
-    Environment overrides:
-      - SSH_SUGGEST_HOST=<gateway host>      (e.g. ssh.cloud.sdu.dk)
-      - SSH_SUGGEST_PORT=<gateway ssh port>  (e.g. 2414)
-      - SSH_SUGGEST_USER=<username>          (defaults to $LOGNAME)
-    """
-    user = os.environ.get("SSH_SUGGEST_USER") or os.environ.get("LOGNAME") or getpass.getuser() or "user"
-
-    # Infer SSH daemon port from SSH_CONNECTION unless overridden
-    ssh_conn = os.environ.get("SSH_CONNECTION", "")  # "<client_ip> <cport> <server_ip> <sport>"
-    inferred_port = None
-    if ssh_conn:
-        parts = ssh_conn.split()
-        if len(parts) >= 4:
-            inferred_port = parts[3]
-    ssh_port = os.environ.get("SSH_SUGGEST_PORT") or inferred_port or "22"
-    port_flag = f" -p {ssh_port}" if ssh_port != "22" else ""
-
-    # Host preference: explicit override → reverse DNS of server IP (if public) → placeholder
-    host = os.environ.get("SSH_SUGGEST_HOST")
-    if not host and ssh_conn:
-        parts = ssh_conn.split()
-        if len(parts) >= 3:
-            server_ip = parts[2]
-            # Only use if it looks public
-            try:
-                ip = ipaddress.ip_address(server_ip)
-                if ip.is_global:
-                    host = server_ip
-            except ValueError:
-                pass
-    if not host:
-        # Last resort: try FQDN, but discard obvious internal names
-        fqdn = socket.getfqdn()
-        host = None if _looks_internal(fqdn) else fqdn
-
-    if not host or _looks_internal(host):
-        host = "your-ssh-gateway.example.com"  # force user to override
-        need_override = True
-    else:
-        need_override = False
-
-    cmd = f"ssh -N -L {app_port}:localhost:{app_port} {user}@{host}{port_flag}"
-
-    print("\n=== SSH port forwarding ===")
-    print("Run this on your LOCAL machine, then open the URL below:")
-    print(f"  {cmd}\n")
-    
-    if need_override:
-        print("Tip: I detected an internal compute-node hostname. Set these before launching the app on the server:")
-        print("  export SSH_SUGGEST_HOST=<your SSH gateway>    # e.g. ssh.cloud.sdu.dk")
-        print("  export SSH_SUGGEST_PORT=<ssh port if not 22>  # e.g. 2414")
-        print("  export SSH_SUGGEST_USER=<your username>       # optional\n")
-        # UCloud example:
-        print("For SDU UCloud specifically:")
-        print("  export SSH_SUGGEST_HOST=ssh.cloud.sdu.dk")
-        print("  export SSH_SUGGEST_PORT=2414\n")
-
 def cli() -> None:
     """
     CLI entrypoint for the Streamlit DMP editor.
@@ -883,6 +1010,13 @@ def cli() -> None:
 
         app_port = int(os.environ.get("DMP_PORT", "8501"))
         _ssh_hint(app_port)
+
+        cmd = f"ssh -N -L {app_port}:localhost:{app_port} example@host.dk -p PORT (The host and port you have connected)"
+        print("\n=== SSH port forwarding ===")
+        print("Run this on your LOCAL machine, then open the URL below:")
+        print(f"  {cmd}\n")
+    
+
         sys.argv = [
             "streamlit", "run", str(app_path),
             "--server.headless", "true",
