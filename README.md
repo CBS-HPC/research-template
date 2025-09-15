@@ -34,7 +34,6 @@ Whether you're preparing a replication package, submitting code and data for pee
 - 🧪 Unit testing support, TDD scaffolds, and CI integration  
 - 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`
 - 📝 Ongoing data management & documentation with RDA maDMP (1.2) — update your DMP as you work (not post-hoc)
-
 - 🧰 Easy activation scripts for both Windows and Bash  
 - 📑 Structured documentation of all code, data, and dependencies  
 - 📄 Includes support for DCAS-compliant replication packages
