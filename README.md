@@ -774,7 +774,7 @@ ci-control --off    # Disable CI
 
 ### <a id="dcas-migration"></a>
 <details>
-<summary><strong>⚙️ <code>dcas-migration</code></strong></summary>
+<summary><strong>🚚 <code>dcas-migration</code></strong></summary>
 
 **Purpose**  
 Create a DCAS-ready replication package under `./DCAS template/` by:
@@ -822,7 +822,7 @@ dcas-migration
 
 ### <a id="dmp-update"></a>
 <details>
-<summary><strong>⚙️ <code>dmp-update</code></strong></summary><br>
+<summary><strong>🔄 <code>dmp-update</code></strong></summary><br>
 
 A **headless** command that (re)creates and normalizes your maDMP file **`dmp.json`** in the project root. It pulls sensible defaults from the maDMP schema, your project’s Cookiecutter metadata, and built-in templates, then writes a clean, consistently ordered file.
 
@@ -858,7 +858,7 @@ dmp-update
 
 ### <a id="dmp-editor"></a>
 <details>
-<summary><strong>⚙️ <code>dmp-editor</code></strong></summary><br>
+<summary><strong>✍️ <code>dmp-editor</code></strong></summary><br>
 
 Interactive **Streamlit** editor for maDMPs with **per-dataset publish** buttons for **Zenodo** and **DeiC Dataverse**.
 
