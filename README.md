@@ -32,10 +32,13 @@ Whether you're preparing a replication package, submitting code and data for pee
 - ☁️ Backup integration with DeiC-Storage, Dropbox, and OneDrive  
 - 🚀 Remote repository setup for GitHub, GitLab, or Codeberg  
 - 🧪 Unit testing support, TDD scaffolds, and CI integration  
-- 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`  
+- 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`
+- 📝 Ongoing data management & documentation with RDA maDMP (1.2) — update your DMP as you work (not post-hoc)
+
 - 🧰 Easy activation scripts for both Windows and Bash  
 - 📑 Structured documentation of all code, data, and dependencies  
 - 📄 Includes support for DCAS-compliant replication packages
+- 📤 Automated dataset publishing to Zenodo sandbox or DeiC Dataverse
 
 ---
 ## 🛠️ Requirements
@@ -45,7 +48,8 @@ Before using the template, ensure the following tools are available:
 - [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the setup scripts.  
 - [**Cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Generates the project structure. Install with: `pip install cookiecutter`  
 - [**Git**](https://git-scm.com/downloads) *(Recommended)* – Required for version control and remote repository setup.  
-- [**Personal Access Token**](#-personal-access-tokens-and-permissions) *(Recommended)* – Needed to push to **GitHub**, **GitLab**, or **Codeberg**.  
+- [**Personal Access Token**](#-personal-access-tokens-and-permissions) *(Recommended)* – Needed to push to **GitHub**, **GitLab**, or **Codeberg**.
+- [**Repository deposit token (Zenodo Sandbox / DeiC Dataverse)**] *(Optional—needed for publishing)* – To enable one-click publishing to Zenodo Sandbox or DeiC Dataverse.
 - [**Stata**](https://www.stata.com/) or [**MATLAB**](https://www.mathworks.com/products/matlab.html) – Required if selected as a scripting language.
 
 > 💡 Missing tools (e.g. Git) can be automatically downloaded during setup.
@@ -385,7 +389,7 @@ Once installed, the following commands are available from the terminal:
 | `code-examples`          | Generates realistic example scripts and notebooks.                          |
 | `git-config`             | Applies Git configuration (e.g., user.name, user.email).                    |
 | `ci-control`             | Enables/disables Continuous Integration (CI) pipelines.                     |
-| `dcas-migrate`          | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
+| `dcas-migration`          | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
 | `dmp-update`          | Creates and updates `dmp.json` with meta-data from `pyproject.toml` or `cookiecutter.json` |
 | `dmp-editor`          | Launches a streamlit app to edit the `dmp.json` or publish datasets to Zenodo or Deic Dataverse |
 
@@ -769,22 +773,125 @@ ci-control --off    # Disable CI
 ---
 </details>
 
-### <a id="dcas-migrate"></a>
+### <a id="dcas-migration"></a>
 <details>
-<summary><strong>⚙️ `ci-control`</strong></summary>
----
+<summary><strong>⚙️ <code>dcas-migration</code></strong></summary>
+
+**Purpose**  
+Create a DCAS-ready replication package under `./DCAS template/` by:
+- Downloading the Social Science Data Editors’ recommended README template.
+- Migrating datasets from your project into the DCAS folder (copying or zipping heavy datasets).
+- Mirroring key project artifacts (code, docs, results, locks, `dmp.json`) into the package.
+- Updating `dmp.json` (or compatible dataset spec) with a `zip_file` path when a dataset is zipped.
+
+**What it operates on**  
+- A dataset specification JSON (default: `./dmp.json`) that contains a top-level array `datasets` with entries like:
+  ```json
+  {
+    "datasets": [
+      {
+        "data_name": "Example dataset",
+        "destination": "./data/02_processed/example_dataset",   // path (relative to project root) to copy/migrate
+        "number_of_files": 245                                   // used to decide zip vs. copy
+      }
+    ]
+  }
+  ```
+  - `destination` → source-relative path of the dataset to migrate (file or folder).  
+  - `number_of_files` → if greater than `--zip-threshold`, the folder is zipped and stored in the destination’s parent.
+
+**Default behavior**  
+Running the tool with defaults will:
+1) Fetch the DCAS README template to `./DCAS template/README_template.md` (if not already present).  
+2) For each dataset in `datasets`:
+   - If `number_of_files` > `zip-threshold` (default 1000) and source is a **directory**: create `<name>.zip` in the destination’s parent and set `zip_file` in the JSON to the zip’s relative path.
+   - Otherwise, copy the file/folder “as is” into `./DCAS template/…`.
+3) Copy typical project artifacts into `./DCAS template/`:
+   - `README.md`, code folder (based on selected programming language), `docs/`, `results/`, `uv.lock`, `environment.yml`, `requirements.txt`, and `dmp.json`.
+4) Update and write back the dataset specification JSON with any new `zip_file` fields.
+
+**CLI usage** (wrapper provided by this template)
+```bash
+dcas-migration 
+```
+
+**Notes**
+- The tool also mirrors key project artifacts to the DCAS package, including your language-specific source tree (Python `src/`, R `R/`, Stata `stata/do/`, MATLAB `src/`), depending on the project’s configured primary language.
+- The README template is pulled from the Social Science Data Editors repository and saved as `README_template.md` so you can incorporate or adapt it when finalizing your DCAS package.
+
 </details>
 
 ### <a id="dmp-update"></a>
 <details>
-<summary><strong>⚙️ `ci-control`</strong></summary>
----
+<summary><strong>⚙️ <code>dmp-update</code></strong></summary><br>
+
+A **headless** command that (re)creates and normalizes your maDMP file **`dmp.json`** in the project root. It pulls sensible defaults from the maDMP schema, your project’s Cookiecutter metadata, and built-in templates, then writes a clean, consistently ordered file.
+
+#### 🧠 What it does
+- **Creates** `dmp.json` if missing, or **loads & updates** it if present.
+- **Sets/keeps the schema URL** (`dmp.schema`) to the exact GitHub “tree” URL for the detected version (1.0/1.1/1.2).  
+  If an existing value matches a known URL, that version is honored; otherwise defaults to **1.2**.
+- **Populates core fields** from Cookiecutter (`pyproject.toml` / `cookiecutter.json`) when available:  
+  `dmp.title`, `dmp.description`, `dmp.contact` (name, email, ORCID), and `project[0]` title/description.
+- **Affiliation inference** from Danish university email domains (CBS, KU, SDU, AU, DTU, AAU, RUC, ITU) with ROR IDs.
+- **Adds required fields from the JSON Schema** using schema-aware defaults (no hardcoded key lists).
+- **Seeds/normalizes datasets**: ensures `dataset[]` exists and each dataset has at least one `distribution[]`.
+- **Sets default license** in `distribution.license[].license_ref` from Cookiecutter `DATA_LICENSE` (e.g., CC-BY-4.0) with today’s `start_date`.
+- **Moves custom payloads** under `extension` (e.g., legacy `x_dcas` → `extension[{ "x_dcas": {...} }]`) and seeds a minimal `x_dcas`.
+- **Reorders keys** to a canonical layout (root, dataset, distribution, and common nested objects).
+- **Timestamps**: updates `dmp.modified` to current UTC (RFC3339 with trailing `Z`). New files also set `dmp.created`.
+
+#### 🖥️ Usage
+```bash
+# Installed as a console script:
+dmp-update
+```
+
+#### 📂 Reads (if present)
+- `./dmp.json` (existing DMP to update)
+- `pyproject.toml` and/or `cookiecutter.json` (project metadata & `DATA_LICENSE`)
+
+#### 📄 Output
+- Writes an ordered, normalized **`./dmp.json`**  
+- Prints: `DMP ensured at <abs path>/dmp.json using maDMP <version> schema (ordered).`
+
 </details>
 
 ### <a id="dmp-editor"></a>
 <details>
-<summary><strong>⚙️ `ci-control`</strong></summary>
----
+<summary><strong>⚙️ <code>dmp-editor</code></strong></summary><br>
+
+Interactive **Streamlit** editor for maDMPs with **per-dataset publish** buttons for **Zenodo** and **DeiC Dataverse**.
+
+#### ✨ Features
+- **Schema-aware forms** for Root, Projects, and Datasets (same defaults as `dmp-update`).
+- In each dataset:
+  - `dataset_id` expanded inline for quick edits.
+  - Single `distribution` expanded inline (multi-distribution falls back to list UI).
+  - **Guardrails**:
+    - If `personal_data` or `sensitive_data` is **"yes"**, all `distribution[].data_access` are forced to **"closed"`.
+    - If access is **shared/closed**, CC license URLs are removed.
+    - If access is **open** and license is empty, **CC-BY-4.0** is added by default.
+- **Publish actions**: “Publish to Zenodo” / “Publish to DeiC Dataverse” per dataset.
+- **Tokens sidebar**: capture and persist `ZENODO_TOKEN` and `DATAVERSE_TOKEN` into `.env`.
+- **Load / Save / Download** with optional schema validation.
+
+#### 🖥️ Usage
+```bash
+# Default launch (Streamlit app)
+dmp-editor
+
+# Headless helper for remote servers (prints SSH port-forward instructions)
+dmp-editor ssh
+```
+
+#### 🔧 Options
+- `ssh` — Run headless + show a ready-to-copy port-forward command.
+
+#### 🔑 Tokens (for publishing)
+- **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
+- **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
+
 </details>
 
 ---
