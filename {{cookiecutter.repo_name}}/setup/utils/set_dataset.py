@@ -10,7 +10,30 @@ from .readme_templates import *
 from .versioning_tools import *
 from .dmp_tools import *  
 
+DEFAULT_UPDATE_FIELDS = []# top-level fields
+DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]         # nested fields to update
 
+
+def get_hash(path, algo:str="sha256"):
+    """
+    Get the hash of a file or folder.
+    Uses hashlib for files and dirhash for directories.
+    """
+    try:
+        if os.path.isfile(path):
+            h = hashlib.new(algo)
+            with open(path, "rb") as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    h.update(chunk)
+            return h.hexdigest()
+        elif os.path.isdir(path):
+            return dirhash(path, algo)
+        else:
+            raise ValueError(f"{path} does not exist or is not a valid file or directory.")
+    except Exception as e:
+        print(f"Error while calculating hash for {path}: {e}")
+        return None
+    
 def get_file_info(file_paths):
     number_of_files = 0
     total_size = 0.0
@@ -52,7 +75,7 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
 
-def datasets_to_json(json_path=DEFAULT_DMP_PATH, entry=None):
+def datasets_to_json_old(json_path=DEFAULT_DMP_PATH, entry=None):
     """
     Upsert a dataset entry into {"dmp": {"dataset": [...]}}.
     Matches existing entries by the relative URL inside distribution
@@ -107,6 +130,8 @@ def datasets_to_json(json_path=DEFAULT_DMP_PATH, entry=None):
             or json.dumps(existing_x, sort_keys=True) != json.dumps(entry_x, sort_keys=True)
             or existing.get("description") != entry.get("description")
         )
+
+   
         entry["modified"] = now_iso_minute() if changed_flag else existing.get("modified")
 
         merged = dict(existing)
@@ -144,10 +169,137 @@ def datasets_to_json(json_path=DEFAULT_DMP_PATH, entry=None):
     dmp["modified"] = now_iso_minute()
     save_json(json_path, data)
 
-    # Validate and warn (non-fatal) so callers see problems
+    return json_path
 
-    #validate_against_schema(data, schema=fetch_schema())
+def datasets_to_json(
+    json_path=DEFAULT_DMP_PATH,
+    entry=None,
+    update_fields: Optional[List[str]] = None,
+    update_distribution_fields: Optional[List[str]] = None,
+    bump_modified_on_distribution_updates: bool = False,
+):
+    """
+    Upsert a dataset entry into {"dmp": {"dataset": [...]}}.
 
+    Matching:
+      - prefer by distribution rel URL (url_acess/url_access/access_url/download_url)
+      - else by title
+
+    Update policy (when a match is found):
+      - changed_flag := (existing.x_dcas.hash != entry.x_dcas.hash)
+      - overwrite ONLY:
+          * x_dcas payload in `extension` (if provided)
+          * top-level fields in `update_fields`
+          * nested distribution fields in `update_distribution_fields`, matched by rel URL
+      - modified := now_iso_minute() iff changed_flag
+        (or also when distribution fields changed, if bump_modified_on_distribution_updates=True)
+    """
+    if update_fields is None:
+        update_fields = DEFAULT_UPDATE_FIELDS
+    if update_distribution_fields is None:
+        update_distribution_fields = DEFAULT_UPDATE_DIST_FIELDS
+
+    json_path = pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_path)
+    data = load_json(json_path)
+    dmp = data["dmp"]
+    datasets = dmp.get("dataset", [])
+
+    def _extract_rel_url(dist: dict) -> Optional[str]:
+        for k in ("url_acess", "url_access", "access_url", "download_url"):
+            v = (dist or {}).get(k)
+            if v:
+                return norm_rel_urlish(v)
+        return None
+
+    def _collect_rel_urls(ds: dict) -> Set[str]:
+        out: Set[str] = set()
+        for d in (ds or {}).get("distribution", []) or []:
+            u = _extract_rel_url(d)
+            if u:
+                out.add(u)
+        return out
+
+    new_rel_urls = _collect_rel_urls(entry or {})
+    idx = None
+    if new_rel_urls:
+        for i, ds in enumerate(datasets):
+            if _collect_rel_urls(ds) & new_rel_urls:
+                idx = i
+                break
+    else:
+        for i, ds in enumerate(datasets):
+            if (ds or {}).get("title") == (entry or {}).get("title"):
+                idx = i
+                break
+
+    if idx is not None:
+        existing = datasets[idx]
+        merged = deepcopy(existing)
+
+        # --- 1) changed_flag from x_dcas.hash only ---
+        existing_x = get_extension_payload(existing, "x_dcas") or {}
+        entry_x = get_extension_payload(entry or {}, "x_dcas") or {}
+        existing_hash = existing_x.get("hash")
+        entry_hash = entry_x.get("hash")
+        changed_flag = (existing_hash != entry_hash)
+
+        # --- 2) optionally replace/insert x_dcas payload ---
+        if entry_x:
+            merged_ext = list(existing.get("extension") or [])
+            merged_ext = [it for it in merged_ext if not (isinstance(it, dict) and "x_dcas" in it)]
+            merged_ext.append({"x_dcas": entry_x})
+            merged["extension"] = merged_ext
+
+        # --- 3) overwrite ONLY whitelisted top-level fields ---
+        for k in update_fields:
+            if k in (entry or {}) and (entry[k] is not None):
+                merged[k] = entry[k]
+
+        # --- 4) overwrite ONLY whitelisted nested fields in distribution (URL-matched) ---
+        dist_changed = False
+        if "distribution" in (entry or {}):
+            incoming_list = entry.get("distribution") or []
+            existing_list = list(merged.get("distribution") or [])
+            # map existing distributions by rel URL
+            existing_by_u = {}
+            for d in existing_list:
+                u = _extract_rel_url(d or {})
+                if u:
+                    existing_by_u[u] = d
+            # apply field updates for matched items
+            for s in incoming_list:
+                u = _extract_rel_url(s or {})
+                if not u or u not in existing_by_u:
+                    continue
+                tgt = existing_by_u[u]
+                for f in update_distribution_fields:
+                    if f in s and s[f] is not None and s[f] != tgt.get(f):
+                        tgt[f] = s[f]
+                        dist_changed = True
+            if dist_changed:
+                merged["distribution"] = existing_list
+
+        # --- 5) modified policy ---
+        if changed_flag or (bump_modified_on_distribution_updates and dist_changed):
+            merged["modified"] = now_iso_minute()
+        else:
+            merged["modified"] = existing.get("modified")
+
+        datasets[idx] = merged
+        print(f"Updated DMP entry for {merged.get('title')}. (changed_flag={changed_flag})")
+    else:
+        datasets.append(entry)
+        print(f"Added DMP entry for {entry.get('title')}.")
+
+    # Sort by x_dcas.data_type then title
+    def _sort_key(ds):
+        x = get_extension_payload(ds, "x_dcas") or {}
+        return (x.get("data_type") or "", ds.get("title") or "")
+    datasets.sort(key=_sort_key)
+
+    dmp["dataset"] = datasets
+    dmp["modified"] = now_iso_minute()
+    save_json(json_path, data)
 
     return json_path
 
@@ -325,7 +477,6 @@ def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
         toml_path="pyproject.toml",
     ) or {}
 
- 
     destination = check_path_format(destination)
 
     if os.path.isfile(destination):
@@ -340,7 +491,6 @@ def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
 
     name = os.path.basename(destination)
     data_type = data_type_from_path(destination)
-
 
     # distribution (complete RDA-DMP shape with defaults; 1.2-compliant)
     distribution = {
@@ -368,7 +518,7 @@ def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
         file_formats = sorted(list(file_formats)),
         data_files =  data_files,
         data_size_mb = individual_sizes_mb,
-        hash_value = get_git_hash(destination),
+        hash_value = get_hash(destination),
     )
     
     entry = make_dataset_entry(name, distribution, x_dcas_payload)
@@ -534,7 +684,8 @@ def main():
     os.chdir(project_root)
 
     with change_dir("./data"):
-        _= git_commit("Running 'set-dataset'")
+        _= git_commit(msg = "Running 'set-dataset'",path = os.getcwd())
+        git_log_to_file(os.path.join(".gitlog"))
     
     data_files, _ = get_data_files()
 

@@ -240,9 +240,9 @@ def git_commit(msg: str = "", path: str = None) -> str:
     if not path: 
         path = str(pathlib.Path(__file__).resolve().parent.parent.parent)
     
-    if os.path.isdir(os.path.join(path, ".git")):
+    if os.path.isdir(os.path.join(path, ".git")) and is_installed("git"):
         # Ensure Git is installed
-        is_installed("git")
+        #is_installed("git")
 
         try:
             # Stage all changes
@@ -360,26 +360,6 @@ def git_log_to_file(output_file_path):
         print(f"Git log has been saved to {output_file_path}")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
-
-def get_git_hash(path, algo="sha256"):
-    """
-    Get the hash of a file or folder.
-    Uses hashlib for files and dirhash for directories.
-    """
-    try:
-        if os.path.isfile(path):
-            h = hashlib.new(algo)
-            with open(path, "rb") as f:
-                for chunk in iter(lambda: f.read(8192), b""):
-                    h.update(chunk)
-            return h.hexdigest()
-        elif os.path.isdir(path):
-            return dirhash(path, algo)
-        else:
-            raise ValueError(f"{path} does not exist or is not a valid file or directory.")
-    except Exception as e:
-        print(f"Error while calculating hash for {path}: {e}")
-        return None
 
 # DVC Setup Functions
 def setup_dvc(version_control,remote_storage,code_repo,repo_name):
