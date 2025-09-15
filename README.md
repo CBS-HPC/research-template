@@ -117,6 +117,7 @@ This information is used to auto-generate:
 
 - `README.md` – populated with title, description, and author info  
 - `CITATION.cff` – for machine-readable academic citation
+- `dmp.json` – for machine-actionable data management plan (maDMP).
 
 ---
 </details>
@@ -135,7 +136,8 @@ Clear licensing is essential for open and reproducible research. It defines how 
 
 This information is used to auto-generate:
 
-- `LICENSE.txt` – includes license sections for code, documentation, and data  
+- `LICENSE.txt` – includes license sections for code, documentation, and data.
+- `dmp.json` – sets the default licensing for dataset added to the for machine-actionable data management plan (maDMP).  
 
 > ℹ️ If “None” is selected, the corresponding section will be omitted from the LICENSE file.
 
@@ -383,7 +385,10 @@ Once installed, the following commands are available from the terminal:
 | `code-examples`          | Generates realistic example scripts and notebooks.                          |
 | `git-config`             | Applies Git configuration (e.g., user.name, user.email).                    |
 | `ci-control`             | Enables/disables Continuous Integration (CI) pipelines.                     |
-| `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
+| `dcas-migrate`          | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
+| `dmp-update`          | Creates and updates `dmp.json` with meta-data from `pyproject.toml` or `cookiecutter.json` |
+| `dmp-editor`          | Launches a streamlit app to edit the `dmp.json` or publish datasets to Zenodo or Deic Dataverse |
+
 
 #### 🛠️ Usage
 
@@ -764,6 +769,24 @@ ci-control --off    # Disable CI
 ---
 </details>
 
+### <a id="dcas-migrate"></a>
+<details>
+<summary><strong>⚙️ `ci-control`</strong></summary>
+---
+</details>
+
+### <a id="dmp-update"></a>
+<details>
+<summary><strong>⚙️ `ci-control`</strong></summary>
+---
+</details>
+
+### <a id="dmp-editor"></a>
+<details>
+<summary><strong>⚙️ `ci-control`</strong></summary>
+---
+</details>
+
 ---
 </details>
 
@@ -777,6 +800,7 @@ The following configuration files are intentionally placed at the root of the re
 |-------------------|--------------------------------------------------------------------------------------------------|
 | `pyproject.toml`  | Project metadata for packaging, CLI tools, sync rules, platform logic, and documentation         |
 | `.env`            | Defines environment-specific variables (e.g., paths, secrets). Typically excluded from version control. |
+| `dmp.json`            |for machine-actionable data management plan (maDMP). |
 | `.gitignore`      | Excludes unnecessary files from Git version control                                              |
 | `environment.yml` | Conda environment definition for Python/R, including packages and versions                       |
 | `requirements.txt`| Pip-based Python dependencies for lightweight environments                                       |
