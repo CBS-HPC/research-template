@@ -75,102 +75,6 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
 
-def datasets_to_json_old(json_path=DEFAULT_DMP_PATH, entry=None):
-    """
-    Upsert a dataset entry into {"dmp": {"dataset": [...]}}.
-    Matches existing entries by the relative URL inside distribution
-    (keys tried in order: 'url_acess', 'url_access', 'access_url', 'download_url').
-
-    NOTE: This version expects/handles x_dcas under dataset.extension.
-    """
-    json_path = pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_path)
-    data = load_json(json_path)
-    dmp = data["dmp"]
-    datasets = dmp.get("dataset", [])
-
-    def _extract_rel_url(dist: dict) -> Optional[str]:
-        for k in ("url_acess", "url_access", "access_url", "download_url"):
-            v = dist.get(k)
-            if v:
-                return norm_rel_urlish(v)
-        return None
-
-    def _collect_rel_urls(ds: dict) -> Set[str]:
-        out: Set[str] = set()
-        for d in ds.get("distribution", []) or []:
-            u = _extract_rel_url(d)
-            if u:
-                out.add(u)
-        return out
-
-    new_rel_urls = _collect_rel_urls(entry)
-    idx = None
-    if new_rel_urls:
-        for i, ds in enumerate(datasets):
-            if _collect_rel_urls(ds) & new_rel_urls:
-                idx = i
-                break
-    else:
-        for i, ds in enumerate(datasets):
-            if ds.get("title") == entry.get("title"):
-                idx = i
-                break
-
-    if idx is not None:
-        existing = datasets[idx]
-        entry["issued"] = existing.get("issued", entry.get("issued"))
-
-        # Compare distributions and the x_dcas payload inside extension
-        existing_x = get_extension_payload(existing, "x_dcas") or {}
-        entry_x = get_extension_payload(entry, "x_dcas") or {}
-
-        changed_flag = (
-            json.dumps(existing.get("distribution", []), sort_keys=True) !=
-            json.dumps(entry.get("distribution", []), sort_keys=True)
-            or json.dumps(existing_x, sort_keys=True) != json.dumps(entry_x, sort_keys=True)
-            or existing.get("description") != entry.get("description")
-        )
-
-   
-        entry["modified"] = now_iso_minute() if changed_flag else existing.get("modified")
-
-        merged = dict(existing)
-        # Merge 'extension' carefully (keep other extensions)
-        if entry.get("extension"):
-            merged_ext = list(existing.get("extension") or [])
-            # replace/insert x_dcas payload
-            e_x = get_extension_payload(entry, "x_dcas")
-            if e_x is not None:
-                # remove any old x_dcas
-                merged_ext = [it for it in merged_ext if not (isinstance(it, dict) and "x_dcas" in it)]
-                merged_ext.append({"x_dcas": e_x})
-            merged["extension"] = merged_ext
-
-        # Shallow-merge the rest (preserve existing when entry has None)
-        for k, v in entry.items():
-            if k == "extension":
-                continue
-            if v is not None:
-                merged[k] = v
-
-        datasets[idx] = merged
-        print(f"Updated DMP entry for {entry.get('title')}.")
-    else:
-        datasets.append(entry)
-        print(f"Added DMP entry for {entry.get('title')}.")
-
-    # Sort by x_dcas.data_type then title
-    def _sort_key(ds):
-        x = get_extension_payload(ds, "x_dcas") or {}
-        return (x.get("data_type") or "", ds.get("title") or "")
-    datasets.sort(key=_sort_key)
-
-    dmp["dataset"] = datasets
-    dmp["modified"] = now_iso_minute()
-    save_json(json_path, data)
-
-    return json_path
-
 def datasets_to_json(
     json_path=DEFAULT_DMP_PATH,
     entry=None,
@@ -203,6 +107,8 @@ def datasets_to_json(
     data = load_json(json_path)
     dmp = data["dmp"]
     datasets = dmp.get("dataset", [])
+
+    any_change_flag = False
 
     def _extract_rel_url(dist: dict) -> Optional[str]:
         for k in ("url_acess", "url_access", "access_url", "download_url"):
@@ -286,10 +192,16 @@ def datasets_to_json(
             merged["modified"] = existing.get("modified")
 
         datasets[idx] = merged
-        print(f"Updated DMP entry for {merged.get('title')}. (changed_flag={changed_flag})")
+        if changed_flag:
+            print(f"Updated DMP entry for {merged.get('title')}.")
+            any_change_flag  = True
+        else:    
+            print(f"No changes detected for DMP entry: {merged.get('title')}.")
+
     else:
         datasets.append(entry)
         print(f"Added DMP entry for {entry.get('title')}.")
+        any_change_flag  = True
 
     # Sort by x_dcas.data_type then title
     def _sort_key(ds):
@@ -301,7 +213,7 @@ def datasets_to_json(
     dmp["modified"] = now_iso_minute()
     save_json(json_path, data)
 
-    return json_path
+    return any_change_flag,json_path
 
 def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
     """
@@ -313,8 +225,6 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
 
     Returns the absolute Path to the JSON file.
     """
-    import os
-    import pathlib
 
     # Resolve path relative to project root (3 levels up from this file)
     root = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -393,14 +303,10 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
                     dist["access_url"] = ""
             updated += 1
 
-    # Save and report
-    dmp["modified"] = now_iso_minute()
-    save_json(json_path, data)
-
     if updated:
+        dmp["modified"] = now_iso_minute()
         print(f"Updated {updated} dataset(s).")
-    else:
-        print("No missing dataset paths found.")
+        save_json(json_path, data)
 
     return json_path
 
@@ -486,8 +392,6 @@ def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
         data_files = sorted(get_all_files(destination))
 
     number_of_files, total_size_mb, file_formats, individual_sizes_mb = get_file_info(data_files)
-    if number_of_files > 1000:
-        print("WARNING: Consider zipping datasets >1000 files.")
 
     name = os.path.basename(destination)
     data_type = data_type_from_path(destination)
@@ -522,8 +426,10 @@ def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
     )
     
     entry = make_dataset_entry(name, distribution, x_dcas_payload)
+    
+    change_flag,json_path = datasets_to_json(json_path=json_path, entry=entry)
 
-    return datasets_to_json(json_path=json_path, entry=entry)
+    return change_flag,json_path
 
 def generate_dataset_table(
     json_path: str,
@@ -550,10 +456,24 @@ def generate_dataset_table(
         return "N/A" if val in (None, "", [], {}, "Not provided") else str(val)
 
     rows = []
+    dynamic_id_fields: Set[str] = set()  # <-- collect dynamic keys from dataset_id.type
+
     for ds in datasets:
         x = get_extension_payload(ds, "x_dcas") or {}
         dist = (ds.get("distribution") or [{}])[0]
-        rows.append({
+
+        # Build the row (unchanged fields kept as-is)
+        # Normalize file formats to a list for safe rendering
+        fmts = dist.get("format")
+        if isinstance(fmts, str):
+            fmts_list = [fmts]
+        elif isinstance(fmts, (list, set, tuple)):
+            fmts_list = list(fmts)
+        else:
+            fmts_list = []
+        fmts_list = sorted(list(set(fmts_list)))
+
+        row = {
             "data_name": ds.get("title"),
             "destination": dist.get("download_url") or dist.get("access_url") or x.get("destination"),
             "created": ds.get("issued"),
@@ -563,18 +483,42 @@ def generate_dataset_table(
             "number_of_files": x.get("number_of_files"),
             "total_size_mb": x.get("total_size_mb") if x.get("total_size_mb") is not None
                              else int(round((dist.get("byte_size") or 0) / (1024 * 1024))),
-            "file_formats": sorted(list(set((dist.get("format") or [])))),
-            "zip_file": dist.get("download_url") or dist.get("access_url") or x.get("destination"),
+            "file_formats": fmts_list,
+            "zip_file": None,
             "description": ds.get("description"),
             "_dtype": x.get("data_type") or data_type_from_path(x.get("destination") or ""),
             "_files": x.get("data_files") or [],
             "_sizes": x.get("data_size_mb") or [],
-        })
+        }
+
+        # --- Dynamic identifier field ---
+        ds_id = ds.get("dataset_id") or {}
+        if isinstance(ds_id, list) and ds_id:
+            ds_id = ds_id[0]
+
+        # Coerce empty/whitespace strings to None
+        raw_identifier = ds_id.get("identifier")
+        if isinstance(raw_identifier, str):
+            ds_id_identifier = raw_identifier.strip() or None
+        else:
+            ds_id_identifier = raw_identifier
+
+        raw_type = ds_id.get("type")
+        ds_id_type = (raw_type.strip() if isinstance(raw_type, str) else raw_type) or None
+
+        # Add a dynamic field named by the identifier type, with value = identifier (possibly None)
+        if ds_id_type:
+            row[str(ds_id_type)] = ds_id_identifier
+            dynamic_id_fields.add(str(ds_id_type))
+
+
+        rows.append(row)
 
     grouped = defaultdict(list)
     for r in rows:
         grouped[r["_dtype"]].append(r)
 
+    # Standard (fixed) columns
     standard_fields = {
         "data_name": "Name",
         "destination": "Location",
@@ -591,6 +535,11 @@ def generate_dataset_table(
     if not include_hash:
         standard_fields.pop("hash", None)
 
+    # Add dynamic identifier columns (header = key itself)
+    for dyn in sorted(dynamic_id_fields):
+        standard_fields[dyn] = dyn
+
+    # Pick the active columns to show (non-empty in at least one row)
     active_fields = [
         k for k in standard_fields
         if k not in hidden_fields and any(is_nonempty(r.get(k)) for r in rows)
@@ -603,6 +552,9 @@ def generate_dataset_table(
                    "provided", "data_size"]
     if include_hash and "hash" not in hidden_fields and any(is_nonempty(r.get("hash")) for r in rows):
         base_detail.insert(5, "hash")
+
+    # Include dynamic identifier fields in the detail table as well
+    base_detail = base_detail + sorted(dynamic_id_fields)
 
     detail_header = "| " + " | ".join([f.replace("_", " ").title() for f in base_detail]) + " |\n"
     detail_divider = "| " + " | ".join(["-" * len(f) for f in base_detail]) + " |\n"
@@ -624,7 +576,11 @@ def generate_dataset_table(
             vals = []
             for k in active_fields:
                 if k == "file_formats":
-                    val = "; ".join("." + f for f in (r.get(k) or [])) or "N/A"
+                    fmts = r.get(k) or []
+                    if isinstance(fmts, (list, tuple, set)):
+                        val = "; ".join("." + f for f in fmts) or "N/A"
+                    else:
+                        val = "." + str(fmts) if fmts else "N/A"
                 else:
                     val = r.get(k, "N/A")
                 vals.append(safe_str(val))
@@ -682,10 +638,6 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
 def main():
     project_root = pathlib.Path(__file__).resolve().parent.parent.parent
     os.chdir(project_root)
-
-    with change_dir("./data"):
-        _= git_commit(msg = "Running 'set-dataset'",path = os.getcwd())
-        git_log_to_file(os.path.join(".gitlog"))
     
     data_files, _ = get_data_files()
 
@@ -701,7 +653,7 @@ def main():
     )
 
     for f in data_files:
-        json_path = set_dataset(destination=f, json_path=json_path)
+        change_flag, json_path = set_dataset(destination=f, json_path=json_path)
 
     try:
         markdown_table, _ = generate_dataset_table(json_path, file_descriptions)
@@ -710,6 +662,10 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
 
+    if change_flag:
+        with change_dir("./data"):
+            _= git_commit(msg = "Running 'set-dataset'",path = os.getcwd())
+            git_log_to_file(os.path.join(".gitlog"))
 
 if __name__ == "__main__":
     main()

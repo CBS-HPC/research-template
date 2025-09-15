@@ -241,34 +241,18 @@ def git_commit(msg: str = "", path: str = None) -> str:
         path = str(pathlib.Path(__file__).resolve().parent.parent.parent)
     
     if os.path.isdir(os.path.join(path, ".git")) and is_installed("git"):
-        # Ensure Git is installed
-        #is_installed("git")
 
         try:
             # Stage all changes
             subprocess.run(["git", "add", "."], check=True, cwd=path)
-
             try:
                 subprocess.run(["git", "commit", "-m", msg], check=True, cwd=path)
             except subprocess.CalledProcessError:
                 print("No changes to commit.")
-
-            # Extract commit hash
-            commit_hash = subprocess.run(
-                ["git", "rev-parse", "HEAD"],
-                capture_output=True,
-                text=True,
-                check=True,
-                cwd=path
-            ).stdout.strip()
-
-            return commit_hash
-
+            return True
         except subprocess.CalledProcessError as e:
             print(f"An error occurred: {e}")
-            return None
-
-    return None
+            return False
 
 def git_push(flag: str, msg: str = "", path: str = None):
     def push_all(remote="origin", path: str =None):
@@ -322,8 +306,7 @@ def git_push(flag: str, msg: str = "", path: str = None):
             push_all(path=path)
 
         elif os.path.isdir(os.path.join(path, ".git")):
-            commit_hash = git_commit(msg, path=path)
-            if commit_hash:
+            if git_commit(msg, path=path):
                 if flag:
                     result = subprocess.run(
                         ["git", "branch", "--show-current"],
