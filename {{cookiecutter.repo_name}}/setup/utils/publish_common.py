@@ -356,7 +356,7 @@ def build_packaging_plan(files: List[str]) -> Tuple[List[PackItem], List[dict], 
 
     return plan, report, workdir
 
-def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
+def _first_level_groups_old(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
     """
     Group files by first-level subdirectory under the common parent.
     Returns (common_parent, groups), where groups maps:
@@ -373,6 +373,47 @@ def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
         head = "" if len(parts) == 1 else parts[0]  # "" means root files
         groups.setdefault(head, []).append(f)
     return parent, groups
+
+def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
+    """
+    Group files by first-level subdirectory under the common parent.
+    Returns (common_parent, groups), where groups maps:
+      "" -> files directly under parent
+      "subdir" -> files under parent/subdir/**
+    Robust to cases where relpath == "." (Path(".").parts == ()).
+    """
+    if not files:
+        return Path("."), {"": []}
+
+    # Use absolute paths for stable commonpath behaviour
+    files_abs = [os.path.abspath(f) for f in files]
+    try:
+        parent_str = os.path.commonpath(files_abs)
+    except ValueError:
+        # (Different drives on Windows). Fallback: use each file's own parent as "parent",
+        # which yields all files as "" group (still valid for our callers).
+        parent_str = os.path.dirname(files_abs[0])
+
+    parent = Path(parent_str)
+    groups: Dict[str, List[str]] = {}
+
+    for f in files_abs:
+        rel_str = os.path.relpath(f, start=parent_str)
+
+        # Normalize funky cases: "", "." → root
+        if rel_str in ("", "."):
+            head = ""
+        else:
+            # Use string split, not Path.parts (avoids the '.' empty-parts trap)
+            norm = rel_str.replace("\\", "/")
+            parts = norm.split("/")
+            # a single component like "file.txt" is root-level
+            head = "" if len(parts) == 1 else parts[0]
+
+        groups.setdefault(head, []).append(f)
+
+    return parent, groups
+
 
 def build_packaging_plan_preserve_first_level(files: List[str]) -> Tuple[List[PackItem], List[dict], str]:
     """

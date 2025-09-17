@@ -34,6 +34,8 @@ try:
     from .publish_common import *
     from .publish_zenodo import *
     from .publish_dataverse import *
+
+
 except ImportError:
     pkg_root = Path(__file__).resolve().parent
     #sys.path.insert(0, str(pkg_root / "utils"))
@@ -50,21 +52,6 @@ package_installer(required_libraries=["streamlit", "jsonschema"])
 import streamlit as st
 from streamlit.web.cli import main as st_main
 from jsonschema import Draft7Validator
-
-
-# ---------------------------
-# New: repository site choices (labels come from format_func)
-# ---------------------------
-ZENODO_API_CHOICES = [
-    ("https://sandbox.zenodo.org/api", "Sandbox (highly recommended)"),
-    ("https://zenodo.org/api", "Production"),
-]
-
-DATAVERSE_SITE_CHOICES = [
-    ("https://demo.dataverse.deic.dk", "DeiC Demo (recommended)"),
-    ("https://dataverse.deic.dk", "DeiC Production"),
-    ("other", "Other…"),
-]
 
 
 def _has_privacy_flags(ds: dict) -> bool:
@@ -752,13 +739,11 @@ def draw_datasets_section(dmp_root: dict) -> None:
                         st.warning("Please set a Zenodo token in the sidebar and press Save.")
                         st.stop()
                     try:
-                        api_base = get_zenodo_api_base()
-                        sandbox = "sandbox.zenodo.org" in (api_base or "")
                         res = streamlit_publish_to_zenodo(
                             dataset=ds,
                             dmp=st.session_state["data"],
                             token=token,
-                            sandbox=sandbox,
+                            sandbox=True,
                             publish=False,
                             allow_reused=allow_override,
                         )
@@ -772,19 +757,12 @@ def draw_datasets_section(dmp_root: dict) -> None:
                         st.warning("Please set a Dataverse token in the sidebar and press Save.")
                         st.stop()
                     try:
-                        dv_base, dv_alias = get_dataverse_config()
-                        if not dv_base:
-                            st.warning("Please select a Dataverse base URL in the sidebar and press Save.")
-                            st.stop()
-                        if not dv_alias:
-                            st.warning("Please enter a Dataverse collection alias in the sidebar and press Save.")
-                            st.stop()
                         res = streamlit_publish_to_dataverse(
                             dataset=ds,
                             dmp=st.session_state["data"],
                             token=token,
-                            base_url=dv_base,
-                            alias=dv_alias,
+                            base_url=DATAVERSE_BASE_URL,                # -> https://demo.dataverse.deic.dk
+                            alias=DATAVERSE_COLLECTION_ALIAS,           # -> copenhagen-business-school
                             publish=False,
                             release_type="major",
                             allow_reused=allow_override,
@@ -831,161 +809,54 @@ TOKENS_STATE = {
     "dataverse": {"env_key": "DATAVERSE_TOKEN", "state_key": "__token_dataverse__"},
 }
 
-
-# ---------------------------
-# Helpers to read secrets/env with fallback
-# ---------------------------
-def _get_env_or_secret(key: str, default: str = "") -> str:
-    val = ""
-    try:
-        val = st.secrets[key]  # type: ignore[index]
-    except Exception:
-        val = ""
-    if not val:
-        val = os.environ.get(key) or (load_from_env(key) or "")
-    return val or default
-
-
-# ---------------------------
-# New: site/alias-aware token controls
-# ---------------------------
 def render_token_controls():
-    """Sidebar section:
-       - Zenodo site dropdown (sandbox default) + token
-       - Dataverse site dropdown (demo/prod/other) + custom URL (if other) + alias + token
-       All persisted to .env and mirrored to session/env on Save.
+    """Render a single sidebar section that:
+       - shows current token source (secrets/env)
+       - lets the user enter a token
+       - saves it to .env on submit
+       - mirrors it into st.session_state for immediate use
     """
     with st.sidebar:
-        st.header("Repositories & tokens")
+        st.header("Repository tokens")
 
-        # ---------------- Zenodo ----------------
-        st.subheader("Zenodo")
-        # Load current/base defaults
-        z_api_default = _get_env_or_secret("ZENODO_API_BASE", "https://sandbox.zenodo.org/api")
-        if "zenodo_api_base" not in st.session_state:
-            st.session_state["zenodo_api_base"] = z_api_default
+        for service in ("zenodo", "dataverse"):
+            env_key   = TOKENS_STATE[service]["env_key"]
+            state_key = TOKENS_STATE[service]["state_key"]
 
-        z_token_default = _get_env_or_secret(TOKENS_STATE["zenodo"]["env_key"], "")
-        if TOKENS_STATE["zenodo"]["state_key"] not in st.session_state:
-            st.session_state[TOKENS_STATE["zenodo"]["state_key"]] = z_token_default
+            # 1) Prefer st.secrets if present
+            token = ""
+            try:
+                token = st.secrets[env_key]  # type: ignore[index]
+            except Exception:
+                token = ""
 
-        zenodo_options = [u for (u, _label) in ZENODO_API_CHOICES]
-        try:
-            z_index = zenodo_options.index(st.session_state["zenodo_api_base"])
-        except ValueError:
-            z_index = 0
+            # 2) Then .env / process env
+            if not token:
+                token = os.environ.get(env_key) or (load_from_env(env_key) or "")
 
-        with st.form("zenodo_settings_form", clear_on_submit=False):
-            z_api = st.selectbox(
-                "Zenodo site (API base)",
-                options=zenodo_options,
-                index=z_index,
-                format_func=lambda u: dict(ZENODO_API_CHOICES)[u],
-                help="Sandbox is highly recommended for testing.",
-            )
-            z_token = st.text_input(
-                "Zenodo API token",
-                type="password",
-                value=st.session_state[TOKENS_STATE["zenodo"]["state_key"]],
-                help="Click Save to write to .env and update session.",
-            )
-            z_submit = st.form_submit_button("Save Zenodo settings")
-            if z_submit:
-                # persist API base
-                save_to_env(z_api, "ZENODO_API_BASE")
-                os.environ["ZENODO_API_BASE"] = z_api
-                st.session_state["zenodo_api_base"] = z_api
-                # persist token (if present)
-                if z_token.strip():
-                    save_to_env(z_token.strip(), TOKENS_STATE["zenodo"]["env_key"])
-                    os.environ[TOKENS_STATE["zenodo"]["env_key"]] = z_token.strip()
-                    st.session_state[TOKENS_STATE["zenodo"]["state_key"]] = z_token.strip()
-                st.success("Zenodo site/token saved.")
+            # 3) Mirror whatever we found into session (so buttons can use it)
+            if state_key not in st.session_state:
+                st.session_state[state_key] = token
 
-        # ---------------- Dataverse ----------------
-        st.subheader("Dataverse")
-
-        dv_base_default = _get_env_or_secret("DATAVERSE_BASE_URL", "https://demo.dataverse.deic.dk")
-        dv_alias_default = _get_env_or_secret("DATAVERSE_ALIAS", "")
-        dv_token_default = _get_env_or_secret(TOKENS_STATE["dataverse"]["env_key"], "")
-
-        if "dataverse_base_url" not in st.session_state:
-            st.session_state["dataverse_base_url"] = dv_base_default
-        if "dataverse_site_choice" not in st.session_state:
-            # infer choice from base url
-            if "demo.dataverse.deic.dk" in dv_base_default:
-                st.session_state["dataverse_site_choice"] = "https://demo.dataverse.deic.dk"
-            elif "dataverse.deic.dk" in dv_base_default:
-                st.session_state["dataverse_site_choice"] = "https://dataverse.deic.dk"
-            else:
-                st.session_state["dataverse_site_choice"] = "other"
-        if "dataverse_alias" not in st.session_state:
-            st.session_state["dataverse_alias"] = dv_alias_default
-        if TOKENS_STATE["dataverse"]["state_key"] not in st.session_state:
-            st.session_state[TOKENS_STATE["dataverse"]["state_key"]] = dv_token_default
-
-        dv_options = [v for (v, _label) in DATAVERSE_SITE_CHOICES]
-        try:
-            dv_idx = dv_options.index(st.session_state["dataverse_site_choice"])
-        except ValueError:
-            dv_idx = 0
-
-        with st.form("dataverse_settings_form", clear_on_submit=False):
-            dv_choice = st.selectbox(
-                "Dataverse site",
-                options=dv_options,
-                index=dv_idx,
-                format_func=lambda v: dict(DATAVERSE_SITE_CHOICES)[v],
-                help="Pick demo or production. Choose 'Other…' to enter a custom base URL.",
-            )
-
-            if dv_choice == "other":
-                custom_url = st.text_input(
-                    "Custom Dataverse base URL",
-                    value=st.session_state["dataverse_base_url"] if st.session_state["dataverse_site_choice"] == "other" else "",
-                    placeholder="https://your.dataverse.org",
+            st.subheader(service.capitalize())
+            # Buffered form — only commits on submit
+            with st.form(f"{service}_token_form", clear_on_submit=False):
+                entered = st.text_input(
+                    f"{service.capitalize()} API token",
+                    type="password",
+                    value=st.session_state[state_key],
+                    help="Click Save to write to .env and update session.",
                 )
-                dv_base = custom_url.strip()
-            else:
-                dv_base = dv_choice
-
-            dv_alias = st.text_input(
-                "Dataverse collection alias",
-                value=st.session_state["dataverse_alias"],
-                help="Alias (URL-friendly identifier) of the target Dataverse collection.",
-            )
-
-            dv_token = st.text_input(
-                "Dataverse API token",
-                type="password",
-                value=st.session_state[TOKENS_STATE["dataverse"]["state_key"]],
-                help="Click Save to write to .env and update session.",
-            )
-
-            dv_submit = st.form_submit_button("Save Dataverse settings")
-            if dv_submit:
-                # basic sanity
-                if dv_choice == "other" and not dv_base:
-                    st.warning("Please enter a custom Dataverse base URL.")
-                else:
-                    # persist site choice + base url
-                    st.session_state["dataverse_site_choice"] = dv_choice
-                    st.session_state["dataverse_base_url"] = dv_base
-                    save_to_env(dv_base, "DATAVERSE_BASE_URL")
-                    os.environ["DATAVERSE_BASE_URL"] = dv_base
-
-                    # persist alias
-                    st.session_state["dataverse_alias"] = dv_alias.strip()
-                    save_to_env(dv_alias.strip(), "DATAVERSE_ALIAS")
-
-                    # persist token
-                    if dv_token.strip():
-                        save_to_env(dv_token.strip(), TOKENS_STATE["dataverse"]["env_key"])
-                        os.environ[TOKENS_STATE["dataverse"]["env_key"]] = dv_token.strip()
-                        st.session_state[TOKENS_STATE["dataverse"]["state_key"]] = dv_token.strip()
-
-                    st.success("Dataverse site/alias/token saved.")
-
+                submitted = st.form_submit_button("Save")
+                if submitted:
+                    if entered.strip():
+                        # Persist & reflect immediately
+                        save_to_env(entered.strip(), env_key)   # (value, key)
+                        os.environ[env_key] = entered.strip()   # immediate availability
+                        st.session_state[state_key] = entered.strip()
+                        st.success(f"Saved {env_key} to .env and updated session.")
+                    else:
+                        st.warning("Please enter a non-empty token.")
 
 def get_token_from_state(service: str) -> str:
     """Read the best-known token without rendering UI."""
@@ -1004,28 +875,6 @@ def get_token_from_state(service: str) -> str:
     except Exception:
         pass
     return os.environ.get(env_key) or (load_from_env(env_key) or "")
-
-
-# ---------------------------
-# New: helpers to retrieve chosen endpoints
-# ---------------------------
-def get_zenodo_api_base() -> str:
-    return (
-        st.session_state.get("zenodo_api_base")
-        or _get_env_or_secret("ZENODO_API_BASE", "https://sandbox.zenodo.org/api")
-    )
-
-def get_dataverse_config() -> Tuple[str, str]:
-    base = (
-        st.session_state.get("dataverse_base_url")
-        or _get_env_or_secret("DATAVERSE_BASE_URL", "https://demo.dataverse.deic.dk")
-    )
-    alias = (
-        st.session_state.get("dataverse_alias")
-        or _get_env_or_secret("DATAVERSE_ALIAS", "")
-    )
-    return base, alias
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # App
@@ -1086,7 +935,7 @@ def main() -> None:
     st.session_state.setdefault("save_path", "")               # current save target path
 
     # ---------------------------
-    # Sidebar: Sites & Tokens (Zenodo / Dataverse)
+    # Tokens UI (Zenodo / Dataverse)
     # ---------------------------
     render_token_controls()
 

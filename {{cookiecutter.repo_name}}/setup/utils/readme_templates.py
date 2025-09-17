@@ -365,7 +365,6 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             "deactivate.ps1": "PowerShell script to deactivate the project's virtual environment on Windows.",
             "activate.sh": "Shell script to activate the project's virtual environment on Unix-based systems.",
             "deactivate.sh": "Shell script to deactivate the project's virtual environment on Unix-based systems.",
-            "deic_storage_download.py": "Script to download data from Deic-Storage for the project.",
             "dependencies.txt": "Plain text list of external Python dependencies for installation.",
             "get_dependencies.py": "Retrieves and checks required dependencies for the project environment.",
             "install_dependencies.py": "Installs any missing dependencies listed in `dependencies.txt` or detected dynamically.",
