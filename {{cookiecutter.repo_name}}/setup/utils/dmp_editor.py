@@ -5,14 +5,7 @@ Streamlit RDA-DMP JSON editor with per-dataset publish buttons:
 - "Publish to Zenodo"
 - "Publish to DeiC Dataverse"
 
-Depends on:
-- utils/general_tools.py  (package_installer, load/save helpers if you use them)
-- utils/dmp_tools.py      (fetch_schema, ensure_dmp_shape, reorder_dmp_keys, now_iso_minute, etc.)
-- publish_from_dmp.py     (publisher with mapping + streamlit wrappers)
-- streamlit_tokens.py     (token retrieval via secrets/env/sidebar)
-
-Run:
-  streamlit run dmp_editor.py
+Now with autosave: changes are saved to disk automatically whenever fields change.
 """
 import os
 import sys
@@ -22,6 +15,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import date, datetime
+from hashlib import sha256  # <- for autosave hashing
 
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
@@ -696,15 +690,13 @@ def _get_env_or_secret(key: str, default: str = "") -> str:
 # ---------------------------
 def _extract_domain_candidates_from_context(dmp_data: Optional[Dict[str, Any]]) -> List[str]:
     candidates: List[str] = []
-
-    #DMP root contact
+    # DMP root contact (minimal inference used in your latest version)
     try:
         mbox = (dmp_data or {}).get("dmp", {}).get("contact", {}).get("mbox", "")
         if isinstance(mbox, str) and "@" in mbox:
             candidates.append(mbox.split("@", 1)[1].lower())
     except Exception:
         pass
-
 
     # Normalize against DK_UNI_MAP keys
     normalized: List[str] = []
@@ -727,8 +719,137 @@ def _guess_dataverse_defaults_from_university(dmp_data: Optional[Dict[str, Any]]
             return info.get("dataverse_default_base_url"), info.get("dataverse_alias")
     return None, None
 
+
+
+# ---------------------------
+# Connection tests
+# ---------------------------
+
+def _safe_get_json(url: str, params: Optional[dict] = None, headers: Optional[dict] = None, timeout: int = 8):
+    try:
+        r = requests.get(url, params=params or {}, headers=headers or {}, timeout=timeout)
+        ctype = r.headers.get("Content-Type", "")
+        if "application/json" in ctype:
+            return r.status_code, r.json()
+        return r.status_code, r.text
+    except requests.exceptions.RequestException as e:
+        return None, str(e)
+
+def test_zenodo_connection(api_base: str, token: str, community: Optional[str] = None) -> Tuple[bool, str]:
+    """Check Zenodo reachability, optional token validity, and optional community existence."""
+    if not api_base:
+        return False, "No Zenodo API base URL configured."
+
+    # 1) Base reachability (public)
+    status, _ = _safe_get_json(api_base.rstrip("/") + "/records", timeout=6)
+    if status != 200:
+        return False, f"Cannot reach Zenodo at {api_base} (HTTP {status})."
+
+    # 2) Token check (optional)
+    if token:
+        status, body = _safe_get_json(
+            api_base.rstrip("/") + "/deposit/depositions",
+            params={"access_token": token},
+            timeout=8
+        )
+        if status == 200:
+            token_ok = True
+        elif status in (401, 403):
+            return False, "Zenodo reachable, but the token was rejected (401/403)."
+        else:
+            return False, f"Zenodo token check returned HTTP {status}: {body}"
+    else:
+        token_ok = False  # no token provided
+
+    # 3) Community check (optional)
+    community = (community or "").strip()
+    if community:
+        # Try direct lookup first
+        status_c, body_c = _safe_get_json(
+            api_base.rstrip("/") + f"/communities/{community}",
+            timeout=8
+        )
+        found = False
+        if status_c == 200:
+            # In Zenodo JSON, the slug is typically in 'id' or 'slug'
+            if isinstance(body_c, dict):
+                slug_match = str(body_c.get("id") or body_c.get("slug") or "").lower() == community.lower()
+                found = slug_match or True  # treat 200 as found even if fields differ
+        elif status_c == 404:
+            # Fallback: search endpoint (older deployments)
+            status_s, body_s = _safe_get_json(
+                api_base.rstrip("/") + "/communities",
+                params={"q": community, "page": 1},
+                timeout=8
+            )
+            if status_s == 200 and isinstance(body_s, dict):
+                # Two possible shapes: {"hits":{"hits":[...]}} or {"hits":[...]}
+                hits = body_s.get("hits", {})
+                if isinstance(hits, dict):
+                    items = hits.get("hits", [])
+                else:
+                    items = hits
+                for it in items or []:
+                    cand = str((it or {}).get("id") or (it or {}).get("slug") or "")
+                    if cand.lower() == community.lower():
+                        found = True
+                        break
+        elif status_c in (401, 403):
+            return False, f"Zenodo reachable, but access denied when checking community '{community}' (HTTP {status_c})."
+        else:
+            return False, f"Community check returned HTTP {status_c}."
+
+        if not found:
+            return False, f"Zenodo reachable{', token OK' if token_ok else ''}, but community '{community}' was not found."
+
+        # Community exists
+        if token_ok:
+            return True, f"Zenodo reachable ✅, token OK, and community '{community}' found."
+        return True, f"Zenodo reachable ✅ and community '{community}' found (no token check)."
+
+    # No community provided
+    if token_ok:
+        return True, "Zenodo reachable ✅ and token looks valid."
+    return True, "Zenodo reachable ✅ (no token provided, skipped token check)."
+
+def test_dataverse_connection(base_url: str, token: str, alias: str) -> Tuple[bool, str]:
+    if not base_url:
+        return False, "No Dataverse base URL configured."
+    # Base reachability
+    status, body = _safe_get_json(base_url.rstrip("/") + "/api/info/version", timeout=6)
+    if status != 200:
+        return False, f"Cannot reach Dataverse at {base_url} (HTTP {status})."
+
+    # Token check (optional)
+    if token:
+        status_me, _ = _safe_get_json(base_url.rstrip("/") + "/api/users/:me", params={"key": token}, timeout=8)
+        if status_me != 200:
+            if status_me in (401, 403):
+                return False, "Dataverse reachable, but the API token was rejected (401/403)."
+            return False, f"Dataverse '/users/:me' returned HTTP {status_me}."
+
+    # Alias check (optional but useful)
+    if alias:
+        status_alias, _ = _safe_get_json(base_url.rstrip("/") + f"/api/dataverses/{alias}", params={"key": token} if token else None, timeout=8)
+        if status_alias == 200:
+            if token:
+                return True, "Dataverse reachable ✅, token OK, and collection (alias) found."
+            return True, "Dataverse reachable ✅ and collection (alias) found (no token check)."
+        elif status_alias == 404:
+            return False, f"Dataverse reachable, but collection (alias '{alias}') was not found (404)."
+        elif status_alias in (401, 403):
+            return False, f"Dataverse reachable, alias provided, but access denied (401/403)."
+        else:
+            return False, f"Dataverse alias check returned HTTP {status_alias}."
+
+    # No alias provided
+    if token:
+        return True, "Dataverse reachable ✅ and token looks valid (no alias provided)."
+    return True, "Dataverse reachable ✅ (no token or alias provided)."
+
 def get_zenodo_community() -> str:
     return (st.session_state.get("zenodo_community") or _get_env_or_secret("ZENODO_COMMUNITY", "")).strip()
+
 
 # ---------------------------
 # Sidebar controls (tokens + sites)
@@ -793,8 +914,14 @@ def render_token_controls():
                 if z_comm.strip():
                     save_to_env(z_comm.strip(), "ZENODO_COMMUNITY")
                     os.environ["ZENODO_COMMUNITY"] = z_comm.strip()
+                
+                # Run connection test using effective values in session
+                eff_api = st.session_state.get("zenodo_api_base", z_api)
+                eff_token = st.session_state.get(TOKENS_STATE["zenodo"]["state_key"], z_token.strip())
+                eff_comm  = (st.session_state.get("zenodo_community") or "").strip()
 
-                st.success("Zenodo site/community/token saved.")
+                ok, msg = test_zenodo_connection(eff_api, eff_token, eff_comm)
+                (st.success if ok else st.error)(msg)
 
         # --------------- Dataverse ---------------
         st.subheader("Dataverse")
@@ -851,14 +978,12 @@ def render_token_controls():
             else:
                 dv_base = dv_choice
 
-            # ---- Prefill alias (key Streamlit quirk fix):
-            # If DeiC site selected, and both saved alias & alias-input are empty, seed alias-input from guess.
+            # Prefill alias if we can guess it
             guess_alias_for_ui = ""
             if dv_choice != "other":
                 _gb_ui, _ga_ui = _guess_dataverse_defaults_from_university(st.session_state.get("data"))
                 guess_alias_for_ui = _ga_ui or ""
 
-            # Initialize the alias input session key if empty and we have a guess
             if dv_choice != "other":
                 if not st.session_state.get("__dv_alias_input__") and not st.session_state.get("dataverse_alias"):
                     if guess_alias_for_ui:
@@ -886,7 +1011,7 @@ def render_token_controls():
                 if dv_choice != "other" and alias_to_save == "":
                     _gb, guess_alias = _guess_dataverse_defaults_from_university(st.session_state.get("data"))
                     if guess_alias:
-                        alias_to_save = guess_alias  # auto-fill if left empty for DeiC
+                        alias_to_save = guess_alias
 
                 if dv_choice == "other" and not dv_base:
                     st.warning("Please enter a custom Dataverse base URL.")
@@ -904,12 +1029,12 @@ def render_token_controls():
                         os.environ[TOKENS_STATE["dataverse"]["env_key"]] = dv_token.strip()
                         st.session_state[TOKENS_STATE["dataverse"]["state_key"]] = dv_token.strip()
 
-                    if alias_to_save:
-                        st.success("Dataverse site/alias/token saved.")
-                    else:
-                        st.warning("Dataverse site/token saved. Collection (alias) is empty; publishing will be disabled until you set it.")
-
-
+                    # Run connection test using effective values in session
+                    eff_base = st.session_state.get("dataverse_base_url", dv_base)
+                    eff_token = st.session_state.get(TOKENS_STATE["dataverse"]["state_key"], dv_token.strip())
+                    eff_alias = st.session_state.get("dataverse_alias", alias_to_save)
+                    ok, msg = test_dataverse_connection(eff_base, eff_token, eff_alias)
+                    (st.success if ok else st.error)(msg)
 
 # ---------------------------
 # Helpers to retrieve chosen endpoints
@@ -921,7 +1046,6 @@ def get_token_from_state(service: str) -> str:
     env_key   = TOKENS_STATE[service]["env_key"]
     state_key = TOKENS_STATE[service]["state_key"]
 
-    # priority: session (set by form) -> secrets -> env/.env
     val = st.session_state.get(state_key, "")
     if val:
         return val
@@ -945,6 +1069,66 @@ def get_dataverse_config() -> Tuple[str, str]:
         base = base or guess_base or "https://demo.dataverse.deic.dk"
         alias = alias or guess_alias or ""
     return base, alias
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Autosave helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _ordered_output_without_touching_modified() -> Dict[str, Any]:
+    """
+    Make a canonical, ordered snapshot WITHOUT bumping dmp.modified.
+    Used only for autosave-change detection.
+    """
+    snap = deepcopy(st.session_state["data"])
+    # Apply fixups and order on the copy
+    snap = reorder_dmp_keys(_schema_fixups_in_place(snap))
+    # Ensure key exists but don't change it
+    snap.setdefault("dmp", {}).setdefault("modified", snap.get("dmp", {}).get("modified", ""))
+    return snap
+
+def _json_hash_for_autosave(obj: Dict[str, Any]) -> str:
+    """
+    Stable hash for change detection (excluding runtime timestamp noise).
+    """
+    # sort_keys True + compact separators gives deterministic string
+    payload = json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+def _autosave_if_changed() -> None:
+    """
+    If the DMP content changed since last snapshot, bump modified and write to disk.
+    """
+    if "save_path" not in st.session_state or not st.session_state["save_path"]:
+        return
+    base_path = Path(st.session_state["save_path"]).resolve()
+    base_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Compute current content snapshot (without touching modified)
+    current_snapshot = _ordered_output_without_touching_modified()
+    current_hash = _json_hash_for_autosave(current_snapshot)
+
+    # First run: seed baseline, don't write yet
+    if "__autosave_last_hash__" not in st.session_state:
+        st.session_state["__autosave_last_hash__"] = current_hash
+        st.session_state["__autosave_feedback__"] = f"Autosave ready — changes will be saved to {base_path.name}"
+        return
+
+    if current_hash == st.session_state["__autosave_last_hash__"]:
+        return  # nothing changed
+
+    # Something changed → bump modified and save
+    to_save = deepcopy(current_snapshot)
+    try:
+        to_save["dmp"]["modified"] = now_iso_minute()
+    except Exception:
+        pass
+
+    try:
+        base_path.write_text(json.dumps(to_save, indent=4, ensure_ascii=False), encoding="utf-8")
+        st.session_state["__autosave_last_hash__"] = current_hash
+        st.session_state["__autosave_feedback__"] = f"💾 Autosaved {base_path.name} at {datetime.now().strftime('%H:%M:%S')}"
+    except Exception as e:
+        st.session_state["__autosave_feedback__"] = f"⚠️ Autosave failed: {e}"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # App
@@ -991,6 +1175,10 @@ def main() -> None:
     st.set_page_config(page_title=f"RDA-DMP {SCHEMA_VERSION} JSON Editor", layout="wide")
     st.title(f"RDA-DMP {SCHEMA_VERSION} JSON Editor")
 
+    # Small status line for autosave
+    if st.session_state.get("__autosave_feedback__"):
+        st.caption(st.session_state["__autosave_feedback__"])
+
     _inject_dist_css_once()
 
     # Session defaults (for UX)
@@ -1004,8 +1192,7 @@ def main() -> None:
     schema_now = safe_fetch_schema()
     default_path = find_default_dmp_path()
 
-    # IMPORTANT: initialize data BEFORE rendering the sidebar,
-    # so guessing functions have the DMP/contact context.
+    # IMPORTANT: initialize data BEFORE rendering the sidebar
     _ensure_data_initialized(default_path)
 
     # Sidebar: Sites & Tokens (Zenodo / Dataverse)
@@ -1015,7 +1202,7 @@ def main() -> None:
     if st.session_state.get("__load_message__"):
         st.info(st.session_state["__load_message__"])
 
-    # Helper: produce ordered/validated output snapshot
+    # Helper: produce ordered/validated output snapshot (manual download/validate)
     def _current_ordered_output() -> Dict[str, Any]:
         st.session_state["data"]["dmp"]["modified"] = now_iso_minute()
         return reorder_dmp_keys(_schema_fixups_in_place(deepcopy(st.session_state["data"])))
@@ -1052,6 +1239,8 @@ def main() -> None:
                     st.session_state["__load_message__"] = f"✅ Loaded DMP from {dst_path}"
                     st.session_state["save_path"] = str(dst_path)
                     st.session_state.pop("ds_selected", None)
+                    # reset autosave baseline to newly loaded content
+                    st.session_state.pop("__autosave_last_hash__", None)
                     st.rerun()
                 except Exception as e:
                     st.error(f"Failed to load uploaded JSON: {e}")
@@ -1072,6 +1261,7 @@ def main() -> None:
                     st.session_state["__load_message__"] = f"⚠️ Default DMP not found. Started a new DMP (will save to {new_path})"
                     st.session_state["save_path"] = str(new_path)
                 st.session_state.pop("ds_selected", None)
+                st.session_state.pop("__autosave_last_hash__", None)
                 st.rerun()
             except Exception as e:
                 st.error(f"Failed to reload default DMP: {e}")
@@ -1085,6 +1275,7 @@ def main() -> None:
             st.session_state["__last_upload_hash__"] = None
             st.session_state.pop("ds_selected", None)
             st.session_state["__uploader_ver__"] += 1
+            st.session_state.pop("__autosave_last_hash__", None)
             st.rerun()
 
         out_for_dl = _current_ordered_output()
@@ -1096,32 +1287,15 @@ def main() -> None:
             key="download",
         )
 
-        if st.button("💾 Save to disk", key="save"):
-            try:
-                out = _current_ordered_output()
-                schema = safe_fetch_schema()
-                if schema:
-                    errs = list(Draft7Validator(schema).iter_errors(out))
-                    if errs:
-                        st.error("Schema validation failed:")
-                        for e in errs[:50]:
-                            st.write(f"• {'/'.join(map(str, e.path)) or '<root>'}: {e.message}")
-                        st.stop()
-                else:
-                    st.warning("Schema unavailable (offline?). Skipping validation.")
-                p = Path(st.session_state["save_path"]).resolve()
-                p.parent.mkdir(parents=True, exist_ok=True)
-                p.write_text(json.dumps(out, indent=4, ensure_ascii=False), encoding="utf-8")
-                st.success(f"Saved to {p} (modified={out['dmp'].get('modified')})")
-            except Exception as e:
-                st.error(f"Failed to save: {e}")
-
     # Main editor area
     data = ensure_dmp_shape(st.session_state["data"])
     dmp_root = data["dmp"]
     draw_root_section(dmp_root)
     draw_projects_section(dmp_root)
     draw_datasets_section(dmp_root)
+
+    # ---- AUTOSAVE: run after all edits have been applied
+    _autosave_if_changed()
 
 def cli() -> None:
     app_path = Path(__file__).resolve()
