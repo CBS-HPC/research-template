@@ -185,51 +185,66 @@ DK_UNI_MAP = {
         "name": "Copenhagen Business School",
         "abbreviation": "CBS",
         "ror": "https://ror.org/04sppb023",
+        "dataverse_alias": "cbs",
+        "dataverse_default_base_url": "https://demo.dataverse.deic.dk",
     },
     # University of Copenhagen
     "ku.dk": {
         "name": "University of Copenhagen",
         "abbreviation": "KU",
         "ror": "https://ror.org/035b05819",
+        "dataverse_alias": "ku",
+        "dataverse_default_base_url": "https://dataverse.deic.dk",  # production for KU
     },
     # University of Southern Denmark
     "sdu.dk": {
         "name": "University of Southern Denmark",
         "abbreviation": "SDU",
         "ror": "https://ror.org/03yrrjy16",
+        "dataverse_alias": "sdu",
+        "dataverse_default_base_url": "https://demo.dataverse.deic.dk",
     },
     # Aarhus University
     "au.dk": {
         "name": "Aarhus University",
         "abbreviation": "AU",
         "ror": "https://ror.org/01aj84f44",
+        "dataverse_alias": "au",
+        "dataverse_default_base_url": "https://demo.dataverse.deic.dk",
     },
     # Technical University of Denmark
     "dtu.dk": {
         "name": "Technical University of Denmark",
         "abbreviation": "DTU",
         "ror": "https://ror.org/04qtj9h94",
+        "dataverse_alias": "dtu",
+        "dataverse_default_base_url": "https://demo.dataverse.deic.dk",
     },
     # Aalborg University
     "aau.dk": {
         "name": "Aalborg University",
         "abbreviation": "AAU",
         "ror": "https://ror.org/04m5j1k67",
+        "dataverse_alias": "aau",
+        "dataverse_default_base_url": "https://demo.dataverse.deic.dk",
     },
     # Roskilde University
     "ruc.dk": {
         "name": "Roskilde University",
         "abbreviation": "RUC",
         "ror": "https://ror.org/014axpa37",
+        "dataverse_alias": "ruc",
+        "dataverse_default_base_url": "https://demo.dataverse.deic.dk",
     },
     # IT University of Copenhagen
     "itu.dk": {
         "name": "IT University of Copenhagen",
         "abbreviation": "ITU",
         "ror": "https://ror.org/02309jg23",
+        "dataverse_alias": "itu",
+        "dataverse_default_base_url": "https://demo.dataverse.deic.dk",
     },
 }
-
 
 
 def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = None) -> dict:

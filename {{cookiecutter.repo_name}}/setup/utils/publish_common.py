@@ -22,9 +22,48 @@ class PublishError(RuntimeError):
 RETRY_STATUS = {429, 500, 502, 503, 504}
 DEFAULT_TIMEOUT = 60
 
+UPLOAD_WORKERS = int(os.environ.get("UPLOAD_WORKERS", "8"))
+
 # Zenodo defaults (decimal GB)
 ZENODO_MAX_FILES = 100
 ZENODO_MAX_TOTAL = 50_000_000_000  # 50 GB
+ZENODO_ROLE_MAP = {
+    "creator": "Researcher",
+    "author": "Researcher",
+    "rights_holder": "RightsHolder",
+    "data_manager": "DataManager",
+    "data curator": "DataCurator",
+    "curator": "DataCurator",
+    "editor": "Editor",
+    "contact person": "ContactPerson",
+    "supervisor": "Supervisor",
+    "project manager": "ProjectManager",
+    "sponsor": "Sponsor",
+    "workpackage leader": "WorkPackageLeader",
+}
+
+# Dataverse upload constraints (as given)
+DATAVERSE_MAX_FILES_TOTAL: int = 100
+DATAVERSE_MAX_FILE_SIZE_BYTES: int = int(953.7 * 1_000_000)  # 953.7 MB (decimal)
+DATAVERS_SUBJECTS: Dict[str, str] = {
+    "agricultural sciences": "Agricultural Sciences",
+    "arts and humanities": "Arts and Humanities",
+    "astronomy and astrophysics": "Astronomy and Astrophysics",
+    "business and management": "Business and Management",
+    "chemistry": "Chemistry",
+    "computer and information science": "Computer and Information Science",
+    "earth and environmental sciences": "Earth and Environmental Sciences",
+    "engineering": "Engineering",
+    "law": "Law",
+    "mathematics": "Mathematics",
+    "medicine, health and life sciences": "Medicine, Health and Life Sciences",
+    "medicine": "Medicine, Health and Life Sciences",
+    "health and life sciences": "Medicine, Health and Life Sciences",
+    "physics": "Physics",
+    "social sciences": "Social Sciences",
+    "other": "Other",
+}
+
 
 # Compression heuristics
 _COMPRESSIBLE = {".txt",".csv",".tsv",".json",".xml",".yaml",".yml",".md",".log",
@@ -356,23 +395,6 @@ def build_packaging_plan(files: List[str]) -> Tuple[List[PackItem], List[dict], 
 
     return plan, report, workdir
 
-def _first_level_groups_old(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
-    """
-    Group files by first-level subdirectory under the common parent.
-    Returns (common_parent, groups), where groups maps:
-      "" -> files directly under parent
-      "subdir" -> files under parent/subdir/**
-    """
-    if not files:
-        return Path("."), {"": []}
-    parent = Path(os.path.commonpath(files))
-    groups: Dict[str, List[str]] = {}
-    for f in files:
-        rel = Path(os.path.relpath(f, start=parent))
-        parts = rel.parts
-        head = "" if len(parts) == 1 else parts[0]  # "" means root files
-        groups.setdefault(head, []).append(f)
-    return parent, groups
 
 def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
     """
@@ -413,7 +435,6 @@ def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
         groups.setdefault(head, []).append(f)
 
     return parent, groups
-
 
 def build_packaging_plan_preserve_first_level(files: List[str]) -> Tuple[List[PackItem], List[dict], str]:
     """

@@ -28,7 +28,7 @@ from pathlib import Path
 
 from .general_tools import package_installer
 from .publish_common import (
-    PublishError, RETRY_STATUS, DEFAULT_TIMEOUT,
+    PublishError, RETRY_STATUS, DEFAULT_TIMEOUT,DATAVERSE_MAX_FILES_TOTAL,DATAVERSE_MAX_FILE_SIZE_BYTES,DATAVERS_SUBJECTS,
     _get, _norm_list, _guess_dataset,
     _has_personal_or_sensitive, description_from_madmp,
     files_from_x_dcas, regular_files_existing, sizes_bytes,
@@ -44,17 +44,6 @@ import streamlit as st  # type: ignore
 # Configuration (requested constants)
 # ============================================================================
 
-# Target Dataverse installation + collection
-DATAVERSE_BASE_URL: str = "https://demo.dataverse.deic.dk"
-
-# IMPORTANT: alias is the URL-safe identifier for the collection (not the display label).
-# Set to the actual alias configured on the server.
-DATAVERSE_COLLECTION_ALIAS: str = "cbs"
-
-# Dataverse upload constraints (as given)
-DATAVERSE_MAX_FILES_TOTAL: int = 100
-DATAVERSE_MAX_FILE_SIZE_BYTES: int = int(953.7 * 1_000_000)  # 953.7 MB (decimal)
-
 # Packaging heuristics
 ZIP_COMPRESSION = getattr(zipfile, "ZIP_DEFLATED", 0)
 # Aim a bit below the hard cap to buffer compression estimate error
@@ -64,25 +53,6 @@ TARGET_MAX_PER_ARCHIVE: int = int(DATAVERSE_MAX_FILE_SIZE_BYTES * 0.92)
 # When we must package, we create *double-zipped* archives to prevent auto-unpack.
 DOUBLE_ZIP_TO_PREVENT_UNPACK: bool = True
 
-# Dataverse default CITATION.SUBJECT controlled vocabulary (core installation)
-DV_SUBJECTS: Dict[str, str] = {
-    "agricultural sciences": "Agricultural Sciences",
-    "arts and humanities": "Arts and Humanities",
-    "astronomy and astrophysics": "Astronomy and Astrophysics",
-    "business and management": "Business and Management",
-    "chemistry": "Chemistry",
-    "computer and information science": "Computer and Information Science",
-    "earth and environmental sciences": "Earth and Environmental Sciences",
-    "engineering": "Engineering",
-    "law": "Law",
-    "mathematics": "Mathematics",
-    "medicine, health and life sciences": "Medicine, Health and Life Sciences",
-    "medicine": "Medicine, Health and Life Sciences",
-    "health and life sciences": "Medicine, Health and Life Sciences",
-    "physics": "Physics",
-    "social sciences": "Social Sciences",
-    "other": "Other",
-}
 
 # ============================================================================
 # API helpers (with retries)
@@ -316,8 +286,8 @@ def _map_subject_to_dv(term: str) -> Optional[str]:
         return None
     t = term.strip().lower()
     # try direct matches
-    if t in DV_SUBJECTS:
-        return DV_SUBJECTS[t]
+    if t in DATAVERS_SUBJECTS:
+        return DATAVERS_SUBJECTS[t]
     # a few helpful synonyms
     SYN = {
         "economics": "Business and Management",
@@ -625,8 +595,8 @@ def _build_dataverse_packaging_plan(files: List[str]) -> DVPlan:
 def publish_dataset_to_dataverse(
     dmp_path: str,
     token: str,
-    dataverse_alias: str = DATAVERSE_COLLECTION_ALIAS,
-    base_url: str = DATAVERSE_BASE_URL,
+    dataverse_alias: str,
+    base_url: str,
     dataset_id_selector: Optional[str] = None,
     publish: bool = False,
     release_type: str = "major"
@@ -789,7 +759,7 @@ def publish_dataset_to_dataverse(
 
 def streamlit_publish_to_dataverse(
     *, dataset: dict, dmp: dict, token: str,
-    base_url: str = DATAVERSE_BASE_URL, alias: str = DATAVERSE_COLLECTION_ALIAS,
+    base_url: str, alias: str,
     publish: bool = False, allow_reused: bool = False, release_type: str = "major",
 ) -> Dict[str, Any]:
     # Block reused datasets unless explicitly allowed (matches your editor logic)
@@ -817,34 +787,6 @@ def streamlit_publish_to_dataverse(
                 skipped = result.get("skipped_files") or []
                 if skipped:
                     st.warning(f"Files not uploaded due to personal/sensitive data or size limits: {', '.join(os.path.basename(x) for x in skipped)}")
-        return result
     finally:
         try: os.unlink(dmp_path)
         except Exception: pass
-
-# ============================================================================
-# CLI
-# ============================================================================
-
-def _parse_args():
-    p = argparse.ArgumentParser(description="Publish from maDMP to Dataverse (x_dcas only, packaging for DV limits)")
-    p.add_argument("--dmp", required=True, help="Path to maDMP JSON")
-    p.add_argument("--token", required=True, help="Dataverse API token")
-    p.add_argument("--alias", default=DATAVERSE_COLLECTION_ALIAS, help="Target Dataverse collection alias")
-    p.add_argument("--base-url", default=DATAVERSE_BASE_URL, help="Dataverse base URL")
-    p.add_argument("--dataset-id", help="Dataset selector in maDMP (id or title)")
-    p.add_argument("--publish", action="store_true", help="Publish after creating (default: draft only)")
-    p.add_argument("--release-type", choices=["major", "minor"], default="major", help="Dataverse release type")
-    return p.parse_args()
-
-def main():
-    args = _parse_args()
-    result = publish_dataset_to_dataverse(
-        dmp_path=args.dmp, token=args.token, dataverse_alias=args.alias,
-        base_url=args.base_url, dataset_id_selector=args.dataset_id,
-        publish=args.publish, release_type=args.release_type
-    )
-    print(json.dumps(result, indent=2))
-
-if __name__ == "__main__":
-    main()

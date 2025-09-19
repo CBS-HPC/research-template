@@ -8,7 +8,7 @@ Streamlit RDA-DMP JSON editor with per-dataset publish buttons:
 Depends on:
 - utils/general_tools.py  (package_installer, load/save helpers if you use them)
 - utils/dmp_tools.py      (fetch_schema, ensure_dmp_shape, reorder_dmp_keys, now_iso_minute, etc.)
-- publish_from_dmp.py     (publisher with  mapping + streamlit wrappers)
+- publish_from_dmp.py     (publisher with mapping + streamlit wrappers)
 - streamlit_tokens.py     (token retrieval via secrets/env/sidebar)
 
 Run:
@@ -17,30 +17,24 @@ Run:
 import os
 import sys
 import json
-import getpass
 import socket
-import ipaddress
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import date, datetime
 
-
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
-    from .general_tools import package_installer, load_from_env, save_to_env 
+    from .general_tools import package_installer, load_from_env, save_to_env
     from .dmp_tools import *  # noqa: F401,F403
-    #from .publish_from_dmp import *
     from .publish_common import *
     from .publish_zenodo import *
     from .publish_dataverse import *
 except ImportError:
     pkg_root = Path(__file__).resolve().parent
-    #sys.path.insert(0, str(pkg_root / "utils"))
     sys.path.insert(0, str(pkg_root))
-    from utils.general_tools import package_installer, load_from_env, save_to_env 
+    from utils.general_tools import package_installer, load_from_env, save_to_env
     from utils.dmp_tools import *  # noqa: F401,F403
-    #from utils.publish_from_dmp import *
     from utils.publish_common import *
     from utils.publish_zenodo import *
     from utils.publish_dataverse import *
@@ -51,9 +45,8 @@ import streamlit as st
 from streamlit.web.cli import main as st_main
 from jsonschema import Draft7Validator
 
-
 # ---------------------------
-# New: repository site choices (labels come from format_func)
+# Repository site choices (labels come from format_func)
 # ---------------------------
 ZENODO_API_CHOICES = [
     ("https://sandbox.zenodo.org/api", "Sandbox (highly recommended)"),
@@ -65,7 +58,6 @@ DATAVERSE_SITE_CHOICES = [
     ("https://dataverse.deic.dk", "DeiC Production"),
     ("other", "Other…"),
 ]
-
 
 def _has_privacy_flags(ds: dict) -> bool:
     return str(ds.get("personal_data", "")).lower() == "yes" or \
@@ -81,10 +73,7 @@ def _enforce_privacy_access(ds: dict) -> bool:
     return changed
 
 def _normalize_license_by_access(ds: dict) -> bool:
-    """
-    If data_access is shared/closed, remove CC license URLs (misleading for non-open).
-    Allows non-CC/custom terms URLs to remain.
-    """
+    """If data_access is shared/closed, remove CC license URLs (misleading for non-open)."""
     changed = False
     for dist in ds.get("distribution", []) or []:
         access = (dist.get("data_access") or "").lower()
@@ -97,10 +86,7 @@ def _normalize_license_by_access(ds: dict) -> bool:
     return changed
 
 def _ensure_open_has_license(ds: dict) -> bool:
-    """
-    If data_access is open and license is empty, set a sensible default (e.g., CC-BY-4.0).
-    Skip if the user already put something in.
-    """
+    """If open and license empty, set default CC-BY-4.0."""
     changed = False
     default_ref = LICENSE_LINKS.get("CC-BY-4.0", "")
     for dist in ds.get("distribution", []) or []:
@@ -117,14 +103,12 @@ def _ensure_open_has_license(ds: dict) -> bool:
     return changed
 
 def _inject_dist_css_once() -> None:
-    # Only add very light styling; keep expanders fully clickable.
     if st.session_state.get("__dist_css__"):
         return
     st.session_state["__dist_css__"] = True
     st.markdown(
         """
         <style>
-        /* Subtle background and left border for expander bodies (applies everywhere) */
         [data-testid="stExpander"] > div {
             border-left: 3px solid #c8d6e5;
             background: rgba(0,0,0,.02);
@@ -148,36 +132,25 @@ def _is_dataset_path(path: tuple) -> bool:
 def _edit_distribution_inline(arr: List[Any], path: tuple, ns: Optional[str] = None) -> List[Any]:
     if not isinstance(arr, list):
         return arr
-
-    # If empty, seed one distribution so users can fill it in
     if not arr:
         templates = dmp_default_templates()
         arr.append(deepcopy(templates["distribution"]))
-
-    # Single distribution → show inline under a normal, closable expander
     if len(arr) == 1 and isinstance(arr[0], dict):
         _inject_dist_css_once()
         with st.expander("Distribution", expanded=True):
             arr[0] = edit_any(arr[0], path=(*path, 0), ns=ns)
         return arr
-
-    # 2+ distributions → default list UI
     return edit_array(arr, path=path, title_singular="Distribution", removable_items=True, ns=ns)
 
 def _edit_dataset_id_inline(obj: Any, path: tuple, ns: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Render dataset_id inline (inside its own closable expander).
-    Seeds from templates if missing/empty.
-    """
     if not isinstance(obj, dict) or not obj:
         templates = dmp_default_templates()
         obj = deepcopy(templates["dataset"]["dataset_id"])
     with st.expander("Dataset ID", expanded=True):
-        obj = edit_any(obj, path=path, ns=ns)   # path already includes "dataset_id"
+        obj = edit_any(obj, path=path, ns=ns)
     return obj
 
 def _ensure_dataset_id_before_distribution(keys: List[str]) -> List[str]:
-    # If both exist and dataset_id comes after distribution, move it just before.
     if "dataset_id" in keys and "distribution" in keys:
         di, dj = keys.index("dataset_id"), keys.index("distribution")
         if di > dj:
@@ -185,9 +158,8 @@ def _ensure_dataset_id_before_distribution(keys: List[str]) -> List[str]:
             keys.insert(dj, k)
     return keys
 
-
 # ──────────────────────────────────────────────────────────────────────────────
-# Minimal helpers (schema-aware editors)  — unchanged parts from your editor
+# Minimal helpers (schema-aware editors)
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _key_for(*parts: Any) -> str:
@@ -286,16 +258,13 @@ def _path_signature(path: tuple) -> str:
     parts: List[str] = []
     for p in path:
         if isinstance(p, int):
-            if parts:
-                parts[-1] = parts[-1] + "[]"
-            else:
-                parts.append("[]")
+            if parts: parts[-1] = parts[-1] + "[]"
+            else: parts.append("[]")
         else:
             parts.append(str(p))
     return ".".join(parts)
 
 def _enum_info_for_path(path: tuple):
-    # Enums are loaded from schema + EXTRA_ENUMS (from dmp_tools)
     node = _schema_node_for_path(path)
     base_mode: Optional[str] = None
     base_options: List[str] = []
@@ -337,77 +306,46 @@ def _enum_label_for(path: tuple, option_value: str) -> str:
         extras = []
     if isinstance(extras, list):
         for d in extras:
-            if isinstance(d, dict):
-                if d.get("value") == option_value:
-                    return d.get("label", option_value)
+            if isinstance(d, dict) and d.get("value") == option_value:
+                return d.get("label", option_value)
     return str(option_value)
 
 def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None) -> Any:
-    
-
     if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
         keyb = _key_for(*path, ns, "bool")
         return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
-    
+
     if _is_format_schema(path, "date"):
-        base_key    = _key_for(*path, ns, "date")           # date_input widget key
-        enable_key  = _key_for(*path, ns, "date_enabled")   # whether picker is enabled
-        pending_key = _key_for(*path, ns, "date_pending")   # one-shot flag to seed today after "Set date"
-        set_key     = _key_for(*path, ns, "date_set_btn")   # button: Set date
-        clear_key   = _key_for(*path, ns, "date_clear_btn") # button: Clear
+        base_key    = _key_for(*path, ns, "date")
+        enable_key  = _key_for(*path, ns, "date_enabled")
+        pending_key = _key_for(*path, ns, "date_pending")
+        set_key     = _key_for(*path, ns, "date_set_btn")
+        clear_key   = _key_for(*path, ns, "date_clear_btn")
 
-        # Current value from the DMP (string -> date or None)
         existing = _parse_iso_date(value)
-
-        # Initialize enable flag on first render of this field
         if enable_key not in st.session_state:
             st.session_state[enable_key] = bool(existing)
-
         enabled = bool(st.session_state[enable_key])
 
         c1, c2 = st.columns([4, 1])
-
-        # --- Right column: buttons FIRST (so we can update state before the widget is created)
         with c2:
             st.markdown("<div style='height:0.15rem'></div>", unsafe_allow_html=True)
-
             if enabled:
-                # Only allow clearing if a date actually exists (in session or DMP)
                 has_date_now = (base_key in st.session_state) or bool(existing)
                 if st.button("Clear", key=clear_key, disabled=not has_date_now):
-                    # Remove any staged widget value *before* creating the widget
                     st.session_state.pop(base_key, None)
                     st.session_state[enable_key] = False
-                    enabled = False  # reflect immediately; no rerun required
+                    enabled = False
             else:
                 if st.button("Set date", key=set_key):
-                    # Arm a one-shot to seed the picker with today on this very run
                     st.session_state[enable_key] = True
                     st.session_state[pending_key] = True
-                    enabled = True  # reflect immediately; no rerun required
-
-        # --- Left column: the date picker (created AFTER button logic)
+                    enabled = True
         with c1:
-            # Decide default shown in the picker (this does not save to the DMP until we return)
             seed_today = bool(st.session_state.pop(pending_key, False))
-            if seed_today and not existing:
-                cur = date.today()
-            else:
-                # Prefer any existing widget value (if present), else DMP value, else show today (UI only)
-                cur = st.session_state.get(base_key) or existing or date.today()
-
-            picked = st.date_input(
-                label,
-                value=cur,
-                key=base_key,
-                disabled=not enabled,
-            )
-
-        # Commit to DMP:
-        # - when disabled → keep empty string (no date in the JSON)
-        # - when enabled  → save whatever is picked
+            cur = date.today() if (seed_today and not existing) else (st.session_state.get(base_key) or existing or date.today())
+            picked = st.date_input(label, value=cur, key=base_key, disabled=not enabled)
         return "" if not enabled else (picked.isoformat() if isinstance(picked, date) else "")
-        
 
     mode, options = _enum_info_for_path(path)
     if mode == "single" and options:
@@ -424,13 +362,11 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
             except Exception:
                 default_index = 0
         selected = st.selectbox(
-            label,
-            options_ui,
-            index=default_index,
-            key=sel_key,
+            label, options_ui, index=default_index, key=sel_key,
             format_func=lambda opt: _enum_label_for(path, opt if opt != custom_label else value),
         )
         return value if (custom_label and selected == custom_label) else selected
+
     key = _key_for(*path, ns, "prim")
     if isinstance(value, bool):
         return st.checkbox(label, value=value, key=key)
@@ -447,19 +383,13 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: Optional[str] = None
 
 def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items: bool, ns: Optional[str] = None) -> List[Any]:
     mode, options = _enum_info_for_path(path)
-
-    # Enum-multi arrays: use multiselect as before
     if mode == "multi" and options:
         label = f"{path[-1] if path else title_singular} (choose any)"
         wkey = _key_for(*path, ns, "enum_multi")
         current = [x for x in arr if isinstance(x, str) and x in options]
-        selected = st.multiselect(
-            label, options, default=current, key=wkey,
-            format_func=lambda opt: _enum_label_for(path, opt),
-        )
+        selected = st.multiselect(label, options, default=current, key=wkey,
+                                  format_func=lambda opt: _enum_label_for(path, opt))
         return selected
-
-    # Simple string lists: textarea as before
     if _looks_like_string_list(arr, path):
         label = f"{path[-1] if path else title_singular} (one per line; saved as array)"
         key = _key_for(*path, ns, "textlist")
@@ -467,19 +397,13 @@ def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items
         txt = st.text_area(label, initial, key=key)
         lines = [ln.strip() for ln in txt.splitlines() if ln.strip()]
         return lines
-
-    # NEW: Inline rendering for single-object arrays
     if len(arr) == 1 and isinstance(arr[0], dict):
-        # Small caption to indicate we're editing the single entry directly
         label = path[-1] if path else title_singular
         st.caption(f"{label} — single entry")
         arr[0] = edit_any(arr[0], path=(*path, 0), ns=ns)
-        # Optional: allow removing the sole entry if the caller asked for it
         if removable_items and st.button(f"Remove this {title_singular.lower()}", key=_key_for(*path, ns, "rm_single")):
             arr.clear()
         return arr
-
-    # Default: one expander per item
     to_delete: List[int] = []
     for i, item in enumerate(list(arr)):
         heading = f"{title_singular} #{i+1}"
@@ -495,26 +419,14 @@ def edit_array(arr: List[Any], path: tuple, title_singular: str, removable_items
         del arr[i]
     return arr
 
-# Add near other small helpers (e.g., below _is_dataset_path)
-
+# Read-only JSON helper for x_dcas
 def _is_under_dataset_extension(path: tuple) -> bool:
-    """
-    True when editing the dict for a single extension entry of a dataset:
-    path like ('dmp','dataset', <idx>, 'extension', <ext_idx>)
-    """
     return (
-        isinstance(path, tuple)
-        and len(path) >= 5
-        and path[0] == "dmp"
-        and path[1] == "dataset"
-        and isinstance(path[2], int)
-        and path[3] == "extension"
+        isinstance(path, tuple) and len(path) >= 5 and
+        path[0] == "dmp" and path[1] == "dataset" and isinstance(path[2], int) and path[3] == "extension"
     )
 
 def _show_readonly_json(label: str, value: Any, key: Optional[str] = None) -> None:
-    """
-    Lightweight read-only viewer for large dicts (cheaper than a full editor).
-    """
     import json as _json
     with st.expander(label, expanded=False):
         try:
@@ -522,10 +434,11 @@ def _show_readonly_json(label: str, value: Any, key: Optional[str] = None) -> No
         except Exception:
             st.code(str(value), language="json")
 
+def _is_empty_alias(v: Any) -> bool:
+    return v is None or (isinstance(v, str) and v.strip() == "")
+
 def edit_object(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: Optional[str] = None) -> Dict[str, Any]:
     keys = list(obj.keys())
-
-    # NEW: keep dataset_id visually above distribution when editing a dataset
     if _is_dataset_path(path):
         keys = _ensure_dataset_id_before_distribution(keys)
 
@@ -533,85 +446,26 @@ def edit_object(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: O
     for key in keys:
         val = obj.get(key)
 
-        # Keep Projects/Datasets/Contributors out of the root object editor; they get bespoke UIs
         if path == ("dmp",) and key in ("project", "dataset", "contributor"):
             continue
 
-        # ─────────────────────────────────────────────────────────────────────
-        # NEW: make dataset.extension[*].x_dcas read-only (render as a dict)
-        # path looks like ('dmp', 'dataset', i, 'extension', j) when we're inside one extension entry
         if key == "x_dcas" and _is_under_dataset_extension(path):
             _show_readonly_json("x_dcas (read-only)", val, key=_key_for(*path, key, ns, "ro"))
-            # do NOT assign back; keep existing value unchanged
             continue
-        # ─────────────────────────────────────────────────────────────────────
 
-        # Special-case: extension as before (optional)
         if key == "extension" and isinstance(val, list):
             with st.expander("extension", expanded=False):
                 obj["extension"] = edit_array(val, path=(*path, "extension"), title_singular="Entry", removable_items=True, ns=ns)
             continue
 
         if isinstance(val, dict):
-            # NEW: unfold dataset_id inline for datasets
             if key == "dataset_id" and _is_dataset_path(path):
                 obj[key] = _edit_dataset_id_inline(val, path=(*path, key), ns=ns)
                 continue
-
             with st.expander(key, expanded=False):
                 obj[key] = edit_any(val, path=(*path, key), ns=ns)
 
         elif isinstance(val, list):
-            # Existing special-case for distribution
-            if key == "distribution" and _is_dataset_path(path):
-                obj[key] = _edit_distribution_inline(val, path=(*path, key), ns=ns)
-                continue
-            with st.expander(key, expanded=False):
-                title = "Distribution" if key == "distribution" else "Item"
-                obj[key] = edit_array(val, path=(*path, key), title_singular=title, removable_items=False, ns=ns)
-
-        else:
-            obj[key] = edit_primitive(key, val, path=(*path, key), ns=ns)
-
-        if allow_remove_keys and st.button(f"Remove key: {key}", key=_key_for(*path, key, ns, "del")):
-            remove_keys.append(key)
-
-    for k in remove_keys:
-        obj.pop(k, None)
-    return obj
-
-def edit_object_old(obj: Dict[str, Any], path: tuple, allow_remove_keys: bool, ns: Optional[str] = None) -> Dict[str, Any]:
-    keys = list(obj.keys())
-
-    # NEW: keep dataset_id visually above distribution when editing a dataset
-    if _is_dataset_path(path):
-        keys = _ensure_dataset_id_before_distribution(keys)
-
-    remove_keys: List[str] = []
-    for key in keys:
-        val = obj.get(key)
-
-        # Keep Projects/Datasets/Contributors out of the root object editor; they get bespoke UIs
-        if path == ("dmp",) and key in ("project", "dataset", "contributor"):
-            continue
-
-        # Special-case: extension as before (optional)
-        if key == "extension" and isinstance(val, list):
-            with st.expander("extension", expanded=False):
-                obj["extension"] = edit_array(val, path=(*path, "extension"), title_singular="Entry", removable_items=True, ns=ns)
-            continue
-
-        if isinstance(val, dict):
-            # NEW: unfold dataset_id inline for datasets
-            if key == "dataset_id" and _is_dataset_path(path):
-                obj[key] = _edit_dataset_id_inline(val, path=(*path, key), ns=ns)
-                continue
-
-            with st.expander(key, expanded=False):
-                obj[key] = edit_any(val, path=(*path, key), ns=ns)
-
-        elif isinstance(val, list):
-            # Existing special-case for distribution
             if key == "distribution" and _is_dataset_path(path):
                 obj[key] = _edit_distribution_inline(val, path=(*path, key), ns=ns)
                 continue
@@ -636,7 +490,6 @@ def edit_any(value: Any, path: tuple, ns: Optional[str] = None) -> Any:
         return edit_array(value, path, title_singular="Item", removable_items=False, ns=ns)
     return edit_primitive("value", value, path, ns=ns)
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # High-level sections (Root, Projects, Datasets)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -653,8 +506,6 @@ def find_default_dmp_path(start: Optional[Path] = None) -> Path:
 
 def draw_root_section(dmp_root: Dict[str, Any]) -> None:
     st.subheader("Root")
-
-    # Ensure required keys exist
     dmp_root.setdefault("schema", dmp_root.get("schema") or SCHEMA_URLS[SCHEMA_VERSION])
     dmp_root.setdefault("contact", dmp_root.get("contact") or {
         "name": "",
@@ -662,16 +513,11 @@ def draw_root_section(dmp_root: Dict[str, Any]) -> None:
         "contact_id": {"type": "orcid", "identifier": ""},
     })
 
-    # Template for a new contributor (use your template if available)
     templates = dmp_default_templates() if "dmp_default_templates" in globals() else {}
     default_contrib = deepcopy(templates.get("contributor")) if templates and "contributor" in templates else {
-        "name": "",
-        "mbox": "",
-        "contributor_id": {"type": "orcid", "identifier": ""},
-        "role": [],  # array of strings per 1.2 schema
+        "name": "", "mbox": "", "contributor_id": {"type": "orcid", "identifier": ""}, "role": [],
     }
 
-    # --- The rest of the Root fields (excluding project/dataset/contact/contributor) ---
     for key in list(dmp_root.keys()):
         if key in ("project", "dataset"):
             continue
@@ -685,11 +531,9 @@ def draw_root_section(dmp_root: Dict[str, Any]) -> None:
         else:
             dmp_root[key] = edit_primitive(key, val, path=("dmp", key), ns=None)
 
-    # --- ADD CONTRIBUTOR button (bottom of Root) ---
     add_col, _ = st.columns([1, 6])
     with add_col:
         if st.button("➕ Add contributor", key=_key_for("dmp", "contributor", "add", "bottom")):
-            # Append and force an immediate rerun so it shows up right away
             dmp_root["contributor"].append(deepcopy(default_contrib))
             st.rerun()
 
@@ -715,29 +559,35 @@ def draw_datasets_section(dmp_root: dict) -> None:
 
     def _is_unknown(v: Any) -> bool:
         s = str(v or "").strip().lower()
-        return s in {"unknown", "unkown", ""}  # treat blank as unknown too
+        return s in {"unknown", "unkown", ""}
 
     for i, ds in enumerate(list(datasets)):
         with st.expander(f"Dataset #{i+1}: {ds.get('title') or 'Dataset'}", expanded=False):
             is_reused = _is_reused(ds)
-
-            # Disable publishing if personal/sensitive is unknown
             has_unknown_privacy = _is_unknown(ds.get("personal_data")) or _is_unknown(ds.get("sensitive_data"))
 
-            # Read/maintain override flag from session
             override_key = f"allow_reused_{i}"
             allow_override = st.session_state.get(override_key, False)
-
-            # If not reused, force override off (prevents stale True)
             if not is_reused and allow_override:
                 st.session_state[override_key] = False
                 allow_override = False
 
-            # Disable rules
             zen_disabled = (is_reused and not allow_override) or has_unknown_privacy
-            dv_disabled  = (is_reused and not allow_override) or has_unknown_privacy
 
-            # Button row
+            # Determine alias availability for enabling the Dataverse button.
+            site_choice = st.session_state.get("dataverse_site_choice", "")
+            alias_effective = (
+                st.session_state.get("dataverse_alias", "")
+                or _get_env_or_secret("DATAVERSE_ALIAS", "")
+            )
+            if site_choice != "other" and _is_empty_alias(alias_effective):
+                _gb, _ga = _guess_dataverse_defaults_from_university(st.session_state.get("data"))
+                if _ga:
+                    alias_effective = _ga
+
+            alias_missing = _is_empty_alias(alias_effective)
+            dv_disabled = (is_reused and not allow_override) or has_unknown_privacy or alias_missing
+
             cols = st.columns([1, 1, 1, 1, 6])
 
             with cols[0]:
@@ -752,13 +602,12 @@ def draw_datasets_section(dmp_root: dict) -> None:
                         st.warning("Please set a Zenodo token in the sidebar and press Save.")
                         st.stop()
                     try:
-                        api_base = get_zenodo_api_base()
-                        sandbox = "sandbox.zenodo.org" in (api_base or "")
-                        res = streamlit_publish_to_zenodo(
+                        streamlit_publish_to_zenodo(
                             dataset=ds,
                             dmp=st.session_state["data"],
                             token=token,
-                            sandbox=sandbox,
+                            base_url=get_zenodo_api_base(),
+                            community=get_zenodo_community(),
                             publish=False,
                             allow_reused=allow_override,
                         )
@@ -776,10 +625,10 @@ def draw_datasets_section(dmp_root: dict) -> None:
                         if not dv_base:
                             st.warning("Please select a Dataverse base URL in the sidebar and press Save.")
                             st.stop()
-                        if not dv_alias:
-                            st.warning("Please enter a Dataverse collection alias in the sidebar and press Save.")
+                        if _is_empty_alias(dv_alias):
+                            st.warning("Please enter a Dataverse collection (alias) in the sidebar and press Save.")
                             st.stop()
-                        res = streamlit_publish_to_dataverse(
+                        streamlit_publish_to_dataverse(
                             dataset=ds,
                             dmp=st.session_state["data"],
                             token=token,
@@ -792,45 +641,42 @@ def draw_datasets_section(dmp_root: dict) -> None:
                     except PublishError as e:
                         st.error(str(e))
 
-            # Only active if the dataset is marked as reused
+                if alias_missing:
+                    if site_choice == "other":
+                        st.caption("⚠️ Enter a Dataverse collection (alias) in the sidebar to enable publishing.")
+                    else:
+                        st.caption("⚠️ No collection (alias) detected. We’ll try to infer it, or set one in the sidebar.")
+
             with cols[3]:
                 st.checkbox(
                     "Allow publish reused?",
                     key=override_key,
                     value=allow_override,
-                    disabled=not is_reused,  # <-- inactive unless reused
+                    disabled=not is_reused,
                     help="Enabled only when 'is_reused' is set on this dataset.",
                 )
 
-            # show/edit dataset metadata
             datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
 
-            # Post-edit guardrails
             changed = False
-            changed |= _enforce_privacy_access(datasets[i])          # force data_access="closed" if personal/sensitive == yes
-            changed |= _normalize_license_by_access(datasets[i])     # strip CC licenses when shared/closed
-            changed |= _ensure_open_has_license(datasets[i])         # add default CC for open (if empty)
-
+            changed |= _enforce_privacy_access(datasets[i])
+            changed |= _normalize_license_by_access(datasets[i])
+            changed |= _ensure_open_has_license(datasets[i])
             if changed:
-                # optional toast after the rerun
                 st.session_state["__last_rule_msg__"] = (
                     "Privacy flags require closed access; adjusted access/license fields."
-                    if _has_privacy_flags(datasets[i])
-                    else "Adjusted license to match access."
+                    if _has_privacy_flags(datasets[i]) else "Adjusted license to match access."
                 )
                 st.rerun()
 
 def _is_reused(ds: dict) -> bool:
-    """maDMP 1.2 `is_reused` means the data were not produced by this project."""
     v = ds.get("is_reused")
-    # Be tolerant to truthy strings/values:
     return str(v).strip().lower() in {"true", "1", "yes"}
 
 TOKENS_STATE = {
     "zenodo": {"env_key": "ZENODO_TOKEN", "state_key": "__token_zenodo__"},
     "dataverse": {"env_key": "DATAVERSE_TOKEN", "state_key": "__token_dataverse__"},
 }
-
 
 # ---------------------------
 # Helpers to read secrets/env with fallback
@@ -845,25 +691,62 @@ def _get_env_or_secret(key: str, default: str = "") -> str:
         val = os.environ.get(key) or (load_from_env(key) or "")
     return val or default
 
+# ---------------------------
+# University→Dataverse helpers
+# ---------------------------
+def _extract_domain_candidates_from_context(dmp_data: Optional[Dict[str, Any]]) -> List[str]:
+    candidates: List[str] = []
+
+    #DMP root contact
+    try:
+        mbox = (dmp_data or {}).get("dmp", {}).get("contact", {}).get("mbox", "")
+        if isinstance(mbox, str) and "@" in mbox:
+            candidates.append(mbox.split("@", 1)[1].lower())
+    except Exception:
+        pass
+
+
+    # Normalize against DK_UNI_MAP keys
+    normalized: List[str] = []
+    for dom in candidates:
+        for key in DK_UNI_MAP.keys():
+            if dom == key or dom.endswith("." + key):
+                normalized.append(key); break
+        else:
+            normalized.append(dom)
+    uniq: List[str] = []
+    for d in normalized:
+        if d not in uniq:
+            uniq.append(d)
+    return uniq
+
+def _guess_dataverse_defaults_from_university(dmp_data: Optional[Dict[str, Any]]) -> Tuple[Optional[str], Optional[str]]:
+    for dom in _extract_domain_candidates_from_context(dmp_data):
+        info = DK_UNI_MAP.get(dom)
+        if info:
+            return info.get("dataverse_default_base_url"), info.get("dataverse_alias")
+    return None, None
+
+def get_zenodo_community() -> str:
+    return (st.session_state.get("zenodo_community") or _get_env_or_secret("ZENODO_COMMUNITY", "")).strip()
 
 # ---------------------------
-# New: site/alias-aware token controls
+# Sidebar controls (tokens + sites)
 # ---------------------------
 def render_token_controls():
-    """Sidebar section:
-       - Zenodo site dropdown (sandbox default) + token
-       - Dataverse site dropdown (demo/prod/other) + custom URL (if other) + alias + token
-       All persisted to .env and mirrored to session/env on Save.
-    """
     with st.sidebar:
         st.header("Repositories & tokens")
 
-        # ---------------- Zenodo ----------------
+        # --------------- Zenodo ---------------
         st.subheader("Zenodo")
-        # Load current/base defaults
+
         z_api_default = _get_env_or_secret("ZENODO_API_BASE", "https://sandbox.zenodo.org/api")
         if "zenodo_api_base" not in st.session_state:
             st.session_state["zenodo_api_base"] = z_api_default
+
+        z_comm_default = _get_env_or_secret("ZENODO_COMMUNITY", "")
+        if "zenodo_community" not in st.session_state:
+            st.session_state["zenodo_community"] = z_comm_default
 
         z_token_default = _get_env_or_secret(TOKENS_STATE["zenodo"]["env_key"], "")
         if TOKENS_STATE["zenodo"]["state_key"] not in st.session_state:
@@ -877,42 +760,60 @@ def render_token_controls():
 
         with st.form("zenodo_settings_form", clear_on_submit=False):
             z_api = st.selectbox(
-                "Zenodo site (API base)",
-                options=zenodo_options,
-                index=z_index,
+                "Site", options=zenodo_options, index=z_index,
                 format_func=lambda u: dict(ZENODO_API_CHOICES)[u],
                 help="Sandbox is highly recommended for testing.",
             )
+            z_comm = st.text_input(
+                "Community (optional)",
+                value=st.session_state["zenodo_community"],
+                placeholder="e.g. cbs, ku, sdu…",
+                help="Community identifier (slug). Leave blank to omit.",
+                key="__zen_comm__",
+            )
             z_token = st.text_input(
-                "Zenodo API token",
+                "API token",
                 type="password",
                 value=st.session_state[TOKENS_STATE["zenodo"]["state_key"]],
                 help="Click Save to write to .env and update session.",
+                key="__zen_token__",
             )
-            z_submit = st.form_submit_button("Save Zenodo settings")
+            z_submit = st.form_submit_button("Save settings")
             if z_submit:
-                # persist API base
                 save_to_env(z_api, "ZENODO_API_BASE")
                 os.environ["ZENODO_API_BASE"] = z_api
                 st.session_state["zenodo_api_base"] = z_api
-                # persist token (if present)
+
                 if z_token.strip():
                     save_to_env(z_token.strip(), TOKENS_STATE["zenodo"]["env_key"])
                     os.environ[TOKENS_STATE["zenodo"]["env_key"]] = z_token.strip()
                     st.session_state[TOKENS_STATE["zenodo"]["state_key"]] = z_token.strip()
-                st.success("Zenodo site/token saved.")
 
-        # ---------------- Dataverse ----------------
+                st.session_state["zenodo_community"] = z_comm.strip()
+                if z_comm.strip():
+                    save_to_env(z_comm.strip(), "ZENODO_COMMUNITY")
+                    os.environ["ZENODO_COMMUNITY"] = z_comm.strip()
+
+                st.success("Zenodo site/community/token saved.")
+
+        # --------------- Dataverse ---------------
         st.subheader("Dataverse")
 
-        dv_base_default = _get_env_or_secret("DATAVERSE_BASE_URL", "https://demo.dataverse.deic.dk")
+        dv_base_default  = _get_env_or_secret("DATAVERSE_BASE_URL", "")
         dv_alias_default = _get_env_or_secret("DATAVERSE_ALIAS", "")
+
+        if not dv_base_default or not dv_alias_default:
+            guess_base, guess_alias = _guess_dataverse_defaults_from_university(st.session_state.get("data"))
+            if not dv_base_default:
+                dv_base_default = guess_base or "https://demo.dataverse.deic.dk"
+            if not dv_alias_default:
+                dv_alias_default = guess_alias or ""
+
         dv_token_default = _get_env_or_secret(TOKENS_STATE["dataverse"]["env_key"], "")
 
         if "dataverse_base_url" not in st.session_state:
             st.session_state["dataverse_base_url"] = dv_base_default
         if "dataverse_site_choice" not in st.session_state:
-            # infer choice from base url
             if "demo.dataverse.deic.dk" in dv_base_default:
                 st.session_state["dataverse_site_choice"] = "https://demo.dataverse.deic.dk"
             elif "dataverse.deic.dk" in dv_base_default:
@@ -932,60 +833,87 @@ def render_token_controls():
 
         with st.form("dataverse_settings_form", clear_on_submit=False):
             dv_choice = st.selectbox(
-                "Dataverse site",
-                options=dv_options,
-                index=dv_idx,
+                "Site", options=dv_options, index=dv_idx,
                 format_func=lambda v: dict(DATAVERSE_SITE_CHOICES)[v],
                 help="Pick demo or production. Choose 'Other…' to enter a custom base URL.",
+                key="__dv_site__",
             )
 
+            # base URL input (for 'other') or fixed (DeiC)
             if dv_choice == "other":
                 custom_url = st.text_input(
                     "Custom Dataverse base URL",
                     value=st.session_state["dataverse_base_url"] if st.session_state["dataverse_site_choice"] == "other" else "",
                     placeholder="https://your.dataverse.org",
+                    key="__dv_custom_base__",
                 )
                 dv_base = custom_url.strip()
             else:
                 dv_base = dv_choice
 
+            # ---- Prefill alias (key Streamlit quirk fix):
+            # If DeiC site selected, and both saved alias & alias-input are empty, seed alias-input from guess.
+            guess_alias_for_ui = ""
+            if dv_choice != "other":
+                _gb_ui, _ga_ui = _guess_dataverse_defaults_from_university(st.session_state.get("data"))
+                guess_alias_for_ui = _ga_ui or ""
+
+            # Initialize the alias input session key if empty and we have a guess
+            if dv_choice != "other":
+                if not st.session_state.get("__dv_alias_input__") and not st.session_state.get("dataverse_alias"):
+                    if guess_alias_for_ui:
+                        st.session_state["__dv_alias_input__"] = guess_alias_for_ui
+
             dv_alias = st.text_input(
-                "Dataverse collection alias",
-                value=st.session_state["dataverse_alias"],
+                "Collection (alias)",
+                value=st.session_state.get("__dv_alias_input__", st.session_state.get("dataverse_alias", "") or guess_alias_for_ui or ""),
+                placeholder=(guess_alias_for_ui or "e.g. your-collection-alias"),
                 help="Alias (URL-friendly identifier) of the target Dataverse collection.",
+                key="__dv_alias_input__",
             )
 
             dv_token = st.text_input(
-                "Dataverse API token",
+                "API token",
                 type="password",
                 value=st.session_state[TOKENS_STATE["dataverse"]["state_key"]],
                 help="Click Save to write to .env and update session.",
+                key="__dv_token__",
             )
 
-            dv_submit = st.form_submit_button("Save Dataverse settings")
+            dv_submit = st.form_submit_button("Save settings")
             if dv_submit:
-                # basic sanity
+                alias_to_save = st.session_state.get("__dv_alias_input__", "").strip()
+                if dv_choice != "other" and alias_to_save == "":
+                    _gb, guess_alias = _guess_dataverse_defaults_from_university(st.session_state.get("data"))
+                    if guess_alias:
+                        alias_to_save = guess_alias  # auto-fill if left empty for DeiC
+
                 if dv_choice == "other" and not dv_base:
                     st.warning("Please enter a custom Dataverse base URL.")
                 else:
-                    # persist site choice + base url
                     st.session_state["dataverse_site_choice"] = dv_choice
                     st.session_state["dataverse_base_url"] = dv_base
                     save_to_env(dv_base, "DATAVERSE_BASE_URL")
                     os.environ["DATAVERSE_BASE_URL"] = dv_base
 
-                    # persist alias
-                    st.session_state["dataverse_alias"] = dv_alias.strip()
-                    save_to_env(dv_alias.strip(), "DATAVERSE_ALIAS")
+                    st.session_state["dataverse_alias"] = alias_to_save
+                    save_to_env(alias_to_save, "DATAVERSE_ALIAS")
 
-                    # persist token
                     if dv_token.strip():
                         save_to_env(dv_token.strip(), TOKENS_STATE["dataverse"]["env_key"])
                         os.environ[TOKENS_STATE["dataverse"]["env_key"]] = dv_token.strip()
                         st.session_state[TOKENS_STATE["dataverse"]["state_key"]] = dv_token.strip()
 
-                    st.success("Dataverse site/alias/token saved.")
+                    if alias_to_save:
+                        st.success("Dataverse site/alias/token saved.")
+                    else:
+                        st.warning("Dataverse site/token saved. Collection (alias) is empty; publishing will be disabled until you set it.")
 
+
+
+# ---------------------------
+# Helpers to retrieve chosen endpoints
+# ---------------------------
 
 def get_token_from_state(service: str) -> str:
     """Read the best-known token without rendering UI."""
@@ -1005,27 +933,18 @@ def get_token_from_state(service: str) -> str:
         pass
     return os.environ.get(env_key) or (load_from_env(env_key) or "")
 
-
-# ---------------------------
-# New: helpers to retrieve chosen endpoints
-# ---------------------------
 def get_zenodo_api_base() -> str:
-    return (
-        st.session_state.get("zenodo_api_base")
-        or _get_env_or_secret("ZENODO_API_BASE", "https://sandbox.zenodo.org/api")
-    )
+    return (st.session_state.get("zenodo_api_base") or _get_env_or_secret("ZENODO_API_BASE", "https://sandbox.zenodo.org/api"))
 
 def get_dataverse_config() -> Tuple[str, str]:
-    base = (
-        st.session_state.get("dataverse_base_url")
-        or _get_env_or_secret("DATAVERSE_BASE_URL", "https://demo.dataverse.deic.dk")
-    )
-    alias = (
-        st.session_state.get("dataverse_alias")
-        or _get_env_or_secret("DATAVERSE_ALIAS", "")
-    )
-    return base, alias
+    base = (st.session_state.get("dataverse_base_url") or _get_env_or_secret("DATAVERSE_BASE_URL", ""))
+    alias = (st.session_state.get("dataverse_alias") or _get_env_or_secret("DATAVERSE_ALIAS", ""))
 
+    if not base or not alias:
+        guess_base, guess_alias = _guess_dataverse_defaults_from_university(st.session_state.get("data"))
+        base = base or guess_base or "https://demo.dataverse.deic.dk"
+        alias = alias or guess_alias or ""
+    return base, alias
 
 # ──────────────────────────────────────────────────────────────────────────────
 # App
@@ -1043,11 +962,10 @@ def _schema_fixups_in_place(data: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 def _ensure_data_initialized(default_path: Path) -> None:
-    """Ensure st.session_state['data'] exists and track its source + message."""
     st.session_state.setdefault("__loaded_from__", "")
     st.session_state.setdefault("__last_upload_hash__", None)
     st.session_state.setdefault("__load_message__", "")
-    st.session_state.setdefault("save_path", str(default_path))  # default initial save target
+    st.session_state.setdefault("save_path", str(default_path))
 
     if "data" in st.session_state and st.session_state["data"]:
         st.session_state["data"] = ensure_dmp_shape(st.session_state["data"])
@@ -1067,7 +985,6 @@ def _ensure_data_initialized(default_path: Path) -> None:
     st.session_state["data"] = ensure_dmp_shape({})
     st.session_state["__loaded_from__"] = "new"
     st.session_state["__load_message__"] = "⚠️ Started with an empty DMP."
-    # still keep save_path pointing to default_path
     st.session_state["save_path"] = str(default_path)
 
 def main() -> None:
@@ -1076,30 +993,25 @@ def main() -> None:
 
     _inject_dist_css_once()
 
-    # ---------------------------
     # Session defaults (for UX)
-    # ---------------------------
     st.session_state.setdefault("__loaded_from__", "")
     st.session_state.setdefault("__load_message__", "")
-    st.session_state.setdefault("__last_upload_hash__", None)  # debounces same-file re-uploads
-    st.session_state.setdefault("__uploader_ver__", 0)         # bump to reset file_uploader widget
-    st.session_state.setdefault("save_path", "")               # current save target path
+    st.session_state.setdefault("__last_upload_hash__", None)
+    st.session_state.setdefault("__uploader_ver__", 0)
+    st.session_state.setdefault("save_path", "")
 
-    # ---------------------------
-    # Sidebar: Sites & Tokens (Zenodo / Dataverse)
-    # ---------------------------
-    render_token_controls()
-
-    # ---------------------------
-    # Schema & default DMP path
-    # ---------------------------
+    # Load schema & default DMP path
     schema_now = safe_fetch_schema()
     default_path = find_default_dmp_path()
 
-    # Initialize data (loads default file if present, sets load message/save_path)
+    # IMPORTANT: initialize data BEFORE rendering the sidebar,
+    # so guessing functions have the DMP/contact context.
     _ensure_data_initialized(default_path)
 
-    # Show load message directly under title
+    # Sidebar: Sites & Tokens (Zenodo / Dataverse)
+    render_token_controls()
+
+    # Show load message
     if st.session_state.get("__load_message__"):
         st.info(st.session_state["__load_message__"])
 
@@ -1109,51 +1021,42 @@ def main() -> None:
         return reorder_dmp_keys(_schema_fixups_in_place(deepcopy(st.session_state["data"])))
 
     # Working folder for all files = directory of the default dmp
-    working_folder: Path = default_path.parent
+    working_folder: Path = Path(st.session_state["save_path"]).resolve().parent if st.session_state.get("save_path") else default_path.parent
 
-    # ---------------------------
     # Sidebar: Load / Save
-    # ---------------------------
     with st.sidebar:
         st.header("Load / Save")
         st.caption(f"Schema: {'✅ loaded' if schema_now else '⚠️ unavailable (fallbacks)'}")
 
-        # --- OPEN JSON: uploader that loads immediately, saves into working_folder, and syncs save_path ---
         uploader_key = f"open_json_uploader_{st.session_state['__uploader_ver__']}"
         uploaded = st.file_uploader(
-            "Open JSON",
-            type=["json"],
+            "Open JSON", type=["json"],
             help=f"Uploads are saved to: {working_folder.resolve()}",
             key=uploader_key,
         )
 
-        # CASE A: user selected a file (and it's new content)
         if uploaded is not None:
             import hashlib
             payload = uploaded.getvalue()
             h = hashlib.sha256(payload).hexdigest()
             if st.session_state.get("__last_upload_hash__") != h:
                 try:
-                    # Save uploaded file into working folder with its original filename
                     working_folder.mkdir(parents=True, exist_ok=True)
                     dst_path = (working_folder / uploaded.name).resolve()
                     dst_path.write_bytes(payload)
 
-                    # Load into the app
                     data = json.loads(payload.decode("utf-8"))
                     st.session_state["data"] = ensure_dmp_shape(data)
                     st.session_state["__last_upload_hash__"] = h
                     st.session_state["__loaded_from__"] = str(dst_path)
                     st.session_state["__load_message__"] = f"✅ Loaded DMP from {dst_path}"
-                    st.session_state["save_path"] = str(dst_path)  # keep Save to path in sync
+                    st.session_state["save_path"] = str(dst_path)
                     st.session_state.pop("ds_selected", None)
                     st.rerun()
                 except Exception as e:
                     st.error(f"Failed to load uploaded JSON: {e}")
 
-        # CASE B: user cleared the uploader after having uploaded before
         elif st.session_state.get("__last_upload_hash__"):
-            # Reset hash marker so we don't loop
             st.session_state["__last_upload_hash__"] = None
             try:
                 if default_path.exists():
@@ -1163,7 +1066,6 @@ def main() -> None:
                     st.session_state["__load_message__"] = f"✅ Loaded default DMP from {default_path.resolve()}"
                     st.session_state["save_path"] = str(default_path.resolve())
                 else:
-                    # No default DMP: start fresh, target new_dmp.json
                     new_path = (working_folder / "new_dmp.json").resolve()
                     st.session_state["data"] = ensure_dmp_shape({})
                     st.session_state["__loaded_from__"] = "new"
@@ -1174,8 +1076,6 @@ def main() -> None:
             except Exception as e:
                 st.error(f"Failed to reload default DMP: {e}")
 
-        # --- NEW DMP: create empty, set save path to default_path.parent / 'new_dmp.json', reset uploader ---
-
         if st.button("➕ Create New DMP"):
             st.session_state["data"] = ensure_dmp_shape({})
             new_path = (working_folder / "new_dmp.json").resolve()
@@ -1184,12 +1084,9 @@ def main() -> None:
             st.session_state["save_path"] = str(new_path)
             st.session_state["__last_upload_hash__"] = None
             st.session_state.pop("ds_selected", None)
-
-            # Reset/clear the file_uploader by bumping the key version
             st.session_state["__uploader_ver__"] += 1
             st.rerun()
 
-        # --- DOWNLOAD JSON: filename follows current save_path ---
         out_for_dl = _current_ordered_output()
         st.download_button(
             "⬇️ Download JSON",
@@ -1219,10 +1116,7 @@ def main() -> None:
             except Exception as e:
                 st.error(f"Failed to save: {e}")
 
-
-    # ---------------------------
     # Main editor area
-    # ---------------------------
     data = ensure_dmp_shape(st.session_state["data"])
     dmp_root = data["dmp"]
     draw_root_section(dmp_root)
@@ -1230,29 +1124,15 @@ def main() -> None:
     draw_datasets_section(dmp_root)
 
 def cli() -> None:
-    """
-    CLI entrypoint for the Streamlit DMP editor.
-    Usage:
-        python dmp_editor.py          # normal mode
-        python dmp_editor.py ssh      # SSH tunnel mode (prints port-forward instructions)
-    """
     app_path = Path(__file__).resolve()
-
-    # Did user request "ssh" mode?
     ssh_mode = len(sys.argv) > 1 and sys.argv[1] == "ssh"
     if ssh_mode:
-        # remove "ssh" so it doesn't confuse Streamlit
         sys.argv.pop(1)
-
         app_port = int(os.environ.get("DMP_PORT", "8501"))
-        _ssh_hint(app_port)
-
         cmd = f"ssh -N -L {app_port}:localhost:{app_port} example@host.dk -p PORT (The host and port you have connected)"
         print("\n=== SSH port forwarding ===")
         print("Run this on your LOCAL machine, then open the URL below:")
         print(f"  {cmd}\n")
-    
-
         sys.argv = [
             "streamlit", "run", str(app_path),
             "--server.headless", "true",
@@ -1262,9 +1142,7 @@ def cli() -> None:
         ]
     else:
         sys.argv = ["streamlit", "run", str(app_path), *sys.argv[1:]]
-
     sys.exit(st_main())
-
 
 if __name__ == "__main__":
     main()
