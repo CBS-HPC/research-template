@@ -14,6 +14,7 @@ import importlib.metadata
 import importlib.util
 from typing import List, Optional
 
+
 def project_root() -> pathlib.Path:
     return pathlib.Path(__file__).resolve().parent.parent.parent
 
@@ -23,6 +24,7 @@ PROJECT_ROOT = project_root()
 def from_root(*parts: str | os.PathLike) -> pathlib.Path:
     """Join paths relative to the detected project root."""
     return PROJECT_ROOT.joinpath(*map(str, parts))
+
 
 def split_multi(val: Optional[str]) -> List[str]:
     if not val or not isinstance(val, str):
@@ -345,7 +347,7 @@ def load_from_env(
     env_name: str,
     env_file: str = ".env",
     toml_file: str = "pyproject.toml",
-    use_keyring: bool = True,
+    use_keyring: bool = False,
 ) -> str | None:
     """
     Loads a value in this priority order:
@@ -369,12 +371,7 @@ def load_from_env(
         if val:
             return check_path_format(val)
 
-    # 2) Already set in environment
-    val = os.getenv(name_upper)
-    if val:
-        return check_path_format(val)
-
-    # 3) .env path resolve
+    # 2) .env path resolve
     env_path = pathlib.Path(env_file)
     if not env_path.is_absolute():
         env_path = PROJECT_ROOT / env_path.name
@@ -415,7 +412,7 @@ def save_to_env(
     env_name: str,
     env_file: str = ".env",
     toml_file: str = "pyproject.toml",
-    use_keyring: bool = True,
+    use_keyring: bool = False,
     also_write_file_fallback: bool = True,
 ) -> None:
     """
