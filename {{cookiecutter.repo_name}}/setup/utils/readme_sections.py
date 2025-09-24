@@ -210,8 +210,8 @@ def set_setup(programming_language,py_version,software_version,conda_version,pip
     
     code_path = language_dirs.get(programming_language.lower())
 
-    #setup_dependencies = read_dependencies(str(pathlib.Path(__file__).resolve().parent.parent.parent / "setup/dependencies.txt"))
-    code_dependencies = read_dependencies(str(pathlib.Path(__file__).resolve().parent.parent.parent / f"{code_path}/dependencies.txt"))
+    #setup_dependencies = read_dependencies(str(PROJECT_ROOT / "setup/dependencies.txt"))
+    code_dependencies = read_dependencies(str(PROJECT_ROOT / f"{code_path}/dependencies.txt"))
     
     setup = ""
 
@@ -663,7 +663,7 @@ stata -b do tests/test_s00_main.do
 
     lang = lang_info[programming_language.lower()]
     
-    folder_path = pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(lang["test_folder"].replace("`", ""))
+    folder_path = PROJECT_ROOT / pathlib.Path(lang["test_folder"].replace("`", ""))
     md = f"""
 
 This template includes built-in support for **unit testing** in {programming_language.capitalize()} to promote research reliability and reproducibility.
@@ -744,7 +744,7 @@ More information: [Codeberg CI docs](https://docs.codeberg.org/ci/)"""
 2. Runs tests in `tests/`  
 3. Outputs results and logs"""
 
-    config_file = pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(ci['config_file'])
+    config_file = PROJECT_ROOT / pathlib.Path(ci['config_file'])
 
     md = f"""
 

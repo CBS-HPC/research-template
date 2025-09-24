@@ -4,13 +4,8 @@ import sys
 import platform
 import urllib.request
 import pathlib
-
-import json
 import shutil
-
-#from .general_tools import *
-
-from .general_tools import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv
+from .general_tools import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv,PROJECT_ROOT
 
 package_installer(required_libraries =  ['pyyaml'])
 
@@ -25,7 +20,7 @@ def setup_virtual_environment(version_control, python_env_manager, r_env_manager
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """    
-    install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
+    install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
 
     env_name = None
   
@@ -98,7 +93,7 @@ def setup_conda(install_path:str,repo_name:str, conda_packages:list = [], env_fi
             return False
 
     # Get the absolute path to the environment
-    env_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(f"./.conda"))
+    env_path = str(PROJECT_ROOT / pathlib.Path(f"./.conda"))
 
     if env_file and (env_file.endswith('.yaml') or env_file.endswith('.txt')):
         if env_file.endswith('.txt'):
@@ -418,7 +413,7 @@ def create_venv_env():
     Create a Python virtual environment using uv if available; otherwise, use venv.
     If the virtual environment already exists, do nothing.
     """
-    env_path = pathlib.Path(__file__).resolve().parent.parent.parent / ".venv"
+    env_path = PROJECT_ROOT / ".venv"
 
     if env_path.exists():
         save_to_env(str(env_path), "VENV_ENV_PATH")

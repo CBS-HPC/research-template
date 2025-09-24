@@ -14,11 +14,11 @@ from utils.get_dependencies import *
 from utils.ci_tools import *
 from utils.dmp_tools import main as dmp_update
 
+PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
+
 def intro():
 
     def create_folders():
-        PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
-
         folders = [
             PROJECT_DIR/"data" / "00_raw",
             PROJECT_DIR/"data" / "01_interim",
@@ -31,8 +31,8 @@ def intro():
             (folder / ".gitkeep").touch(exist_ok=True)
     
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-    os.chdir(project_root)
+  
+    os.chdir(PROJECT_DIR)
 
     print('Running "Intro"')
 
@@ -64,8 +64,7 @@ def intro():
 def version_setup():
 
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_DIR)
 
     print('Running "Version Control Setup"')
 
@@ -109,8 +108,7 @@ def remote_repo_setup():
             print(f"Error during installation: {result.stderr}")
 
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_DIR)
 
     print('Running "Remote Repo Setup"')
 
@@ -161,10 +159,8 @@ def outro():
 
         return results
 
-     # Ensure the working directory is the project root
-    
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-    os.chdir(project_root)
+    # Ensure the working directory is the project root
+    os.chdir(PROJECT_DIR)
 
     print('Running "Outro"')
 

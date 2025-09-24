@@ -9,15 +9,15 @@ from .jinja_tools import *
 @ensure_correct_kernel
 def ci_config():
      # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+  
+    os.chdir(PROJECT_ROOT)
 
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     code_repo = load_from_env("CODE_REPO",".cookiecutter")
 
-    if set_git_alis(project_root):
-        generate_ci_configs(programming_language, code_repo, project_root)
-        toggle_ci_files(enable = False, code_repo = code_repo, project_root = project_root)
+    if set_git_alis(PROJECT_ROOT):
+        generate_ci_configs(programming_language, code_repo, PROJECT_ROOT)
+        toggle_ci_files(enable = False, code_repo = code_repo, project_root = PROJECT_ROOT)
         if not git_push(True,f"Setups up CI at {code_repo}"):
             remove_ci_configs()
 
@@ -176,10 +176,7 @@ def set_git_alis(project_root: str = "."):
 
 @ensure_correct_kernel
 def ci_control():
-    print(sys.executable)
-  # Ensure we're in the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
 
     parser = argparse.ArgumentParser(description="Enable or disable CI config files.")
     parser.add_argument(
@@ -202,14 +199,14 @@ def ci_control():
         print("No code repository has been setup.")
         return 
 
-    generate_ci_configs(programming_language, code_repo, project_root)
+    generate_ci_configs(programming_language, code_repo, PROJECT_ROOT)
 
     if args.on and args.off:
         print("❌ You can't use --on and --off together.")
     elif args.on:
-        toggle_ci_files(enable=True, code_repo=code_repo, project_root=project_root)
+        toggle_ci_files(enable=True, code_repo=code_repo, project_root=PROJECT_ROOT)
     elif args.off:
-        toggle_ci_files(enable=False, code_repo=code_repo, project_root=project_root)
+        toggle_ci_files(enable=False, code_repo=code_repo, project_root=PROJECT_ROOT)
     else:
         print("ℹ️ Use --on or --off to toggle CI.")
 

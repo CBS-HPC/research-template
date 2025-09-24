@@ -8,15 +8,70 @@ from contextlib import contextmanager
 from functools import wraps
 import pathlib
 import getpass
+#import importlib
 import importlib.metadata
 import importlib.util
 from typing import List, Optional
+from functools import lru_cache
 
-import pathlib
-import subprocess
-import sys
-import importlib
-import importlib.util
+# Files/folders that usually live at the repo/project root
+_MARKERS = (
+    "pyproject.toml",
+    "setup.cfg",
+    ".git",
+    ".hg",
+    ".project-root",   # optional: create an empty file as an explicit anchor
+)
+
+def _has_marker(p: pathlib.Path) -> bool:
+    return any((p / m).exists() for m in _MARKERS)
+
+@lru_cache(maxsize=1)
+def project_root(start: str | pathlib.Path | None = None) -> pathlib.Path:
+    """
+    Resolve the project root using (in order):
+      1) PROJECT_ROOT env var (if set)
+      2) `git rev-parse --show-toplevel` (if available)
+      3) Walking upward from `start` (or this file) until a marker is found
+      4) Fallback: parent of the `setup` package
+    """
+    # 1) Env var override
+    env = os.getenv("PROJECT_ROOT")
+    if env:
+        p = pathlib.Path(env).expanduser().resolve()
+        if p.exists():
+            return p
+
+    # 2) Git top-level (nice in dev / CI clones)
+    try:
+        base = pathlib.Path(start) if start else pathlib.Path(__file__).resolve()
+        top = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=base.parent,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        if top:
+            return pathlib.Path(top)
+    except Exception:
+        pass
+
+    # 3) Walk upward looking for markers
+    base = pathlib.Path(start) if start else pathlib.Path(__file__)
+    base = base.resolve()
+    for candidate in (base,) + tuple(base.parents):
+        if _has_marker(candidate):
+            return candidate
+
+    # 4) Last resort: parent of the `setup` package directory
+    return pathlib.Path(__file__).resolve().parent.parent
+
+# Convenience constant + helper
+PROJECT_ROOT = project_root()
+
+def from_root(*parts: str | os.PathLike) -> pathlib.Path:
+    """Join paths relative to the detected project root."""
+    return PROJECT_ROOT.joinpath(*map(str, parts))
 
 
 def split_multi(val: Optional[str]) -> List[str]:
@@ -49,7 +104,7 @@ def create_uv_project():
     Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
     Skips both if uv.lock already exists.
     """
-    project_path = pathlib.Path(__file__).resolve().parent.parent.parent
+    project_path = PROJECT_ROOT
     pyproject_path = project_path / "pyproject.toml"
     uv_lock_path = project_path / "uv.lock"
     
@@ -212,7 +267,7 @@ def package_installer(required_libraries: list = None):
 
     uv_available = install_uv()
     try:
-        project_root = pathlib.Path(__file__).resolve().parents[2]
+        project_root = PROJECT_ROOT
     except Exception:
         project_root = pathlib.Path.cwd()
 
@@ -257,7 +312,7 @@ def check_path_format(path, project_root=None):
     if any(sep in path for sep in ["/", "\\", ":"]) and os.path.exists(path):  # ":" for Windows drive letters
         # Set default project root if not provided
         if project_root is None:
-            project_root = pathlib.Path(__file__).resolve().parents[2]
+            project_root = PROJECT_ROOT
 
         # Resolve both paths fully
         project_root = pathlib.Path(project_root).resolve()
@@ -286,7 +341,7 @@ def load_from_env(env_name: str, env_file: str = ".env", toml_file: str = "pypro
     env_name_upper = env_name_strip.strip().upper()
     env_file_path = pathlib.Path(env_file)
     if not env_file_path.is_absolute():
-        env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
+        env_file_path = PROJECT_ROOT / env_file_path.name
 
     # Try reading .env first
     if env_file_path.exists():
@@ -308,7 +363,7 @@ def load_from_env(env_name: str, env_file: str = ".env", toml_file: str = "pypro
     # Read from TOML fallback
     toml_path = pathlib.Path(toml_file)
     if not toml_path.is_absolute():
-        toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
+        toml_path = PROJECT_ROOT / toml_path.name
 
     if toml_path.exists():
         try:
@@ -352,7 +407,7 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
 
     env_file_path = pathlib.Path(env_file)
     if not env_file_path.is_absolute():
-        env_file_path = pathlib.Path(__file__).resolve().parent.parent.parent / env_file_path.name
+        env_file_path = PROJECT_ROOT / env_file_path.name
 
     # Always write to .env if explicitly requested
     if env_file_path.name == ".env" or env_file_path.exists():
@@ -381,7 +436,7 @@ def save_to_env(env_var: str, env_name: str, env_file: str = ".env", toml_file: 
     toml_section = env_file_path.stem.lstrip(".")
     toml_path = pathlib.Path(toml_file)
     if not toml_path.is_absolute():
-        toml_path = pathlib.Path(__file__).resolve().parent.parent.parent / toml_path.name
+        toml_path = PROJECT_ROOT / toml_path.name
 
     config = {}
     if toml_path.exists():
@@ -407,7 +462,7 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
+        env_file = PROJECT_ROOT / env_file.name
 
     # Ensure it's an absolute path
     path = os.path.abspath(path)
@@ -518,7 +573,7 @@ def exe_to_env(executable: str = None, path: str = None, env_file: str = ".env")
 
     env_file = pathlib.Path(env_file)
     if not env_file.exists():
-        env_file = pathlib.Path(__file__).resolve().parent.parent.parent / env_file.name
+        env_file = PROJECT_ROOT / env_file.name
 
     if not executable:
         print("Executable must be provided.")
@@ -987,7 +1042,7 @@ def write_uv_requires(toml_file: str = "pyproject.toml"):
 
     path = pathlib.Path(toml_file)
     if not path.is_absolute():
-        path = pathlib.Path(__file__).resolve().parent.parent.parent / path.name
+        path = PROJECT_ROOT / path.name
 
     config = {}
     if path.exists():
@@ -1004,7 +1059,7 @@ def write_uv_requires(toml_file: str = "pyproject.toml"):
 @contextmanager
 def change_dir(destination):
     cur_dir = os.getcwd()
-    destination = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(destination))
+    destination = str(PROJECT_ROOT / pathlib.Path(destination))
     try:
         os.chdir(destination)
         yield
@@ -1012,6 +1067,4 @@ def change_dir(destination):
         os.chdir(cur_dir)
 
 if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
-    #write_uv_requires()
-    #create_uv_project()
     package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))

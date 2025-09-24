@@ -1,8 +1,5 @@
-
-import pathlib
 import os
 from textwrap import dedent
-import pathlib
 
 from .general_tools import *
 from .jinja_tools import *
@@ -86,8 +83,7 @@ def create_scripts(programming_language):
 @ensure_correct_kernel
 def main():
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     # Create scripts and notebook
     create_scripts(load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter"))

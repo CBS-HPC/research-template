@@ -409,13 +409,12 @@ def copy_data_items(
 
 def main():
     # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
 
     download_README_template(readme_file = "./DCAS template/README_template.md")
     
     _ = migrate_datasets(dataset_json="./dmp.json",
-                         source_root = project_root,
+                         source_root = PROJECT_ROOT,
                            dest_root="./DCAS template",
                            zip_threshold=1000,
                            overwrite=True)
@@ -430,7 +429,7 @@ def main():
 
     _ = copy_items(items=["./README.md",code_path,"./docs","./results","./uv.lock","./environment.yml","./requirements.txt","./dmp.json"],
                    dest_root="./DCAS template",
-                   source_root=project_root,
+                   source_root=PROJECT_ROOT,
                    base=None,
                    overwrite=True,
                    ignore_patterns=None)

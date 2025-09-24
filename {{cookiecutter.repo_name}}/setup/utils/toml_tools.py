@@ -4,7 +4,7 @@ import sys
 import pathlib
 import json
 
-from .general_tools import package_installer
+from .general_tools import package_installer,PROJECT_ROOT
 
 install_packages = ['python-dotenv','pathspec']
 
@@ -38,7 +38,7 @@ def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name:
         open_mode = ("rb", None)
 
     if not folder:
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        folder = str(PROJECT_ROOT)
 
     ignore_path = ignore_filename if os.path.isabs(ignore_filename or "") else os.path.join(folder, ignore_filename or "")
 
@@ -86,7 +86,7 @@ def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str
         open_mode = ("rb", None)
 
     if not folder:
-        folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        folder = str(PROJECT_ROOT)
 
     json_path = json_filename if os.path.isabs(json_filename or "") else os.path.join(folder, json_filename or "")
     if os.path.exists(json_path):
@@ -120,7 +120,7 @@ def write_toml_json(data: dict = None, folder: str = None, json_filename: str = 
             open_write = ("w", "utf-8")
 
         if not folder:
-            folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+            folder = str(PROJECT_ROOT)
         if not tool_name:
             raise ValueError("tool_name is required")
 

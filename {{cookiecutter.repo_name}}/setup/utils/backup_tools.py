@@ -1,6 +1,5 @@
 import os
 import subprocess
-import pathlib
 import argparse
 import json
 from datetime import datetime
@@ -9,6 +8,7 @@ import tempfile
 from .general_tools import *
 from .versioning_tools import *
 from .toml_tools import *
+
 
 def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
     
@@ -92,8 +92,7 @@ def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
         return
 
     if folder_to_backup is None:
-        folder_to_backup = str(pathlib.Path(__file__).resolve().parent.parent.parent)
-        #folder_to_backup = os.getcwd()
+        folder_to_backup = str(PROJECT_ROOT)
 
     if not os.path.exists(folder_to_backup):
         print(f"Error: The folder '{folder_to_backup}' does not exist.")
@@ -318,8 +317,7 @@ def push_backup(remote_name):
     if remote_name.strip().lower() == "deic storage":
         remote_name = "deic-storage"
 
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     if not install_rclone("./bin"):
         return
@@ -382,8 +380,7 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
         return
 
     if destination_folder is None:
-        #destination_folder = os.getcwd()
-        destination_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        destination_folder = str(PROJECT_ROOT)
  
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
@@ -450,5 +447,5 @@ def main():
         parser.print_help()
 
 if __name__ == "__main__":
-    os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
+    os.chdir(PROJECT_ROOT)
     main()

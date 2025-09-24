@@ -51,13 +51,13 @@ def write_script(folder_path, script_name, extension, content):
     content (str): The content to be written to the script.
     """
     # Create the folder if it doesn't exist
-    full_folder_path = pathlib.Path(__file__).resolve().parent.parent.parent / folder_path
+    full_folder_path = PROJECT_ROOT / folder_path
     full_folder_path.mkdir(parents=True, exist_ok=True)
 
 
     file_name = f"{script_name}.{extension}"
     file_path = os.path.join(folder_path, file_name)
-    file_path= str(pathlib.Path(__file__).resolve().parent.parent.parent /  pathlib.Path(file_path))
+    file_path= str(PROJECT_ROOT /  pathlib.Path(file_path))
 
     with open(file_path, "w") as file:
         if isinstance(content,str):

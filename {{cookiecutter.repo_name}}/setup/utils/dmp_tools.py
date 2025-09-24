@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .general_tools import split_multi
+from .general_tools import split_multi,PROJECT_ROOT
 from .toml_tools import read_toml_json
 
 
@@ -257,9 +257,8 @@ def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = N
     now_dt = now_dt or now_iso_minute()  # date-time with Z
     today = today or today_iso()
     
-    project_root = Path(__file__).resolve().parent.parent.parent
     cookie = read_toml_json(
-    folder=str(project_root),
+    folder=str(PROJECT_ROOT),
     json_filename="cookiecutter.json",
     tool_name="cookiecutter",
     toml_path="pyproject.toml",
@@ -1025,7 +1024,6 @@ def normalize_datasets_in_place(data: Dict[str, Any],
             x["data_type"] = data_type_from_path(hint)
         set_extension_payload(ds, "x_dcas", x)
 
-
 def _ensure_object_fields_from_schema(target: Dict[str, Any],
                                       schema: Dict[str, Any],
                                       obj_schema: Dict[str, Any],
@@ -1048,7 +1046,6 @@ def _ensure_object_fields_from_schema(target: Dict[str, Any],
     if prefill:
         for k, v in prefill.items():
             target.setdefault(k, v)
-
 
 def _order_dict(d: Dict[str, Any], order: List[str]) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
@@ -1137,7 +1134,6 @@ def reorder_dmp_keys(data: Dict[str, Any]) -> Dict[str, Any]:
     # Return new container with ordered root
     return {"dmp": ordered_root}
 
-
 def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
     """
     - If DMP doesn't exist: create a fresh DMP scaffold.
@@ -1149,8 +1145,6 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
     - Ensure the top-level 'dmp' object is saved in the exact key order you specified.
     """
 
-
-    project_root = Path(__file__).resolve().parent.parent.parent
     schema = fetch_schema()
 
     if not dmp_path.exists():
@@ -1158,7 +1152,7 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
         schema = fetch_schema()
         # Fresh shape
         shaped = ensure_dmp_shape({})
-        _apply_cookiecutter_meta(project_root=project_root, data=shaped,overwrite=True)
+        _apply_cookiecutter_meta(project_root=PROJECT_ROOT, data=shaped,overwrite=True)
         normalize_root_in_place(shaped, schema=schema)
         normalize_datasets_in_place(shaped, schema=schema)
 
@@ -1180,7 +1174,7 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
     data = ensure_dmp_shape(data)
     normalize_root_in_place(data, schema=schema)
     normalize_datasets_in_place(data, schema=schema)
-    _apply_cookiecutter_meta(project_root=project_root, data=data,overwrite=False)
+    _apply_cookiecutter_meta(project_root=PROJECT_ROOT, data=data,overwrite=False)
 
     data["dmp"]["schema"] = SCHEMA_URLS[SCHEMA_VERSION]  # enforce requested value
     data["dmp"]["modified"] = now_iso_minute()  # ensure date-time with Z
@@ -1197,12 +1191,9 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
     print(f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP {SCHEMA_VERSION} schema (ordered).")
     return dmp_path
 
-
 def main() -> None:
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     create_or_update_dmp_from_schema(dmp_path=DEFAULT_DMP_PATH)
-
 
 if __name__ == "__main__":
     main()

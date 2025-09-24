@@ -219,7 +219,7 @@ def install_glab(install_path=None):
 
     os_type = platform.system().lower()
     
-    install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
+    install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
 
     os.makedirs(install_path, exist_ok=True)
     version = get_glab_version()
@@ -286,7 +286,7 @@ def install_gh(install_path=None):
 
     os_type = platform.system().lower()
 
-    install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
+    install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
 
     os.makedirs(install_path, exist_ok=True)
 
@@ -338,8 +338,7 @@ def install_gh(install_path=None):
 @ensure_correct_kernel
 def main():
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
     repo_name = load_from_env("REPO_NAME",".cookiecutter")

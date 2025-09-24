@@ -32,7 +32,7 @@ def setup_git(version_control,code_repo):
     if install_git("./bin/git"): 
 
         # Ensure that chdir is at project folder
-        os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
+        os.chdir(PROJECT_ROOT)
         
         flag, git_name, git_email = check_git_config()
 
@@ -81,7 +81,7 @@ def install_git(install_path=None):
                 print("Please provide an install path for Windows installation.")
                 return False
 
-            install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
+            install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
 
             # Download Git installer for Windows
             download_dir = os.path.dirname(install_path)
@@ -211,7 +211,7 @@ def setup_git_config(version_control,git_name,git_email):
 def git_init(msg, branch_name, path: str =None):
     
     if not path: 
-        path = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        path = str(PROJECT_ROOT)
     
     # Ensure the target path exists
     if not os.path.exists(path):
@@ -238,7 +238,7 @@ def git_commit(msg: str = "", path: str = None) -> str:
     """Commits changes to Git in the given path and returns the commit hash."""
     
     if not path: 
-        path = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        path = str(PROJECT_ROOT)
     
     if os.path.isdir(os.path.join(path, ".git")) and is_installed("git"):
 
@@ -258,7 +258,7 @@ def git_push(flag: str, msg: str = "", path: str = None):
     def push_all(remote="origin", path: str =None):
 
         if not path: 
-            path = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+            path = str(PROJECT_ROOT)
 
         try:
             # Get the name of the current branch
@@ -292,7 +292,7 @@ def git_push(flag: str, msg: str = "", path: str = None):
             print(f"Unexpected error: {e}")
 
     if not path: 
-        path = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        path = str(PROJECT_ROOT)
     try:
         
         if os.path.isdir(os.path.join(path, ".datalad")):
@@ -601,7 +601,7 @@ def install_git_annex_remote_rclone(install_path):
         repo_path = os.path.join(install_path, repo_name)
 
         # Create the bin folder if it doesn't exist
-        install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
+        install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
         os.makedirs(install_path, exist_ok=True)
 
         # Check if the repository already exists
@@ -740,7 +740,7 @@ def install_rclone(install_path):
             return None
 
         # Create the bin folder if it doesn't exist
-        install_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(install_path))
+        install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
         os.makedirs(install_path, exist_ok=True)
     
         # Download rclone

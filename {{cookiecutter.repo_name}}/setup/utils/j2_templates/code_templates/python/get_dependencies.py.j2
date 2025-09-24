@@ -121,8 +121,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 
 def main():
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
 	
     _ = get_setup_dependencies()
 

@@ -29,7 +29,7 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
     are tracked in uv.lock (by running `uv add` on any missing).
     """
 
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
+    project_root = PROJECT_ROOT
     requirements_path = project_root / requirements_file
     uv_lock_path = project_root / "uv.lock"
 
@@ -87,8 +87,8 @@ def create_conda_environment_yml(env_name,r_version=None,requirements_file:str="
     - output_file (str): Path to output the generated environment.yml file (default 'environment.yml').
     - r_version (str, optional): R version string like "R version 4.4.3" (default None).
     """
-    requirements_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(requirements_file))
-    output_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(output_file))
+    requirements_file = str(PROJECT_ROOT / pathlib.Path(requirements_file))
+    output_file = str(PROJECT_ROOT / pathlib.Path(output_file))
 
 
     if not os.path.exists(requirements_file):
@@ -131,7 +131,7 @@ def create_conda_environment_yml(env_name,r_version=None,requirements_file:str="
 
 def tag_env_file(env_file: str = "environment.yml"):
     # Paths
-    root = pathlib.Path(__file__).resolve().parent.parent.parent
+    root = PROJECT_ROOT
     env_path = root / env_file
 
     if not env_path.exists():
@@ -195,7 +195,7 @@ def tag_env_file(env_file: str = "environment.yml"):
 
 def tag_requirements_txt(requirements_file: str = "requirements.txt"):
     # Resolve paths
-    root = pathlib.Path(__file__).resolve().parent.parent.parent
+    root = PROJECT_ROOT
     requirements_path = root / requirements_file
     
     platform_rules = read_toml_json(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "pyproject.toml")
@@ -336,8 +336,8 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
 def setup_renv(programming_language,msg:str):
     if programming_language.lower() == "r":
         # Call the setup script using the function
-        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./R/get_dependencies.R")),"r")
-        project_root = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./R")),"r")
+        script_path = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./R/get_dependencies.R")),"r")
+        project_root = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./R")),"r")
         cmd = [script_path, "--args", project_root]
         output = run_script("r", cmd)
         print(output)
@@ -345,7 +345,7 @@ def setup_renv(programming_language,msg:str):
 
 def setup_matlab(programming_language,msg:str):
     if programming_language.lower() == "matlab":
-        code_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src")),"matlab")
+        code_path = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./src")),"matlab")
         cmd = [f"addpath({code_path}); get_dependencies"]
         output = run_script("matlab", cmd)
         print(output)
@@ -354,7 +354,7 @@ def setup_matlab(programming_language,msg:str):
 def setup_stata(programming_language,msg:str):
     if programming_language.lower() == "stata":
         # Call the setup script using the function
-        script_path = make_safe_path(str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./stata/do/get_dependencies.do")),"stata")
+        script_path = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./stata/do/get_dependencies.do")),"stata")
         cmd = [f"do {script_path}"]
         output = run_script("stata", cmd)
         print(output)
@@ -375,16 +375,16 @@ def update_env_files():
 
 def update_setup_dependency():
     print("Screening './setup' for dependencies")
-    setup_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup"))
-    setup_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./setup/dependencies.txt"))
+    setup_folder = str(PROJECT_ROOT / pathlib.Path("./setup"))
+    setup_file = str(PROJECT_ROOT / pathlib.Path("./setup/dependencies.txt"))
     _ = get_setup_dependencies(folder_path=setup_folder,file_name =setup_file) 
 
 def update_code_dependency():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     if programming_language.lower() == "python":
         print("Screening './src' for dependencies")
-        code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src"))
-        code_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./src/dependencies.txt"))
+        code_path = str(PROJECT_ROOT / pathlib.Path("./src"))
+        code_file = str(PROJECT_ROOT / pathlib.Path("./src/dependencies.txt"))
         _ = get_setup_dependencies(folder_path=code_path,file_name=code_file)
     elif programming_language.lower() == "r":
         print("Screening './R' for dependencies")
@@ -401,8 +401,7 @@ def update_code_dependency():
 @ensure_correct_kernel
 def main():
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     print("Updating 'requirements.txt','environment.yml'")
     update_env_files()

@@ -29,7 +29,7 @@ def install_package(package, version, use_uv=True):
 
 def main():
     print("Checking and installing dependencies...")
-    os.chdir(project_root)
+    os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
 
     installed_packages = get_setup_dependencies(folder_path=str(project_root))
     use_uv = shutil.which("uv") is not None

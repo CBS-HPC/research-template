@@ -103,7 +103,7 @@ def datasets_to_json(
     if update_distribution_fields is None:
         update_distribution_fields = DEFAULT_UPDATE_DIST_FIELDS
 
-    json_path = pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(json_path)
+    json_path = PROJECT_ROOT / pathlib.Path(json_path)
     data = load_json(json_path)
     dmp = data["dmp"]
     datasets = dmp.get("dataset", [])
@@ -227,7 +227,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
     """
 
     # Resolve path relative to project root (3 levels up from this file)
-    root = pathlib.Path(__file__).resolve().parent.parent.parent
+    root = PROJECT_ROOT
     json_path = (root / pathlib.Path(json_path)).resolve()
 
     # ---- Load & shape ----
@@ -611,7 +611,7 @@ def generate_dataset_table(
 
 def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     section_title = "**The following datasets are included in the project:**"
-    readme_path = (pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(readme_file))
+    readme_path = (PROJECT_ROOT / pathlib.Path(readme_file))
     new_section = f"{section_title}\n\n{markdown_table.strip()}\n</details>"
     try:
         content = readme_path.read_text(encoding="utf-8")
@@ -636,8 +636,7 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
 
 @ensure_correct_kernel
 def main():
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     data_files, _ = get_data_files()
 
@@ -646,7 +645,7 @@ def main():
     json_path = remove_missing_datasets(json_path=DEFAULT_DMP_PATH)
 
     file_descriptions = read_toml_json(
-        folder=project_root,
+        folder=PROJECT_ROOT,
         json_filename="./file_descriptions.json",
         tool_name="file_descriptions",
         toml_path="pyproject.toml"

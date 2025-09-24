@@ -105,8 +105,7 @@ def deic_storage_download(link, save_dir, n_workers=1):
 @ensure_correct_kernel
 def main():
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     # Command-line argument parser
     parser = argparse.ArgumentParser(description="Set data source and monitor file creation.")

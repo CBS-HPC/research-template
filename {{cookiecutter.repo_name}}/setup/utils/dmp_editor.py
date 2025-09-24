@@ -18,20 +18,12 @@ from datetime import date, datetime
 from hashlib import sha256  # <- for autosave hashing
 
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
-try:
-    from .general_tools import package_installer, load_from_env, save_to_env
-    from .dmp_tools import *  # noqa: F401,F403
-    from .publish_common import *
-    from .publish_zenodo import *
-    from .publish_dataverse import *
-except ImportError:
-    pkg_root = Path(__file__).resolve().parent
-    sys.path.insert(0, str(pkg_root))
-    from utils.general_tools import package_installer, load_from_env, save_to_env
-    from utils.dmp_tools import *  # noqa: F401,F403
-    from utils.publish_common import *
-    from utils.publish_zenodo import *
-    from utils.publish_dataverse import *
+#try:
+from .general_tools import package_installer, load_from_env, save_to_env
+from .dmp_tools import *  # noqa: F401,F403
+from .publish_common import *
+from .publish_zenodo import *
+from .publish_dataverse import *
 
 package_installer(required_libraries=["streamlit", "jsonschema"])
 

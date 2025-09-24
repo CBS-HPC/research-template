@@ -94,15 +94,15 @@ def creating_readme(programming_language = "None"):
     code_path = language_dirs.get(programming_language)
    
     # Create and update README and Project Tree:
-    file_descriptions = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./file_descriptions.json"))
-    readme_file= str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
-    code_path = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path(code_path))
+    file_descriptions = str(PROJECT_ROOT / pathlib.Path("./file_descriptions.json"))
+    readme_file= str(PROJECT_ROOT / pathlib.Path("./README.md"))
+    code_path = str(PROJECT_ROOT / pathlib.Path(code_path))
     
     update_file_descriptions(programming_language, readme_file, file_descriptions)
     
     generate_readme(readme_file, code_path, file_descriptions)
 
-    file_descriptions = read_toml_json(folder = str(pathlib.Path(__file__).resolve().parent.parent.parent), json_filename =  file_descriptions , tool_name = "file_descriptions", toml_path = "pyproject.toml")
+    file_descriptions = read_toml_json(folder = str(PROJECT_ROOT), json_filename =  file_descriptions , tool_name = "file_descriptions", toml_path = "pyproject.toml")
     markdown_table, _ = generate_dataset_table("./dmp.json",file_descriptions)
 
     if markdown_table:
@@ -238,7 +238,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, roo
         return
 
     if not root_folder:
-        root_folder = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+        root_folder = str(PROJECT_ROOT)
     else:
         root_folder = os.path.abspath(root_folder)
 
@@ -510,7 +510,7 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
     }
 
     # Write to CITATION.cff
-    file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("CITATION.cff"))
+    file = str(PROJECT_ROOT / pathlib.Path("CITATION.cff"))
     with open(file, "w") as cff_file:
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
@@ -558,20 +558,18 @@ def update_requirements(programming_language, readme_file):
         print(f"{readme_file} successfully updated.")
 
     code_path = language_dirs.get(programming_language.lower())
-    code_dependencies = read_dependencies(str(pathlib.Path(__file__).resolve().parent.parent.parent / f"{code_path}/dependencies.txt"))
+    code_dependencies = read_dependencies(str(PROJECT_ROOT / f"{code_path}/dependencies.txt"))
    
    
     write_to_readme(readme_file,code_dependencies)
 
 def main():
     # Change to project root directory
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
     creating_readme(programming_language = programming_language)
-    readme_file = str(pathlib.Path(__file__).resolve().parent.parent.parent / pathlib.Path("./README.md"))
-    update_requirements(programming_language, readme_file)
+    update_requirements(programming_language, str(PROJECT_ROOT / pathlib.Path("./README.md")))
 
 if __name__ == "__main__":
     main()

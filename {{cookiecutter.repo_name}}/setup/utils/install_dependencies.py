@@ -2,13 +2,9 @@ import subprocess
 import sys
 import re
 import os
-import pathlib
 import importlib
 
-# Ensure the project root is in sys.path
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-
-from utils import *
+from .general_tools import *
 
 def parse_dependencies(file_path="dependencies.txt"):
     required_libraries = []
@@ -79,8 +75,7 @@ def install_dependencies(required_libraries):
 def main(dependencies_file="dependencies.txt"):
     
     # Ensure the working directory is the project root
-    project_root = pathlib.Path(__file__).resolve().parent.parent.parent
-    os.chdir(project_root)
+    os.chdir(PROJECT_ROOT)
     
     # Parse the dependencies from the text file
     required_libraries = parse_dependencies(dependencies_file)
