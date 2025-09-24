@@ -21,7 +21,7 @@ from hashlib import sha256  # <- for autosave hashing
 #try:
 from .general_tools import package_installer, load_from_env, save_to_env
 from .dmp_tools import *  # noqa: F401,F403
-from .publish_common import *
+from .publish_tools import *
 from .publish_zenodo import *
 from .publish_dataverse import *
 

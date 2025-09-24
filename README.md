@@ -640,7 +640,7 @@ code-examples
   - `get_dependencies` to update `dependencies.txt`
   - `update-readme` to regenerate project metadata
 
-> 🧠 Uses templates from: `j2_templates/example_templates`  
+> 🧠 Uses templates from: `j2/example_templates`  
 > 🗂️ Script locations depend on your selected programming language  
 > ⚠️ Existing files will be **overwritten** if they share the same name
 
@@ -681,7 +681,7 @@ reset-templates
 - Test templates are placed in:
   - `tests/`, `tests/testthat/`, etc., depending on language
 
-> 🧩 Uses Jinja2 templates stored in `j2_templates/code_templates`  
+> 🧩 Uses Jinja2 templates stored in `j2/code_templates`  
 > 🔄 Existing scripts with the same name may be overwritten!
 
 ---
@@ -765,7 +765,7 @@ ci-control --off    # Disable CI
 
 #### 📁 Notes
 
-- Will auto-install CI templates from `j2_templates/ci_templates/`  
+- Will auto-install CI templates from `j2/ci_templates/`  
 - Only runs if a valid `CODE_REPO` is set  
 - CI files can be removed manually using `remove_ci_configs()` in code
 
@@ -1206,7 +1206,6 @@ This template uses a modular folder layout that promotes transparency, reproduci
 
 ```
 ├── setup/
-│   ├── setup.py             # Registers setup package
 │   ├── pyproject.toml       # CLI tool registration and config
 │   ├── dependencies.txt     # Setup-specific Python dependencies
 │   └── utils/               # Utility scripts for setup and automation

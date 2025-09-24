@@ -59,13 +59,13 @@ def main_text(json_file, code_path):
     contact = set_contact(authors, orcids, emails)
     usage, run_command = set_scripts(programming_language, code_path, json_file)
     config = set_config_table(programming_language)
-    cli_tools = set_cli_tools()
+    cli_section = _set_cli()
     dcas = set_dcas()
     code_path = language_dirs.get(programming_language.lower())
 
 
     system_spec = set_specs()
-    ci_tools = set_ci_tools(programming_language, code_repo)
+    ci_section = _set_ci(programming_language, code_repo)
     unit_tests = set_unit_tests(programming_language)
 
 
@@ -139,7 +139,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 <details>
 <summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
 
-{ci_tools}
+{ci_section}
 
 </details>
 
@@ -153,7 +153,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 <details>
 <summary><strong>🧰 CLI Utilities</strong></summary><br>
 
-{cli_tools}
+{cli_section}
 
 </details>
 
@@ -513,9 +513,9 @@ def set_config_table(programming_language, project_root="."):
 
     return base_config
 
-def set_cli_tools():
+def _set_cli():
 
-    cli_tools = f"""
+    cli_section = f"""
 The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
 
 ℹ️ **Note**: To use these commands, you must first install the local `setup` package.  
@@ -552,7 +552,7 @@ reset-templates
 A detailed description of each available CLI command — including usage, behavior, and example output — is provided [here](https://github.com/CBS-HPC/research-template?tab=readme-ov-file#cli-tools).
 
 """
-    return cli_tools
+    return cli_section
 
 def set_unit_tests(programming_language: str) -> str:
 
@@ -693,7 +693,7 @@ This template includes built-in support for **unit testing** in {programming_lan
 
     return md
 
-def set_ci_tools(programming_language: str, code_repo: str) -> str:
+def _set_ci(programming_language: str, code_repo: str) -> str:
     
     ci_matrix = {
         "github": {

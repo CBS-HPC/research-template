@@ -631,7 +631,7 @@ def datalad_create():
 
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".datalad"):
-        files_to_unlock = ["src/**","R/**","stata/**","setup/**","docs/**","config/**","README.md", "LICENSE.txt","environment.yml","setup.py","setup.ps1","setup.sh","CITATION.cff","dmp.json","hardware_information.txt"] # FIX ME
+        files_to_unlock = ["src/**","R/**","stata/**","setup/**","docs/**","config/**","README.md", "LICENSE.txt","environment.yml","setup.ps1","setup.sh","CITATION.cff","dmp.json","hardware_information.txt"] # FIX ME
         subprocess.run(["datalad", "create","--force"], check=True)
         unlock_files(files_to_unlock )
         subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)

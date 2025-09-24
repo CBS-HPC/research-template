@@ -37,8 +37,8 @@ def generate_ci_configs(programming_language, code_repo, project_root="."):
     code_repo = code_repo.lower()
     version = parse_version(get_version(programming_language), programming_language)
 
-    patch_jinja_templates("j2_templates/ci_templates")
-    template_env = set_jinja_templates("j2_templates/ci_templates")
+    patch_jinja_templates("j2/ci_templates")
+    template_env = set_jinja_templates("j2/ci_templates")
 
     file_map = {
         "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",
