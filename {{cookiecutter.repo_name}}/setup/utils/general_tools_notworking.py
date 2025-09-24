@@ -13,60 +13,10 @@ import getpass
 import importlib.metadata
 import importlib.util
 from typing import List, Optional
-from functools import lru_cache
-
-# Files/folders that usually live at the repo/project root
-_MARKERS = (
-    "pyproject.toml",
-    "setup.cfg",
-    ".git",
-    ".hg",
-    ".project-root",   # optional: create an empty file as an explicit anchor
-)
 
 
-def _has_marker(p: pathlib.Path) -> bool:
-    return any((p / m).exists() for m in _MARKERS)
-
-@lru_cache(maxsize=1)
-def project_root(start: str | pathlib.Path | None = None) -> pathlib.Path:
-    """
-    Resolve the project root using (in order):
-      1) PROJECT_ROOT env var (if set)
-      2) `git rev-parse --show-toplevel` (if available)
-      3) Walking upward from `start` (or this file) until a marker is found
-      4) Fallback: parent of the `setup` package
-    """
-    # 1) Env var override
-    env = os.getenv("PROJECT_ROOT")
-    if env:
-        p = pathlib.Path(env).expanduser().resolve()
-        if p.exists():
-            return p
-
-    # 2) Git top-level (nice in dev / CI clones)
-    try:
-        base = pathlib.Path(start) if start else pathlib.Path(__file__).resolve()
-        top = subprocess.check_output(
-            ["git", "rev-parse", "--show-toplevel"],
-            cwd=base.parent,
-            text=True,
-            stderr=subprocess.DEVNULL,
-        ).strip()
-        if top:
-            return pathlib.Path(top)
-    except Exception:
-        pass
-
-    # 3) Walk upward looking for markers
-    base = pathlib.Path(start) if start else pathlib.Path(__file__)
-    base = base.resolve()
-    for candidate in (base,) + tuple(base.parents):
-        if _has_marker(candidate):
-            return candidate
-
-    # 4) Last resort: parent of the `setup` package directory
-    return pathlib.Path(__file__).resolve().parent.parent
+def project_root() -> pathlib.Path:
+    return pathlib.Path(__file__).resolve().parent.parent.parent
 
 # Convenience constant + helper
 PROJECT_ROOT = project_root()
