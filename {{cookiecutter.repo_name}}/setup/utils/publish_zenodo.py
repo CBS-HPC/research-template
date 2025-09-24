@@ -41,10 +41,6 @@ def _resolve_zenodo_base_url(base_url: Optional[str]) -> str:
     """
     if base_url and base_url.strip():
         return base_url.rstrip("/")
-    env = os.environ.get("ZENODO_API_BASE", "").strip()
-    if env:
-        return env.rstrip("/")
-    return "https://sandbox.zenodo.org/api"
 
 def _zenodo_headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}

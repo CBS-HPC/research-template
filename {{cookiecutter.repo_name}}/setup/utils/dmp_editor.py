@@ -674,7 +674,7 @@ def _get_env_or_secret(key: str, default: str = "") -> str:
     except Exception:
         val = ""
     if not val:
-        val = os.environ.get(key) or (load_from_env(key) or "")
+        val = load_from_env(key) or ""
     return val or default
 
 # ---------------------------

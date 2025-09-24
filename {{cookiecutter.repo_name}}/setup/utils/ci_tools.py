@@ -210,6 +210,5 @@ def ci_control():
     else:
         print("ℹ️ Use --on or --off to toggle CI.")
 
-
 if __name__ == "__main__":
     ci_config()
