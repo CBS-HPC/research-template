@@ -25,7 +25,6 @@ def from_root(*parts: str | os.PathLike) -> pathlib.Path:
     """Join paths relative to the detected project root."""
     return PROJECT_ROOT.joinpath(*map(str, parts))
 
-
 def split_multi(val: Optional[str]) -> List[str]:
     if not val or not isinstance(val, str):
         return None

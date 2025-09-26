@@ -10,7 +10,6 @@ Now with autosave: changes are saved to disk automatically whenever fields chang
 import os
 import sys
 import json
-import socket
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -18,12 +17,20 @@ from datetime import date, datetime
 from hashlib import sha256  # <- for autosave hashing
 
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
-#try:
-from .general_tools import package_installer, load_from_env, save_to_env
-from .dmp_tools import *  # noqa: F401,F403
-from .publish_tools import *
-from .publish_zenodo import *
-from .publish_dataverse import *
+try:
+    from ..general_tools import package_installer, load_from_env, save_to_env
+    from .dmp import *  # noqa: F401,F403
+    from .publish import *
+    from .zenodo import *
+    from .dataverse import *
+except ImportError:
+    pkg_root = Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(pkg_root))
+    from utils.general_tools import package_installer, load_from_env, save_to_env
+    from utils.rdm.dmp import *  # noqa: F401,F403
+    from utils.rdm.publish import *
+    from utils.rdm.zenodo import *
+    from utils.rdm.dataverse import *
 
 package_installer(required_libraries=["streamlit", "jsonschema"])
 

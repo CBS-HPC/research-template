@@ -5,14 +5,14 @@ import subprocess
 import platform
 
 from utils.general_tools import *
-from utils.backup_tools import *
-from utils.readme_templates import *
-from utils.code_templates import *
-from utils.versioning_tools import *
-from utils.repo_tools import *
-from utils.get_dependencies import *
-from utils.ci_tools import *
-from utils.dmp_tools import main as dmp_update
+from utils.ops.backup_tools import *
+from utils.readme.template import *
+from utils.templates.code import *
+from utils.ops.vcs import *
+from utils.ops.git_remote import *
+from utils.ops.deps import *
+from utils.ops.ci import *
+from utils.rdm.dmp import main as dmp_update
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import wraps
 import pathlib
 
-from .general_tools import *
+from ..general_tools import *
 
 install_packages = ['jinja2','nbformat']
 

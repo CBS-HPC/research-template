@@ -1,14 +1,13 @@
 import json
 import os
 import urllib.request
-import pathlib
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .general_tools import split_multi,PROJECT_ROOT
-from .toml_tools import read_toml_json
+from ..general_tools import split_multi,PROJECT_ROOT
+from ..ops.toml import read_toml_json
 
 
 def load_json(path: Path) -> Dict[str, Any]:

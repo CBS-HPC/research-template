@@ -1,26 +1,26 @@
 # utils/__init__.py
 from .general_tools import *
-from .toml_tools import *
-from .jinja_tools import *
-from .backup_tools import *
-from .repo_tools import *
-from .versioning_tools import *
-from .virenv_tools import *
+from .ops.toml import *
+from .templates.jinja import *
+from .ops.backup_tools import *
+from .ops.git_remote import *
+from .ops.vcs import *
+from .ops.env import *
 
-from .code_templates import *
-from .readme_templates import *
-from .readme_sections import *
-from .example_templates import *
-from .ci_tools import *
+from .templates.code import *
+from .readme.template import *
+from .readme.sections import *
+from .templates.example import *
+from .ops.ci import *
 
 
-from .get_dependencies import *
+from .ops.deps import *
 from .install_dependencies import *
-from .dcas_migration import *
 
-from .dmp_tools import *
-from .dmp_editor import *
-from .publish_tools import *
-from .publish_zenodo import *
-from .publish_dataverse import *
-from .set_dataset import *
+from .rdm.dcas import *
+from .rdm.dmp import *
+from .rdm.editor import *
+from .rdm.publish import *
+from .rdm.zenodo import *
+from .rdm.dataverse import *
+from .rdm.dataset import *

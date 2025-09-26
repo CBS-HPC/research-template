@@ -3,8 +3,8 @@ import pathlib
 import argparse
 import subprocess
 
-from .versioning_tools import *
-from .jinja_tools import *
+from .vcs import *
+from ..templates.jinja import *
 
 @ensure_correct_kernel
 def ci_config():
@@ -37,8 +37,8 @@ def generate_ci_configs(programming_language, code_repo, project_root="."):
     code_repo = code_repo.lower()
     version = parse_version(get_version(programming_language), programming_language)
 
-    patch_jinja_templates("j2/ci_templates")
-    template_env = set_jinja_templates("j2/ci_templates")
+    patch_jinja_templates("j2/ci")
+    template_env = set_jinja_templates("j2/ci")
 
     file_map = {
         "github": pathlib.Path(project_root) / ".github" / "workflows" / "ci.yml",

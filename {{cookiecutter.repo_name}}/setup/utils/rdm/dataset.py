@@ -6,9 +6,9 @@ from typing import Optional, Tuple, Dict, List, Set, Any, Iterable
 from collections import defaultdict
 from copy import deepcopy
 
-from .readme_templates import *
-from .versioning_tools import *
-from .dmp_tools import *  
+from ..readme.template import *
+from ..ops.vcs import *
+from .dmp import *  
 
 DEFAULT_UPDATE_FIELDS = []# top-level fields
 DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]         # nested fields to update
@@ -310,7 +310,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
 
     return json_path
 
-def set_dataset(destination, json_path=DEFAULT_DMP_PATH):
+def dataset(destination, json_path=DEFAULT_DMP_PATH):
     
     def make_dataset_entry(name, distribution, x_dcas_payload):
         templates = dmp_default_templates()
@@ -652,7 +652,7 @@ def main():
     )
 
     for f in data_files:
-        change_flag, json_path = set_dataset(destination=f, json_path=json_path)
+        change_flag, json_path = dataset(destination=f, json_path=json_path)
 
     try:
         markdown_table, _ = generate_dataset_table(json_path, file_descriptions)

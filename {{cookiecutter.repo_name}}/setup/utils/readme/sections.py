@@ -5,8 +5,8 @@ from datetime import datetime
 import pathlib
 import fnmatch
 
-from .general_tools import *
-from .toml_tools import *
+from ..general_tools import *
+from ..ops.toml import *
 
 
 package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
@@ -69,7 +69,7 @@ def main_text(json_file, code_path):
     unit_tests = set_unit_tests(programming_language)
 
 
-    dataset = set_dataset()
+    dataset = dataset()
 
     if programming_language.lower() != "python":
         head = f"📋 Instructions for installing {py_version}, {software_version}, and dependencies"
@@ -792,7 +792,7 @@ For a full list of journals, visit [here](https://datacodestandard.org/journals/
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal."""
     return dcas
 
-def set_dataset():
+def dataset():
 
     return f""" To set up or configure a dataset, run the following command:
 

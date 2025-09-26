@@ -14,18 +14,18 @@ dependencies = [
 ]
 
 [project.scripts]
-backup = "utils.backup_tools:main"
-set-dataset = "utils.set_dataset:main"
-update-dependencies = "utils.get_dependencies:main"
+backup = "utils.ops.backup_tools:main"
+set-dataset = "utils.rdm.dataset:main"
+update-dependencies = "utils.ops.deps:main"
 install-dependencies = "utils.install_dependencies:main"
-update-readme = "utils.readme_templates:main"
-reset-templates = "utils.code_templates:main"
-code-examples = "utils.example_templates:main"
-git-config = "utils.repo_tools:main"
-ci-control = "utils.ci_tools:ci_control"
-dcas-migration = "utils.dcas_migration:main"
-dmp-update = "utils.dmp_tools:main"
-dmp-editor = "utils.dmp_editor:cli"
+update-readme = "utils.readme.template:main"
+reset-templates = "utils.templates.code:main"
+code-examples = "utils.templates.example:main"
+git-config = "utils.ops.git_remote:main"
+ci-control = "utils.ops.ci:ci_control"
+dcas-migration = "utils.rdm.dcas:main"
+dmp-update = "utils.rdm.dmp:main"
+dmp-editor = "utils.rdm.editor:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

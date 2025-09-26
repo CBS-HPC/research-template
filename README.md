@@ -414,7 +414,7 @@ The backup CLI is exposed as the `backup` command via the Python package defined
 
 ```toml
 [project.scripts]
-backup = "utils.backup_tools:main"
+backup = "utils.ops.backup_tools:main"
 ```
 
 Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can run the following commands from the terminal:
@@ -487,7 +487,7 @@ set-dataset
 - Regenerates a DCAS-compatible dataset list (`dataset_list.md`)
 
 > 💡 Dataset metadata is stored in `dmp.json` using a normalized schema.  
-> 🔍 All dataset remapping logic happens inside the `utils.set_dataset` module.
+> 🔍 All dataset remapping logic happens inside the `utils.rdm.dataset` module.
 
 ---
 </details>
@@ -640,7 +640,7 @@ code-examples
   - `get_dependencies` to update `dependencies.txt`
   - `update-readme` to regenerate project metadata
 
-> 🧠 Uses templates from: `j2/example_templates`  
+> 🧠 Uses templates from: `./setup/temples/j2/example`  
 > 🗂️ Script locations depend on your selected programming language  
 > ⚠️ Existing files will be **overwritten** if they share the same name
 
@@ -681,7 +681,7 @@ reset-templates
 - Test templates are placed in:
   - `tests/`, `tests/testthat/`, etc., depending on language
 
-> 🧩 Uses Jinja2 templates stored in `j2/code_templates`  
+> 🧩 Uses Jinja2 templates stored in `./setup/temples/j2/code`  
 > 🔄 Existing scripts with the same name may be overwritten!
 
 ---
@@ -765,7 +765,7 @@ ci-control --off    # Disable CI
 
 #### 📁 Notes
 
-- Will auto-install CI templates from `j2/ci_templates/`  
+- Will auto-install CI templates from `./setup/temples/j2/ci/`  
 - Only runs if a valid `CODE_REPO` is set  
 - CI files can be removed manually using `remove_ci_configs()` in code
 

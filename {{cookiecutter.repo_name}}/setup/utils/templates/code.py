@@ -1,12 +1,12 @@
 import os
 from textwrap import dedent
 
-from .general_tools import *
-from .jinja_tools import *
+from ..general_tools import *
+from .jinja import *
 
 package_installer(required_libraries = ['nbformat','jinja2'])
 
-template_env = set_jinja_templates("j2/code_templates")
+template_env = set_jinja_templates("j2/code")
 
 
 def create_script_from_template(programming_language, folder_path, template_name, script_name, context, subdir=None):

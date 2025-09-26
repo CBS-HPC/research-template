@@ -5,8 +5,8 @@ import zipfile
 from pathlib import Path
 from typing import Union, Iterable, Dict, Any, List,Optional
 
-from .general_tools import *
-from .set_dataset import get_data_files
+from ..general_tools import *
+from .dataset import get_data_files
 
 package_installer(required_libraries =  ['requests'])
 

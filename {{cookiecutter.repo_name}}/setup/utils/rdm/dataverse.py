@@ -11,11 +11,10 @@ Publish a dataset from an maDMP to DeiC Dataverse (demo) with:
 - Robust retries for API calls and uploads
 
 Usage (CLI):
-  python publish_dataverse.py --dmp path/to/dmp.json --token <API_TOKEN> --publish
+  python dataverse.py --dmp path/to/dmp.json --token <API_TOKEN> --publish
 """
 
 from __future__ import annotations
-import argparse
 import json
 import os
 import time
@@ -26,8 +25,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from random import random
 from pathlib import Path
 
-from .general_tools import package_installer
-from .publish_tools import (
+from ..general_tools import package_installer
+from .publish import (
     PublishError, RETRY_STATUS, DEFAULT_TIMEOUT,DATAVERSE_MAX_FILES_TOTAL,DATAVERSE_MAX_FILE_SIZE_BYTES,DATAVERS_SUBJECTS,
     _get, _norm_list, _guess_dataset,
     _has_personal_or_sensitive, description_from_madmp,

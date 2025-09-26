@@ -1,12 +1,11 @@
 import os
-import pathlib
 
-from .general_tools import *
-from .readme_templates import main as update_readme_main
-from .get_dependencies import main as get_setup_dependencies_main
-from .jinja_tools import *
+from ..general_tools import *
+from ..readme.template import main as update_readme_main
+from ..ops.deps import main as get_setup_dependencies_main
+from .jinja import *
 
-template_env = set_jinja_templates("j2/example_templates")
+template_env = set_jinja_templates("j2/example")
 
 def render_template(language, template_name, context):
     try:

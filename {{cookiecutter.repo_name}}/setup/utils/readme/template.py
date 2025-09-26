@@ -3,18 +3,15 @@ import os
 import json
 import re
 import pathlib
-import platform
-from typing import List
 import pathspec
 
+from .sections import *
+from ..rdm.dataset import generate_dataset_table, dataset_to_readme
 
-from .readme_sections import *
-from .set_dataset import generate_dataset_table, dataset_to_readme
-
-package_installer(required_libraries =  ['pyyaml','requests'])
+package_installer(required_libraries =  ['pyyaml'])
 
 import yaml
-import requests
+
 
 
 def merge_pathspecs(spec_a: pathspec.PathSpec,

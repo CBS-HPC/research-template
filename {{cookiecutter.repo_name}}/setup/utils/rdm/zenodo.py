@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import annotations
-import argparse
 import json
 import os
 import time
@@ -12,8 +11,8 @@ from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
-from .general_tools import package_installer
-from .publish_tools import (
+from ..general_tools import package_installer
+from .publish import (
     PublishError, RETRY_STATUS, DEFAULT_TIMEOUT,
     ZENODO_MAX_FILES, ZENODO_MAX_TOTAL,ZENODO_ROLE_MAP,UPLOAD_WORKERS ,
     _get, _norm_list, _guess_dataset, _keywords_from_madmp,
