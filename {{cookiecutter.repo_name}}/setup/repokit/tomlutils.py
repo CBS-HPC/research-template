@@ -3,7 +3,7 @@ from subprocess import DEVNULL
 import sys
 import json
 
-from ..general_tools import package_installer,PROJECT_ROOT
+from .general_tools import package_installer,PROJECT_ROOT
 
 install_packages = ['python-dotenv','pathspec']
 

@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "setup"
+name = "repokit"
 version = "0.1"
 dependencies = [
     "python-dotenv",
@@ -14,18 +14,17 @@ dependencies = [
 ]
 
 [project.scripts]
-backup = "utils.ops.backup_tools:main"
-set-dataset = "utils.rdm.dataset:main"
-update-dependencies = "utils.ops.deps:main"
-install-dependencies = "utils.install_dependencies:main"
-update-readme = "utils.readme.template:main"
-reset-templates = "utils.templates.code:main"
-code-examples = "utils.templates.example:main"
-git-config = "utils.ops.git_remote:main"
-ci-control = "utils.ops.ci:ci_control"
-dcas-migration = "utils.rdm.dcas:main"
-dmp-update = "utils.rdm.dmp:main"
-dmp-editor = "utils.rdm.editor:cli"
+backup = "repokit.backup_tools:main"
+set-dataset = "repokit.rdm.dataset:main"
+update-dependencies = "repokit.deps:main"
+update-readme = "repokit.readme.template:main"
+reset-templates = "repokit.templates.code:main"
+code-examples = "repokit.templates.example:main"
+git-config = "repokit.git_remote:main"
+ci-control = "repokit.ci:ci_control"
+dcas-migration = "repokit.rdm.dcas:main"
+dmp-update = "repokit.rdm.dmp:main"
+dmp-editor = "repokit.rdm.editor:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

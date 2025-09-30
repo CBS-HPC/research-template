@@ -7,7 +7,7 @@ import zipfile
 import tarfile
 import pathlib
 
-from ..general_tools import *
+from .general_tools import *
 from .vcs import *
 from .ci import ci_config
 

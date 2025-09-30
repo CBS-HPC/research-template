@@ -7,7 +7,7 @@ from collections import defaultdict
 from copy import deepcopy
 
 from ..readme.template import *
-from ..ops.vcs import *
+from .vcs import *
 from .dmp import *  
 
 DEFAULT_UPDATE_FIELDS = []# top-level fields

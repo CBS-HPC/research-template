@@ -7,9 +7,8 @@ import pathlib
 import zipfile
 import glob
 import os
-import hashlib
 
-from ..general_tools import *
+from .general_tools import *
 
 package_installer(required_libraries =  ['requests','dirhash'])
 

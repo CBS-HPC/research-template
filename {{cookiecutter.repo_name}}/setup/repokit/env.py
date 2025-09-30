@@ -5,7 +5,7 @@ import platform
 import urllib.request
 import pathlib
 import shutil
-from ..general_tools import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv,PROJECT_ROOT
+from .general_tools import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv,PROJECT_ROOT
 
 package_installer(required_libraries =  ['pyyaml'])
 

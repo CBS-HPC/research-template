@@ -6,7 +6,7 @@ import pathlib
 import fnmatch
 
 from ..general_tools import *
-from ..ops.toml import *
+from .tomlutils import *
 
 
 package_installer(required_libraries =  ['psutil',"py-cpuinfo"])

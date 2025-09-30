@@ -4,7 +4,7 @@ import argparse
 import subprocess
 
 from .vcs import *
-from ..templates.jinja import *
+from .templates.jinja import *
 
 @ensure_correct_kernel
 def ci_config():

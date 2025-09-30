@@ -2,7 +2,7 @@ import os
 
 from ..general_tools import *
 from ..readme.template import main as update_readme_main
-from ..ops.deps import main as get_setup_dependencies_main
+from .deps import main as get_setup_dependencies_main
 from .jinja import *
 
 template_env = set_jinja_templates("j2/example")

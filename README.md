@@ -414,7 +414,7 @@ The backup CLI is exposed as the `backup` command via the Python package defined
 
 ```toml
 [project.scripts]
-backup = "utils.ops.backup_tools:main"
+backup = "utilsbackup_tools:main"
 ```
 
 Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can run the following commands from the terminal:
@@ -487,7 +487,7 @@ set-dataset
 - Regenerates a DCAS-compatible dataset list (`dataset_list.md`)
 
 > 💡 Dataset metadata is stored in `dmp.json` using a normalized schema.  
-> 🔍 All dataset remapping logic happens inside the `utils.rdm.dataset` module.
+> 🔍 All dataset remapping logic happens inside the `repokit.rdm.dataset` module.
 
 ---
 </details>

@@ -5,9 +5,9 @@ import json
 from datetime import datetime
 import tempfile
 
-from ..general_tools import *
+from .general_tools import *
 from .vcs import *
-from .toml import *
+from .tomlutils import *
 
 
 def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:

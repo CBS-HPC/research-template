@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..general_tools import split_multi,PROJECT_ROOT
-from ..ops.toml import read_toml_json
+from .tomlutils import read_toml_json
 
 
 def load_json(path: Path) -> Dict[str, Any]:

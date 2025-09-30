@@ -4,15 +4,15 @@ import pathlib
 import subprocess
 import platform
 
-from utils.general_tools import *
-from utils.ops.backup_tools import *
-from utils.readme.template import *
-from utils.templates.code import *
-from utils.ops.vcs import *
-from utils.ops.git_remote import *
-from utils.ops.deps import *
-from utils.ops.ci import *
-from utils.rdm.dmp import main as dmp_update
+from repokit.general_tools import *
+from repokit.backup_tools import *
+from repokit.readme.template import *
+from repokit.templates.code import *
+from repokit.vcs import *
+from repokit.git_remote import *
+from repokit.deps import *
+from repokit.ci import *
+from repokit.rdm.dmp import main as dmp_update
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 

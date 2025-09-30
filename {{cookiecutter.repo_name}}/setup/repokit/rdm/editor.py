@@ -26,11 +26,11 @@ try:
 except ImportError:
     pkg_root = Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(pkg_root))
-    from utils.general_tools import package_installer, load_from_env, save_to_env
-    from utils.rdm.dmp import *  # noqa: F401,F403
-    from utils.rdm.publish import *
-    from utils.rdm.zenodo import *
-    from utils.rdm.dataverse import *
+    from repokit.general_tools import package_installer, load_from_env, save_to_env
+    from repokit.rdm.dmp import *  # noqa: F401,F403
+    from repokit.rdm.publish import *
+    from repokit.rdm.zenodo import *
+    from repokit.rdm.dataverse import *
 
 package_installer(required_libraries=["streamlit", "jsonschema"])
 
