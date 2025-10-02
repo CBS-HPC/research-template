@@ -2,10 +2,8 @@ import os
 import getpass
 from typing import List, Optional
 
-#from .paths import check_path_format
-#from .secretstore import load_from_env, save_to_env
-
-from .secretstore import load_from_env, save_to_env, check_path_format
+from .paths import check_path_format
+from .secretstore import load_from_env, save_to_env
 
 def split_multi(val: Optional[str]) -> List[str]:
     if not val or not isinstance(val, str):

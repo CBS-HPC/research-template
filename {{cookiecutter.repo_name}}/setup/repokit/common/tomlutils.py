@@ -3,10 +3,8 @@ from subprocess import DEVNULL
 import sys
 import json
 
-from .env import PROJECT_ROOT, package_installer
-
-#from .paths import PROJECT_ROOT
-#from .env import package_installer
+from .paths import PROJECT_ROOT
+from .env import package_installer
 
 install_packages = ['python-dotenv','pathspec']
 
