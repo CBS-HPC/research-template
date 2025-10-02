@@ -6,8 +6,7 @@ import fnmatch
 import subprocess
 import shutil
 
-from ..common import load_from_env, get_version, PROJECT_ROOT, language_dirs, package_installer
-from ..tomlutils import read_toml_json
+from ..common import load_from_env, get_version, PROJECT_ROOT, language_dirs, package_installer, read_toml_json
 
 package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
 

@@ -8,8 +8,7 @@ from copy import deepcopy
 import hashlib
 import dirhash
 
-from ..common import check_path_format,PROJECT_ROOT,ensure_correct_kernel,change_dir
-from ..tomlutils import read_toml_json
+from ..common import check_path_format, PROJECT_ROOT, ensure_correct_kernel, change_dir, read_toml_json
 #from ..readme.template import readme_path
 from ..vcs import git_commit, git_log_to_file
 from .dmp import (

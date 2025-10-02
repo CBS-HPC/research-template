@@ -50,6 +50,11 @@ from .env import (
     ensure_correct_kernel
 )
 
+from .tomlutils import (
+    read_toml_ignore,
+    read_toml_json,
+    write_toml_json
+)
 
 from .constants import (
     ext_map,
@@ -96,6 +101,11 @@ __all__ = (
     "set_program_path",
     "run_script",
     "ensure_correct_kernel",
+    
+    # tomlutils
+    "read_toml_ignore",
+    "read_toml_json",
+    "write_toml_json",
 
     # constants
     "ext_map",

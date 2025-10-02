@@ -6,8 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..common import split_multi,PROJECT_ROOT
-from ..tomlutils import read_toml_json
+from ..common import split_multi, PROJECT_ROOT, read_toml_json
 
 
 def load_json(path: Path) -> Dict[str, Any]:

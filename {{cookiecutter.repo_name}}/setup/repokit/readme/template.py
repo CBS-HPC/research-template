@@ -6,8 +6,7 @@ import pathlib
 import pathspec
 
 from .sections import main_text, read_dependencies
-from ..common import load_from_env, PROJECT_ROOT, language_dirs, ext_map, package_installer
-from ..tomlutils import read_toml_json, write_toml_json, read_toml_ignore
+from ..common import load_from_env, PROJECT_ROOT, language_dirs, ext_map, package_installer, read_toml_json, write_toml_json, read_toml_ignore
 from ..rdm.dataset import generate_dataset_table, dataset_to_readme
 
 package_installer(required_libraries =  ['pyyaml'])
