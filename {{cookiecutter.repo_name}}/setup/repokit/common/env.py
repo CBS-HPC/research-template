@@ -9,10 +9,12 @@ import pathlib
 import importlib.metadata
 import importlib.util
 
-from .paths import PROJECT_ROOT, check_path_format, get_relative_path  
-from .secretstore import load_from_env, save_to_env
-from .tomlutils import toml, tomli_w, dotenv_values, load_dotenv
+#from .paths import PROJECT_ROOT, check_path_format, get_relative_path  
+#from .secretstore import load_from_env, save_to_env
+#from .tomlutils import toml, tomli_w, dotenv_values, load_dotenv
 
+from .secretstore import load_from_env, save_to_env, PROJECT_ROOT, check_path_format, toml, tomli_w, dotenv_values, load_dotenv
+from .paths import get_relative_path
 
 # UV
 def install_uv():
