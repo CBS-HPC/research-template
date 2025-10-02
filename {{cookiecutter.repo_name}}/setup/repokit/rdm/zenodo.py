@@ -11,17 +11,36 @@ from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
-from ..general_tools import package_installer
+from ..common import package_installer
 from .publish import (
-    PublishError, RETRY_STATUS, DEFAULT_TIMEOUT,
-    ZENODO_MAX_FILES, ZENODO_MAX_TOTAL,ZENODO_ROLE_MAP,UPLOAD_WORKERS ,
-    _get, _norm_list, _guess_dataset, _keywords_from_madmp,
-    _has_personal_or_sensitive, _normalize_orcid, _affiliation_from_node,
-    description_from_madmp, related_identifiers,
-    files_from_x_dcas, regular_files_existing, sizes_bytes,
-    estimate_zip_total_bytes, append_packaging_note,
-    build_packaging_plan, realize_packaging_plan_parallel,
+    
+    PublishError,
+
+    # ── constants ─────────────────────────────────────────────
+    RETRY_STATUS,
+    DEFAULT_TIMEOUT,
+    UPLOAD_WORKERS,
+    ZENODO_MAX_FILES,
+    ZENODO_MAX_TOTAL,
+    ZENODO_ROLE_MAP,
+
+    # ── functions ────────────────────────────────────────────
+    _get,
+    _norm_list,
+    _guess_dataset,
+    _keywords_from_madmp,
+    _has_personal_or_sensitive,
+    files_from_x_dcas,
+    regular_files_existing,
+    sizes_bytes,
+    estimate_zip_total_bytes,
+    append_packaging_note,
+    _normalize_orcid,
+    _affiliation_from_node,
+    description_from_madmp,
+    related_identifiers,
     build_packaging_plan_preserve_first_level,
+    realize_packaging_plan_parallel,
 )
 
 package_installer(required_libraries=["streamlit", "requests"])
@@ -59,14 +78,6 @@ def _z_request(method: str, url: str, headers: dict, json_payload=None, timeout=
             detail = r.text
         raise PublishError(f"Zenodo API error {r.status_code} on {url}: {detail}")
     raise PublishError(f"Zenodo request failed after retries: {url}")
-
-def _z_create_deposit(token: str, api_base_url: str) -> dict:
-    url = f"{api_base_url.rstrip('/')}/deposit/depositions"
-    return _z_request("POST", url, _zenodo_headers(token), {}).json()
-
-def _z_update_metadata(token: str, api_base_url: str, deposition_id: int, metadata: dict) -> dict:
-    url = f"{api_base_url.rstrip('/')}/deposit/depositions/{deposition_id}"
-    return _z_request("PUT", url, _zenodo_headers(token), {"metadata": metadata}).json()
 
 def _z_publish(token: str, api_base_url: str, deposition_id: int) -> dict:
     url = f"{api_base_url.rstrip('/')}/deposit/depositions/{deposition_id}/actions/publish"

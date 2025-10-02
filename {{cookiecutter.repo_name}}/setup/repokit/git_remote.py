@@ -7,8 +7,8 @@ import zipfile
 import tarfile
 import pathlib
 
-from .general_tools import *
-from .vcs import *
+from .common import load_from_env, PROJECT_ROOT, is_installed, exe_to_path, repo_user_info, package_installer, ensure_correct_kernel
+from .vcs import setup_version_control
 from .ci import ci_config
 
 package_installer(required_libraries =  ['requests'])

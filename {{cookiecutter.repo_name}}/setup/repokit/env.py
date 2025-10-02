@@ -5,7 +5,7 @@ import platform
 import urllib.request
 import pathlib
 import shutil
-from .general_tools import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv,PROJECT_ROOT
+from .common import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv, PROJECT_ROOT
 
 package_installer(required_libraries =  ['pyyaml'])
 
@@ -215,7 +215,6 @@ def init_conda():
     except Exception as e:
         print(f"Failed to initialize Conda shell: {e}")
         return False
-
 
 def install_miniconda(install_path):
     os_type = platform.system().lower()

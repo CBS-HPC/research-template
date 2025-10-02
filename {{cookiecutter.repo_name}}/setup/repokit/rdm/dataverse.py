@@ -25,15 +25,37 @@ from typing import Any, Dict, List, Optional, Tuple
 from random import random
 from pathlib import Path
 
-from ..general_tools import package_installer
+from ..common import package_installer
 from .publish import (
-    PublishError, RETRY_STATUS, DEFAULT_TIMEOUT,DATAVERSE_MAX_FILES_TOTAL,DATAVERSE_MAX_FILE_SIZE_BYTES,DATAVERS_SUBJECTS,
-    _get, _norm_list, _guess_dataset,
-    _has_personal_or_sensitive, description_from_madmp,
-    files_from_x_dcas, regular_files_existing, sizes_bytes,
-    estimate_zip_total_bytes, append_packaging_note,
-    PackItem, realize_packaging_plan_parallel,
+
+    PublishError,
+    PackItem,
+
+    # ── constants ─────────────────────────────────────────────
+    RETRY_STATUS,
+    DEFAULT_TIMEOUT,
+    DATAVERSE_MAX_FILES_TOTAL,
+    DATAVERSE_MAX_FILE_SIZE_BYTES,
+    DATAVERS_SUBJECTS,
+
+
+    # ── functions ────────────────────────────────────────────
+    _get,
+    _norm_list,
+    _guess_dataset,
+    _has_personal_or_sensitive,
+    files_from_x_dcas,
+    regular_files_existing,
+    sizes_bytes,
+    estimate_zip_total_bytes,
+    append_packaging_note,
+    _normalize_orcid,
+    _affiliation_from_node,
+    description_from_madmp,
+    realize_packaging_plan_parallel,
 )
+
+
 
 package_installer(required_libraries=["streamlit", "requests"])
 import requests

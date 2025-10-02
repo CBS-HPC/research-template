@@ -4,14 +4,14 @@ import pathlib
 import subprocess
 import platform
 
-from repokit.general_tools import *
-from repokit.backup_tools import *
-from repokit.readme.template import *
-from repokit.templates.code import *
-from repokit.vcs import *
-from repokit.git_remote import *
-from repokit.deps import *
-from repokit.ci import *
+from repokit.common import load_from_env, set_program_path, save_to_env, package_installer,set_packages
+from repokit.backup import setup_remote_backup
+from repokit.readme.template import creating_readme, create_citation_file
+from repokit.templates.code import create_scripts
+from repokit.vcs import git_push
+from repokit.git_remote import setup_version_control, setup_repo
+from repokit.deps import update_env_files, update_setup_dependency, update_code_dependency
+from repokit.ci import ci_config
 from repokit.rdm.dmp import main as dmp_update
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -42,6 +42,11 @@ def intro():
     version = load_from_env("VERSION",".cookiecutter")
     authors = load_from_env("AUTHORS",".cookiecutter")
     orcids = load_from_env("ORCIDS",".cookiecutter")
+
+    # Install required libraries
+    if load_from_env("VENV_ENV_PATH") or load_from_env("CONDA_ENV_PATH"):
+        package_installer(required_libraries = set_packages(load_from_env("VERSION_CONTROL",".cookiecutter"),load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")))
+
     
     # Set to .env
     set_program_path(programming_language)

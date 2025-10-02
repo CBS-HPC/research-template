@@ -14,26 +14,64 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import date, datetime
+import hashlib
 from hashlib import sha256  # <- for autosave hashing
 
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
-    from ..general_tools import package_installer, load_from_env, save_to_env
-    from .dmp import *  # noqa: F401,F403
-    from .publish import *
-    from .zenodo import *
-    from .dataverse import *
+    from ..common import package_installer, load_from_env, save_to_env,PROJECT_ROOT
+    from .dmp import (SCHEMA_URLS,
+        DEFAULT_DMP_PATH,
+        SCHEMA_VERSION,
+        LICENSE_LINKS,
+        EXTRA_ENUMS,
+        DK_UNI_MAP,
+
+        dmp_default_templates,
+        now_iso_minute,
+        fetch_schema,
+        today_iso,
+        repair_empty_enums,
+        ensure_required_by_schema,
+        ensure_dmp_shape,
+        normalize_root_in_place,
+        normalize_datasets_in_place,
+        reorder_dmp_keys,
+        )
+
+
+    #from .publish import *
+    from .zenodo import streamlit_publish_to_zenodo
+    from .dataverse import streamlit_publish_to_dataverse, PublishError
 except ImportError:
-    pkg_root = Path(__file__).resolve().parent.parent
+    pkg_root = PROJECT_ROOT / "setup"
     sys.path.insert(0, str(pkg_root))
-    from repokit.general_tools import package_installer, load_from_env, save_to_env
-    from repokit.rdm.dmp import *  # noqa: F401,F403
-    from repokit.rdm.publish import *
-    from repokit.rdm.zenodo import *
-    from repokit.rdm.dataverse import *
+    from repokit.common import package_installer, load_from_env, save_to_env
+    from repokit.rdm.dmp import (SCHEMA_URLS,
+        DEFAULT_DMP_PATH,
+        SCHEMA_VERSION,
+        LICENSE_LINKS,
+        EXTRA_ENUMS,
+        DK_UNI_MAP,
 
-package_installer(required_libraries=["streamlit", "jsonschema"])
+        dmp_default_templates,
+        now_iso_minute,
+        fetch_schema,
+        today_iso,
+        repair_empty_enums,
+        ensure_required_by_schema,
+        ensure_dmp_shape,
+        normalize_root_in_place,
+        normalize_datasets_in_place,
+        reorder_dmp_keys,
+        )
+    #from repokit.rdm.publish import *
+    from repokit.rdm.zenodo import streamlit_publish_to_zenodo
+    from repokit.rdm.dataverse import streamlit_publish_to_dataverse, PublishError
 
+package_installer(required_libraries=["streamlit", "jsonschema","requests"])
+
+import requests
 import streamlit as st
 from streamlit.web.cli import main as st_main
 from jsonschema import Draft7Validator
@@ -1222,7 +1260,6 @@ def main() -> None:
         )
 
         if uploaded is not None:
-            import hashlib
             payload = uploaded.getvalue()
             h = hashlib.sha256(payload).hexdigest()
             if st.session_state.get("__last_upload_hash__") != h:

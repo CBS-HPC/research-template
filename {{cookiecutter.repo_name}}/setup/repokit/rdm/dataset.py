@@ -5,10 +5,32 @@ import pathlib
 from typing import Optional, Tuple, Dict, List, Set, Any, Iterable
 from collections import defaultdict
 from copy import deepcopy
+import hashlib
+import dirhash
 
-from ..readme.template import *
-from .vcs import *
-from .dmp import *  
+from ..common import check_path_format,PROJECT_ROOT,ensure_correct_kernel,change_dir
+from ..tomlutils import read_toml_json
+#from ..readme.template import readme_path
+from ..vcs import git_commit, git_log_to_file
+from .dmp import (
+    DEFAULT_DMP_PATH,
+    LICENSE_LINKS,
+
+
+    # ── functions ────────────────────────────────────────────
+    load_json,
+    save_json,
+    dmp_default_templates,
+    now_iso_minute,
+    to_bytes_mb,
+    norm_rel_urlish,
+    data_type_from_path,
+    get_extension_payload,
+    ensure_dmp_shape,
+    create_or_update_dmp_from_schema,
+    main,
+)
+
 
 DEFAULT_UPDATE_FIELDS = []# top-level fields
 DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]         # nested fields to update
@@ -374,10 +396,8 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
 
         return x
 
-    project_root = Path(__file__).resolve().parent.parent.parent
-
     cookie = read_toml_json(
-        folder=str(project_root),
+        folder=str(PROJECT_ROOT),
         json_filename="cookiecutter.json",
         tool_name="cookiecutter",
         toml_path="pyproject.toml",

@@ -7,8 +7,9 @@ import pathlib
 import zipfile
 import glob
 import os
+import urllib.request
 
-from .general_tools import *
+from .common import package_installer, PROJECT_ROOT, save_to_env, change_dir, is_installed, ask_yes_no, load_from_env, exe_to_path, git_user_info
 
 package_installer(required_libraries =  ['requests','dirhash'])
 
@@ -513,7 +514,7 @@ def setup_datalad(version_control,remote_storage,code_repo,repo_name):
     datalad_create()
 
     if remote_storage == "Local Path":
-        datalad_local_storage(repo_name)
+        datalad_local_storage(repo_name,remote_storage)
     elif remote_storage in ["Dropbox", "Deic-Storage"]:
         datalad_deic_storage(repo_name)
 
@@ -668,7 +669,7 @@ def datalad_deic_storage(repo_name):
     #rclone_remote()
     git_annex_remote("deic-storage","deic-storage",repo_name)
 
-def datalad_local_storage(repo_name):
+def datalad_local_storage(repo_name,remote_storage):
 
     def get_remote_path(repo_name):
         """

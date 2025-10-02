@@ -1,8 +1,8 @@
 import os
-from textwrap import dedent
+#from textwrap import dedent
 
-from ..general_tools import *
-from .jinja import *
+from ..common import package_installer, ensure_correct_kernel, load_from_env, PROJECT_ROOT, language_dirs, ext_map
+from .jinja import set_jinja_templates, write_script
 
 package_installer(required_libraries = ['nbformat','jinja2'])
 
@@ -78,7 +78,6 @@ def create_scripts(programming_language):
 
     for base in scripts.keys():
         create_script_from_template(programming_language, folder_path,  template_name, f"test_{base}", {"base": base})    
-
 
 @ensure_correct_kernel
 def main():

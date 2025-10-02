@@ -3,8 +3,9 @@ import pathlib
 import argparse
 import subprocess
 
-from .vcs import *
-from .templates.jinja import *
+from .vcs import git_push
+from .templates.jinja import set_jinja_templates, patch_jinja_templates
+from .common import load_from_env, get_version, ensure_correct_kernel, PROJECT_ROOT
 
 @ensure_correct_kernel
 def ci_config():

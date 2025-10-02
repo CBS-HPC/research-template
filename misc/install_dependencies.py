@@ -4,7 +4,7 @@ import re
 import os
 import importlib
 
-from .general_tools import *
+from .common import *
 
 def parse_dependencies(file_path="dependencies.txt"):
     required_libraries = []

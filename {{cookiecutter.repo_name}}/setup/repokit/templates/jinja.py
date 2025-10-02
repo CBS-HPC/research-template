@@ -1,10 +1,10 @@
 import os
 from subprocess import DEVNULL
-from contextlib import contextmanager
-from functools import wraps
+#from contextlib import contextmanager
+#from functools import wraps
 import pathlib
 
-from ..general_tools import *
+from ..common import package_installer, PROJECT_ROOT
 
 install_packages = ['jinja2','nbformat']
 

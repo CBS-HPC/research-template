@@ -1,9 +1,9 @@
 import os
 
-from ..general_tools import *
+from ..common import ensure_correct_kernel, load_from_env, PROJECT_ROOT, language_dirs, ext_map
 from ..readme.template import main as update_readme_main
-from .deps import main as get_setup_dependencies_main
-from .jinja import *
+from ..deps import main as get_setup_dependencies_main
+from .jinja import set_jinja_templates, write_script
 
 template_env = set_jinja_templates("j2/example")
 

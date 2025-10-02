@@ -6,8 +6,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..general_tools import split_multi,PROJECT_ROOT
-from .tomlutils import read_toml_json
+from ..common import split_multi,PROJECT_ROOT
+from ..tomlutils import read_toml_json
 
 
 def load_json(path: Path) -> Dict[str, Any]:
@@ -66,7 +66,6 @@ SCHEMA_URLS: Dict[str, str] = {
         "tree/master/examples/JSON/JSON-schema/1.2"
     ),
 }
-
 
 DEFAULT_DMP_PATH = Path("./dmp.json")
 
