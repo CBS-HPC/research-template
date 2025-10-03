@@ -46,7 +46,7 @@ try:
 except ImportError:
     pkg_root = PROJECT_ROOT / "setup"
     sys.path.insert(0, str(pkg_root))
-    from repokit.common import package_installer, load_from_env, save_to_env
+    from repokit.common import package_installer, load_from_env, save_to_env,PROJECT_ROOT
     from repokit.rdm.dmp import (SCHEMA_URLS,
         DEFAULT_DMP_PATH,
         SCHEMA_VERSION,
