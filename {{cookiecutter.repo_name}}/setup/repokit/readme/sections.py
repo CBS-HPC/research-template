@@ -6,7 +6,7 @@ import fnmatch
 import subprocess
 import shutil
 
-from ..common import load_from_env, get_version, PROJECT_ROOT, language_dirs, package_installer, read_toml_json
+from ..common import load_from_env, get_version, PROJECT_ROOT, language_dirs, package_installer, read_toml
 
 package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
 
@@ -437,7 +437,7 @@ def set_scripts(programming_language,folder_path, json_file="./file_description.
     scripts = find_scripts(folder_path, source_ext, notebook_ext)
 
     # Dectect Scripts
-    file_descriptions = read_toml_json(json_filename=json_file, tool_name="file_descriptions", toml_path="pyproject.toml")
+    file_descriptions = read_toml(json_filename=json_file, tool_name="file_descriptions", toml_path="pyproject.toml")
     if not file_descriptions:
         file_descriptions = {}
     md = []

@@ -6,7 +6,7 @@ import pathlib
 import pathspec
 
 from .sections import main_text, read_dependencies
-from ..common import load_from_env, PROJECT_ROOT, language_dirs, ext_map, package_installer, read_toml_json, write_toml_json, read_toml_ignore
+from ..common import load_from_env, PROJECT_ROOT, language_dirs, ext_map, package_installer, read_toml, write_toml, toml_ignore
 from ..rdm.dataset import generate_dataset_table, dataset_to_readme
 
 package_installer(required_libraries =  ['pyyaml'])
@@ -98,13 +98,13 @@ def creating_readme(programming_language = "None"):
     
     generate_readme(readme_file, code_path, file_descriptions)
 
-    file_descriptions = read_toml_json(folder = str(PROJECT_ROOT), json_filename =  file_descriptions , tool_name = "file_descriptions", toml_path = "pyproject.toml")
+    file_descriptions = read_toml(folder = str(PROJECT_ROOT), json_filename =  file_descriptions , tool_name = "file_descriptions", toml_path = "pyproject.toml")
     markdown_table, _ = generate_dataset_table("./dmp.json",file_descriptions)
 
     if markdown_table:
         dataset_to_readme(markdown_table)
         
-    ignore_list, _  = read_toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
+    ignore_list, _  = toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
     dataset_list = datasets_ignore(datasets_json = "dmp.json")
 
     if dataset_list:
@@ -369,7 +369,7 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             # Update the existing dictionary with the new descriptions
             file_descriptions.update(code_file_descriptions(programming_language))
 
-        write_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")
+        write_toml(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")
 
         return file_descriptions
 
@@ -403,9 +403,9 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
                 if description:
                     file_descriptions[filename] = description
 
-        write_toml_json(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")
+        write_toml(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")
         
-    file_descriptions = read_toml_json(json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")    
+    file_descriptions = read_toml(json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")    
 
     if not file_descriptions:
         file_descriptions = create_file_descriptions(programming_language,json_file)

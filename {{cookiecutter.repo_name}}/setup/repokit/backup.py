@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 import tempfile
 
-from .common import change_dir, ensure_correct_kernel, load_from_env, PROJECT_ROOT, remote_user_info, read_toml_ignore
+from .common import change_dir, ensure_correct_kernel, load_from_env, PROJECT_ROOT, remote_user_info, toml_ignore
 from .vcs import git_commit, git_log_to_file, git_push, install_rclone
 
 def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
@@ -95,7 +95,7 @@ def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
     if not os.path.exists(folder_to_backup):
         print(f"Error: The folder '{folder_to_backup}' does not exist.")
         return
-    _ , exclude_patterns = read_toml_ignore(folder = folder_to_backup, toml_path = "pyproject.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
+    _ , exclude_patterns = toml_ignore(folder = folder_to_backup, toml_path = "pyproject.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
 
     exclude_args = []
     for pattern in exclude_patterns:
@@ -383,7 +383,7 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
 
-    _ , exclude_patterns = read_toml_ignore(folder = destination_folder, toml_path = "pyproject.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
+    _ , exclude_patterns = toml_ignore(folder = destination_folder, toml_path = "pyproject.toml" ,  ignore_filename = ".rcloneignore",tool_name = "rcloneignore",toml_key = "patterns")
   
     exclude_args = []
     for pattern in exclude_patterns:

@@ -1,42 +1,35 @@
 import os
-from subprocess import DEVNULL
 import sys
 import json
-
-from .paths import PROJECT_ROOT
-from .env import package_installer
-
-install_packages = ['python-dotenv','pathspec']
-
-if sys.version_info < (3, 11):
-    install_packages.append('toml')
-else:
-    install_packages.append('tomli-w')
-
-package_installer(required_libraries = install_packages)
-
 from dotenv import dotenv_values, load_dotenv
+import pathspec
 
 if sys.version_info < (3, 11):
     import toml
     tomli_w = None
+    OPEN_MODE = ("r", "utf-8")
+    load_toml = toml.load
+    dump_toml = toml.dump
+    READ_MODE = ("r", "utf-8")
+    WRITE_MODE = ("w", "utf-8")
 else:
     import tomllib as toml
     import tomli_w
+    OPEN_MODE = ("rb", None)
+    def load_toml(f): return toml.load(f)
+    def dump_toml(d, f): f.write(tomli_w.dumps(d))
+    READ_MODE = ("rb", None)
+    WRITE_MODE = ("w", "utf-8")
 
-import pathspec
+from .base import PROJECT_ROOT
 
-def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml", toml_key: str = "patterns"):
+def toml_ignore(folder: str = None, ignore_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml", toml_key: str = "patterns"):
     """
     Load ignore patterns from a file or from a TOML tool config section.
 
     Returns:
         Tuple[PathSpec | None, List[str]]: A PathSpec matcher and raw pattern list
     """
-    if sys.version_info < (3, 11):
-        open_mode = ("r", "utf-8")
-    else:
-        open_mode = ("rb", None)
 
     if not folder:
         folder = str(PROJECT_ROOT)
@@ -52,7 +45,7 @@ def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name:
     toml_full_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
     if os.path.exists(toml_full_path):
         try:
-            with open(toml_full_path, open_mode[0], encoding=open_mode[1]) as f:
+            with open(toml_full_path, OPEN_MODE[0], encoding=OPEN_MODE[1]) as f:
                 config = toml.load(f)
             patterns = config.get("tool", {}).get(tool_name) or config.get(tool_name)
             if isinstance(patterns, dict):
@@ -66,7 +59,7 @@ def read_toml_ignore(folder: str = None, ignore_filename: str = None, tool_name:
 
     return None, []
 
-def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
+def read_toml(folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
     """
     Load a dictionary from a JSON file, or fall back to a tool-specific section
     in a TOML file (either under [tool.<tool_name>] or [<tool_name>]).
@@ -80,11 +73,6 @@ def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str
     Returns:
         dict | None: Dictionary loaded from JSON or TOML, or None if both fail.
     """
-    
-    if sys.version_info < (3, 11):
-        open_mode = ("r", "utf-8")
-    else:
-        open_mode = ("rb", None)
 
     if not folder:
         folder = str(PROJECT_ROOT)
@@ -100,7 +88,7 @@ def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str
     toml_path_full = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
     if os.path.exists(toml_path_full):
         try:
-            with open(toml_path_full, open_mode[0], encoding=open_mode[1]) as f:
+            with open(toml_path_full, OPEN_MODE[0], encoding=OPEN_MODE[1]) as f:
                 config = toml.load(f)
             return config.get("tool", {}).get(tool_name) or config.get(tool_name)
         except Exception as e:
@@ -108,18 +96,7 @@ def read_toml_json(folder: str = None, json_filename: str = None, tool_name: str
 
     return None
 
-def write_toml_json(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
-        if sys.version_info < (3, 11):
-            load_toml = toml.load
-            dump_toml = toml.dump
-            open_read = ("r", "utf-8")
-            open_write = ("w", "utf-8")
-        else:
-            def load_toml(f): return toml.load(f)
-            def dump_toml(d, f): f.write(tomli_w.dumps(d))
-            open_read = ("rb", None)
-            open_write = ("w", "utf-8")
-
+def write_toml(data: dict = None, folder: str = None, json_filename: str = None, tool_name: str = None, toml_path: str = "pyproject.toml"):
         if not folder:
             folder = str(PROJECT_ROOT)
         if not tool_name:
@@ -141,7 +118,7 @@ def write_toml_json(data: dict = None, folder: str = None, json_filename: str = 
 
         toml_data = {}
         if os.path.exists(toml_file_path):
-            with open(toml_file_path, open_read[0], encoding=open_read[1]) as f:
+            with open(toml_file_path, READ_MODE[0], encoding=READ_MODE[1]) as f:
                 try:
                     toml_data = load_toml(f)
                 except Exception as e:
@@ -155,5 +132,5 @@ def write_toml_json(data: dict = None, folder: str = None, json_filename: str = 
 
         toml_data["tool"][tool_name].update(data)
 
-        with open(toml_file_path, open_write[0], encoding=open_write[1]) as f:
+        with open(toml_file_path, WRITE_MODE[0], encoding=WRITE_MODE[1]) as f:
             dump_toml(toml_data, f)

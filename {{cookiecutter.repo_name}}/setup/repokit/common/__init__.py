@@ -3,11 +3,15 @@
 Explicit re-exports for helpers that used to live in one big module.
 """
 
-# ---- common.paths ----
-from .paths import (
+# ---- common.bases ----
+from .base import (
     project_root,
     PROJECT_ROOT,
-    from_root,
+    install_uv,
+)
+
+# ---- common.paths ----
+from .paths import (
     check_path_format,
     get_relative_path,
     make_safe_path,
@@ -35,7 +39,6 @@ from .prompts import (
 )
 
 from .env import (
-    install_uv,
     create_uv_project,
     write_uv_requires,
     set_packages,
@@ -51,9 +54,9 @@ from .env import (
 )
 
 from .tomlutils import (
-    read_toml_ignore,
-    read_toml_json,
-    write_toml_json
+    toml_ignore,
+    read_toml,
+    write_toml
 )
 
 from .constants import (
@@ -62,10 +65,12 @@ from .constants import (
 )
 
 __all__ = (
-    # paths
+    # base
     "project_root",
     "PROJECT_ROOT",
-    "from_root",
+    "install_uv",
+    
+    # paths
     "check_path_format",
     "get_relative_path",
     "make_safe_path",
@@ -88,7 +93,6 @@ __all__ = (
     "remote_user_info",
 
     # env (topic module)
-    "install_uv",
     "create_uv_project",
     "write_uv_requires",
     "set_packages",
@@ -103,9 +107,9 @@ __all__ = (
     "ensure_correct_kernel",
     
     # tomlutils
-    "read_toml_ignore",
-    "read_toml_json",
-    "write_toml_json",
+    "toml_ignore",
+    "read_toml",
+    "write_toml",
 
     # constants
     "ext_map",

@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..common import split_multi, PROJECT_ROOT, read_toml_json
+from ..common import split_multi, PROJECT_ROOT, read_toml
 
 
 def load_json(path: Path) -> Dict[str, Any]:
@@ -254,7 +254,7 @@ def dmp_default_templates(now_dt: Optional[str] = None, today: Optional[str] = N
     now_dt = now_dt or now_iso_minute()  # date-time with Z
     today = today or today_iso()
     
-    cookie = read_toml_json(
+    cookie = read_toml(
     folder=str(PROJECT_ROOT),
     json_filename="cookiecutter.json",
     tool_name="cookiecutter",
@@ -484,7 +484,7 @@ def _apply_cookiecutter_meta(project_root: Path, data: Dict[str, Any],overwrite:
       - dmp.contact (first author/email[/orcid])
       - dmp.project[0].title/description
     """
-    cookie = read_toml_json(
+    cookie = read_toml(
         folder=str(project_root),
         json_filename="cookiecutter.json",
         tool_name="cookiecutter",

@@ -8,34 +8,22 @@ from functools import wraps
 import pathlib
 import importlib.metadata
 import importlib.util
+from dotenv import dotenv_values, load_dotenv
 
-from .paths import PROJECT_ROOT, check_path_format, get_relative_path  
+if sys.version_info < (3, 11):
+    import toml
+    tomli_w = None
+else:
+    import tomllib as toml
+    import tomli_w
+
+
+from .base import install_uv, PROJECT_ROOT
+from .paths import check_path_format, get_relative_path  
 from .secretstore import load_from_env, save_to_env
-from .tomlutils import toml, tomli_w, dotenv_values, load_dotenv
+
 
 # UV
-def install_uv():
-    try:
-        import uv  # noqa: F401
-        return True
-    except ImportError:
-        try:
-            print("Installing 'uv' package into current Python environment...")
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade","uv"],
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-
-            print("'uv' installed successfully.")
-            
-            import uv  # noqa: F401
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to install 'uv' via pip: {e}")
-            return False
-
 def create_uv_project():
     """
     Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.

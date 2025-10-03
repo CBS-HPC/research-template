@@ -3,11 +3,7 @@ import platform
 from contextlib import contextmanager
 import pathlib
 
-def project_root() -> pathlib.Path:
-    return pathlib.Path(__file__).resolve().parent.parent.parent
-
-# Convenience constant + helper
-PROJECT_ROOT = project_root()
+from .base import PROJECT_ROOT
 
 def from_root(*parts: str | os.PathLike) -> pathlib.Path:
     """Join paths relative to the detected project root."""

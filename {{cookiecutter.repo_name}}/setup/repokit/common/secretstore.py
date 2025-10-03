@@ -16,9 +16,18 @@ except Exception:
     KeyringError = NoKeyringError = Exception  # type: ignore
     _HAS_KEYRING = False
 
+from .base import PROJECT_ROOT
+from .paths import check_path_format
 
-from .paths import PROJECT_ROOT, check_path_format
-from .tomlutils import toml, tomli_w, dotenv_values, load_dotenv
+
+if sys.version_info < (3, 11):
+    import toml
+    tomli_w = None
+else:
+    import tomllib as toml
+    import tomli_w
+
+from dotenv import dotenv_values, load_dotenv
 
 
 # --- Helpers for secret management ---

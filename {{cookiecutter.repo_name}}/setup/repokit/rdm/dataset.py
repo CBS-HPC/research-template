@@ -8,7 +8,7 @@ from copy import deepcopy
 import hashlib
 import dirhash
 
-from ..common import check_path_format, PROJECT_ROOT, ensure_correct_kernel, change_dir, read_toml_json
+from ..common import check_path_format, PROJECT_ROOT, ensure_correct_kernel, change_dir, read_toml
 #from ..readme.template import readme_path
 from ..vcs import git_commit, git_log_to_file
 from .dmp import (
@@ -395,7 +395,7 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
 
         return x
 
-    cookie = read_toml_json(
+    cookie = read_toml(
         folder=str(PROJECT_ROOT),
         json_filename="cookiecutter.json",
         tool_name="cookiecutter",
@@ -663,7 +663,7 @@ def main():
 
     json_path = remove_missing_datasets(json_path=DEFAULT_DMP_PATH)
 
-    file_descriptions = read_toml_json(
+    file_descriptions = read_toml(
         folder=PROJECT_ROOT,
         json_filename="./file_descriptions.json",
         tool_name="file_descriptions",
