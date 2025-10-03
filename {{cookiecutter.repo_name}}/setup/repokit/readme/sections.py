@@ -68,7 +68,7 @@ def main_text(json_file, code_path):
     unit_tests = set_unit_tests(programming_language)
 
 
-    dataset = dataset()
+    dataset_section = set_dataset()
 
     if programming_language.lower() != "python":
         head = f"📋 Instructions for installing {py_version}, {software_version}, and dependencies"
@@ -159,7 +159,7 @@ To execute the full workflow pipeline, run the main orchestration script from th
 <details>
 <summary><strong>📦 Dataset List</strong></summary><br>
 
-{dataset}
+{dataset_section}
 
 </details>
 
@@ -791,7 +791,7 @@ For a full list of journals, visit [here](https://datacodestandard.org/journals/
 Individual journal policies may differ slightly. To ensure full compliance, check the policies and submission guidelines of the journal."""
     return dcas
 
-def dataset():
+def set_dataset():
 
     return f""" To set up or configure a dataset, run the following command:
 
