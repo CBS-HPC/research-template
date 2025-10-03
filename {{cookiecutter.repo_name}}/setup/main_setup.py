@@ -4,6 +4,28 @@ import pathlib
 import subprocess
 import platform
 
+PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
+
+def install_py_package(setup_path:str="./setup"):
+
+    # Change the current working directory to to setup folder
+    os.chdir(setup_path)
+
+    # Run "pip install -e ."
+    result = subprocess.run(
+            [sys.executable, '-m', 'pip', 'install', '-e', '.'],
+            capture_output=True,
+            text=True
+        )
+
+    if result.returncode == 0:
+        print("Installation successful.")
+    else:
+        print(f"Error during installation: {result.stderr}")
+
+# Installing package:
+install_py_package("./setup")
+
 from repokit.common import load_from_env, set_program_path, save_to_env, package_installer,set_packages
 from repokit.backup import setup_remote_backup
 from repokit.readme.template import creating_readme, create_citation_file
@@ -14,7 +36,6 @@ from repokit.deps import update_env_files, update_setup_dependency, update_code_
 from repokit.ci import ci_config
 from repokit.rdm.dmp import main as dmp_update
 
-PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
 def intro():
 
@@ -95,22 +116,6 @@ def remote_repo_setup():
         save_to_env("None", "CODE_REPO", ".cookiecutter")
         return False
     
-    def install_py_package(setup_path:str="./setup"):
-
-        # Change the current working directory to to setup folder
-        os.chdir(setup_path)
-    
-        # Run "pip install -e ."
-        result = subprocess.run(
-                [sys.executable, '-m', 'pip', 'install', '-e', '.'],
-                capture_output=True,
-                text=True
-            )
-
-        if result.returncode == 0:
-            print("Installation successful.")
-        else:
-            print(f"Error during installation: {result.stderr}")
 
     # Ensure the working directory is the project root
     os.chdir(PROJECT_DIR)
@@ -131,11 +136,8 @@ def remote_repo_setup():
     update_setup_dependency()
     update_code_dependency()
 
-    # Installing package:
-    install_py_package("./setup")
-
     # Pushing to Git
-    push_msg = " Created `requirements.txt`, `environment.yml`, and `dependencies.txt`, installed Setup package and updated in README.md" 
+    push_msg = " Created `requirements.txt`, `environment.yml`,`dependencies.txt` and updated in README.md" 
     git_push(flag,push_msg)
 
 def outro():

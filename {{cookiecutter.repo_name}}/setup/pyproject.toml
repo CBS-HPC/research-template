@@ -1,16 +1,26 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "repokit"
 version = "0.1"
 dependencies = [
-    "python-dotenv",
-    "pyyaml",
-    "requests",
-    "nbformat",
-    "beautifulsoup4"
+  "python-dotenv",
+  "PyYAML",
+  "requests",
+  "beautifulsoup4",
+  "nbformat",
+  "pathspec",
+  "psutil",
+  "py-cpuinfo",
+  "Jinja2",
+  "streamlit",
+  "dirhash",
+
+  # TOML read/write split:
+  'toml ; python_version < "3.11"',
+  'tomli-w ; python_version >= "3.11"',
 ]
 
 [project.scripts]
