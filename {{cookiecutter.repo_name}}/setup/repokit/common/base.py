@@ -54,7 +54,7 @@ def install_base_deps(deps: list[str] = BASE_DEPS) -> None:
             pass
 
 def project_root() -> Path:
-    return Path(__file__).resolve().parent.parent.parent
+    return Path(__file__).resolve().parent.parent.parent.parent
 
 # Convenience constant + helper
 PROJECT_ROOT = project_root()
