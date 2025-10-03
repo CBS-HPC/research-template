@@ -3,17 +3,75 @@ import os
 import pathlib
 import subprocess
 import platform
+from typing import Tuple
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
-def install_py_package(setup_path:str="./setup"):
+
+def install_py_package(setup_path: str = "./setup", editable: bool = True) -> Tuple[bool, str]:
+    """
+    Install the local package at `setup_path`, preferring uv and falling back to pip.
+
+    Returns:
+        (ok: bool, method: str) where method is one of {"uv", "python -m uv", "pip"}.
+    """
+    setup_dir = pathlib.Path(setup_path).resolve()
+    if not setup_dir.exists():
+        raise FileNotFoundError(f"setup_path does not exist: {setup_dir}")
+
+    # Build the args once
+    editable_args = ["-e", "."] if editable else ["."]
+    uv_cmd = ["uv", "pip", "install", *editable_args]
+    uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install", *editable_args]
+    pip_cmd = [sys.executable, "-m", "pip", "install", *editable_args]
+
+    # Do work in the target directory, but restore CWD afterwards
+    cwd = os.getcwd()
+    os.chdir(setup_dir)
+    try:
+        # 1) Try uv CLI first
+        try:
+            result = subprocess.run(uv_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("Installation successful with uv.")
+                return True, "uv"
+            else:
+                print(f"uv failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
+        except FileNotFoundError:
+            # uv CLI not found
+            pass
+
+        # 2) Try `python -m uv` (if uv is importable as a module)
+        try:
+            result = subprocess.run(uv_mod_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("Installation successful with python -m uv.")
+                return True, "python -m uv"
+            else:
+                print(f"'python -m uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
+        except FileNotFoundError:
+            # Very old Python envs can raise this if python isn't found, but unlikely.
+            pass
+
+        # 3) Fallback to pip
+        result = subprocess.run(pip_cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            print("Installation successful with pip.")
+            return True, "pip"
+        else:
+            print(f"pip failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
+            return False, "pip"
+    finally:
+        os.chdir(cwd)
+
+def install_py_package_old(setup_path:str="./setup"):
 
     # Change the current working directory to to setup folder
     os.chdir(setup_path)
 
     # Run "pip install -e ."
     result = subprocess.run(
-            [sys.executable, '-m', 'pip', 'install', '-e', '.'],
+            [sys.executable, '-m','pip', 'install', '-e', '.'],
             capture_output=True,
             text=True
         )
