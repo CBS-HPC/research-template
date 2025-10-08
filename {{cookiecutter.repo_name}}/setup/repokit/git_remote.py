@@ -1,45 +1,54 @@
 import os
-import sys
-import subprocess
+import pathlib
 import platform
 import shutil
-import zipfile
+import subprocess
 import tarfile
-import pathlib
+import zipfile
+
 import requests
 
-from .common import load_from_env, PROJECT_ROOT, is_installed, exe_to_path, repo_user_info, ensure_correct_kernel
-from .vcs import setup_version_control
 from .ci import ci_config
+from .common import (
+    PROJECT_ROOT,
+    ensure_correct_kernel,
+    exe_to_path,
+    is_installed,
+    load_from_env,
+    repo_user_info,
+)
+from .vcs import setup_version_control
 
 # GitHub, Gitlad and Codeberg Functions
 
-def setup_repo(version_control,code_repo,repo_name,project_description):
-    if repo_login(version_control,repo_name,code_repo):
+
+def setup_repo(version_control, code_repo, repo_name, project_description):
+    if repo_login(version_control, repo_name, code_repo):
         return repo_create(code_repo, repo_name, project_description)
     else:
-        return False 
+        return False
+
 
 def get_login_credentials(code_repo, repo_name):
     """Returns the user, token, hostname, CLI command, and privacy setting based on the code repository."""
     code_repo = code_repo.lower()
 
     if code_repo == "github":
-        user = load_from_env('GITHUB_USER')
-        token = load_from_env('GITHUB_TOKEN')
-        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
+        user = load_from_env("GITHUB_USER")
+        token = load_from_env("GITHUB_TOKEN")
+        hostname = load_from_env("GITHUB_HOSTNAME") or "github.com"
         privacy_setting = load_from_env("GITHUB_PRIVACY")
 
     elif code_repo == "gitlab":
-        user = load_from_env('GITLAB_USER')
-        token = load_from_env('GITLAB_TOKEN')
-        hostname = load_from_env('GITLAB_HOSTNAME') or "gitlab.com"
+        user = load_from_env("GITLAB_USER")
+        token = load_from_env("GITLAB_TOKEN")
+        hostname = load_from_env("GITLAB_HOSTNAME") or "gitlab.com"
         privacy_setting = load_from_env("GITLAB_PRIVACY")
 
     elif code_repo == "codeberg":
-        user = load_from_env('CODEBERG_USER')
-        token = load_from_env('CODEBERG_TOKEN')
-        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
+        user = load_from_env("CODEBERG_USER")
+        token = load_from_env("CODEBERG_TOKEN")
+        hostname = load_from_env("CODEBERG_HOSTNAME") or "codeberg.org"
         privacy_setting = load_from_env("CODEBERG_PRIVACY")
 
     else:
@@ -48,12 +57,14 @@ def get_login_credentials(code_repo, repo_name):
     # Fallback to repo_user_info if anything critical is missing
     if not user or not token or not privacy_setting:
         version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
-        user, privacy_setting, token, hostname = repo_user_info(version_control, repo_name, code_repo)
+        user, privacy_setting, token, hostname = repo_user_info(
+            version_control, repo_name, code_repo
+        )
 
     return user, token, hostname, privacy_setting
 
-def repo_login(version_control=None, repo_name=None, code_repo=None):
 
+def repo_login(version_control=None, repo_name=None, code_repo=None):
     def authenticate_api(token, hostname, platform):
         """Authenticate by requesting user info via API."""
         if not token or not hostname:
@@ -82,7 +93,7 @@ def repo_login(version_control=None, repo_name=None, code_repo=None):
 
     if not repo_name or not code_repo:
         return False
-    
+
     try:
         # Get login details based on the repository type
         _, token, hostname, _ = get_login_credentials(code_repo, repo_name)
@@ -102,6 +113,7 @@ def repo_login(version_control=None, repo_name=None, code_repo=None):
         print(f"An error occurred: {e}")
         return False
 
+
 def repo_create(code_repo, repo_name, project_description):
     try:
         user, token, hostname, privacy_setting = get_login_credentials(code_repo, repo_name)
@@ -110,27 +122,31 @@ def repo_create(code_repo, repo_name, project_description):
 
         code_repo_lower = code_repo.lower()
         if code_repo_lower not in ["github", "gitlab", "codeberg"]:
-            raise ValueError("Unsupported code repository. Choose 'github', 'gitlab', or 'codeberg'.")
+            raise ValueError(
+                "Unsupported code repository. Choose 'github', 'gitlab', or 'codeberg'."
+            )
 
         def create_github():
             api_url = "https://api.github.com/user/repos"
             headers = {
                 "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json"
+                "Accept": "application/vnd.github.v3+json",
             }
             payload = {
                 "name": repo_name,
                 "description": project_description,
                 "private": (privacy_setting == "private"),
-                "auto_init": False
+                "auto_init": False,
             }
             response = requests.post(api_url, headers=headers, json=payload)
             if response.status_code == 201:
                 print(f"Repository '{repo_name}' created successfully on GitHub.")
-            elif response.status_code == 422 and 'already exists' in response.text.lower():
+            elif response.status_code == 422 and "already exists" in response.text.lower():
                 print(f"Repository '{repo_name}' already exists on GitHub.")
             else:
-                raise Exception(f"GitHub repo creation failed: {response.status_code} {response.text}")
+                raise Exception(
+                    f"GitHub repo creation failed: {response.status_code} {response.text}"
+                )
 
         def create_gitlab():
             api_url = f"https://{hostname}/api/v4/projects"
@@ -139,27 +155,26 @@ def repo_create(code_repo, repo_name, project_description):
                 "name": repo_name,
                 "description": project_description,
                 "visibility": "private" if privacy_setting == "private" else "public",
-                "initialize_with_readme": False
+                "initialize_with_readme": False,
             }
             response = requests.post(api_url, headers=headers, data=payload)
             if response.status_code == 201:
                 print(f"Repository '{repo_name}' created successfully on GitLab.")
-            elif response.status_code == 400 and 'has already been taken' in response.text.lower():
+            elif response.status_code == 400 and "has already been taken" in response.text.lower():
                 print(f"Repository '{repo_name}' already exists on GitLab.")
             else:
-                raise Exception(f"GitLab repo creation failed: {response.status_code} {response.text}")
+                raise Exception(
+                    f"GitLab repo creation failed: {response.status_code} {response.text}"
+                )
 
         def create_codeberg():
             api_url = f"https://{hostname}/api/v1/user/repos"
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"token {token}"
-            }
+            headers = {"Content-Type": "application/json", "Authorization": f"token {token}"}
             payload = {
                 "name": repo_name,
                 "description": project_description,
                 "private": (privacy_setting == "private"),
-                "auto_init": False
+                "auto_init": False,
             }
             response = requests.post(api_url, headers=headers, json=payload)
             if response.status_code == 201:
@@ -167,7 +182,9 @@ def repo_create(code_repo, repo_name, project_description):
             elif response.status_code == 409:
                 print(f"Repository '{repo_name}' already exists on Codeberg.")
             else:
-                raise Exception(f"Codeberg repo creation failed: {response.status_code} {response.text}")
+                raise Exception(
+                    f"Codeberg repo creation failed: {response.status_code} {response.text}"
+                )
 
         # Create or check the repo
         if code_repo_lower == "github":
@@ -197,8 +214,8 @@ def repo_create(code_repo, repo_name, project_description):
         print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
         return False
 
+
 def install_glab(install_path=None):
-    
     def get_glab_version():
         url = "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases"
         try:
@@ -211,11 +228,11 @@ def install_glab(install_path=None):
             print(f"Error retrieving the latest glab version: {e}")
             return None
 
-    if is_installed('glab',"GitLab CLI (glab)"):
+    if is_installed("glab", "GitLab CLI (glab)"):
         return True
 
     os_type = platform.system().lower()
-    
+
     install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
 
     os.makedirs(install_path, exist_ok=True)
@@ -229,7 +246,7 @@ def install_glab(install_path=None):
     if os_type == "windows":
         glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_windows_amd64.zip"
         glab_path = os.path.join(install_path, f"glab_{nversion}_windows_amd64.zip")
-        extract_method = lambda: zipfile.ZipFile(glab_path, 'r').extractall(install_path)
+        extract_method = lambda: zipfile.ZipFile(glab_path, "r").extractall(install_path)
 
     elif os_type == "darwin":  # macOS
         glab_url = f"https://gitlab.com/gitlab-org/cli/-/releases/{version}/downloads/glab_{nversion}_darwin_amd64.tar.gz"
@@ -265,20 +282,22 @@ def install_glab(install_path=None):
     print(f"Extracting {glab_path}...")
     extract_method()
 
-    return exe_to_path('glab',os.path.join(install_path, "bin"))
-   
+    return exe_to_path("glab", os.path.join(install_path, "bin"))
+
+
 def install_gh(install_path=None):
     """
     Installs the GitHub CLI (gh) on Windows, macOS, or Linux.
 
-    Parameters:
+    Parameters
+    ----------
     - install_path (str, optional): The directory where GitHub CLI should be installed. Defaults to the current working directory.
 
-    Returns:
+    Returns
+    -------
     - bool: True if installation is successful, False otherwise.
     """
-   
-    if is_installed('gh', "GitHub CLI (gh)"):
+    if is_installed("gh", "GitHub CLI (gh)"):
         return True
 
     os_type = platform.system().lower()
@@ -289,33 +308,47 @@ def install_gh(install_path=None):
 
     try:
         if os_type == "windows":
-            installer_url = "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
+            installer_url = (
+                "https://github.com/cli/cli/releases/latest/download/gh_2.28.0_windows_amd64.msi"
+            )
             installer_name = os.path.join(install_path, "gh_installer.msi")
-            
+
             # Download the installer
             subprocess.run(["curl", "-Lo", installer_name, installer_url], check=True)
 
             # Install GitHub CLI
-            subprocess.run(["msiexec", "/i", installer_name, "/quiet", "/norestart", f"INSTALLDIR={install_path}"], check=True)
+            subprocess.run(
+                [
+                    "msiexec",
+                    "/i",
+                    installer_name,
+                    "/quiet",
+                    "/norestart",
+                    f"INSTALLDIR={install_path}",
+                ],
+                check=True,
+            )
             print(f"GitHub CLI (gh) installed successfully to {install_path}.")
-            return exe_to_path("gh",os.path.join(install_path, "bin"))
+            return exe_to_path("gh", os.path.join(install_path, "bin"))
 
         elif os_type == "darwin":  # macOS
             # Using Homebrew to install GitHub CLI
             subprocess.run(["brew", "install", "gh", "--prefix", install_path], check=True)
             print(f"GitHub CLI (gh) installed successfully to {install_path}.")
-            return exe_to_path("gh",os.path.join(install_path, "bin"))
+            return exe_to_path("gh", os.path.join(install_path, "bin"))
 
         elif os_type == "linux":
             subprocess.run(["sudo", "apt", "update"], check=True)
             subprocess.run(["sudo", "apt", "install", "-y", "gh"], check=True)
-            print(f"GitHub CLI (gh) installed successfully.")
+            print("GitHub CLI (gh) installed successfully.")
 
             # Move to "install_path"
             path = shutil.which("gh")
             if path:
-                subprocess.run(["sudo", "mv", path, os.path.join(install_path,'gh','gh')], check=True)
-                return exe_to_path("gh",os.path.dirname(os.path.abspath(install_path)))
+                subprocess.run(
+                    ["sudo", "mv", path, os.path.join(install_path, "gh", "gh")], check=True
+                )
+                return exe_to_path("gh", os.path.dirname(os.path.abspath(install_path)))
             else:
                 return False
         else:
@@ -328,27 +361,28 @@ def install_gh(install_path=None):
 
     finally:
         # Clean up installer on Windows
-        if os_type == "windows" and 'installer_name' in locals() and os.path.exists(installer_name):
+        if os_type == "windows" and "installer_name" in locals() and os.path.exists(installer_name):
             os.remove(installer_name)
             print(f"Installer {installer_name} removed.")
+
 
 @ensure_correct_kernel
 def main():
     # Ensure the working directory is the project root
     os.chdir(PROJECT_ROOT)
-    
-    version_control = load_from_env("VERSION_CONTROL",".cookiecutter")
-    repo_name = load_from_env("REPO_NAME",".cookiecutter")
-    code_repo = load_from_env("CODE_REPO",".cookiecutter")
-    project_description = load_from_env("PROJECT_DESCRIPTION",".cookiecutter")
-    remote_storage = load_from_env("REMOTE_STORAGE",".cookiecutter")
-    
-    setup_version_control(version_control,remote_storage,code_repo,repo_name)
+
+    version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
+    code_repo = load_from_env("CODE_REPO", ".cookiecutter")
+    project_description = load_from_env("PROJECT_DESCRIPTION", ".cookiecutter")
+    remote_storage = load_from_env("REMOTE_STORAGE", ".cookiecutter")
+
+    setup_version_control(version_control, remote_storage, code_repo, repo_name)
 
     # Create Remote Repository
-    if setup_repo(version_control,code_repo,repo_name,project_description):
+    if setup_repo(version_control, code_repo, repo_name, project_description):
         ci_config()
 
- 
+
 if __name__ == "__main__":
     main()

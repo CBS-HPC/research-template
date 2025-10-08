@@ -1,40 +1,39 @@
-import os
-import json
-from datetime import datetime
-import pathlib
-from typing import Optional, Tuple, Dict, List, Set, Any, Iterable
-from collections import defaultdict
-from copy import deepcopy
 import hashlib
+import json
+import os
+import pathlib
+from collections import defaultdict
+from collections.abc import Iterable
+from copy import deepcopy
+from datetime import datetime
+from typing import Any
+
 import dirhash
 
-from ..common import check_path_format, PROJECT_ROOT, ensure_correct_kernel, change_dir, read_toml
+from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct_kernel, read_toml
 from ..vcs import git_commit, git_log_to_file
 from .dmp import (
     DEFAULT_DMP_PATH,
     LICENSE_LINKS,
-
-
+    create_or_update_dmp_from_schema,
+    data_type_from_path,
+    dmp_default_templates,
+    ensure_dmp_shape,
+    get_extension_payload,
     # ── functions ────────────────────────────────────────────
     load_json,
-    save_json,
-    dmp_default_templates,
-    now_iso_minute,
-    to_bytes_mb,
-    norm_rel_urlish,
-    data_type_from_path,
-    get_extension_payload,
-    ensure_dmp_shape,
-    create_or_update_dmp_from_schema,
     main,
+    norm_rel_urlish,
+    now_iso_minute,
+    save_json,
+    to_bytes_mb,
 )
 
+DEFAULT_UPDATE_FIELDS = []  # top-level fields
+DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]  # nested fields to update
 
-DEFAULT_UPDATE_FIELDS = []# top-level fields
-DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]         # nested fields to update
 
-
-def get_hash(path, algo:str="sha256"):
+def get_hash(path, algo: str = "sha256"):
     """
     Get the hash of a file or folder.
     Uses hashlib for files and dirhash for directories.
@@ -53,7 +52,8 @@ def get_hash(path, algo:str="sha256"):
     except Exception as e:
         print(f"Error while calculating hash for {path}: {e}")
         return None
-    
+
+
 def get_file_info(file_paths):
     number_of_files = 0
     total_size = 0.0
@@ -67,6 +67,7 @@ def get_file_info(file_paths):
         file_formats.add(os.path.splitext(path)[1].lower())
     return number_of_files, total_size, file_formats, individual_sizes_mb
 
+
 def get_all_files(destination):
     all_files = set()
     for root, _, files in os.walk(destination):
@@ -74,13 +75,15 @@ def get_all_files(destination):
             all_files.add(os.path.join(root, file))
     return all_files
 
-def get_data_files(base_dir='./data', ignore=None, recursive=False):
+
+def get_data_files(base_dir="./data", ignore=None, recursive=False):
     if ignore is None:
-        ignore = {'.git', '.gitignore', '.gitkeep', '.gitlog'}
+        ignore = {".git", ".gitignore", ".gitkeep", ".gitlog"}
     all_files = []
     try:
-        subdirs = [name for name in os.listdir(base_dir)
-                   if name not in ignore and not name.startswith('.')]
+        subdirs = [
+            name for name in os.listdir(base_dir) if name not in ignore and not name.startswith(".")
+        ]
     except FileNotFoundError:
         return [], []
     subdirs = sorted(subdirs)
@@ -89,17 +92,18 @@ def get_data_files(base_dir='./data', ignore=None, recursive=False):
         if os.path.isdir(sub_path):
             iterator = os.walk(sub_path) if recursive else [(sub_path, [], os.listdir(sub_path))]
             for root, dirs, files in iterator:
-                dirs[:] = [d for d in dirs if d not in ignore and not d.startswith('.')]
+                dirs[:] = [d for d in dirs if d not in ignore and not d.startswith(".")]
                 for fn in files:
-                    if fn not in ignore and not fn.startswith('.'):
+                    if fn not in ignore and not fn.startswith("."):
                         all_files.append(os.path.join(root, fn))
     return all_files, subdirs
+
 
 def datasets_to_json(
     json_path=DEFAULT_DMP_PATH,
     entry=None,
-    update_fields: Optional[List[str]] = None,
-    update_distribution_fields: Optional[List[str]] = None,
+    update_fields: list[str] | None = None,
+    update_distribution_fields: list[str] | None = None,
     bump_modified_on_distribution_updates: bool = False,
 ):
     """
@@ -130,15 +134,15 @@ def datasets_to_json(
 
     any_change_flag = False
 
-    def _extract_rel_url(dist: dict) -> Optional[str]:
+    def _extract_rel_url(dist: dict) -> str | None:
         for k in ("url_acess", "url_access", "access_url", "download_url"):
             v = (dist or {}).get(k)
             if v:
                 return norm_rel_urlish(v)
         return None
 
-    def _collect_rel_urls(ds: dict) -> Set[str]:
-        out: Set[str] = set()
+    def _collect_rel_urls(ds: dict) -> set[str]:
+        out: set[str] = set()
         for d in (ds or {}).get("distribution", []) or []:
             u = _extract_rel_url(d)
             if u:
@@ -167,7 +171,7 @@ def datasets_to_json(
         entry_x = get_extension_payload(entry or {}, "x_dcas") or {}
         existing_hash = existing_x.get("hash")
         entry_hash = entry_x.get("hash")
-        changed_flag = (existing_hash != entry_hash)
+        changed_flag = existing_hash != entry_hash
 
         # --- 2) optionally replace/insert x_dcas payload ---
         if entry_x:
@@ -214,26 +218,28 @@ def datasets_to_json(
         datasets[idx] = merged
         if changed_flag:
             print(f"Updated DMP entry for {merged.get('title')}.")
-            any_change_flag  = True
-        else:    
+            any_change_flag = True
+        else:
             print(f"No changes detected for DMP entry: {merged.get('title')}.")
 
     else:
         datasets.append(entry)
         print(f"Added DMP entry for {entry.get('title')}.")
-        any_change_flag  = True
+        any_change_flag = True
 
     # Sort by x_dcas.data_type then title
     def _sort_key(ds):
         x = get_extension_payload(ds, "x_dcas") or {}
         return (x.get("data_type") or "", ds.get("title") or "")
+
     datasets.sort(key=_sort_key)
 
     dmp["dataset"] = datasets
     dmp["modified"] = now_iso_minute()
     save_json(json_path, data)
 
-    return any_change_flag,json_path
+    return any_change_flag, json_path
+
 
 def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
     """
@@ -245,7 +251,6 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
 
     Returns the absolute Path to the JSON file.
     """
-
     # Resolve path relative to project root (3 levels up from this file)
     root = PROJECT_ROOT
     json_path = (root / pathlib.Path(json_path)).resolve()
@@ -301,11 +306,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
                 new_exts.append(ext)
                 continue
             # Drop any prior x_dcas in any known shape
-            if (
-                "x_dcas" in ext
-                or ext.get("name") == "x_dcas"
-                or ext.get("extension") == "x_dcas"
-            ):
+            if "x_dcas" in ext or ext.get("name") == "x_dcas" or ext.get("extension") == "x_dcas":
                 continue
             new_exts.append(ext)
 
@@ -330,8 +331,8 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
 
     return json_path
 
+
 def dataset(destination, json_path=DEFAULT_DMP_PATH):
-    
     def make_dataset_entry(name, distribution, x_dcas_payload):
         templates = dmp_default_templates()
 
@@ -339,9 +340,9 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
         entry = deepcopy(templates["dataset"])
 
         # Simple overlays
-        entry["title"]    = name
-        entry["issued"]   = now_iso_minute()
-        entry["modified"] = now_iso_minute() 
+        entry["title"] = name
+        entry["issued"] = now_iso_minute()
+        entry["modified"] = now_iso_minute()
 
         # distribution must be a list with one object; merge with its template
         dist = deepcopy(templates["distribution"])
@@ -359,15 +360,15 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
 
     def make_x_dcas_payload(
         *,
-        data_type: Optional[str] = None,
-        destination: Optional[str] = None,
-        number_of_files: Optional[int] = None,
-        total_size_mb: Optional[float] = None,
-        file_formats: Optional[Iterable[str]] = None,
-        data_files: Optional[Iterable[str]] = None,
-        data_size_mb: Optional[Iterable[float]] = None,
-        hash_value: Optional[str] = None,   # 'hash' is a builtin, so use hash_value
-    ) -> Dict[str, Any]:
+        data_type: str | None = None,
+        destination: str | None = None,
+        number_of_files: int | None = None,
+        total_size_mb: float | None = None,
+        file_formats: Iterable[str] | None = None,
+        data_files: Iterable[str] | None = None,
+        data_size_mb: Iterable[float] | None = None,
+        hash_value: str | None = None,  # 'hash' is a builtin, so use hash_value
+    ) -> dict[str, Any]:
         """
         Build x_dcas by loading templates['x_dcas'] and only updating fields
         that already exist in the template.
@@ -376,7 +377,7 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
         x = deepcopy(templates["x_dcas"])
 
         # Prepare candidate updates (normalize types lightly)
-        updates: Dict[str, Any] = {
+        updates: dict[str, Any] = {
             "data_type": data_type,
             "destination": norm_rel_urlish(destination) if destination is not None else None,
             "number_of_files": int(number_of_files) if number_of_files is not None else None,
@@ -394,12 +395,15 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
 
         return x
 
-    cookie = read_toml(
-        folder=str(PROJECT_ROOT),
-        json_filename="cookiecutter.json",
-        tool_name="cookiecutter",
-        toml_path="pyproject.toml",
-    ) or {}
+    cookie = (
+        read_toml(
+            folder=str(PROJECT_ROOT),
+            json_filename="cookiecutter.json",
+            tool_name="cookiecutter",
+            toml_path="pyproject.toml",
+        )
+        or {}
+    )
 
     destination = check_path_format(destination)
 
@@ -416,48 +420,51 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
 
     # distribution (complete RDA-DMP shape with defaults; 1.2-compliant)
     distribution = {
-        #"title": name,
+        # "title": name,
         "access_url": norm_rel_urlish(destination),
-        #"download_url": "",
+        # "download_url": "",
         "format": [ext.strip(".") for ext in sorted(file_formats)],
         "byte_size": to_bytes_mb(total_size_mb),
         "data_access": "open" if data_files else "closed",
-        #"host": {"title": "Project repository", "url": ""},
+        # "host": {"title": "Project repository", "url": ""},
         "available_until": "",
-        #"description": "",
-        "license": [{
-            "license_ref": LICENSE_LINKS.get(cookie.get("DATA_LICENSE"), ""),
-            "start_date": datetime.now().strftime("%Y-%m-%d")
-        }],
+        # "description": "",
+        "license": [
+            {
+                "license_ref": LICENSE_LINKS.get(cookie.get("DATA_LICENSE"), ""),
+                "start_date": datetime.now().strftime("%Y-%m-%d"),
+            }
+        ],
     }
 
     # DCAS payload wrapped under dataset.extension
     x_dcas_payload = make_x_dcas_payload(
-        data_type = data_type,
-        destination = destination,
-        number_of_files = number_of_files,
-        total_size_mb = int(round(total_size_mb)),
-        file_formats = sorted(list(file_formats)),
-        data_files =  data_files,
-        data_size_mb = individual_sizes_mb,
-        hash_value = get_hash(destination),
+        data_type=data_type,
+        destination=destination,
+        number_of_files=number_of_files,
+        total_size_mb=int(round(total_size_mb)),
+        file_formats=sorted(list(file_formats)),
+        data_files=data_files,
+        data_size_mb=individual_sizes_mb,
+        hash_value=get_hash(destination),
     )
-    
-    entry = make_dataset_entry(name, distribution, x_dcas_payload)
-    
-    change_flag,json_path = datasets_to_json(json_path=json_path, entry=entry)
 
-    return change_flag,json_path
+    entry = make_dataset_entry(name, distribution, x_dcas_payload)
+
+    change_flag, json_path = datasets_to_json(json_path=json_path, entry=entry)
+
+    return change_flag, json_path
+
 
 def generate_dataset_table(
     json_path: str,
-    file_descriptions: Optional[Dict[str, str]] = None,
+    file_descriptions: dict[str, str] | None = None,
     include_hash: bool = False,
-) -> Tuple[Optional[str], Optional[str]]:
+) -> tuple[str | None, str | None]:
     if not os.path.exists(json_path):
         return None, None
 
-    with open(json_path, "r", encoding="utf-8") as fh:
+    with open(json_path, encoding="utf-8") as fh:
         json_data = json.load(fh)
 
     dmp = ensure_dmp_shape(json_data)["dmp"]
@@ -474,7 +481,7 @@ def generate_dataset_table(
         return "N/A" if val in (None, "", [], {}, "Not provided") else str(val)
 
     rows = []
-    dynamic_id_fields: Set[str] = set()  # <-- collect dynamic keys from dataset_id.type
+    dynamic_id_fields: set[str] = set()  # <-- collect dynamic keys from dataset_id.type
 
     for ds in datasets:
         x = get_extension_payload(ds, "x_dcas") or {}
@@ -493,14 +500,17 @@ def generate_dataset_table(
 
         row = {
             "data_name": ds.get("title"),
-            "destination": dist.get("download_url") or dist.get("access_url") or x.get("destination"),
+            "destination": dist.get("download_url")
+            or dist.get("access_url")
+            or x.get("destination"),
             "created": ds.get("issued"),
             "lastest_change": ds.get("modified"),
             "hash": x.get("hash"),
             "provided": "Provided" if x.get("data_files") else "Can be re-created",
             "number_of_files": x.get("number_of_files"),
-            "total_size_mb": x.get("total_size_mb") if x.get("total_size_mb") is not None
-                             else int(round((dist.get("byte_size") or 0) / (1024 * 1024))),
+            "total_size_mb": x.get("total_size_mb")
+            if x.get("total_size_mb") is not None
+            else int(round((dist.get("byte_size") or 0) / (1024 * 1024))),
             "file_formats": fmts_list,
             "zip_file": None,
             "description": ds.get("description"),
@@ -528,7 +538,6 @@ def generate_dataset_table(
         if ds_id_type:
             row[str(ds_id_type)] = ds_id_identifier
             dynamic_id_fields.add(str(ds_id_type))
-
 
         rows.append(row)
 
@@ -559,16 +568,30 @@ def generate_dataset_table(
 
     # Pick the active columns to show (non-empty in at least one row)
     active_fields = [
-        k for k in standard_fields
+        k
+        for k in standard_fields
         if k not in hidden_fields and any(is_nonempty(r.get(k)) for r in rows)
     ]
 
     summary_header = "| " + " | ".join([standard_fields[k] for k in active_fields]) + " |\n"
-    summary_divider = "| " + " | ".join(["-" * len(standard_fields[k]) for k in active_fields]) + " |\n"
+    summary_divider = (
+        "| " + " | ".join(["-" * len(standard_fields[k]) for k in active_fields]) + " |\n"
+    )
 
-    base_detail = ["data_name", "data_files", "destination", "created", "lastest_change",
-                   "provided", "data_size"]
-    if include_hash and "hash" not in hidden_fields and any(is_nonempty(r.get("hash")) for r in rows):
+    base_detail = [
+        "data_name",
+        "data_files",
+        "destination",
+        "created",
+        "lastest_change",
+        "provided",
+        "data_size",
+    ]
+    if (
+        include_hash
+        and "hash" not in hidden_fields
+        and any(is_nonempty(r.get("hash")) for r in rows)
+    ):
         base_detail.insert(5, "hash")
 
     # Include dynamic identifier fields in the detail table as well
@@ -577,11 +600,15 @@ def generate_dataset_table(
     detail_header = "| " + " | ".join([f.replace("_", " ").title() for f in base_detail]) + " |\n"
     detail_divider = "| " + " | ".join(["-" * len(f) for f in base_detail]) + " |\n"
 
-    summary_blocks: List[str] = []
-    detail_blocks: List[str] = []
+    summary_blocks: list[str] = []
+    detail_blocks: list[str] = []
 
     for dtype, entries in sorted(grouped.items()):
-        desc = f" <- {file_descriptions.get(dtype, '')}" if (file_descriptions and dtype in file_descriptions) else None
+        desc = (
+            f" <- {file_descriptions.get(dtype, '')}"
+            if (file_descriptions and dtype in file_descriptions)
+            else None
+        )
         header = f"### {dtype} {desc}\n" if desc else f"### {dtype}\n"
         summary_blocks.append(header + summary_header + summary_divider)
 
@@ -610,7 +637,7 @@ def generate_dataset_table(
                 sizes = r["_sizes"]
                 if len(sizes) < len(files):
                     sizes += ["?"] * (len(files) - len(sizes))
-                for f, sz in zip(files, sizes):
+                for f, sz in zip(files, sizes, strict=False):
                     detail_vals = []
                     for k in base_detail:
                         if k == "data_files":
@@ -627,9 +654,10 @@ def generate_dataset_table(
 
     return "".join(summary_blocks), "".join(detail_blocks)
 
+
 def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     section_title = "**The following datasets are included in the project:**"
-    readme_path = (PROJECT_ROOT / pathlib.Path(readme_file))
+    readme_path = PROJECT_ROOT / pathlib.Path(readme_file)
     new_section = f"{section_title}\n\n{markdown_table.strip()}\n</details>"
     try:
         content = readme_path.read_text(encoding="utf-8")
@@ -652,10 +680,11 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     readme_path.write_text(updated.strip(), encoding="utf-8")
     print(f"{readme_path} successfully updated with dataset section.")
 
+
 @ensure_correct_kernel
 def main():
     os.chdir(PROJECT_ROOT)
-    
+
     data_files, _ = get_data_files()
 
     create_or_update_dmp_from_schema(dmp_path=DEFAULT_DMP_PATH)
@@ -666,7 +695,7 @@ def main():
         folder=PROJECT_ROOT,
         json_filename="./file_descriptions.json",
         tool_name="file_descriptions",
-        toml_path="pyproject.toml"
+        toml_path="pyproject.toml",
     )
 
     for f in data_files:
@@ -681,8 +710,9 @@ def main():
 
     if change_flag:
         with change_dir("./data"):
-            _= git_commit(msg = "Running 'set-dataset'",path = os.getcwd())
+            _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
             git_log_to_file(os.path.join(".gitlog"))
+
 
 if __name__ == "__main__":
     main()

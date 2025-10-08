@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
+
+import multiprocessing
 import os
 import stat
 import tempfile
 import zipfile
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import multiprocessing
+from pathlib import Path
 
 # ========= Exceptions / constants =========
 
+
 class PublishError(RuntimeError):
     pass
+
 
 RETRY_STATUS = {429, 500, 502, 503, 504}
 DEFAULT_TIMEOUT = 60
@@ -42,7 +43,7 @@ ZENODO_ROLE_MAP = {
 # Dataverse upload constraints (as given)
 DATAVERSE_MAX_FILES_TOTAL: int = 100
 DATAVERSE_MAX_FILE_SIZE_BYTES: int = int(953.7 * 1_000_000)  # 953.7 MB (decimal)
-DATAVERS_SUBJECTS: Dict[str, str] = {
+DATAVERS_SUBJECTS: dict[str, str] = {
     "agricultural sciences": "Agricultural Sciences",
     "arts and humanities": "Arts and Humanities",
     "astronomy and astrophysics": "Astronomy and Astrophysics",
@@ -63,15 +64,45 @@ DATAVERS_SUBJECTS: Dict[str, str] = {
 
 
 # Compression heuristics
-_COMPRESSIBLE = {".txt",".csv",".tsv",".json",".xml",".yaml",".yml",".md",".log",
-                 ".fastq",".fasta",".sam"}
-_INCOMPRESSIBLE = {".zip",".gz",".bz2",".xz",".zst",".7z",
-                   ".jpg",".jpeg",".png",".gif",".mp3",".mp4",".mov",".avi",
-                   ".pdf",".parquet",".feather",".orc"}
+_COMPRESSIBLE = {
+    ".txt",
+    ".csv",
+    ".tsv",
+    ".json",
+    ".xml",
+    ".yaml",
+    ".yml",
+    ".md",
+    ".log",
+    ".fastq",
+    ".fasta",
+    ".sam",
+}
+_INCOMPRESSIBLE = {
+    ".zip",
+    ".gz",
+    ".bz2",
+    ".xz",
+    ".zst",
+    ".7z",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".mp3",
+    ".mp4",
+    ".mov",
+    ".avi",
+    ".pdf",
+    ".parquet",
+    ".feather",
+    ".orc",
+}
 
 # ========= maDMP utilities =========
 
-def _get(d: dict, path: List[str], default=None):
+
+def _get(d: dict, path: list[str], default=None):
     cur = d
     for p in path:
         if isinstance(cur, dict) and p in cur:
@@ -80,15 +111,19 @@ def _get(d: dict, path: List[str], default=None):
             return default
     return cur
 
+
 def _norm_list(x):
     if x is None:
         return []
     return x if isinstance(x, list) else [x]
 
-def _guess_dataset(dmp: dict, dataset_id: Optional[str]) -> dict:
+
+def _guess_dataset(dmp: dict, dataset_id: str | None) -> dict:
     datasets = _get(dmp, ["dmp", "dataset"], []) or dmp.get("dataset", [])
     if not datasets:
-        raise PublishError("No datasets found in the DMP (expected 'dmp.dataset' or top-level 'dataset').")
+        raise PublishError(
+            "No datasets found in the DMP (expected 'dmp.dataset' or top-level 'dataset')."
+        )
     if dataset_id:
         for ds in datasets:
             if ds.get("dataset_id") == dataset_id or ds.get("title") == dataset_id:
@@ -100,31 +135,38 @@ def _guess_dataset(dmp: dict, dataset_id: Optional[str]) -> dict:
                     return ds
     return datasets[0]
 
-def _keywords_from_madmp(ds: dict) -> List[str]:
+
+def _keywords_from_madmp(ds: dict) -> list[str]:
     kws = []
     kws += [kw for kw in _norm_list(ds.get("keyword", [])) if isinstance(kw, str)]
     for subj in _norm_list(ds.get("subject", [])):
         term = subj.get("term") or subj.get("value") if isinstance(subj, dict) else None
         if term:
             kws.append(term)
-    seen = set(); out = []
+    seen = set()
+    out = []
     for k in (k.strip() for k in kws if isinstance(k, str)):
         if k and k.lower() not in seen:
-            seen.add(k.lower()); out.append(k)
+            seen.add(k.lower())
+            out.append(k)
     return out[:50]
+
 
 def _has_personal_or_sensitive(ds: dict) -> bool:
     def _yes(x):
         return isinstance(x, str) and x.strip().lower() == "yes"
+
     return _yes(ds.get("personal_data")) or _yes(ds.get("sensitive_data"))
+
 
 # ========= x_dcas file resolution =========
 
-def files_from_x_dcas(ds: dict) -> List[str]:
+
+def files_from_x_dcas(ds: dict) -> list[str]:
     """
     Authoritative list from extension[].x_dcas.data_files. Normalize/resolve paths.
     """
-    out: List[str] = []
+    out: list[str] = []
     project_root = Path(__file__).resolve().parent.parent.parent
     for ext in _norm_list(ds.get("extension", [])):
         if not isinstance(ext, dict):
@@ -141,10 +183,12 @@ def files_from_x_dcas(ds: dict) -> List[str]:
     seen, uniq = set(), []
     for p in out:
         if p not in seen:
-            seen.add(p); uniq.append(p)
+            seen.add(p)
+            uniq.append(p)
     return uniq
 
-def regular_files_existing(paths: List[str]) -> List[str]:
+
+def regular_files_existing(paths: list[str]) -> list[str]:
     """Keep only existing regular files; skip dirs/symlinks/unreadable."""
     out = []
     for p in paths:
@@ -156,7 +200,8 @@ def regular_files_existing(paths: List[str]) -> List[str]:
             pass
     return out
 
-def sizes_bytes(files: List[str]) -> Tuple[int, dict]:
+
+def sizes_bytes(files: list[str]) -> tuple[int, dict]:
     """Return (total_bytes, per_file_size)."""
     sizes = {}
     total = 0
@@ -169,7 +214,8 @@ def sizes_bytes(files: List[str]) -> Tuple[int, dict]:
         total += sz
     return total, sizes
 
-def estimate_zip_total_bytes(files: List[str], total_bytes: int) -> int:
+
+def estimate_zip_total_bytes(files: list[str], total_bytes: int) -> int:
     """
     Conservative estimate of zipped total:
       compressible ~50%; incompressible ~100%; unknown ~90%.
@@ -183,38 +229,46 @@ def estimate_zip_total_bytes(files: List[str], total_bytes: int) -> int:
         elif ext in _INCOMPRESSIBLE:
             incom += sz
     unknown = max(0, total_bytes - comp - incom)
-    return int(comp*0.5 + incom*1.0 + unknown*0.9)
+    return int(comp * 0.5 + incom * 1.0 + unknown * 0.9)
+
 
 # ========= PACKAGING NOTE (with ASCII tree) =========
 
-def append_packaging_note(desc: str, pre_files: int, pre_bytes: int,
-                          final_paths: List[str], report: List[dict]) -> str:
+
+def append_packaging_note(
+    desc: str, pre_files: int, pre_bytes: int, final_paths: list[str], report: list[dict]
+) -> str:
     """
     Append a formatted packaging note. Shows totals and an ASCII tree of the original
     dataset structure up to the zipping level. The tree is reconstructed from the
     report entries' 'first_level' keys and 'dataset_root'.
     """
-    def _gb(n): return f"{n/1_000_000_000:.2f} GB"
+
+    def _gb(n):
+        return f"{n / 1_000_000_000:.2f} GB"
+
     post_total = sum(os.path.getsize(p) for p in final_paths if os.path.exists(p))
     base = (desc or "No description provided.").strip()
 
     summary = []
-    summary.append(f"Original payload (from x_dcas.data_files): {pre_files} files, ~{_gb(pre_bytes)} total.")
+    summary.append(
+        f"Original payload (from x_dcas.data_files): {pre_files} files, ~{_gb(pre_bytes)} total."
+    )
     summary.append(f"Final upload set: {len(final_paths)} item(s), ~{_gb(post_total)} total.")
 
     # ASCII tree (only if a report is available)
-    tree_lines: List[str] = []
+    tree_lines: list[str] = []
     if report:
         # totals per archive already in report
         summary.append(f"Created {len(report)} archive(s) to comply with upload limits.")
         for r in report:
-            examples = ", ".join(r.get('examples', []))
+            examples = ", ".join(r.get("examples", []))
             summary.append(f"{r['archive']}: {r['count']} files (~{_gb(r['bytes'])})")
             if examples:
                 summary.append(f"   e.g., {examples}")
 
         # Build tree structure: group by first-level directory
-        groups: Dict[str, List[dict]] = {}
+        groups: dict[str, list[dict]] = {}
         dataset_root = None
         for r in report:
             k = r.get("first_level", "")  # "" means root files
@@ -222,7 +276,7 @@ def append_packaging_note(desc: str, pre_files: int, pre_bytes: int,
             dataset_root = dataset_root or r.get("dataset_root")
 
         # Order groups: subdirs (sorted) then root files (if any) at the end
-        keys = sorted([k for k in groups.keys() if k]) + ([""] if "" in groups else [])
+        keys = sorted([k for k in groups if k]) + ([""] if "" in groups else [])
 
         # Root label
         root_label = (dataset_root or "dataset") + "/"
@@ -230,7 +284,7 @@ def append_packaging_note(desc: str, pre_files: int, pre_bytes: int,
 
         # Emit first-level nodes
         for gi, key in enumerate(keys):
-            is_last = (gi == len(keys) - 1)
+            is_last = gi == len(keys) - 1
             branch = "└─ " if is_last else "├─ "
             prefix_children = "   " if is_last else "│  "
 
@@ -239,17 +293,23 @@ def append_packaging_note(desc: str, pre_files: int, pre_bytes: int,
                 # Root files: may have multiple archives in the flat-folder case
                 if len(entries) == 1:
                     e = entries[0]
-                    tree_lines.append(f"{branch}(root files) → {e['archive']} ({e['count']} files, ~{_gb(e['bytes'])})")
+                    tree_lines.append(
+                        f"{branch}(root files) → {e['archive']} ({e['count']} files, ~{_gb(e['bytes'])})"
+                    )
                 else:
                     tree_lines.append(f"{branch}(root files)")
                     for j, e in enumerate(entries):
-                        sub_last = (j == len(entries) - 1)
+                        sub_last = j == len(entries) - 1
                         sub_branch = "└─ " if sub_last else "├─ "
-                        tree_lines.append(f"{prefix_children}{sub_branch}{e['archive']} ({e['count']} files, ~{_gb(e['bytes'])})")
+                        tree_lines.append(
+                            f"{prefix_children}{sub_branch}{e['archive']} ({e['count']} files, ~{_gb(e['bytes'])})"
+                        )
             else:
                 # Subdirectory: exactly one zip per subdir in preserve-first-level plan
                 e = entries[0]
-                tree_lines.append(f"{branch}{key}/ → {e['archive']} ({e['count']} files, ~{_gb(e['bytes'])})")
+                tree_lines.append(
+                    f"{branch}{key}/ → {e['archive']} ({e['count']} files, ~{_gb(e['bytes'])})"
+                )
 
     # Compose final note (with two blank lines before header, and a single <pre> block)
     body_lines = summary
@@ -260,9 +320,11 @@ def append_packaging_note(desc: str, pre_files: int, pre_bytes: int,
 
     return base + "<pre>\n\n\n[PACKAGING NOTE]\n\n" + "\n".join(body_lines) + "\n</pre>"
 
+
 # ========= People / affiliation / license helpers (shared) =========
 
-def _normalize_orcid(raw: Optional[str]) -> Optional[str]:
+
+def _normalize_orcid(raw: str | None) -> str | None:
     if not raw:
         return None
     s = str(raw).strip()
@@ -277,7 +339,8 @@ def _normalize_orcid(raw: Optional[str]) -> Optional[str]:
         return f"{s[0:4]}-{s[4:8]}-{s[8:12]}-{s[12:16]}"
     return None
 
-def _affiliation_from_node(node: Optional[dict]) -> Tuple[Optional[str], Optional[str]]:
+
+def _affiliation_from_node(node: dict | None) -> tuple[str | None, str | None]:
     if not isinstance(node, dict):
         return (None, None)
     name = node.get("name")
@@ -289,30 +352,37 @@ def _affiliation_from_node(node: Optional[dict]) -> Tuple[Optional[str], Optiona
             ror = rid.strip()
     return (name, ror)
 
+
 def description_from_madmp(ds: dict) -> str:
     desc = ds.get("description") or _get(ds, ["description", "text"])
     return desc or "No description provided."
 
-def related_identifiers(ds: dict) -> List[Dict[str, str]]:
+
+def related_identifiers(ds: dict) -> list[dict[str, str]]:
     rels = []
     for ref in _norm_list(ds.get("related_identifier", [])) + _norm_list(ds.get("reference", [])):
         if isinstance(ref, dict):
             idv = ref.get("identifier") or ref.get("id")
             scheme = (ref.get("type") or ref.get("scheme") or "").upper() or None
-            relation = (ref.get("relation_type") or ref.get("relation") or "isReferencedBy")
+            relation = ref.get("relation_type") or ref.get("relation") or "isReferencedBy"
         else:
-            idv = str(ref); scheme = None; relation = "isReferencedBy"
+            idv = str(ref)
+            scheme = None
+            relation = "isReferencedBy"
         if idv:
             r = {"identifier": idv, "relation": relation}
-            if scheme: r["scheme"] = scheme
+            if scheme:
+                r["scheme"] = scheme
             rels.append(r)
     return rels[:100]
+
 
 # ========= Parallel packaging plan & execution =========
 
 # Tune these as needed or via env vars:
-ZIP_WORKERS = max(1, min((multiprocessing.cpu_count() or 2), 8))   # CPU-bound
+ZIP_WORKERS = max(1, min((multiprocessing.cpu_count() or 2), 8))  # CPU-bound
 ZIP_CHUNK = 2000  # files per compressed zip chunk to keep central dir reasonable
+
 
 class PackItem:
     """
@@ -321,17 +391,25 @@ class PackItem:
     - kind = "zip"    -> zip_path is where to write; members is list of files
                          compression = zipfile.ZIP_DEFLATED or ZIP_STORED
     """
-    __slots__ = ("kind","path","zip_path","members","compression")
-    def __init__(self, kind: str, path: str | None = None,
-                 zip_path: str | None = None, members: List[str] | None = None,
-                 compression: int | None = None):
+
+    __slots__ = ("kind", "path", "zip_path", "members", "compression")
+
+    def __init__(
+        self,
+        kind: str,
+        path: str | None = None,
+        zip_path: str | None = None,
+        members: list[str] | None = None,
+        compression: int | None = None,
+    ):
         self.kind = kind
         self.path = path
         self.zip_path = zip_path
         self.members = members or []
         self.compression = compression
 
-def build_packaging_plan(files: List[str]) -> Tuple[List[PackItem], List[dict], str]:
+
+def build_packaging_plan(files: list[str]) -> tuple[list[PackItem], list[dict], str]:
     """
     Return (plan, report, workdir). Does NOT create zips yet.
     """
@@ -345,44 +423,59 @@ def build_packaging_plan(files: List[str]) -> Tuple[List[PackItem], List[dict], 
     comp_files, incom_files, other = [], [], []
     for f in files:
         ext = os.path.splitext(f)[1].lower()
-        if ext in _COMPRESSIBLE: comp_files.append(f)
-        elif ext in _INCOMPRESSIBLE: incom_files.append(f)
-        else: other.append(f)
+        if ext in _COMPRESSIBLE:
+            comp_files.append(f)
+        elif ext in _INCOMPRESSIBLE:
+            incom_files.append(f)
+        else:
+            other.append(f)
 
-    singles: List[str] = []
-    small_incom: List[str] = []
+    singles: list[str] = []
+    small_incom: list[str] = []
     for f in sorted(incom_files, key=lambda x: -sizes[x]):
         (singles if sizes[f] >= 1_000_000_000 else small_incom).append(f)  # >=1 GB single
 
     workdir = tempfile.mkdtemp(prefix="zenodo_pack_")
-    plan: List[PackItem] = []
-    report: List[dict] = []
+    plan: list[PackItem] = []
+    report: list[dict] = []
 
-    def add_zip_plan(members: List[str], name_stub: str, compression: int):
+    def add_zip_plan(members: list[str], name_stub: str, compression: int):
         zip_path = os.path.join(workdir, f"{name_stub}.zip")
         plan.append(PackItem("zip", zip_path=zip_path, members=members, compression=compression))
-        report.append({
-            "archive": os.path.basename(zip_path),
-            "count": len(members),
-            "bytes": sum(sizes[m] for m in members),
-            "examples": [os.path.basename(m) for m in members[:5]],
-            "first_level": "",                   # flat -> root files
-            "dataset_root": dataset_root_name,   # for tree header
-        })
+        report.append(
+            {
+                "archive": os.path.basename(zip_path),
+                "count": len(members),
+                "bytes": sum(sizes[m] for m in members),
+                "examples": [os.path.basename(m) for m in members[:5]],
+                "first_level": "",  # flat -> root files
+                "dataset_root": dataset_root_name,  # for tree header
+            }
+        )
 
     # Compressible -> deflated zips (chunked)
     if comp_files:
         for i in range(0, len(comp_files), ZIP_CHUNK):
-            chunk = comp_files[i:i+ZIP_CHUNK]
-            add_zip_plan(chunk, f"comp_{1 + i//ZIP_CHUNK:03d}", getattr(zipfile, "ZIP_DEFLATED", 0))
+            chunk = comp_files[i : i + ZIP_CHUNK]
+            add_zip_plan(
+                chunk, f"comp_{1 + i // ZIP_CHUNK:03d}", getattr(zipfile, "ZIP_DEFLATED", 0)
+            )
 
     # Reduce count if over 100 using STORE zips on small incompressible + unknown
     remain_pool = small_incom + other
-    while (len(singles) + len(remain_pool) + sum(1 for it in plan if it.kind=="zip")) > ZENODO_MAX_FILES:
-        reduce_needed = (len(singles) + len(remain_pool) + sum(1 for it in plan if it.kind=="zip")) - ZENODO_MAX_FILES
+    while (
+        len(singles) + len(remain_pool) + sum(1 for it in plan if it.kind == "zip")
+    ) > ZENODO_MAX_FILES:
+        reduce_needed = (
+            len(singles) + len(remain_pool) + sum(1 for it in plan if it.kind == "zip")
+        ) - ZENODO_MAX_FILES
         K = min(max(1, reduce_needed + 1), 1000)
         group, remain_pool = remain_pool[:K], remain_pool[K:]
-        add_zip_plan(group, f"store_{len([1 for it in plan if it.kind=='zip'])+1:03d}", getattr(zipfile, "ZIP_STORED", 0))
+        add_zip_plan(
+            group,
+            f"store_{len([1 for it in plan if it.kind == 'zip']) + 1:03d}",
+            getattr(zipfile, "ZIP_STORED", 0),
+        )
 
     # Whatever remains can be singles
     singles.extend(remain_pool)
@@ -393,7 +486,7 @@ def build_packaging_plan(files: List[str]) -> Tuple[List[PackItem], List[dict], 
     return plan, report, workdir
 
 
-def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
+def _first_level_groups(files: list[str]) -> tuple[Path, dict[str, list[str]]]:
     """
     Group files by first-level subdirectory under the common parent.
     Returns (common_parent, groups), where groups maps:
@@ -414,7 +507,7 @@ def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
         parent_str = os.path.dirname(files_abs[0])
 
     parent = Path(parent_str)
-    groups: Dict[str, List[str]] = {}
+    groups: dict[str, list[str]] = {}
 
     for f in files_abs:
         rel_str = os.path.relpath(f, start=parent_str)
@@ -433,7 +526,10 @@ def _first_level_groups(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
 
     return parent, groups
 
-def build_packaging_plan_preserve_first_level(files: List[str]) -> Tuple[List[PackItem], List[dict], str]:
+
+def build_packaging_plan_preserve_first_level(
+    files: list[str],
+) -> tuple[list[PackItem], list[dict], str]:
     """
     Preserve first-level directory structure:
       - If ONLY root files (no subdirs): fall back to build_packaging_plan(files)
@@ -452,22 +548,30 @@ def build_packaging_plan_preserve_first_level(files: List[str]) -> Tuple[List[Pa
         return build_packaging_plan(files)
 
     workdir = tempfile.mkdtemp(prefix="zenodo_pack_")
-    plan: List[PackItem] = []
-    report: List[dict] = []
+    plan: list[PackItem] = []
+    report: list[dict] = []
 
-    def add_zip(members: List[str], name_stub: str):
+    def add_zip(members: list[str], name_stub: str):
         zip_path = os.path.join(workdir, f"{name_stub}.zip")
-        plan.append(PackItem("zip", zip_path=zip_path, members=members,
-                             compression=getattr(zipfile, "ZIP_DEFLATED", 0)))
+        plan.append(
+            PackItem(
+                "zip",
+                zip_path=zip_path,
+                members=members,
+                compression=getattr(zipfile, "ZIP_DEFLATED", 0),
+            )
+        )
         _, sizes = sizes_bytes(members)
-        report.append({
-            "archive": os.path.basename(zip_path),
-            "count": len(members),
-            "bytes": sum(sizes.get(m, 0) for m in members),
-            "examples": [os.path.basename(m) for m in members[:5]],
-            "first_level": name_stub if name_stub != "root_files" else "",
-            "dataset_root": dataset_root_name,
-        })
+        report.append(
+            {
+                "archive": os.path.basename(zip_path),
+                "count": len(members),
+                "bytes": sum(sizes.get(m, 0) for m in members),
+                "examples": [os.path.basename(m) for m in members[:5]],
+                "first_level": name_stub if name_stub != "root_files" else "",
+                "dataset_root": dataset_root_name,
+            }
+        )
 
     # One zip per subdirectory
     for sub in sorted(subdirs):
@@ -487,11 +591,12 @@ def build_packaging_plan_preserve_first_level(files: List[str]) -> Tuple[List[Pa
         batch_size = max(1, len(all_members_groups) // ZENODO_MAX_FILES + 1)
         for i in range(0, len(all_members_groups), batch_size):
             batch = []
-            for grp in all_members_groups[i:i+batch_size]:
+            for grp in all_members_groups[i : i + batch_size]:
                 batch.extend(grp)
             add_zip(batch, f"batched_{1 + i // batch_size:03d}")
 
     return plan, report, workdir
+
 
 def _zip_worker(args):
     zip_path, members, compression = args
@@ -501,11 +606,12 @@ def _zip_worker(args):
             zf.write(fp, arcname=os.path.relpath(fp, start=base))
     return zip_path
 
-def realize_packaging_plan_parallel(plan: List[PackItem]) -> List[str]:
+
+def realize_packaging_plan_parallel(plan: list[PackItem]) -> list[str]:
     """
     Execute the plan: create zips in parallel (processes), return final paths to upload.
     """
-    final_paths: List[str] = []
+    final_paths: list[str] = []
     zip_jobs = [(it.zip_path, it.members, it.compression) for it in plan if it.kind == "zip"]
 
     # Kick off zipping in parallel

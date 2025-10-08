@@ -23,6 +23,8 @@ dependencies = [
   'toml ; python_version < "3.11"',
   'tomli-w ; python_version >= "3.11"',
 ]
+# (optional) declare your supported versions explicitly:
+# requires-python = ">=3.10"
 
 [project.scripts]
 backup = "repokit.backup_tools:main"
@@ -37,5 +39,52 @@ dcas-migration = "repokit.rdm.dcas:main"
 dmp-update = "repokit.rdm.dmp:main"
 dmp-editor = "repokit.rdm.editor:cli"
 
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.6",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+  # type stubs for third-party libs you use (dev-only):
+  "types-requests",
+  "types-PyYAML",
+  "types-beautifulsoup4",
+  "types-psutil",
+]
+
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.ruff]
+line-length = 100
+# set to "py310" if your lowest supported Python is 3.10
+target-version = "py311"
+src = ["repokit", "tests"]
+extend-exclude = ["build", "dist", ".venv", ".mypy_cache", "__pycache__", "data", "notebooks"]
+
+[tool.ruff.lint]
+# Style + bug catchers + upgrades + perf + args + datetime + print/doc rules
+select = ["E", "F", "I", "B", "UP", "SIM", "PERF", "ARG", "DTZ", "T20", "ERA", "D"]
+ignore = []
+# allow prints in CLI entrypoints; relax docs in tests
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+# Ruff formatter is Black-compatible
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"  # or "google"
+
+[tool.mypy]
+# match to your lowest supported Python for best results
+python_version = "3.11"
+warn_unused_ignores = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+check_untyped_defs = true
+ignore_missing_imports = false
+exclude = '(^\.venv/|^build/|^dist/|^tests?/data/|^notebooks/)'

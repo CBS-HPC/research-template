@@ -1,30 +1,43 @@
 from __future__ import annotations
-import os
+
 import json
-import re
+import os
 import pathlib
+import re
+
 import pathspec
 import yaml
 
-
+from ..common import (
+    PROJECT_ROOT,
+    ext_map,
+    language_dirs,
+    load_from_env,
+    read_toml,
+    toml_ignore,
+    write_toml,
+)
+from ..rdm.dataset import dataset_to_readme, generate_dataset_table
 from .sections import main_text, read_dependencies
-from ..common import load_from_env, PROJECT_ROOT, language_dirs, ext_map, read_toml, write_toml, toml_ignore
-from ..rdm.dataset import generate_dataset_table, dataset_to_readme
 
 
-def merge_pathspecs(spec_a: pathspec.PathSpec,
-                    spec_b: pathspec.PathSpec,
-                    style: str = "gitwildmatch",
-                    dedupe: bool = True) -> pathspec.PathSpec:
+def merge_pathspecs(
+    spec_a: pathspec.PathSpec,
+    spec_b: pathspec.PathSpec,
+    style: str = "gitwildmatch",
+    dedupe: bool = True,
+) -> pathspec.PathSpec:
     # Pull the raw pattern text out of each compiled Pattern
-    patterns = [p.pattern for p in getattr(spec_a, "patterns", [])] + \
-               [p.pattern for p in getattr(spec_b, "patterns", [])]
+    patterns = [p.pattern for p in getattr(spec_a, "patterns", [])] + [
+        p.pattern for p in getattr(spec_b, "patterns", [])
+    ]
 
     if dedupe:
         seen = set()
         patterns = [x for x in patterns if not (x in seen or seen.add(x))]
 
     return pathspec.PathSpec.from_lines(style, patterns)
+
 
 def datasets_ignore(
     datasets_json: str | pathlib.Path,
@@ -38,6 +51,7 @@ def datasets_ignore(
       - guaranteed to end with "/"
       - deduplicated (order-preserving)
     """
+
     def _to_dir_pattern(p: str | pathlib.Path, base: str | pathlib.Path | None) -> str:
         p = pathlib.Path(p)
         if base is not None:
@@ -55,7 +69,7 @@ def datasets_ignore(
     if not os.path.exists(datasets_json):
         return None
 
-    with open(datasets_json, "r", encoding="utf-8") as f:
+    with open(datasets_json, encoding="utf-8") as f:
         payload = json.load(f)
 
     patterns: list[str] = []
@@ -79,60 +93,74 @@ def datasets_ignore(
 
 
 # README.md
-def creating_readme(programming_language = "None"):
-
+def creating_readme(programming_language="None"):
     programming_language = programming_language.lower()
 
     if ext_map.get(programming_language) is None:
         return f"Unsupported programming language: {programming_language}"
 
     code_path = language_dirs.get(programming_language)
-   
+
     # Create and update README and Project Tree:
     file_descriptions = str(PROJECT_ROOT / pathlib.Path("./file_descriptions.json"))
-    readme_file= str(PROJECT_ROOT / pathlib.Path("./README.md"))
+    readme_file = str(PROJECT_ROOT / pathlib.Path("./README.md"))
     code_path = str(PROJECT_ROOT / pathlib.Path(code_path))
-    
+
     update_file_descriptions(programming_language, readme_file, file_descriptions)
-    
+
     generate_readme(readme_file, code_path, file_descriptions)
 
-    file_descriptions = read_toml(folder = str(PROJECT_ROOT), json_filename =  file_descriptions , tool_name = "file_descriptions", toml_path = "pyproject.toml")
-    markdown_table, _ = generate_dataset_table("./dmp.json",file_descriptions)
+    file_descriptions = read_toml(
+        folder=str(PROJECT_ROOT),
+        json_filename=file_descriptions,
+        tool_name="file_descriptions",
+        toml_path="pyproject.toml",
+    )
+    markdown_table, _ = generate_dataset_table("./dmp.json", file_descriptions)
 
     if markdown_table:
         dataset_to_readme(markdown_table)
-        
-    ignore_list, _  = toml_ignore(toml_path = "pyproject.toml" ,  ignore_filename = ".treeignore",tool_name = "treeignore",toml_key = "patterns")
-    dataset_list = datasets_ignore(datasets_json = "dmp.json")
+
+    ignore_list, _ = toml_ignore(
+        toml_path="pyproject.toml",
+        ignore_filename=".treeignore",
+        tool_name="treeignore",
+        toml_key="patterns",
+    )
+    dataset_list = datasets_ignore(datasets_json="dmp.json")
 
     if dataset_list:
-        ignore_list = merge_pathspecs(ignore_list,dataset_list)
-    
-    create_tree(readme_file,ignore_list ,file_descriptions)
-    
-def generate_readme(readme_file = "./README.md", code_path = None,json_file="./file_descriptions.json"):
+        ignore_list = merge_pathspecs(ignore_list, dataset_list)
+
+    create_tree(readme_file, ignore_list, file_descriptions)
+
+
+def generate_readme(
+    readme_file="./README.md", code_path=None, json_file="./file_descriptions.json"
+):
     """
     Generates a README.md file with the project structure (from a tree command),
     project name, and description.
 
-    Parameters:
+    Parameters
+    ----------
     - project_name (str): The name of the project.
     - project_description (str): A short description of the project.
     """
-    
-    header = main_text(json_file,code_path)
+    header = main_text(json_file, code_path)
 
     # Write the README.md content
-    with open(readme_file, "w",encoding="utf-8") as file:
+    with open(readme_file, "w", encoding="utf-8") as file:
         file.write(header)
     print(f"README.md created at: {readme_file}")
 
-def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, root_folder=None):
+
+def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root_folder=None):
     """
     Updates the "Project Tree" section in a README.md file with the project structure.
 
-    Parameters:
+    Parameters
+    ----------
     - readme_file (str): The README file to update. Defaults to "README.md".
     - ignore_list (list): Files or directories to ignore.
     - file_descriptions (dict): Descriptions for files and directories.
@@ -143,7 +171,8 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, roo
         """
         Recursively generates a tree structure of the folder, respecting ignore rules.
 
-        Parameters:
+        Parameters
+        ----------
         - folder_path (str): The current folder path.
         - file_descriptions (dict): Optional descriptions for files.
         - ignore_spec (PathSpec): PathSpec object for ignore rules.
@@ -152,33 +181,47 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, roo
         """
         if root_path is None:
             root_path = folder_path  # First call: set root path
-        
+
         tree = []
         items = sorted(os.listdir(folder_path))
         for index, item in enumerate(items):
             item_path = os.path.join(folder_path, item)
 
             # Correct: compute rel_path relative to root
-            rel_path = os.path.relpath(item_path, start=root_path).replace("\\", "/")  # Always use forward slashes
+            rel_path = os.path.relpath(item_path, start=root_path).replace(
+                "\\", "/"
+            )  # Always use forward slashes
 
             if ignore_spec and ignore_spec.match_file(rel_path):
                 continue
 
             is_last = index == len(items) - 1
             tree_symbol = "└── " if is_last else "├── "
-            description = f" <- {file_descriptions.get(item, '')}" if file_descriptions and item in file_descriptions else ""
+            description = (
+                f" <- {file_descriptions.get(item, '')}"
+                if file_descriptions and item in file_descriptions
+                else ""
+            )
             tree.append(f"{prefix}{tree_symbol}{item}{description}")
 
             if os.path.isdir(item_path):
                 child_prefix = f"{prefix}    " if is_last else f"{prefix}│   "
-                #child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
-                tree.extend(generate_tree(item_path, file_descriptions, ignore_spec=ignore_spec, prefix=child_prefix, root_path=root_path))
+                # child_prefix = f"{prefix}   " if is_last else f"{prefix}│   "
+                tree.extend(
+                    generate_tree(
+                        item_path,
+                        file_descriptions,
+                        ignore_spec=ignore_spec,
+                        prefix=child_prefix,
+                        root_path=root_path,
+                    )
+                )
 
         return tree
 
     def update_readme_tree_section(readme_file, root_folder, file_descriptions, ignore_list):
         # Read the entire README content into lines
-        with open(readme_file, "r", encoding="utf-8") as file:
+        with open(readme_file, encoding="utf-8") as file:
             readme_content = file.readlines()
 
         start_index = None
@@ -209,14 +252,14 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, roo
             folder_path=root_folder,
             file_descriptions=file_descriptions,
             ignore_spec=ignore_list,
-            root_path=root_folder
+            root_path=root_folder,
         )
 
         # Step 5: Replace old tree block with the new one
         updated_content = (
-            readme_content[:start_index] +                        # Before tree block
-            [line + "\n" for line in tree_structure] +            # New tree lines
-            readme_content[end_index:]                            # After closing ```
+            readme_content[:start_index]  # Before tree block
+            + [line + "\n" for line in tree_structure]  # New tree lines
+            + readme_content[end_index:]  # After closing ```
         )
 
         # Step 6: Write the updated README
@@ -227,7 +270,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, roo
 
     if not readme_file:
         readme_file = "README.md"
-    
+
     if not os.path.exists(readme_file):
         print(f"README file '{readme_file}' does not exist. Exiting.")
         return
@@ -241,21 +284,25 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions =None, roo
         ignore_list = []  # Default to an empty list if not provided
 
     update_readme_tree_section(readme_file, root_folder, file_descriptions, ignore_list)
-    
-def update_file_descriptions(programming_language, readme_file = "README.md", json_file="./file_descriptions.json"):
+
+
+def update_file_descriptions(
+    programming_language, readme_file="README.md", json_file="./file_descriptions.json"
+):
     """
     Reads the project tree from an existing README.md and updates a file_descriptions.json file.
 
-    Parameters:
+    Parameters
+    ----------
     - readme_file (str): Path to the README.md file.
     - json_file (str): The name of the JSON file for file descriptions.
 
-    Returns:
+    Returns
+    -------
     - None
     """
 
-    def create_file_descriptions(programming_language,json_file):
-
+    def create_file_descriptions(programming_language, json_file):
         def code_file_descriptions(programming_language):
             # Set extensions based on programming language
             if programming_language.lower() == "r":
@@ -280,25 +327,22 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
                 "s05_modeling": "fits models and generates outputs",
                 "s06_visualization": "creates plots and summaries",
                 "get_dependencies": "retrieves and checks required packages for the project (utilised)",
-
                 # Unit tests
                 "test_s00_main": "tests the main pipeline orchestration in `s00_main.*`",
-                "test_s00_workflow": "tests the full pipeline notebook `s00_workflow{}`".format(notebook_ext),
+                "test_s00_workflow": f"tests the full pipeline notebook `s00_workflow{notebook_ext}`",
                 "test_s01_install_dependencies": "tests the dependency installation logic in `s01_install_dependencies.*`",
                 "test_s02_utils": "tests utility functions defined in `s02_utils.*`",
                 "test_s03_data_collection": "tests data import and generation logic from `s03_data_collection.*`",
                 "test_s04_preprocessing": "tests data cleaning and transformation in `s04_preprocessing.*`",
                 "test_s05_modeling": "tests model fitting and output generation in `s05_modeling.*`",
                 "test_s06_visualization": "tests plotting and summary creation in `s06_visualization.*`",
-                "test_get_dependencies": "tests the package dependency resolution in `get_dependencies.*`"
+                "test_get_dependencies": "tests the package dependency resolution in `get_dependencies.*`",
             }
 
             descriptions = {}
 
             for key, description in code_template.items():
-                if key == "s00_workflow":
-                    file_name = f"{key}{notebook_ext}"
-                elif key == "test_s00_workflow":
+                if key == "s00_workflow" or key == "test_s00_workflow":
                     file_name = f"{key}{notebook_ext}"
                 else:
                     file_name = f"{key}{source_ext}"
@@ -307,7 +351,6 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             return descriptions
 
         file_descriptions = {
-
             # Directories
             "data": "Directory containing scripts to download or generate data.",
             "01_interim": "Intermediate data transformed during the workflow.",
@@ -330,7 +373,6 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             "bin": "Directory for executable scripts or binaries used in the project.",
             ".venv": "Project-local Python virtual environment directory created using `python -m venv` or similar tools.",
             ".conda": "Project-local Conda environment directory created using `conda create --prefix` for isolated dependency management.",
-
             # Setup and configuration files
             ".cookiecutter": "Cookiecutter template configuration for creating new project structures.",
             ".gitignore": "Specifies files and directories that should be ignored by Git.",
@@ -348,13 +390,11 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             "environment.yml": "Conda environment definition file for installing R and Python dependencies.",
             "renv.lock": "Snapshot file generated by the R `renv` package. Records the exact versions and sources of R packages used in the project to enable precise environment restoration.",
             "uv.lock": "Dependency lock file generated by the uv package manager for reproducible Python environments.",
-
             # Continuous Integration config files
             ".git": "Version control directory used by Git to manage repository history.",
             ".github": "Defines GitHub Actions workflows for continuous integration and deployment.",
             ".gitlab-ci.yml": "Specifies a GitLab CI/CD pipeline for running tests on one or more custom or shared runners.",
             ".woodpecker.yml": "Configures a Woodpecker CI pipeline used on Codeberg to run test jobs in a Linux environment.",
-
             # Setup package scripts
             "activate.ps1": "PowerShell script to activate the project's virtual environment on Windows.",
             "deactivate.ps1": "PowerShell script to deactivate the project's virtual environment on Windows.",
@@ -368,18 +408,21 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
             # Update the existing dictionary with the new descriptions
             file_descriptions.update(code_file_descriptions(programming_language))
 
-        write_toml(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")
+        write_toml(
+            data=file_descriptions,
+            json_filename=json_file,
+            tool_name="file_descriptions",
+            toml_path="pyproject.toml",
+        )
 
         return file_descriptions
 
-    def update_descriptions(json_file,readme_file):
-        
+    def update_descriptions(json_file, readme_file):
         if not os.path.exists(readme_file):
             return
         # Read the README.md and extract the "Project Tree" section
-        with open(readme_file, "r", encoding="utf-8") as f:
+        with open(readme_file, encoding="utf-8") as f:
             readme_content = f.read()
-
 
         tree_match = re.search(r"```tree\s*([\s\S]+?)```", readme_content)
         if not tree_match:
@@ -398,21 +441,33 @@ def update_file_descriptions(programming_language, readme_file = "README.md", js
                 filename = match.group(2).strip()
                 description = match.group(3)  # This captures everything after '<-'
                 if description:
-                    description = description.strip()[3:]  # Remove the '<- ' part and get the description text
+                    description = description.strip()[
+                        3:
+                    ]  # Remove the '<- ' part and get the description text
                 if description:
                     file_descriptions[filename] = description
 
-        write_toml(data = file_descriptions, json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")
-        
-    file_descriptions = read_toml(json_filename = json_file, tool_name = "file_descriptions", toml_path = "pyproject.toml")    
+        write_toml(
+            data=file_descriptions,
+            json_filename=json_file,
+            tool_name="file_descriptions",
+            toml_path="pyproject.toml",
+        )
+
+    file_descriptions = read_toml(
+        json_filename=json_file, tool_name="file_descriptions", toml_path="pyproject.toml"
+    )
 
     if not file_descriptions:
-        file_descriptions = create_file_descriptions(programming_language,json_file)
+        file_descriptions = create_file_descriptions(programming_language, json_file)
 
-    update_descriptions(json_file,readme_file)
+    update_descriptions(json_file, readme_file)
+
 
 # CITATION.cff
-def create_citation_file(project_name, version, authors, orcids, code_repo, doi=None, release_date=None):
+def create_citation_file(
+    project_name, version, authors, orcids, code_repo, doi=None, release_date=None
+):
     """
     Create a CITATION.cff file based on inputs from cookiecutter.json and environment variables for URL.
 
@@ -426,8 +481,8 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
         release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
     """
     # Split authors and ORCIDs into lists
-    author_names = re.split(r'[;,]', authors) if authors else []
-    orcid_list = re.split(r'[;,]', orcids) if orcids else []
+    author_names = re.split(r"[;,]", authors) if authors else []
+    orcid_list = re.split(r"[;,]", orcids) if orcids else []
 
     # Create a structured list of author dictionaries
     author_data_list = []
@@ -435,7 +490,7 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
         name = name.strip()
         if not name:
             continue  # Skip empty names
-        
+
         name_parts = name.split(" ")
         if len(name_parts) == 1:
             # If only a given name is provided
@@ -444,7 +499,7 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
         else:
             given_names = " ".join(name_parts[:-1])
             family_names = name_parts[-1]
-        
+
         author_data = {"given-names": given_names}
         if family_names:
             author_data["family-names"] = family_names
@@ -463,18 +518,18 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
     if code_repo.lower() == "github":
         user = load_from_env("GITHUB_USER")
         repo = load_from_env("GITHUB_REPO")
-        hostname = load_from_env('GITHUB_HOSTNAME') or "github.com"
-        base_url = f"https://{hostname}"  
+        hostname = load_from_env("GITHUB_HOSTNAME") or "github.com"
+        base_url = f"https://{hostname}"
     elif code_repo.lower() == "gitlab":
         user = load_from_env("GITLAB_USER")
         repo = load_from_env("GITLAB_REPO")
-        hostname = load_from_env('GITHUB_HOSTNAME') or "gitlab.com"
-        base_url = f"https://{hostname}"  
+        hostname = load_from_env("GITHUB_HOSTNAME") or "gitlab.com"
+        base_url = f"https://{hostname}"
     elif code_repo.lower() == "codeberg":
         user = load_from_env("CODEBERG_USER")
         repo = load_from_env("CODEBERG_REPO")
-        hostname = load_from_env('CODEBERG_HOSTNAME') or "codeberg.org"
-        base_url = f"https://{hostname}"     
+        hostname = load_from_env("CODEBERG_HOSTNAME") or "codeberg.org"
+        base_url = f"https://{hostname}"
     else:
         user = None
         repo = None
@@ -502,15 +557,17 @@ def create_citation_file(project_name, version, authors, orcids, code_repo, doi=
     with open(file, "w") as cff_file:
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
+
 def update_requirements(programming_language, readme_file):
-    
     def write_to_readme(readme_file, code_dependencies):
         # Check if the README file exists; create it if not
         if not os.path.exists(readme_file):
-            creating_readme(programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
+            creating_readme(
+                programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
+            )
 
         try:
-            with open(readme_file, "r", encoding="utf-8") as file:
+            with open(readme_file, encoding="utf-8") as file:
                 readme_content = file.read()
 
             # Look for fenced code block labeled 'code_dependencies'
@@ -524,16 +581,25 @@ def update_requirements(programming_language, readme_file):
                 if end != -1:
                     # Replace the content in between
                     updated_content = (
-                        readme_content[:start].rstrip() + "\n" +
-                        code_dependencies.strip() + "\n" +
-                        readme_content[end:]
+                        readme_content[:start].rstrip()
+                        + "\n"
+                        + code_dependencies.strip()
+                        + "\n"
+                        + readme_content[end:]
                     )
                 else:
-                    print("❌ Could not find closing ``` after ```code_dependencies. No changes made.")
+                    print(
+                        "❌ Could not find closing ``` after ```code_dependencies. No changes made."
+                    )
                     return
             else:
                 # If the block doesn't exist, append a new one
-                updated_content = readme_content.strip() + "\n\n```code_dependencies\n" + code_dependencies.strip() + "\n```"
+                updated_content = (
+                    readme_content.strip()
+                    + "\n\n```code_dependencies\n"
+                    + code_dependencies.strip()
+                    + "\n```"
+                )
 
         except FileNotFoundError:
             # If README doesn't exist at all, create with only this block
@@ -547,17 +613,18 @@ def update_requirements(programming_language, readme_file):
 
     code_path = language_dirs.get(programming_language.lower())
     code_dependencies = read_dependencies(str(PROJECT_ROOT / f"{code_path}/dependencies.txt"))
-   
-   
-    write_to_readme(readme_file,code_dependencies)
+
+    write_to_readme(readme_file, code_dependencies)
+
 
 def main():
     # Change to project root directory
     os.chdir(PROJECT_ROOT)
-    
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    creating_readme(programming_language = programming_language)
+
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
+    creating_readme(programming_language=programming_language)
     update_requirements(programming_language, str(PROJECT_ROOT / pathlib.Path("./README.md")))
+
 
 if __name__ == "__main__":
     main()

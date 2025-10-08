@@ -1,15 +1,14 @@
 import os
-import subprocess
-from subprocess import DEVNULL
-import re
-import sys
 import pathlib
-
+import re
+import subprocess
+import sys
 
 # ---- Secret manager (optional) ----
 try:
     import keyring
     from keyring.errors import KeyringError, NoKeyringError
+
     _HAS_KEYRING = True
 except Exception:
     keyring = None
@@ -19,12 +18,13 @@ except Exception:
 from .base import PROJECT_ROOT
 from .paths import check_path_format
 
-
 if sys.version_info < (3, 11):
     import toml
+
     tomli_w = None
 else:
     import tomllib as toml
+
     import tomli_w
 
 from dotenv import dotenv_values, load_dotenv
@@ -36,15 +36,21 @@ def _slugify(s: str | None) -> str:
         return "default"
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
+
 def _project_slug() -> str:
     # 1) explicit override
     s = os.getenv("PROJECT_SLUG") or os.getenv("RT_PROJECT_SLUG")
-    if s: return _slugify(s)
+    if s:
+        return _slugify(s)
 
     # 2) try git repo name
     try:
-        r = subprocess.run(["git", "rev-parse", "--show-toplevel"],
-                           capture_output=True, text=True, cwd=str(PROJECT_ROOT))
+        r = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_ROOT),
+        )
         if r.returncode == 0:
             return _slugify(pathlib.Path(r.stdout.strip()).name)
     except Exception:
@@ -53,9 +59,11 @@ def _project_slug() -> str:
     # 3) fallback: project folder name
     return _slugify(PROJECT_ROOT.name)
 
+
 def _secret_service_name() -> str:
     base = os.getenv("SECRET_SERVICE_NAME", "research-template")
-    return f"{base}::{_project_slug()}"   # <-- service name is per project
+    return f"{base}::{_project_slug()}"  # <-- service name is per project
+
 
 def _keyring_get(name: str) -> str | None:
     """Try project-scoped key first, then global key."""
@@ -70,6 +78,7 @@ def _keyring_get(name: str) -> str | None:
             return None
     return None
 
+
 def _keyring_set(name: str, value: str) -> bool:
     """Write project-scoped key. Optionally also write a global alias."""
     if not _HAS_KEYRING:
@@ -81,6 +90,7 @@ def _keyring_set(name: str, value: str) -> bool:
         return True
     except (KeyringError, NoKeyringError):
         return False
+
 
 def load_from_env(
     env_name: str,
@@ -146,6 +156,7 @@ def load_from_env(
 
     return None
 
+
 def save_to_env(
     env_var: str,
     env_name: str,
@@ -171,8 +182,13 @@ def save_to_env(
         read_mode = ("r", "utf-8")
         write_mode = ("w", "utf-8")
     else:
-        def load_toml(f): return toml.load(f)
-        def dump_toml(d, f): f.write(tomli_w.dumps(d))  # type: ignore
+
+        def load_toml(f):
+            return toml.load(f)
+
+        def dump_toml(d, f):
+            f.write(tomli_w.dumps(d))  # type: ignore
+
         read_mode = ("rb", None)
         write_mode = ("w", "utf-8")
 
@@ -202,7 +218,7 @@ def save_to_env(
     if env_path.name == ".env" or env_path.exists():
         lines = []
         if env_path.exists():
-            with open(env_path, "r", encoding="utf-8") as f:
+            with open(env_path, encoding="utf-8") as f:
                 lines = f.readlines()
 
         updated = False

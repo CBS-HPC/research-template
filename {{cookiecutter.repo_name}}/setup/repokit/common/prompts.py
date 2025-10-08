@@ -1,15 +1,16 @@
-import os
 import getpass
-from typing import List, Optional
+import os
 
 from .paths import check_path_format
 from .secretstore import load_from_env, save_to_env
 
-def split_multi(val: Optional[str]) -> List[str]:
+
+def split_multi(val: str | None) -> list[str]:
     if not val or not isinstance(val, str):
         return None
     raw = [p.strip() for p in val.replace(";", ",").split(",")]
     return [p for p in raw if p]
+
 
 def ask_yes_no(question):
     """
@@ -18,7 +19,8 @@ def ask_yes_no(question):
     Args:
         question (str): The question to display to the user.
 
-    Returns:
+    Returns
+    -------
         bool: True if the user confirms (yes/y), False if the user declines (no/n).
     """
     while True:
@@ -30,11 +32,11 @@ def ask_yes_no(question):
         else:
             print("Invalid response. Please answer with 'yes' or 'no'.")
 
+
 # Setting Options
 def git_user_info(version_control):
     if version_control.lower() in ["git", "datalad", "dvc"]:
         # Load defaults
-
 
         default_names = split_multi(load_from_env("AUTHORS", ".cookiecutter"))
         default_emails = split_multi(load_from_env("EMAIL", ".cookiecutter"))
@@ -57,11 +59,12 @@ def git_user_info(version_control):
         print(f"\nUsing Git user name: {git_name}")
         print(f"Using Git user email: {git_email}\n")
 
-        save_to_env(git_name, 'GIT_USER')
-        save_to_env(git_email, 'GIT_EMAIL')
+        save_to_env(git_name, "GIT_USER")
+        save_to_env(git_email, "GIT_EMAIL")
         return git_name, git_email
     else:
         return None, None
+
 
 def repo_user_info(version_control, repo_name, code_repo):
     valid_repos = ["github", "gitlab", "codeberg"]
@@ -75,14 +78,19 @@ def repo_user_info(version_control, repo_name, code_repo):
         default_host = {
             "github": "github.com",
             "gitlab": "gitlab.com",
-            "codeberg": "codeberg.org"
+            "codeberg": "codeberg.org",
         }.get(code_repo.lower())
 
         while not hostname or not repo_user or not privacy_setting:
-            #hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
+            # hostname = input(f"Enter {code_repo} hostname [{default_host}]: ").strip() or default_host
             hostname = default_host
             repo_user = input(f"Enter your {code_repo} username: ").strip()
-            privacy_setting = input(f"Select the repository visibility (private/public) [{default_setting}]: ").strip().lower() or default_setting
+            privacy_setting = (
+                input(f"Select the repository visibility (private/public) [{default_setting}]: ")
+                .strip()
+                .lower()
+                or default_setting
+            )
 
             if privacy_setting not in ["private", "public"]:
                 print("Invalid choice. Defaulting to 'private'.")
@@ -125,6 +133,7 @@ def repo_user_info(version_control, repo_name, code_repo):
     else:
         return None, None, None, None
 
+
 def remote_user_info(remote_name):
     """Prompt for remote login credentials and base folder path."""
 
@@ -140,7 +149,6 @@ def remote_user_info(remote_name):
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
 
     if remote_name.lower() == "deic-storage":
-
         email = load_from_env("DEIC_EMAIL")
         password = load_from_env("DEIC_PASS")
         base_folder = load_from_env("DEIC_BASE")
@@ -150,13 +158,18 @@ def remote_user_info(remote_name):
             return email, password, base_folder
 
         default_email = load_from_env("EMAIL", ".cookiecutter")
-        default_base = f'RClone_backup/{repo_name}'
-        base_folder = input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        default_base = f"RClone_backup/{repo_name}"
+        base_folder = (
+            input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        )
         base_folder = ensure_repo_suffix(base_folder, repo_name)
 
         email = password = None
         while not email or not password:
-            email = input(f"Please enter email to Deic-Storage [{default_email}]: ").strip() or default_email
+            email = (
+                input(f"Please enter email to Deic-Storage [{default_email}]: ").strip()
+                or default_email
+            )
             password = getpass.getpass("Please enter password to Deic-Storage: ").strip()
 
             if not email or not password:
@@ -172,7 +185,12 @@ def remote_user_info(remote_name):
         return email, password, base_folder
 
     elif remote_name.lower() == "local":
-        base_folder = input("Please enter the local path for rclone: ").strip().replace("'", "").replace('"', '')
+        base_folder = (
+            input("Please enter the local path for rclone: ")
+            .strip()
+            .replace("'", "")
+            .replace('"', "")
+        )
         base_folder = check_path_format(base_folder)
         if not os.path.isdir(base_folder):
             print(f"Error: The specified local path does not exist{base_folder}")
@@ -181,11 +199,12 @@ def remote_user_info(remote_name):
         return None, None, base_folder
 
     elif remote_name.lower() != "none":
-        default_base = f'RClone_backup/{repo_name}'
-        base_folder = input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        default_base = f"RClone_backup/{repo_name}"
+        base_folder = (
+            input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        )
         base_folder = ensure_repo_suffix(base_folder, repo_name)
         return None, None, base_folder
 
     else:
         return None, None, None
-

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Publish a dataset from an maDMP to DeiC Dataverse (demo) with:
@@ -15,47 +14,44 @@ Usage (CLI):
 """
 
 from __future__ import annotations
+
 import json
 import os
-import time
 import tempfile
+import time
 import zipfile
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
-from random import random
 from pathlib import Path
-
-from .publish import (
-
-    PublishError,
-    PackItem,
-
-    # ── constants ─────────────────────────────────────────────
-    RETRY_STATUS,
-    DEFAULT_TIMEOUT,
-    DATAVERSE_MAX_FILES_TOTAL,
-    DATAVERSE_MAX_FILE_SIZE_BYTES,
-    DATAVERS_SUBJECTS,
-
-
-    # ── functions ────────────────────────────────────────────
-    _get,
-    _norm_list,
-    _guess_dataset,
-    _has_personal_or_sensitive,
-    files_from_x_dcas,
-    regular_files_existing,
-    sizes_bytes,
-    estimate_zip_total_bytes,
-    append_packaging_note,
-    _normalize_orcid,
-    _affiliation_from_node,
-    description_from_madmp,
-    realize_packaging_plan_parallel,
-)
+from random import random
+from typing import Any
 
 import requests
 import streamlit as st  # type: ignore
+
+from .publish import (
+    DATAVERS_SUBJECTS,
+    DATAVERSE_MAX_FILE_SIZE_BYTES,
+    DATAVERSE_MAX_FILES_TOTAL,
+    DEFAULT_TIMEOUT,
+    # ── constants ─────────────────────────────────────────────
+    RETRY_STATUS,
+    PackItem,
+    PublishError,
+    _affiliation_from_node,
+    # ── functions ────────────────────────────────────────────
+    _get,
+    _guess_dataset,
+    _has_personal_or_sensitive,
+    _norm_list,
+    _normalize_orcid,
+    append_packaging_note,
+    description_from_madmp,
+    estimate_zip_total_bytes,
+    files_from_x_dcas,
+    realize_packaging_plan_parallel,
+    regular_files_existing,
+    sizes_bytes,
+)
 
 # ============================================================================
 # Configuration (requested constants)
@@ -75,79 +71,121 @@ DOUBLE_ZIP_TO_PREVENT_UNPACK: bool = True
 # API helpers (with retries)
 # ============================================================================
 
+
 def _dv_headers(token: str) -> dict:
     return {"X-Dataverse-key": token}
+
 
 def _retry_sleep(attempt: int) -> None:
     time.sleep(min(30, (attempt + 1) * 1.5) + random())
 
-def _dv_post_json(url: str, token: str, payload: Optional[dict], timeout: int = DEFAULT_TIMEOUT) -> requests.Response:
+
+def _dv_post_json(
+    url: str, token: str, payload: dict | None, timeout: int = DEFAULT_TIMEOUT
+) -> requests.Response:
     for attempt in range(6):
         try:
             r = requests.post(url, headers=_dv_headers(token), json=payload, timeout=timeout)
         except requests.RequestException:
-            _retry_sleep(attempt); continue
+            _retry_sleep(attempt)
+            continue
         if r.status_code in RETRY_STATUS:
-            _retry_sleep(attempt); continue
+            _retry_sleep(attempt)
+            continue
         return r
     raise PublishError(f"Dataverse request failed after retries: POST {url}")
 
-def _dv_post_files(url: str, token: str, files: dict, data: dict, timeout: int = DEFAULT_TIMEOUT) -> requests.Response:
+
+def _dv_post_files(
+    url: str, token: str, files: dict, data: dict, timeout: int = DEFAULT_TIMEOUT
+) -> requests.Response:
     for attempt in range(6):
         try:
-            r = requests.post(url, headers=_dv_headers(token), files=files, data=data, timeout=timeout)
+            r = requests.post(
+                url, headers=_dv_headers(token), files=files, data=data, timeout=timeout
+            )
         except requests.RequestException:
-            _retry_sleep(attempt); continue
+            _retry_sleep(attempt)
+            continue
         if r.status_code in RETRY_STATUS:
-            _retry_sleep(attempt); continue
+            _retry_sleep(attempt)
+            continue
         return r
     raise PublishError(f"Dataverse file upload failed after retries: POST {url}")
 
-def _dv_create_dataset(base_url: str, token: str, dataverse_alias: str, dataset_version_json: dict) -> dict:
+
+def _dv_create_dataset(
+    base_url: str, token: str, dataverse_alias: str, dataset_version_json: dict
+) -> dict:
     url = f"{base_url.rstrip('/')}/api/dataverses/{dataverse_alias}/datasets"
     r = _dv_post_json(url, token, dataset_version_json)
     if not r.ok:
-        try: detail = r.json()
-        except Exception: detail = r.text
+        try:
+            detail = r.json()
+        except Exception:
+            detail = r.text
         raise PublishError(f"Dataverse create dataset failed: {r.status_code} {detail}")
     return r.json()
 
-def _dv_upload_file(base_url: str, token: str, dataset_id: int,
-                    filepath: str, description: Optional[str] = None,
-                    directory_label: Optional[str] = None,
-                    restrict: bool = False) -> dict:
+
+def _dv_upload_file(
+    base_url: str,
+    token: str,
+    dataset_id: int,
+    filepath: str,
+    description: str | None = None,
+    directory_label: str | None = None,
+    restrict: bool = False,
+) -> dict:
     url = f"{base_url.rstrip('/')}/api/datasets/{dataset_id}/add"
     json_data = {"description": description or ""}
-    if directory_label: json_data["directoryLabel"] = directory_label
-    if restrict: json_data["restrict"] = True
+    if directory_label:
+        json_data["directoryLabel"] = directory_label
+    if restrict:
+        json_data["restrict"] = True
     data = {"jsonData": json.dumps(json_data)}
     with open(filepath, "rb") as fh:
         files = {"file": (os.path.basename(filepath), fh)}
         r = _dv_post_files(url, token, files=files, data=data)
     if not r.ok:
-        try: detail = r.json()
-        except Exception: detail = r.text
+        try:
+            detail = r.json()
+        except Exception:
+            detail = r.text
         raise PublishError(f"Dataverse upload failed ({filepath}): {r.status_code} {detail}")
     return r.json()
 
-def _dv_publish_dataset(base_url: str, token: str, dataset_id: int, release_type: str = "major") -> dict:
+
+def _dv_publish_dataset(
+    base_url: str, token: str, dataset_id: int, release_type: str = "major"
+) -> dict:
     assert release_type in {"major", "minor"}
     url = f"{base_url.rstrip('/')}/api/datasets/{dataset_id}/actions/:publish?type={release_type}"
     r = _dv_post_json(url, token, None)
     if not r.ok:
-        try: detail = r.json()
-        except Exception: detail = r.text
+        try:
+            detail = r.json()
+        except Exception:
+            detail = r.text
         raise PublishError(f"Dataverse publish failed: {r.status_code} {detail}")
     return r.json()
+
 
 # ============================================================================
 # maDMP → Dataverse field mapping
 # ============================================================================
 
-def _normalize_orcid(raw: Optional[str]) -> Optional[str]:
+
+def _normalize_orcid(raw: str | None) -> str | None:
     if not raw:
         return None
-    s = str(raw).strip().replace("https://orcid.org/","").replace("http://orcid.org/","").replace(" ","")
+    s = (
+        str(raw)
+        .strip()
+        .replace("https://orcid.org/", "")
+        .replace("http://orcid.org/", "")
+        .replace(" ", "")
+    )
     s = s.replace("-", "")
     if len(s) != 16:
         return None
@@ -156,7 +194,8 @@ def _normalize_orcid(raw: Optional[str]) -> Optional[str]:
         return f"{s[0:4]}-{s[4:8]}-{s[8:12]}-{s[12:16]}"
     return None
 
-def _affiliation_from_node(node: Optional[dict]) -> Tuple[Optional[str], Optional[str]]:
+
+def _affiliation_from_node(node: dict | None) -> tuple[str | None, str | None]:
     if not isinstance(node, dict):
         return (None, None)
     name = node.get("name")
@@ -168,12 +207,14 @@ def _affiliation_from_node(node: Optional[dict]) -> Tuple[Optional[str], Optiona
             ror = rid.strip()
     return (name, ror)
 
-def _license_for_dataverse(ds: dict) -> Optional[dict]:
+
+def _license_for_dataverse(ds: dict) -> dict | None:
     """
     Map maDMP license info to a Dataverse-accepted license object.
     Returns {"name": "...", "uri": "..."} for CC0 / CC BY family, else None.
     """
-    def _best_license_url_or_text() -> Optional[str]:
+
+    def _best_license_url_or_text() -> str | None:
         for section_key in ("distribution", "rights"):
             for block in _norm_list(ds.get(section_key, [])):
                 if not isinstance(block, dict):
@@ -202,13 +243,17 @@ def _license_for_dataverse(ds: dict) -> Optional[dict]:
     if "creativecommons.org" in s and "/licenses/" in s:
         parts = [p for p in s.split("/") if p]
         try:
-            code = parts[-2]   # e.g. "by-nc-sa"
-            ver  = parts[-1]   # e.g. "4.0"
+            code = parts[-2]  # e.g. "by-nc-sa"
+            ver = parts[-1]  # e.g. "4.0"
         except Exception:
             code = ver = None
         code_map = {
-            "by": "BY", "by-sa": "BY-SA", "by-nd": "BY-ND",
-            "by-nc": "BY-NC", "by-nc-sa": "BY-NC-SA", "by-nc-nd": "BY-NC-ND",
+            "by": "BY",
+            "by-sa": "BY-SA",
+            "by-nd": "BY-ND",
+            "by-nc": "BY-NC",
+            "by-nc-sa": "BY-NC-SA",
+            "by-nc-nd": "BY-NC-ND",
         }
         if code in code_map and ver and any(ch.isdigit() for ch in ver):
             return {
@@ -217,8 +262,10 @@ def _license_for_dataverse(ds: dict) -> Optional[dict]:
             }
     return None
 
+
 def _dv_field(name, value, tclass="primitive", multiple=False):
     return {"typeName": name, "typeClass": tclass, "multiple": multiple, "value": value}
+
 
 def _dv_authors_field(ds: dict, dmp: dict) -> dict:
     """
@@ -233,14 +280,16 @@ def _dv_authors_field(ds: dict, dmp: dict) -> dict:
                     ...
                  ]}
     """
-    comps: List[dict] = []
+    comps: list[dict] = []
 
-    def _emit(name: str, aff: Optional[str], orcid: Optional[str]):
-        comp: Dict[str, Any] = {"authorName": _dv_field("authorName", name)}
+    def _emit(name: str, aff: str | None, orcid: str | None):
+        comp: dict[str, Any] = {"authorName": _dv_field("authorName", name)}
         if aff:
             comp["authorAffiliation"] = _dv_field("authorAffiliation", aff)
         if orcid:
-            comp["authorIdentifierScheme"] = _dv_field("authorIdentifierScheme", "ORCID", tclass="controlledVocabulary")
+            comp["authorIdentifierScheme"] = _dv_field(
+                "authorIdentifierScheme", "ORCID", tclass="controlledVocabulary"
+            )
             comp["authorIdentifier"] = _dv_field("authorIdentifier", f"https://orcid.org/{orcid}")
         comps.append(comp)
 
@@ -258,8 +307,9 @@ def _dv_authors_field(ds: dict, dmp: dict) -> dict:
     def _iter_contrib_blocks():
         yield from _norm_list(_get(dmp, ["dmp", "contributor"]) or dmp.get("contributor"))
         yield from _norm_list(ds.get("contributor"))
+
     for cont in _iter_contrib_blocks():
-        if not isinstance(cont, dict): 
+        if not isinstance(cont, dict):
             continue
         nm = cont.get("name") or cont.get("fullname")
         if not nm:
@@ -273,8 +323,9 @@ def _dv_authors_field(ds: dict, dmp: dict) -> dict:
 
     return {"typeName": "author", "typeClass": "compound", "multiple": True, "value": comps}
 
-def _dv_contacts_field(ds: dict, dmp: dict) -> Optional[dict]:
-    comps: List[dict] = []
+
+def _dv_contacts_field(ds: dict, dmp: dict) -> dict | None:
+    comps: list[dict] = []
     for c in _norm_list(ds.get("contact", [])):
         email = c.get("mbox") or c.get("email") or c.get("contactEmail")
         name = c.get("name") or c.get("fullname") or email or "Unknown"
@@ -285,7 +336,12 @@ def _dv_contacts_field(ds: dict, dmp: dict) -> Optional[dict]:
             }
             comps.append(comp)
     if comps:
-        return {"typeName": "datasetContact", "typeClass": "compound", "multiple": True, "value": comps}
+        return {
+            "typeName": "datasetContact",
+            "typeClass": "compound",
+            "multiple": True,
+            "value": comps,
+        }
     # Fallback to DMP contact
     c = _get(dmp, ["dmp", "contact"]) or dmp.get("contact") or {}
     email = c.get("mbox") or c.get("email")
@@ -296,9 +352,14 @@ def _dv_contacts_field(ds: dict, dmp: dict) -> Optional[dict]:
             "datasetContactName": _dv_field("datasetContactName", name),
         }
         comps.append(comp)
-    return {"typeName": "datasetContact", "typeClass": "compound", "multiple": True, "value": comps} if comps else None
+    return (
+        {"typeName": "datasetContact", "typeClass": "compound", "multiple": True, "value": comps}
+        if comps
+        else None
+    )
 
-def _map_subject_to_dv(term: str) -> Optional[str]:
+
+def _map_subject_to_dv(term: str) -> str | None:
     if not term:
         return None
     t = term.strip().lower()
@@ -325,8 +386,9 @@ def _map_subject_to_dv(term: str) -> Optional[str]:
         return SYN[t]
     return None
 
+
 def _dv_subjects_field(ds: dict) -> dict:
-    vals: List[str] = []
+    vals: list[str] = []
     for s in _norm_list(ds.get("subject")):
         term = s.get("term") if isinstance(s, dict) else s
         mapped = _map_subject_to_dv(term) if isinstance(term, str) else None
@@ -334,37 +396,53 @@ def _dv_subjects_field(ds: dict) -> dict:
             vals.append(mapped)
     if not vals:
         vals = ["Other"]
-    return {"typeName": "subject", "typeClass": "controlledVocabulary", "multiple": True, "value": vals}
+    return {
+        "typeName": "subject",
+        "typeClass": "controlledVocabulary",
+        "multiple": True,
+        "value": vals,
+    }
 
-def _dv_keywords_field(ds: dict) -> Optional[dict]:
-    comps: List[dict] = []
+
+def _dv_keywords_field(ds: dict) -> dict | None:
+    comps: list[dict] = []
     for kw in _norm_list(ds.get("keyword") or []):
         if isinstance(kw, str) and kw.strip():
             comp = {"keywordValue": _dv_field("keywordValue", kw.strip())}
             comps.append(comp)
-    return {"typeName": "keyword", "typeClass": "compound", "multiple": True, "value": comps} if comps else None
+    return (
+        {"typeName": "keyword", "typeClass": "compound", "multiple": True, "value": comps}
+        if comps
+        else None
+    )
 
-def _normalize_language(lang_raw: Optional[str]) -> Optional[str]:
+
+def _normalize_language(lang_raw: str | None) -> str | None:
     if not isinstance(lang_raw, str):
         return None
     s = lang_raw.strip().lower()
     MAP = {
-        "en": "English", "eng": "English", "english": "English",
-        "da": "Danish",  "dan": "Danish",  "dansk": "Danish",
+        "en": "English",
+        "eng": "English",
+        "english": "English",
+        "da": "Danish",
+        "dan": "Danish",
+        "dansk": "Danish",
     }
     return MAP.get(s) or None
 
+
 def build_dataverse_dataset_version_from_madmp(
     dmp: dict,
-    dataset_id: Optional[str] = None,
+    dataset_id: str | None = None,
     *,
     sensitive_flag: bool = False,
-    skipped_files: Optional[List[str]] = None,
-) -> Tuple[dict, dict]:
+    skipped_files: list[str] | None = None,
+) -> tuple[dict, dict]:
     ds = _guess_dataset(dmp, dataset_id)
     title = ds.get("title") or _get(dmp, ["dmp", "title"]) or "Untitled dataset"
 
-    fields: List[dict] = []
+    fields: list[dict] = []
     fields.append(_dv_field("title", title))
     fields.append(_dv_authors_field(ds, dmp))
     contacts_field = _dv_contacts_field(ds, dmp)
@@ -377,17 +455,21 @@ def build_dataverse_dataset_version_from_madmp(
         skipped = skipped_files or []
         if skipped:
             bullet = "\n".join(f"  - {os.path.basename(x)}" for x in skipped)
-            base_desc += ("\n\n[NOTICE] Files withheld due to personal/sensitive data. "
-                          "A metadata-only record has been created. Skipped files:\n" + bullet)
+            base_desc += (
+                "\n\n[NOTICE] Files withheld due to personal/sensitive data. "
+                "A metadata-only record has been created. Skipped files:\n" + bullet
+            )
         else:
             base_desc += "\n\n[NOTICE] Files withheld due to personal/sensitive data. A metadata-only record has been created."
 
-    fields.append({
-        "typeName": "dsDescription",
-        "typeClass": "compound",
-        "multiple": True,
-        "value": [{"dsDescriptionValue": _dv_field("dsDescriptionValue", base_desc)}],
-    })
+    fields.append(
+        {
+            "typeName": "dsDescription",
+            "typeClass": "compound",
+            "multiple": True,
+            "value": [{"dsDescriptionValue": _dv_field("dsDescriptionValue", base_desc)}],
+        }
+    )
 
     fields.append(_dv_subjects_field(ds))
 
@@ -398,9 +480,16 @@ def build_dataverse_dataset_version_from_madmp(
 
     lang = _normalize_language(ds.get("language") or _get(dmp, ["dmp", "language"]))
     if lang:
-        fields.append({"typeName": "language", "typeClass": "controlledVocabulary", "multiple": True, "value": [lang]})
+        fields.append(
+            {
+                "typeName": "language",
+                "typeClass": "controlledVocabulary",
+                "multiple": True,
+                "value": [lang],
+            }
+        )
 
-    dataset_version: Dict[str, Any] = {
+    dataset_version: dict[str, Any] = {
         "datasetVersion": {
             "metadataBlocks": {"citation": {"displayName": "Citation Metadata", "fields": fields}}
         }
@@ -413,26 +502,30 @@ def build_dataverse_dataset_version_from_madmp(
 
     return dataset_version, {"dataset_title": title}
 
+
 # ============================================================================
 # Packaging for Dataverse (<=100 files total, <=953.7 MB per file)
 # ============================================================================
 
+
 @dataclass
 class DVPlan:
-    plan: List[PackItem]
-    report: List[dict]
+    plan: list[PackItem]
+    report: list[dict]
     workdir: str
-    directory_label_for: Dict[str, Optional[str]]  # final path -> directory label
+    directory_label_for: dict[str, str | None]  # final path -> directory label
     double_zipped: bool = False
 
-def _estimate_zip_size(members: List[str]) -> int:
+
+def _estimate_zip_size(members: list[str]) -> int:
     total, _ = sizes_bytes(members)
     return estimate_zip_total_bytes(members, total)
 
-def _shard_members_by_size(members: List[str], max_bytes: int) -> List[List[str]]:
+
+def _shard_members_by_size(members: list[str], max_bytes: int) -> list[list[str]]:
     """Greedy sharding: add files while estimated zip stays under target."""
-    shards: List[List[str]] = []
-    current: List[str] = []
+    shards: list[list[str]] = []
+    current: list[str] = []
     by_size = sorted(members, key=lambda p: os.path.getsize(p), reverse=True)
     for fp in by_size:
         trial = current + [fp]
@@ -445,7 +538,8 @@ def _shard_members_by_size(members: List[str], max_bytes: int) -> List[List[str]
         shards.append(current)
     return shards
 
-def _first_level_groups_safe(files: List[str]) -> Tuple[Path, Dict[str, List[str]]]:
+
+def _first_level_groups_safe(files: list[str]) -> tuple[Path, dict[str, list[str]]]:
     """Robust against relpath=='.' and cross-drive paths on Windows."""
     if not files:
         return Path("."), {"": []}
@@ -455,7 +549,7 @@ def _first_level_groups_safe(files: List[str]) -> Tuple[Path, Dict[str, List[str
     except ValueError:
         parent_str = os.path.dirname(files_abs[0])
     parent = Path(parent_str)
-    groups: Dict[str, List[str]] = {}
+    groups: dict[str, list[str]] = {}
     for f in files_abs:
         rel_str = os.path.relpath(f, start=parent_str)
         if rel_str in ("", "."):
@@ -466,7 +560,8 @@ def _first_level_groups_safe(files: List[str]) -> Tuple[Path, Dict[str, List[str
         groups.setdefault(head, []).append(f)
     return parent, groups
 
-def _build_dataverse_packaging_plan(files: List[str]) -> DVPlan:
+
+def _build_dataverse_packaging_plan(files: list[str]) -> DVPlan:
     """
     Preserve first-level folders. Create DEFLATED zips per folder (or per shard),
     ensuring each final archive <= TARGET_MAX_PER_ARCHIVE and total items <= 100.
@@ -480,12 +575,12 @@ def _build_dataverse_packaging_plan(files: List[str]) -> DVPlan:
     dataset_root = parent.name or "dataset"
 
     workdir = tempfile.mkdtemp(prefix="dv_pack_")
-    plan: List[PackItem] = []
-    report: List[dict] = []
-    directory_label_for: Dict[str, Optional[str]] = {}
+    plan: list[PackItem] = []
+    report: list[dict] = []
+    directory_label_for: dict[str, str | None] = {}
     make_double_zip = DOUBLE_ZIP_TO_PREVENT_UNPACK
 
-    singles: List[str] = []
+    singles: list[str] = []
 
     # Root files: if few and small, keep as singles; else shard into zips
     for sub, members in sorted(groups.items(), key=lambda kv: kv[0] or ""):
@@ -499,34 +594,44 @@ def _build_dataverse_packaging_plan(files: List[str]) -> DVPlan:
                     directory_label_for[m] = None  # root
                 continue
 
-            for idx, shard in enumerate(_shard_members_by_size(members, TARGET_MAX_PER_ARCHIVE), start=1):
+            for idx, shard in enumerate(
+                _shard_members_by_size(members, TARGET_MAX_PER_ARCHIVE), start=1
+            ):
                 zip_path = os.path.join(workdir, f"root_files_{idx:02d}.zip")
-                plan.append(PackItem("zip", zip_path=zip_path, members=shard, compression=ZIP_COMPRESSION))
+                plan.append(
+                    PackItem("zip", zip_path=zip_path, members=shard, compression=ZIP_COMPRESSION)
+                )
                 _, shard_sizes = sizes_bytes(shard)
-                report.append({
-                    "archive": os.path.basename(zip_path),
-                    "count": len(shard),
-                    "bytes": sum(shard_sizes.values()),
-                    "examples": [os.path.basename(m) for m in shard[:5]],
-                    "first_level": "",
-                    "dataset_root": dataset_root,
-                })
+                report.append(
+                    {
+                        "archive": os.path.basename(zip_path),
+                        "count": len(shard),
+                        "bytes": sum(shard_sizes.values()),
+                        "examples": [os.path.basename(m) for m in shard[:5]],
+                        "first_level": "",
+                        "dataset_root": dataset_root,
+                    }
+                )
                 directory_label_for[zip_path] = None
         else:
             shards = _shard_members_by_size(members, TARGET_MAX_PER_ARCHIVE)
             for idx, shard in enumerate(shards, start=1):
                 suffix = "" if len(shards) == 1 else f"_part{idx:02d}"
                 zip_path = os.path.join(workdir, f"{sub}{suffix}.zip")
-                plan.append(PackItem("zip", zip_path=zip_path, members=shard, compression=ZIP_COMPRESSION))
+                plan.append(
+                    PackItem("zip", zip_path=zip_path, members=shard, compression=ZIP_COMPRESSION)
+                )
                 _, shard_sizes = sizes_bytes(shard)
-                report.append({
-                    "archive": os.path.basename(zip_path),
-                    "count": len(shard),
-                    "bytes": sum(shard_sizes.values()),
-                    "examples": [os.path.basename(m) for m in shard[:5]],
-                    "first_level": sub,
-                    "dataset_root": dataset_root,
-                })
+                report.append(
+                    {
+                        "archive": os.path.basename(zip_path),
+                        "count": len(shard),
+                        "bytes": sum(shard_sizes.values()),
+                        "examples": [os.path.basename(m) for m in shard[:5]],
+                        "first_level": sub,
+                        "dataset_root": dataset_root,
+                    }
+                )
                 directory_label_for[zip_path] = sub  # display old folder as label for the zip
 
     # Add remaining small singles (those not included in zips)
@@ -551,8 +656,8 @@ def _build_dataverse_packaging_plan(files: List[str]) -> DVPlan:
             groups_z.append((est, it))
 
         groups_z.sort(key=lambda x: x[0], reverse=True)
-        new_bins: List[List[PackItem]] = []
-        new_bin_estimates: List[int] = []
+        new_bins: list[list[PackItem]] = []
+        new_bin_estimates: list[int] = []
         for est, it in groups_z:
             placed = False
             for bi in range(len(new_bins)):
@@ -566,27 +671,35 @@ def _build_dataverse_packaging_plan(files: List[str]) -> DVPlan:
                 new_bin_estimates.append(est)
 
         # Rebuild plan if merging helps
-        merged_plan: List[PackItem] = []
-        merged_report: List[dict] = []
+        merged_plan: list[PackItem] = []
+        merged_report: list[dict] = []
         if len(new_bins) < len(groups_z):
             for idx, bin_items in enumerate(new_bins, start=1):
-                all_members: List[str] = []
+                all_members: list[str] = []
                 for it in bin_items:
                     all_members.extend(it.members)
                 zip_path = os.path.join(workdir, f"merged_{idx:03d}.zip")
-                merged_plan.append(PackItem("zip", zip_path=zip_path, members=all_members, compression=ZIP_COMPRESSION))
+                merged_plan.append(
+                    PackItem(
+                        "zip", zip_path=zip_path, members=all_members, compression=ZIP_COMPRESSION
+                    )
+                )
                 _, sizes_map = sizes_bytes(all_members)
-                merged_report.append({
-                    "archive": os.path.basename(zip_path),
-                    "count": len(all_members),
-                    "bytes": sum(sizes_map.values()),
-                    "examples": [os.path.basename(m) for m in all_members[:5]],
-                    "first_level": "",  # spans multiple folders
-                    "dataset_root": dataset_root,
-                })
+                merged_report.append(
+                    {
+                        "archive": os.path.basename(zip_path),
+                        "count": len(all_members),
+                        "bytes": sum(sizes_map.values()),
+                        "examples": [os.path.basename(m) for m in all_members[:5]],
+                        "first_level": "",  # spans multiple folders
+                        "dataset_root": dataset_root,
+                    }
+                )
                 directory_label_for[zip_path] = None
             plan = merged_plan
-            report = [r for r in report if r.get("archive", "").startswith(("root_files_",))] + merged_report
+            report = [
+                r for r in report if r.get("archive", "").startswith(("root_files_",))
+            ] + merged_report
 
         if _current_count() > DATAVERSE_MAX_FILES_TOTAL:
             raise PublishError(
@@ -602,24 +715,30 @@ def _build_dataverse_packaging_plan(files: List[str]) -> DVPlan:
                 "Please split the dataset differently."
             )
 
-    return DVPlan(plan=plan, report=report, workdir=workdir,
-                  directory_label_for=directory_label_for, double_zipped=make_double_zip)
+    return DVPlan(
+        plan=plan,
+        report=report,
+        workdir=workdir,
+        directory_label_for=directory_label_for,
+        double_zipped=make_double_zip,
+    )
+
 
 # ============================================================================
 # Publish flow
 # ============================================================================
+
 
 def publish_dataset_to_dataverse(
     dmp_path: str,
     token: str,
     dataverse_alias: str,
     base_url: str,
-    dataset_id_selector: Optional[str] = None,
+    dataset_id_selector: str | None = None,
     publish: bool = False,
-    release_type: str = "major"
-) -> Dict[str, Any]:
-
-    with open(dmp_path, "r", encoding="utf-8") as fh:
+    release_type: str = "major",
+) -> dict[str, Any]:
+    with open(dmp_path, encoding="utf-8") as fh:
         dmp = json.load(fh)
 
     ds = _guess_dataset(dmp, dataset_id_selector)
@@ -632,7 +751,7 @@ def publish_dataset_to_dataverse(
 
     # Resolve relative paths against the DMP file location
     dmp_dir = str(Path(dmp_path).resolve().parent)
-    resolved: List[str] = []
+    resolved: list[str] = []
     for p in xdcas_files:
         if os.path.isabs(p):
             resolved.append(p)
@@ -653,9 +772,9 @@ def publish_dataset_to_dataverse(
     pre_count = len(uploads_raw)
 
     # Plan packaging (no zips created yet)
-    packaging_report: List[dict] = []
-    planned_final_paths: List[str] = []
-    directory_label_for: Dict[str, Optional[str]] = {}
+    packaging_report: list[dict] = []
+    planned_final_paths: list[str] = []
+    directory_label_for: dict[str, str | None] = {}
 
     if not sensitive and pre_count > 0:
         dvplan = _build_dataverse_packaging_plan(uploads_raw)
@@ -672,10 +791,18 @@ def publish_dataset_to_dataverse(
     # Append PACKAGING NOTE (+ info on double-zip) to dsDescription
     ds_fields = dataset_version["datasetVersion"]["metadataBlocks"]["citation"]["fields"]
     note = append_packaging_note(
-        next((f["value"][0]["dsDescriptionValue"]["value"]
-              for f in ds_fields if f.get("typeName") == "dsDescription"), "No description provided."),
-        pre_files=pre_count, pre_bytes=pre_total,
-        final_paths=planned_final_paths, report=packaging_report
+        next(
+            (
+                f["value"][0]["dsDescriptionValue"]["value"]
+                for f in ds_fields
+                if f.get("typeName") == "dsDescription"
+            ),
+            "No description provided.",
+        ),
+        pre_files=pre_count,
+        pre_bytes=pre_total,
+        final_paths=planned_final_paths,
+        report=packaging_report,
     )
     if not sensitive and planned_final_paths and DOUBLE_ZIP_TO_PREVENT_UNPACK:
         note += "\n\n[INFO] Zip containers are uploaded as *double-zipped* archives to prevent automatic unpacking by Dataverse."
@@ -694,15 +821,18 @@ def publish_dataset_to_dataverse(
     if not ds_id:
         raise PublishError(f"Dataverse: missing dataset id in response: {resp}")
 
-    uploaded: List[str] = []
-    skipped_too_big: List[str] = []
+    uploaded: list[str] = []
+    skipped_too_big: list[str] = []
     try:
         # Determine file restrict flag from maDMP distribution.data_access
         def _first_distribution(_ds: dict) -> dict:
             d = _ds.get("distribution")
-            if isinstance(d, dict): return d
-            if isinstance(d, list) and d: return d[0]
+            if isinstance(d, dict):
+                return d
+            if isinstance(d, list) and d:
+                return d[0]
             return {}
+
         access = (_first_distribution(ds).get("data_access") or "").strip().lower()
         restrict_files = (access in {"shared", "closed"}) or sensitive
 
@@ -716,14 +846,21 @@ def publish_dataset_to_dataverse(
                 if os.path.isfile(p) and p not in inner_paths:
                     inner_paths.append(p)
 
-            final_paths: List[str] = []
+            final_paths: list[str] = []
 
             # Wrap each created zip as an OUTER zip to prevent auto-unpack (if enabled)
             if dvplan.double_zipped:
                 for fp in inner_paths:
-                    if fp.lower().endswith(".zip") and os.path.getsize(fp) <= DATAVERSE_MAX_FILE_SIZE_BYTES:
-                        outer = os.path.join(os.path.dirname(fp), os.path.basename(fp).replace(".zip", "_outer.zip"))
-                        with zipfile.ZipFile(outer, "w", compression=ZIP_COMPRESSION, allowZip64=True) as zf:
+                    if (
+                        fp.lower().endswith(".zip")
+                        and os.path.getsize(fp) <= DATAVERSE_MAX_FILE_SIZE_BYTES
+                    ):
+                        outer = os.path.join(
+                            os.path.dirname(fp), os.path.basename(fp).replace(".zip", "_outer.zip")
+                        )
+                        with zipfile.ZipFile(
+                            outer, "w", compression=ZIP_COMPRESSION, allowZip64=True
+                        ) as zf:
                             zf.write(fp, arcname=os.path.basename(fp))
                         if os.path.getsize(outer) <= DATAVERSE_MAX_FILE_SIZE_BYTES:
                             final_paths.append(outer)
@@ -738,14 +875,18 @@ def publish_dataset_to_dataverse(
 
             # Final guardrails
             if len(final_paths) > DATAVERSE_MAX_FILES_TOTAL:
-                raise PublishError("Final upload set still exceeds 100 files; please split the dataset.")
+                raise PublishError(
+                    "Final upload set still exceeds 100 files; please split the dataset."
+                )
 
             for fp in final_paths:
                 if os.path.getsize(fp) > DATAVERSE_MAX_FILE_SIZE_BYTES:
                     skipped_too_big.append(os.path.basename(fp))
                     continue
                 lbl = dvplan.directory_label_for.get(fp)
-                _dv_upload_file(base_url, token, ds_id, fp, directory_label=lbl, restrict=restrict_files)
+                _dv_upload_file(
+                    base_url, token, ds_id, fp, directory_label=lbl, restrict=restrict_files
+                )
                 uploaded.append(os.path.basename(fp))
 
         # Optional publish
@@ -770,27 +911,44 @@ def publish_dataset_to_dataverse(
         # Temporary workdir clean-up is best-effort (Zip creation happens in temp dirs)
         pass
 
+
 # ============================================================================
 # Streamlit wrapper
 # ============================================================================
 
+
 def streamlit_publish_to_dataverse(
-    *, dataset: dict, dmp: dict, token: str,
-    base_url: str, alias: str,
-    publish: bool = False, allow_reused: bool = False, release_type: str = "major",
-) -> Dict[str, Any]:
+    *,
+    dataset: dict,
+    dmp: dict,
+    token: str,
+    base_url: str,
+    alias: str,
+    publish: bool = False,
+    allow_reused: bool = False,
+    release_type: str = "major",
+) -> dict[str, Any]:
     # Block reused datasets unless explicitly allowed (matches your editor logic)
-    if str(dataset.get("is_reused", "")).strip().lower() in {"true", "1", "yes"} and not allow_reused:
+    if (
+        str(dataset.get("is_reused", "")).strip().lower() in {"true", "1", "yes"}
+        and not allow_reused
+    ):
         raise PublishError("Blocked: dataset is marked re-used (is_reused=true) in the DMP.")
 
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w", encoding="utf-8") as tf:
+    with tempfile.NamedTemporaryFile(
+        suffix=".json", delete=False, mode="w", encoding="utf-8"
+    ) as tf:
         json.dump(dmp, tf, ensure_ascii=False, indent=2)
         dmp_path = tf.name
     try:
         result = publish_dataset_to_dataverse(
-            dmp_path=dmp_path, token=token, dataverse_alias=alias,
-            base_url=base_url, dataset_id_selector=dataset.get("title") or None,
-            publish=publish, release_type=release_type,
+            dmp_path=dmp_path,
+            token=token,
+            dataverse_alias=alias,
+            base_url=base_url,
+            dataset_id_selector=dataset.get("title") or None,
+            publish=publish,
+            release_type=release_type,
         )
         if st is not None:
             landing = result.get("landing_page")
@@ -803,7 +961,11 @@ def streamlit_publish_to_dataverse(
             if result.get("sensitive_or_personal"):
                 skipped = result.get("skipped_files") or []
                 if skipped:
-                    st.warning(f"Files not uploaded due to personal/sensitive data or size limits: {', '.join(os.path.basename(x) for x in skipped)}")
+                    st.warning(
+                        f"Files not uploaded due to personal/sensitive data or size limits: {', '.join(os.path.basename(x) for x in skipped)}"
+                    )
     finally:
-        try: os.unlink(dmp_path)
-        except Exception: pass
+        try:
+            os.unlink(dmp_path)
+        except Exception:
+            pass

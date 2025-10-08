@@ -2,23 +2,27 @@ import json
 import os
 import shutil
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Union, Iterable, Dict, Any, List,Optional
+from typing import Any
+
 import requests
 
-
-from ..common import load_from_env, PROJECT_ROOT, language_dirs
+from ..common import PROJECT_ROOT, language_dirs, load_from_env
 from .dataset import get_data_files
 
-# Download Readme template:
-def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", readme_file:str = "./README_DCAS_template.md"):
-    
-    readme_file= str(Path(__file__).resolve().parent.parent.parent / Path(readme_file))
 
-     # Check if the local file already exists
+# Download Readme template:
+def download_README_template(
+    url: str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md",
+    readme_file: str = "./README_DCAS_template.md",
+):
+    readme_file = str(Path(__file__).resolve().parent.parent.parent / Path(readme_file))
+
+    # Check if the local file already exists
     if os.path.exists(readme_file):
         return
-    
+
     # Ensure the parent directory exists
     folder_path = os.path.dirname(readme_file)
     os.makedirs(folder_path, exist_ok=True)
@@ -29,16 +33,19 @@ def download_README_template(url:str = "https://raw.githubusercontent.com/social
     # Check if the request was successful
     if response.status_code == 200:
         # Save the content to a file
-        with open(readme_file, 'wb') as file:
+        with open(readme_file, "wb") as file:
             file.write(response.content)
     else:
         print(f"Failed to download {readme_file} from {url}")
 
-def migrate_datasets(dataset_json: Union[str, Path],
-                     source_root: Union[str, Path],
-                     dest_root: Union[str, Path],
-                     zip_threshold: int = 1000,
-                     overwrite: bool = True) -> List[Dict[str, Any]]:
+
+def migrate_datasets(
+    dataset_json: str | Path,
+    source_root: str | Path,
+    dest_root: str | Path,
+    zip_threshold: int = 1000,
+    overwrite: bool = True,
+) -> list[dict[str, Any]]:
     """
     Migrate datasets from source_root to dest_root according to dmp.json,
     preserving the subpath in each 'destination'. If number_of_files > zip_threshold,
@@ -87,8 +94,8 @@ def migrate_datasets(dataset_json: Union[str, Path],
     with dataset_json.open("r", encoding="utf-8") as f:
         spec = json.load(f)
 
-    results: List[Dict[str, Any]] = []
-    datasets: Iterable[Dict[str, Any]] = spec.get("datasets", [])
+    results: list[dict[str, Any]] = []
+    datasets: Iterable[dict[str, Any]] = spec.get("datasets", [])
 
     for ds in datasets:
         rel_path = _normalize_relpath(ds.get("destination", ""))
@@ -97,7 +104,7 @@ def migrate_datasets(dataset_json: Union[str, Path],
 
         number_of_files = int(ds.get("number_of_files", 0))
         ds["zip_file"] = None  # default; becomes a string if we create/use a zip
-        action: Dict[str, Any] = {
+        action: dict[str, Any] = {
             "data_name": ds.get("data_name"),
             "source": str(src_path),
             "status": "pending",
@@ -124,7 +131,9 @@ def migrate_datasets(dataset_json: Union[str, Path],
                     if made_zip.exists():
                         ds["zip_file"] = _rel_from_root_str(made_zip, dest_root)
                         action["status"] = (
-                            "zipped_and_copied" if overwrite or not dst_zip_path.exists() else "zip_exists_skipped"
+                            "zipped_and_copied"
+                            if overwrite or not dst_zip_path.exists()
+                            else "zip_exists_skipped"
                         )
                         action["dest"] = str(made_zip.resolve())
                     else:
@@ -198,15 +207,15 @@ def migrate_datasets(dataset_json: Union[str, Path],
 
     return results
 
+
 def copy_items(
     items: Iterable[str],
     dest_root: os.PathLike | str,
     source_root: os.PathLike | str,
-    base: Optional[os.PathLike | str] = None,
+    base: os.PathLike | str | None = None,
     overwrite: bool = True,
-    ignore_patterns: Optional[Iterable[str]] = None
-    ):
-    
+    ignore_patterns: Iterable[str] | None = None,
+):
     """
     Copy a list of files/directories into dest_root.
 
@@ -231,7 +240,9 @@ def copy_items(
         # Treat any relative path as relative to source_root
         return (source_root / p).resolve()
 
-    def _rel_dest_for(src: Path, dest_root: Path, base: Optional[Path], fallback_root: Optional[Path]) -> Path:
+    def _rel_dest_for(
+        src: Path, dest_root: Path, base: Path | None, fallback_root: Path | None
+    ) -> Path:
         # Prefer explicit base; otherwise try relative to fallback_root (source_root)
         for root in [base, fallback_root]:
             if root:
@@ -255,16 +266,18 @@ def copy_items(
     base_path = Path(base).resolve() if base else None
     ignore = shutil.ignore_patterns(*ignore_patterns) if ignore_patterns else None
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
 
     for item in items:
         try:
             src = _resolve_src(item, source_root)
         except Exception as e:
-            results.append({"src": str(item), "status": "error", "error": f"{type(e).__name__}: {e}"})
+            results.append(
+                {"src": str(item), "status": "error", "error": f"{type(e).__name__}: {e}"}
+            )
             continue
 
-        rec: Dict[str, Any] = {"src": str(src), "status": "pending"}
+        rec: dict[str, Any] = {"src": str(src), "status": "pending"}
 
         if not src.exists():
             rec.update(status="error", error=f"Not found: {src}")
@@ -316,12 +329,13 @@ def copy_items(
 
     return results
 
+
 def copy_data_items(
-    items: Iterable[Union[str, Path]],
-    dest_base: Union[str, Path] = "./DCAS template/data",
+    items: Iterable[str | Path],
+    dest_base: str | Path = "./DCAS template/data",
     overwrite: bool = True,
     create_missing_dirs: bool = True,
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     """
     For each path in `items`:
       - If it's a directory: create the corresponding directory under `dest_base`
@@ -334,17 +348,18 @@ def copy_data_items(
 
     Returns a list of {"src","dst","status",("error")} per item.
     """
+
     def _rel_under_data(p: Path) -> Path:
         # If the path contains a 'data' segment, keep the part after 'data/'
         parts = p.parts
         if "data" in parts:
             i = parts.index("data")
-            remainder = parts[i+1:]
+            remainder = parts[i + 1 :]
             return Path(*remainder) if remainder else Path()
         # If it's already relative, keep as-is; if absolute, fallback to basename
         return p if not p.is_absolute() else Path(p.name)
 
-    def _looks_like_dir(raw: Union[str, Path]) -> bool:
+    def _looks_like_dir(raw: str | Path) -> bool:
         s = str(raw)
         # Treat as directory if it ends with a path separator, or has no suffix
         # (works for typical names like '00_raw', '01_interim/', etc.)
@@ -353,11 +368,11 @@ def copy_data_items(
     base = Path(dest_base)
     base.mkdir(parents=True, exist_ok=True)
 
-    results: List[Dict[str, str]] = []
+    results: list[dict[str, str]] = []
 
     for item in items:
         src = Path(item)
-        rec: Dict[str, str] = {"src": str(src), "status": "pending"}
+        rec: dict[str, str] = {"src": str(src), "status": "pending"}
 
         rel = _rel_under_data(src)
         dst = base / rel
@@ -405,32 +420,45 @@ def copy_data_items(
 
     return results
 
+
 def main():
     # Change to project root directory
     os.chdir(PROJECT_ROOT)
 
-    download_README_template(readme_file = "./DCAS template/README_template.md")
-    
-    _ = migrate_datasets(dataset_json="./dmp.json",
-                         source_root = PROJECT_ROOT,
-                           dest_root="./DCAS template",
-                           zip_threshold=1000,
-                           overwrite=True)
+    download_README_template(readme_file="./DCAS template/README_template.md")
+
+    _ = migrate_datasets(
+        dataset_json="./dmp.json",
+        source_root=PROJECT_ROOT,
+        dest_root="./DCAS template",
+        zip_threshold=1000,
+        overwrite=True,
+    )
     programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
     code_path = language_dirs.get(programming_language.lower())
-    
 
-    _, items = get_data_files()   # second value is the mixed list of dirs/files
+    _, items = get_data_files()  # second value is the mixed list of dirs/files
 
     copy_data_items(items, dest_base="./DCAS template/data", overwrite=True)
 
+    _ = copy_items(
+        items=[
+            "./README.md",
+            code_path,
+            "./docs",
+            "./results",
+            "./uv.lock",
+            "./environment.yml",
+            "./requirements.txt",
+            "./dmp.json",
+        ],
+        dest_root="./DCAS template",
+        source_root=PROJECT_ROOT,
+        base=None,
+        overwrite=True,
+        ignore_patterns=None,
+    )
 
-    _ = copy_items(items=["./README.md",code_path,"./docs","./results","./uv.lock","./environment.yml","./requirements.txt","./dmp.json"],
-                   dest_root="./DCAS template",
-                   source_root=PROJECT_ROOT,
-                   base=None,
-                   overwrite=True,
-                   ignore_patterns=None)
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     main()

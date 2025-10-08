@@ -1,29 +1,35 @@
-import os
-import subprocess
 import ast
+import importlib
+import os
+import pathlib
+import subprocess
 import sys
 import sysconfig
 from datetime import datetime
-import importlib
-from typing import Dict, List
-import pathlib
 
 if sys.version_info < (3, 11):
     import toml
 else:
     import tomllib as toml
-import yaml
 import nbformat
+import yaml
 
+from .common import (
+    PROJECT_ROOT,
+    ensure_correct_kernel,
+    load_from_env,
+    make_safe_path,
+    read_toml,
+    run_script,
+)
 from .env import export_conda_env
-from .common import PROJECT_ROOT, ensure_correct_kernel, run_script, make_safe_path, load_from_env, read_toml
+
 
 def create_requirements_txt(requirements_file: str = "requirements.txt"):
     """
     Writes pip freeze output to requirements.txt and ensures all installed packages
     are tracked in uv.lock (by running `uv add` on any missing).
     """
-
     project_root = PROJECT_ROOT
     requirements_path = project_root / requirements_file
     uv_lock_path = project_root / "uv.lock"
@@ -36,9 +42,7 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
 
     # Step 2: Parse pip freeze output
     frozen_lines = result.stdout.strip().splitlines()
-    installed_pkgs = {
-        line.split("==")[0].lower(): line for line in frozen_lines if "==" in line
-    }
+    installed_pkgs = {line.split("==")[0].lower(): line for line in frozen_lines if "==" in line}
 
     # Step 3: Write pip freeze output to requirements.txt
     with open(requirements_path, "w", encoding="utf-8") as f:
@@ -51,7 +55,7 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
             try:
                 with open(uv_lock_path, "rb") as f:
-                #with open(uv_lock_path, "r", encoding="utf-8") as f:          
+                    # with open(uv_lock_path, "r", encoding="utf-8") as f:
                     uv_data = toml.load(f)
                     for pkg in uv_data.get("package", []):
                         if isinstance(pkg, dict) and "name" in pkg:
@@ -66,18 +70,30 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
             env["UV_LINK_MODE"] = "copy"
             print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
             for pkg in missing_from_lock:
-                try:   
-                    subprocess.run([sys.executable, "-m","uv", "add", pkg], check=True, env=env,
-                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "uv", "add", pkg],
+                        check=True,
+                        env=env,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
                 except subprocess.CalledProcessError as e:
                     print(f"❌ Failed to add {pkg} via uv: {e}")
 
-def create_conda_environment_yml(env_name,r_version=None,requirements_file:str="requirements.txt", output_file:str="environment.yml"):
+
+def create_conda_environment_yml(
+    env_name,
+    r_version=None,
+    requirements_file: str = "requirements.txt",
+    output_file: str = "environment.yml",
+):
     """
-    Creates a Conda environment.yml based on a pip requirements.txt file, 
+    Creates a Conda environment.yml based on a pip requirements.txt file,
     the current Python version, and optionally an R version.
-    
-    Parameters:
+
+    Parameters
+    ----------
     - requirements_file (str): Path to the pip requirements.txt file.
     - output_file (str): Path to output the generated environment.yml file (default 'environment.yml').
     - r_version (str, optional): R version string like "R version 4.4.3" (default None).
@@ -85,44 +101,41 @@ def create_conda_environment_yml(env_name,r_version=None,requirements_file:str="
     requirements_file = str(PROJECT_ROOT / pathlib.Path(requirements_file))
     output_file = str(PROJECT_ROOT / pathlib.Path(output_file))
 
-
     if not os.path.exists(requirements_file):
         raise FileNotFoundError(f"Requirements file not found: {requirements_file}")
 
     # Get the current Python version
-    version_output = subprocess.check_output([sys.executable, '--version']).decode().strip()
+    version_output = subprocess.check_output([sys.executable, "--version"]).decode().strip()
     python_version = version_output.split()[1]  # Get '3.10.12'
 
     # Read the requirements.txt
-    with open(requirements_file, "r", encoding="utf-8") as f:
+    with open(requirements_file, encoding="utf-8") as f:
         pip_dependencies = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
     # Build the basic dependencies list
-    conda_dependencies = [f'python={python_version}']
+    conda_dependencies = [f"python={python_version}"]
 
     # If R version is provided, extract version number and add R base package
     if r_version:
         try:
             # Expect input like "R version 4.4.3"
             r_version_number = r_version.split()[-1]  # Get '4.4.3'
-            conda_dependencies.append(f'r-base={r_version_number}')
+            conda_dependencies.append(f"r-base={r_version_number}")
         except Exception as e:
             print(f"Warning: Could not parse R version. Got error: {e}")
 
     # Add pip dependencies
-    conda_dependencies.append({'pip': pip_dependencies})
+    conda_dependencies.append({"pip": pip_dependencies})
 
     # Create environment.yml structure
-    conda_env = {
-        'name': {env_name},
-        'dependencies': conda_dependencies
-    }
+    conda_env = {"name": {env_name}, "dependencies": conda_dependencies}
 
     # Write the environment.yml
     with open(output_file, "w", encoding="utf-8") as f:
         yaml.dump(conda_env, f, default_flow_style=False, sort_keys=False)
 
     print(f"✅ Conda environment file created: {output_file}")
+
 
 def tag_env_file(env_file: str = "environment.yml"):
     # Paths
@@ -133,17 +146,18 @@ def tag_env_file(env_file: str = "environment.yml"):
         print(f"❌ {env_file} not found.")
         return
 
-    raw_rules = read_toml(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "pyproject.toml")
+    raw_rules = read_toml(
+        folder=root,
+        json_filename="platform_rules.json",
+        tool_name="platform_rules",
+        toml_path="pyproject.toml",
+    )
 
     if not raw_rules:
         print("ℹ️ No platform rules found. Skipping tagging.")
         return
 
-    sys_to_conda = {
-        "win32": "win",
-        "darwin": "osx",
-        "linux": "linux"
-    }
+    sys_to_conda = {"win32": "win", "darwin": "osx", "linux": "linux"}
 
     # Translate rules
     platform_rules = {}
@@ -153,7 +167,7 @@ def tag_env_file(env_file: str = "environment.yml"):
             platform_rules[pkg.lower()] = conda_selector
 
     # Read environment.yml
-    with open(env_path, "r", encoding="utf-8") as f:
+    with open(env_path, encoding="utf-8") as f:
         lines = f.readlines()
 
     in_pip_section = False
@@ -188,12 +202,18 @@ def tag_env_file(env_file: str = "environment.yml"):
 
     print(f"✅ Updated {env_file} with Conda-style platform tags")
 
+
 def tag_requirements_txt(requirements_file: str = "requirements.txt"):
     # Resolve paths
     root = PROJECT_ROOT
     requirements_path = root / requirements_file
-    
-    platform_rules = read_toml(folder = root,json_filename =  "platform_rules.json",tool_name = "platform_rules", toml_path = "pyproject.toml")
+
+    platform_rules = read_toml(
+        folder=root,
+        json_filename="platform_rules.json",
+        tool_name="platform_rules",
+        toml_path="pyproject.toml",
+    )
 
     if not platform_rules:
         print("ℹ️ No platform rules found. Skipping tagging.")
@@ -203,7 +223,7 @@ def tag_requirements_txt(requirements_file: str = "requirements.txt"):
         raise FileNotFoundError(f"❌ Requirements file not found: {requirements_path}")
 
     # Read the requirements.txt
-    with open(requirements_path, "r", encoding="utf-8") as f:
+    with open(requirements_path, encoding="utf-8") as f:
         lines = f.read().strip().splitlines()
 
     filtered_lines = []
@@ -216,7 +236,7 @@ def tag_requirements_txt(requirements_file: str = "requirements.txt"):
         pkg = clean_line.split("==")[0].split(">=")[0].split("<=")[0].strip().lower()
         if pkg in platform_rules:
             platform = platform_rules[pkg]
-            filtered_lines.append(f"{clean_line} ; sys_platform == \"{platform}\"")
+            filtered_lines.append(f'{clean_line} ; sys_platform == "{platform}"')
         else:
             filtered_lines.append(clean_line)
 
@@ -225,13 +245,14 @@ def tag_requirements_txt(requirements_file: str = "requirements.txt"):
 
     print(f"✅ requirements.txt updated with platform tags: {requirements_path}")
 
+
 def resolve_parent_module(module_name):
-    if '.' in module_name:
-        return module_name.split('.')[0]
+    if "." in module_name:
+        return module_name.split(".")[0]
     return module_name
 
+
 def get_setup_dependencies(folder_path: str = None, file_name: str = "dependencies.txt"):
-    
     def extract_code_from_notebook(path):
         code_cells = []
         try:
@@ -251,7 +272,7 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
                 if file.endswith(".ipynb"):
                     code = extract_code_from_notebook(file)
                 else:
-                    with open(file, "r", encoding="utf-8") as f:
+                    with open(file, encoding="utf-8") as f:
                         code = f.read()
 
                 tree = ast.parse(code, filename=file)
@@ -280,11 +301,14 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
                 installed_packages[package] = version
             except importlib.metadata.PackageNotFoundError:
                 if package not in standard_libs and package not in sys.builtin_module_names:
-                    installed_packages[package] = "Not available" 
+                    installed_packages[package] = "Not available"
 
         python_script_names = {os.path.splitext(os.path.basename(file))[0] for file in python_files}
-        valid_packages = {package: version for package, version in installed_packages.items()
-                        if not (version == "Not available" and package in python_script_names)}
+        valid_packages = {
+            package: version
+            for package, version in installed_packages.items()
+            if not (version == "Not available" and package in python_script_names)
+        }
 
         return valid_packages
 
@@ -302,18 +326,18 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         print("No Python files found in the specified folder.")
         return
 
-    installed_packages  = get_dependencies_from_file(python_files)
+    installed_packages = get_dependencies_from_file(python_files)
 
     # Write to file
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     relative_python_files = [os.path.relpath(file, folder_path) for file in python_files]
-    python_version = subprocess.check_output([sys.executable, '--version']).decode().strip()
+    python_version = subprocess.check_output([sys.executable, "--version"]).decode().strip()
 
     if os.path.exists(os.path.dirname(file_name)):
         output_file = file_name
-    else: 
-        output_file = os.path.join(folder_path,"dependencies.txt")
-    
+    else:
+        output_file = os.path.join(folder_path, "dependencies.txt")
+
     with open(output_file, "w") as f:
         f.write("Software version:\n")
         f.write(f"{python_version}\n\n")
@@ -321,89 +345,106 @@ def get_setup_dependencies(folder_path: str = None, file_name: str = "dependenci
         f.write("Files checked:\n")
         f.write("\n".join(relative_python_files) + "\n\n")
         f.write("Dependencies:\n")
-        for package, version in installed_packages .items():
+        for package, version in installed_packages.items():
             f.write(f"{package}=={version}\n")
 
     print(f"{file_name} successfully generated at {output_file}")
 
     return installed_packages
 
-def setup_renv(programming_language,msg:str):
+
+def setup_renv(programming_language, msg: str):
     if programming_language.lower() == "r":
         # Call the setup script using the function
-        script_path = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./R/get_dependencies.R")),"r")
-        project_root = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./R")),"r")
+        script_path = make_safe_path(
+            str(PROJECT_ROOT / pathlib.Path("./R/get_dependencies.R")), "r"
+        )
+        project_root = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./R")), "r")
         cmd = [script_path, "--args", project_root]
         output = run_script("r", cmd)
         print(output)
         print(msg)
 
-def setup_matlab(programming_language,msg:str):
+
+def setup_matlab(programming_language, msg: str):
     if programming_language.lower() == "matlab":
-        code_path = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./src")),"matlab")
+        code_path = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./src")), "matlab")
         cmd = [f"addpath({code_path}); get_dependencies"]
         output = run_script("matlab", cmd)
         print(output)
         print(msg)
 
-def setup_stata(programming_language,msg:str):
+
+def setup_stata(programming_language, msg: str):
     if programming_language.lower() == "stata":
         # Call the setup script using the function
-        script_path = make_safe_path(str(PROJECT_ROOT / pathlib.Path("./stata/do/get_dependencies.do")),"stata")
+        script_path = make_safe_path(
+            str(PROJECT_ROOT / pathlib.Path("./stata/do/get_dependencies.do")), "stata"
+        )
         cmd = [f"do {script_path}"]
         output = run_script("stata", cmd)
         print(output)
         print(msg)
 
+
 def update_env_files():
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    python_env_manager = load_from_env("PYTHON_ENV_MANAGER",".cookiecutter")
-    repo_name = load_from_env("REPO_NAME",".cookiecutter")
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
+    python_env_manager = load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter")
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
     create_requirements_txt("requirements.txt")
     if python_env_manager.lower() == "venv":
-        create_conda_environment_yml(repo_name, r_version = load_from_env("R_VERSION", ".cookiecutter") if programming_language.lower() == "r" else None)
-    elif python_env_manager.lower() == "conda": 
+        create_conda_environment_yml(
+            repo_name,
+            r_version=load_from_env("R_VERSION", ".cookiecutter")
+            if programming_language.lower() == "r"
+            else None,
+        )
+    elif python_env_manager.lower() == "conda":
         export_conda_env(repo_name)
 
     tag_requirements_txt(requirements_file="requirements.txt")
-    tag_env_file(env_file = "environment.yml")
+    tag_env_file(env_file="environment.yml")
+
 
 def update_setup_dependency():
     print("Screening './setup' for dependencies")
     setup_folder = str(PROJECT_ROOT / pathlib.Path("./setup"))
     setup_file = str(PROJECT_ROOT / pathlib.Path("./setup/dependencies.txt"))
-    _ = get_setup_dependencies(folder_path=setup_folder,file_name =setup_file) 
+    _ = get_setup_dependencies(folder_path=setup_folder, file_name=setup_file)
+
 
 def update_code_dependency():
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
     if programming_language.lower() == "python":
         print("Screening './src' for dependencies")
         code_path = str(PROJECT_ROOT / pathlib.Path("./src"))
         code_file = str(PROJECT_ROOT / pathlib.Path("./src/dependencies.txt"))
-        _ = get_setup_dependencies(folder_path=code_path,file_name=code_file)
+        _ = get_setup_dependencies(folder_path=code_path, file_name=code_file)
     elif programming_language.lower() == "r":
         print("Screening './R' for dependencies")
-        setup_renv(programming_language,"/renv and .lock file has been updated")
+        setup_renv(programming_language, "/renv and .lock file has been updated")
     elif programming_language.lower() == "matlab":
         print("Screening './src' for dependencies")
-        setup_matlab(programming_language,"Tracking Matlab dependencies")
+        setup_matlab(programming_language, "Tracking Matlab dependencies")
     elif programming_language.lower() == "stata":
         print("Screening './stata' for dependencies")
-        setup_stata(programming_language,"Tracking Stata dependencies")
+        setup_stata(programming_language, "Tracking Stata dependencies")
     else:
         print("not implemented yet")
+
 
 @ensure_correct_kernel
 def main():
     # Ensure the working directory is the project root
     os.chdir(PROJECT_ROOT)
-    
+
     print("Updating 'requirements.txt','environment.yml'")
     update_env_files()
 
     # Run dependencies search
     update_setup_dependency()
     update_code_dependency()
+
 
 if __name__ == "__main__":
     main()

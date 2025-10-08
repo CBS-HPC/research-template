@@ -1,26 +1,28 @@
+import argparse
 import os
 import pathlib
-import argparse
 import subprocess
 
+from .common import PROJECT_ROOT, ensure_correct_kernel, get_version, load_from_env
+from .templates.jinja import patch_jinja_templates, set_jinja_templates
 from .vcs import git_push
-from .templates.jinja import set_jinja_templates, patch_jinja_templates
-from .common import load_from_env, get_version, ensure_correct_kernel, PROJECT_ROOT
+
 
 @ensure_correct_kernel
 def ci_config():
-     # Ensure the working directory is the project root
-  
+    # Ensure the working directory is the project root
+
     os.chdir(PROJECT_ROOT)
 
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
+    code_repo = load_from_env("CODE_REPO", ".cookiecutter")
 
     if set_git_alis(PROJECT_ROOT):
         generate_ci_configs(programming_language, code_repo, PROJECT_ROOT)
-        toggle_ci_files(enable = False, code_repo = code_repo, project_root = PROJECT_ROOT)
-        if not git_push(True,f"Setups up CI at {code_repo}"):
+        toggle_ci_files(enable=False, code_repo=code_repo, project_root=PROJECT_ROOT)
+        if not git_push(True, f"Setups up CI at {code_repo}"):
             remove_ci_configs()
+
 
 def parse_version(version_string: str, programming_language: str) -> str:
     programming_language = programming_language.lower()
@@ -32,6 +34,7 @@ def parse_version(version_string: str, programming_language: str) -> str:
         return version_string.split()[1]
     else:
         raise ValueError("Unsupported programming_language.")
+
 
 def generate_ci_configs(programming_language, code_repo, project_root="."):
     programming_language = programming_language.lower()
@@ -50,7 +53,7 @@ def generate_ci_configs(programming_language, code_repo, project_root="."):
     output_path = file_map.get(code_repo)
     if not output_path:
         raise ValueError(f"Unsupported code_repo: {code_repo}")
-    
+
     if output_path.exists() or output_path.with_suffix(output_path.suffix + ".disabled").exists():
         return
 
@@ -63,17 +66,19 @@ def generate_ci_configs(programming_language, code_repo, project_root="."):
 
     rendered = template.render(version=version)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f: 
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(rendered)
 
     print(f"✅ Created CI config for {programming_language} on {code_repo} using version {version}")
+
 
 def remove_ci_configs(code_repo: str = None, project_root: str = "."):
     """
     Remove CI configuration files created by generate_ci_configs,
     including both enabled (.yml) and disabled (.yml.disabled) versions.
 
-    Parameters:
+    Parameters
+    ----------
         code_repo (str): 'github', 'gitlab', 'codeberg', or 'all'
         project_root (str): Root path to the project directory
     """
@@ -111,11 +116,13 @@ def remove_ci_configs(code_repo: str = None, project_root: str = "."):
             except Exception as e:
                 print(f"⚠️ Could not remove workflows folder: {e}")
 
+
 def toggle_ci_files(enable: bool = True, code_repo: str = "all", project_root: str = "."):
     """
     Enables or disables CI by renaming .yml files (to .disabled) for GitHub, GitLab, and Codeberg.
-    
-    Parameters:
+
+    Parameters
+    ----------
         enable (bool): True to enable CI, False to disable it.
         code_repo (str): 'github', 'gitlab', 'codeberg', or 'all'.
         project_root (str): project_root directory of the project.
@@ -151,20 +158,22 @@ def toggle_ci_files(enable: bool = True, code_repo: str = "all", project_root: s
             else:
                 print(f"ℹ️  CI for {name} is already disabled or not found.")
 
-def set_git_alis(project_root: str = "."):
 
-    git_folder = project_root/ pathlib.Path(".git")
+def set_git_alis(project_root: str = "."):
+    git_folder = project_root / pathlib.Path(".git")
 
     # Git alias setup (only if .git exists)
     if git_folder.exists() and git_folder.is_dir():
         try:
             subprocess.run(
                 [
-                    "git", "config", "--global",
+                    "git",
+                    "config",
+                    "--global",
                     "alias.commit-skip",
-                    "!f() { git commit -m \"$1 [skip ci]\"; }; f"
+                    '!f() { git commit -m "$1 [skip ci]"; }; f',
                 ],
-                check=True
+                check=True,
             )
             print("✅ Git alias 'commit-skip' added.")
             return True
@@ -174,6 +183,7 @@ def set_git_alis(project_root: str = "."):
     else:
         print("ℹ️ Skipped Git alias setup: .git folder not found in project root.")
         return False
+
 
 @ensure_correct_kernel
 def ci_control():
@@ -193,12 +203,12 @@ def ci_control():
 
     args = parser.parse_args()
 
-    programming_language = load_from_env("PROGRAMMING_LANGUAGE",".cookiecutter")
-    code_repo = load_from_env("CODE_REPO",".cookiecutter")
+    programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
+    code_repo = load_from_env("CODE_REPO", ".cookiecutter")
 
     if code_repo.lower() == "none":
         print("No code repository has been setup.")
-        return 
+        return
 
     generate_ci_configs(programming_language, code_repo, PROJECT_ROOT)
 
@@ -210,6 +220,7 @@ def ci_control():
         toggle_ci_files(enable=False, code_repo=code_repo, project_root=PROJECT_ROOT)
     else:
         print("ℹ️ Use --on or --off to toggle CI.")
+
 
 if __name__ == "__main__":
     ci_config()
