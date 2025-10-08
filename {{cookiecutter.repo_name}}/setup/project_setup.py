@@ -177,7 +177,7 @@ remote_backup = "none"
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 programming_language, python_env_manager, r_env_manager, code_repo, remote_storage, conda_r_version, conda_python_version  = set_options(programming_language,version_control)
 
-from repokit.common import save_to_env, git_user_info, repo_user_info, remote_user_info, check_path_format, ask_yes_no
+from repokit.common import package_installer, save_to_env, git_user_info, repo_user_info, remote_user_info, check_path_format, ask_yes_no
 
 def set_programming_language(programming_language,r_env_manager):
 
@@ -359,6 +359,7 @@ repo_user,_,_,_= repo_user_info(version_control,repo_name,code_repo)
 remote_user_info(remote_backup)
 
 # Create Virtual Environment
+package_installer(required_libraries =  ['pyyaml'])
 from repokit.env import setup_virtual_environment
 env_path = setup_virtual_environment(version_control,python_env_manager,r_env_manager,repo_name,conda_r_version, conda_python_version,miniconda_path)
 
