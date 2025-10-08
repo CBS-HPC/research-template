@@ -64,23 +64,6 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> Tu
     finally:
         os.chdir(cwd)
 
-def install_py_package_old(setup_path:str="./setup"):
-
-    # Change the current working directory to to setup folder
-    os.chdir(setup_path)
-
-    # Run "pip install -e ."
-    result = subprocess.run(
-            [sys.executable, '-m','pip', 'install', '-e', '.'],
-            capture_output=True,
-            text=True
-        )
-
-    if result.returncode == 0:
-        print("Installation successful.")
-    else:
-        print(f"Error during installation: {result.stderr}")
-
 # Installing package:
 install_py_package("./setup")
 

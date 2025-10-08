@@ -4,7 +4,6 @@ import sys
 import platform
 import os
 
-
 if sys.version_info < (3, 11):
     TOML_VERSION = "toml"
 else:

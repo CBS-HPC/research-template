@@ -16,6 +16,7 @@ dependencies = [
   "py-cpuinfo",
   "Jinja2",
   "streamlit",
+  "jsonschema",
   "dirhash",
 
   # TOML read/write split:
