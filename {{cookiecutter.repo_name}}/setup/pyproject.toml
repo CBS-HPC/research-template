@@ -18,6 +18,8 @@ dependencies = [
   "streamlit",
   "jsonschema",
   "dirhash",
+  "ruff>=0.6",
+  "mypy>=1.10",
 
   # TOML read/write split:
   'toml ; python_version < "3.11"',
@@ -38,6 +40,7 @@ ci-control = "repokit.ci:ci_control"
 dcas-migration = "repokit.rdm.dcas:main"
 dmp-update = "repokit.rdm.dmp:main"
 dmp-editor = "repokit.rdm.editor:cli"
+lint = "repokit.linting:main"
 
 [project.optional-dependencies]
 dev = [
@@ -57,7 +60,7 @@ where = ["."]
 [tool.ruff]
 line-length = 100
 # set to "py310" if your lowest supported Python is 3.10
-target-version = "py311"
+target-version = "py39"
 src = ["repokit", "tests"]
 extend-exclude = ["build", "dist", ".venv", ".mypy_cache", "__pycache__", "data", "notebooks"]
 
@@ -80,7 +83,7 @@ convention = "numpy"  # or "google"
 
 [tool.mypy]
 # match to your lowest supported Python for best results
-python_version = "3.11"
+python_version = "3.9"
 warn_unused_ignores = true
 disallow_untyped_defs = true
 no_implicit_optional = true

@@ -36,6 +36,9 @@ def create_scripts(programming_language):
         "get_dependencies": "",
     }
 
+    if programming_language in ("python", "r","matlab"):
+        scripts["linting"] = "Linting script to check code quality",
+
     for script_name, purpose in scripts.items():
         if script_name == "s00_main":
             create_script_from_template(
@@ -45,11 +48,21 @@ def create_scripts(programming_language):
                 script_name,
                 {"script_name": script_name},
             )
+
         elif script_name == "get_dependencies":
             create_script_from_template(
                 programming_language,
                 folder_path,
                 f"get_dependencies.{ext}.j2",
+                script_name,
+                {"script_name": script_name},
+            )
+            
+        elif script_name == "linting":
+            create_script_from_template(
+                programming_language,
+                folder_path,
+                f"linting.{ext}.j2",
                 script_name,
                 {"script_name": script_name},
             )
@@ -61,7 +74,7 @@ def create_scripts(programming_language):
                 script_name,
                 {"script_name": script_name},
             )
-        elif script_name == "s02_utilss":
+        elif script_name == "s02_utils":
             create_script_from_template(
                 programming_language,
                 folder_path,
