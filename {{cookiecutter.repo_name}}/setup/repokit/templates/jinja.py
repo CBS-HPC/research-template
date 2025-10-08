@@ -6,9 +6,7 @@ import pathlib
 
 from ..common import package_installer, PROJECT_ROOT
 
-install_packages = ['jinja2','nbformat']
-
-package_installer(required_libraries = install_packages)
+#package_installer(required_libraries = ['jinja2','nbformat'])
 
 # Jinja template functions (MOVE to own file)
 from jinja2 import Environment, FileSystemLoader

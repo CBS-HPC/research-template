@@ -57,7 +57,7 @@ from .publish import (
 
 
 
-package_installer(required_libraries=["streamlit", "requests"])
+#package_installer(required_libraries=["streamlit", "requests"])
 import requests
 import streamlit as st  # type: ignore
 

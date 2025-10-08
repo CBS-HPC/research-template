@@ -8,7 +8,7 @@ import shutil
 
 from ..common import load_from_env, get_version, PROJECT_ROOT, language_dirs, package_installer, read_toml
 
-package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
+#package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
 
 import psutil
 import cpuinfo

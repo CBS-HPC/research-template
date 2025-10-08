@@ -8,7 +8,7 @@ from typing import Union, Iterable, Dict, Any, List,Optional
 from ..common import load_from_env, PROJECT_ROOT, language_dirs, package_installer
 from .dataset import get_data_files
 
-package_installer(required_libraries =  ['requests'])
+#package_installer(required_libraries =  ['requests'])
 
 import requests
 

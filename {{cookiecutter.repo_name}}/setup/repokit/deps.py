@@ -17,7 +17,7 @@ else:
 from .env import export_conda_env
 from .common import package_installer, PROJECT_ROOT, ensure_correct_kernel, run_script, make_safe_path, load_from_env, read_toml
 
-package_installer(required_libraries =  ['nbformat','pyyaml'])
+#package_installer(required_libraries =  ['nbformat','pyyaml'])
 
 import yaml
 import nbformat

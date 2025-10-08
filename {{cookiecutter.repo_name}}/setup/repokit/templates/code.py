@@ -4,7 +4,7 @@ import os
 from ..common import package_installer, ensure_correct_kernel, load_from_env, PROJECT_ROOT, language_dirs, ext_map
 from .jinja import set_jinja_templates, write_script
 
-package_installer(required_libraries = ['nbformat','jinja2'])
+#package_installer(required_libraries = ['nbformat','jinja2'])
 
 template_env = set_jinja_templates("j2/code")
 

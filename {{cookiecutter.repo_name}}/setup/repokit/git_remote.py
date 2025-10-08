@@ -11,7 +11,7 @@ from .common import load_from_env, PROJECT_ROOT, is_installed, exe_to_path, repo
 from .vcs import setup_version_control
 from .ci import ci_config
 
-package_installer(required_libraries =  ['requests'])
+#package_installer(required_libraries =  ['requests'])
 
 import requests
 

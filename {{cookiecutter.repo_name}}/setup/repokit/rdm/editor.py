@@ -44,7 +44,7 @@ try:
     from .zenodo import streamlit_publish_to_zenodo
     from .dataverse import streamlit_publish_to_dataverse, PublishError
 except ImportError:
-    pkg_root = PROJECT_ROOT / "setup"
+    pkg_root = Path(__file__).resolve().parent.parent.parent / "setup"
     sys.path.insert(0, str(pkg_root))
     from repokit.common import package_installer, load_from_env, save_to_env,PROJECT_ROOT
     from repokit.rdm.dmp import (SCHEMA_URLS,
@@ -69,7 +69,7 @@ except ImportError:
     from repokit.rdm.zenodo import streamlit_publish_to_zenodo
     from repokit.rdm.dataverse import streamlit_publish_to_dataverse, PublishError
 
-package_installer(required_libraries=["streamlit", "jsonschema","requests"])
+#package_installer(required_libraries=["streamlit", "jsonschema","requests"])
 
 import requests
 import streamlit as st

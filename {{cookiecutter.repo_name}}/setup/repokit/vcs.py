@@ -11,7 +11,7 @@ import urllib.request
 
 from .common import package_installer, PROJECT_ROOT, save_to_env, change_dir, is_installed, ask_yes_no, load_from_env, exe_to_path, git_user_info
 
-package_installer(required_libraries =  ['requests','dirhash'])
+#package_installer(required_libraries =  ['requests','dirhash'])
 
 import requests
 from dirhash import dirhash

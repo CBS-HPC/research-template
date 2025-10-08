@@ -8,7 +8,7 @@ from functools import wraps
 import pathlib
 import importlib.metadata
 import importlib.util
-from dotenv import dotenv_values, load_dotenv
+from dotenv import load_dotenv
 
 if sys.version_info < (3, 11):
     import toml
@@ -17,13 +17,10 @@ else:
     import tomllib as toml
     import tomli_w
 
-
 from .base import install_uv, PROJECT_ROOT
 from .paths import check_path_format, get_relative_path  
 from .secretstore import load_from_env, save_to_env
 
-
-# UV
 def create_uv_project():
     """
     Runs `uv lock` if pyproject.toml exists, otherwise runs `uv init`.
@@ -92,7 +89,7 @@ def set_packages(version_control,programming_language):
     if not programming_language or not version_control:
         return []
 
-    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil','py-cpuinfo','jinja2','streamlit','dirhash']
+    install_packages = ['python-dotenv','pyyaml','requests','beautifulsoup4','nbformat','setuptools','pathspec','psutil','py-cpuinfo','jinja2','streamlit','jsonschema','dirhash']
 
     # Add toml package if Python version < 3.11
     if sys.version_info < (3, 11):
@@ -520,7 +517,6 @@ def run_script(programming_language, script_command=None):
     except subprocess.CalledProcessError as e:
         return f"Error running script: {e.stderr.strip() if e.stderr else str(e)}"
 
-#Check software
 def ensure_correct_kernel(func):
     """Decorator to ensure the function runs with the correct Python kernel."""
     @wraps(func)

@@ -9,7 +9,7 @@ from .sections import main_text, read_dependencies
 from ..common import load_from_env, PROJECT_ROOT, language_dirs, ext_map, package_installer, read_toml, write_toml, toml_ignore
 from ..rdm.dataset import generate_dataset_table, dataset_to_readme
 
-package_installer(required_libraries =  ['pyyaml'])
+#package_installer(required_libraries =  ['pyyaml'])
 
 import yaml
 

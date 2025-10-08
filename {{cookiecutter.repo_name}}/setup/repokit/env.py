@@ -7,7 +7,7 @@ import pathlib
 import shutil
 from .common import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv, PROJECT_ROOT
 
-package_installer(required_libraries =  ['pyyaml'])
+#package_installer(required_libraries =  ['pyyaml'])
 
 import yaml
 
