@@ -1,8 +1,10 @@
 {% raw %}
+function linting
 % Auto-generated from linting.m.j2
 % Lint MATLAB code under PROJECT_ROOT/src using checkcode.
 
 try
+    % This file lives at PROJECT_ROOT/src/linting.m
     scriptPath = mfilename('fullpath');
     srcDir = fileparts(scriptPath);
     projectRoot = fileparts(srcDir);
@@ -19,7 +21,9 @@ try
     for k = 1:numel(files)
         f = fullfile(files(k).folder, files(k).name);
         r = checkcode(f, '-id', '-cyc');
-        if ~isempty(r), allIssues = [allIssues; r]; end
+        if ~isempty(r)
+            allIssues = [allIssues; r]; %#ok<AGROW>
+        end
     end
 
     if isempty(allIssues)
@@ -27,14 +31,20 @@ try
         exit(0);
     else
         for i = 1:numel(allIssues)
-            if isfield(allIssues, 'column'), c = allIssues(i).column; else, c = 0; end
+            if isfield(allIssues, 'column')
+                c = allIssues(i).column;
+            else
+                c = 0;
+            end
             fprintf('%s:%d:%d %s %s\n', allIssues(i).file, allIssues(i).line, c, allIssues(i).id, allIssues(i).message);
         end
         exit(1);
     end
+
 catch ME
     disp(getReport(ME));
     exit(2);
+end
 end
 
 {% endraw %}
