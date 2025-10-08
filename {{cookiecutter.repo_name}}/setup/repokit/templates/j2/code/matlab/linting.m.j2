@@ -1,9 +1,8 @@
 {% raw %}
 % Auto-generated from linting.m.j2
-% Script to lint MATLAB code under PROJECT_ROOT/src using checkcode.
+% Lint MATLAB code under PROJECT_ROOT/src using checkcode.
 
 try
-    % This script lives in PROJECT_ROOT/src
     scriptPath = mfilename('fullpath');
     srcDir = fileparts(scriptPath);
     projectRoot = fileparts(srcDir);
@@ -12,7 +11,7 @@ try
 
     files = dir(fullfile(srcDir, '**', '*.m'));
     if isempty(files)
-        fprintf('ℹ️  No .m files under %s\n', srcDir);
+        fprintf('Info: No .m files under %s\n', srcDir);
         exit(0);
     end
 
@@ -24,7 +23,7 @@ try
     end
 
     if isempty(allIssues)
-        fprintf('✅ No MATLAB lint issues.\n');
+        fprintf('OK: No MATLAB lint issues.\n');
         exit(0);
     else
         for i = 1:numel(allIssues)
@@ -37,4 +36,5 @@ catch ME
     disp(getReport(ME));
     exit(2);
 end
+
 {% endraw %}

@@ -2,7 +2,6 @@
 #!/usr/bin/env Rscript
 # Auto-generated from linting.R.j2
 
-# Determine PROJECT_ROOT: this script lives in PROJECT_ROOT/R
 args <- commandArgs(trailingOnly = FALSE)
 file_arg <- grep("^--file=", args, value = TRUE)
 script_path <- if (length(file_arg)) substring(file_arg, 8) else normalizePath(".")
@@ -13,16 +12,16 @@ cat(sprintf("PROJECT_ROOT: %s\n", PROJECT_ROOT))
 cat(sprintf("R_DIR: %s\n\n", R_DIR))
 
 if (!requireNamespace("lintr", quietly = TRUE)) {
-  message('❌ lintr is not installed. In R: install.packages("lintr")')
+  message('ERROR: lintr is not installed. In R: install.packages("lintr")')
   quit(status = 2)
 }
 
 if (!dir.exists(R_DIR)) {
-  message(sprintf("ℹ️ R directory not found: %s (skipping)", R_DIR))
+  message(sprintf("Info: R directory not found: %s (skipping)", R_DIR))
   quit(status = 0)
 }
 
-cat("🔍 lintr::lint_dir()\n\n")
+cat("[lintr] lint_dir()\n\n")
 l <- lintr::lint_dir(path = R_DIR)
 print(l)
 quit(status = if (length(l) > 0) 1 else 0)
