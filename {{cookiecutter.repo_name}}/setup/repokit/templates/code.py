@@ -1,13 +1,9 @@
 import os
-#from textwrap import dedent
 
-from ..common import package_installer, ensure_correct_kernel, load_from_env, PROJECT_ROOT, language_dirs, ext_map
+from ..common import ensure_correct_kernel, load_from_env, PROJECT_ROOT, language_dirs, ext_map
 from .jinja import set_jinja_templates, write_script
 
-#package_installer(required_libraries = ['nbformat','jinja2'])
-
 template_env = set_jinja_templates("j2/code")
-
 
 def create_script_from_template(programming_language, folder_path, template_name, script_name, context, subdir=None):
     template = template_env.get_template(f"{programming_language}/{template_name}")

@@ -16,10 +16,14 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import date, datetime
 import hashlib
 from hashlib import sha256  # <- for autosave hashing
+import requests
+import streamlit as st
+from streamlit.web.cli import main as st_main
+from jsonschema import Draft7Validator
 
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
-    from ..common import package_installer, load_from_env, save_to_env,PROJECT_ROOT
+    from ..common import load_from_env, save_to_env
     from .dmp import (SCHEMA_URLS,
         DEFAULT_DMP_PATH,
         SCHEMA_VERSION,
@@ -46,7 +50,7 @@ try:
 except ImportError:
     pkg_root = Path(__file__).resolve().parent.parent.parent / "setup"
     sys.path.insert(0, str(pkg_root))
-    from repokit.common import package_installer, load_from_env, save_to_env,PROJECT_ROOT
+    from repokit.common import load_from_env, save_to_env
     from repokit.rdm.dmp import (SCHEMA_URLS,
         DEFAULT_DMP_PATH,
         SCHEMA_VERSION,
@@ -69,12 +73,6 @@ except ImportError:
     from repokit.rdm.zenodo import streamlit_publish_to_zenodo
     from repokit.rdm.dataverse import streamlit_publish_to_dataverse, PublishError
 
-#package_installer(required_libraries=["streamlit", "jsonschema","requests"])
-
-import requests
-import streamlit as st
-from streamlit.web.cli import main as st_main
-from jsonschema import Draft7Validator
 
 # ---------------------------
 # Repository site choices (labels come from format_func)

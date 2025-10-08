@@ -8,13 +8,9 @@ import zipfile
 import glob
 import os
 import urllib.request
-
-from .common import package_installer, PROJECT_ROOT, save_to_env, change_dir, is_installed, ask_yes_no, load_from_env, exe_to_path, git_user_info
-
-#package_installer(required_libraries =  ['requests','dirhash'])
-
 import requests
-from dirhash import dirhash
+
+from .common import PROJECT_ROOT, save_to_env, change_dir, is_installed, ask_yes_no, load_from_env, exe_to_path, git_user_info
 
 # Version Control
 def setup_version_control(version_control,remote_storage,code_repo,repo_name):

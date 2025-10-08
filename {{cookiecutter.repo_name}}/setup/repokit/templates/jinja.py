@@ -1,16 +1,10 @@
 import os
 from subprocess import DEVNULL
-#from contextlib import contextmanager
-#from functools import wraps
-import pathlib
-
-from ..common import package_installer, PROJECT_ROOT
-
-#package_installer(required_libraries = ['jinja2','nbformat'])
-
-# Jinja template functions (MOVE to own file)
 from jinja2 import Environment, FileSystemLoader
 import nbformat
+import pathlib
+
+from ..common import PROJECT_ROOT
 
 def set_jinja_templates(template_folder:str):
     

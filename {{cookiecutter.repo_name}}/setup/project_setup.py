@@ -359,7 +359,7 @@ repo_user,_,_,_= repo_user_info(version_control,repo_name,code_repo)
 remote_user_info(remote_backup)
 
 # Create Virtual Environment
-package_installer(required_libraries =  ['pyyaml'])
+#package_installer(required_libraries =  ['pyyaml'])
 from repokit.env import setup_virtual_environment
 env_path = setup_virtual_environment(version_control,python_env_manager,r_env_manager,repo_name,conda_r_version, conda_python_version,miniconda_path)
 

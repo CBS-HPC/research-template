@@ -5,14 +5,10 @@ import pathlib
 import fnmatch
 import subprocess
 import shutil
-
-from ..common import load_from_env, get_version, PROJECT_ROOT, language_dirs, package_installer, read_toml
-
-#package_installer(required_libraries =  ['psutil',"py-cpuinfo"])
-
 import psutil
 import cpuinfo
 
+from ..common import load_from_env, get_version, PROJECT_ROOT, language_dirs, read_toml
 
 extension_map = {
         "r": (".R", ".Rmd"),

@@ -5,11 +5,9 @@ import platform
 import urllib.request
 import pathlib
 import shutil
-from .common import package_installer, ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv, PROJECT_ROOT
-
-#package_installer(required_libraries =  ['pyyaml'])
-
 import yaml
+
+from .common import ask_yes_no, is_installed, save_to_env, exe_to_path, install_uv, PROJECT_ROOT
 
 # Virtual Environment
 def setup_virtual_environment(version_control, python_env_manager, r_env_manager, repo_name, conda_r_version, conda_python_version, install_path = "./bin/miniconda3"):

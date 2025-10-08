@@ -52,7 +52,7 @@ def create_with_uv():
 
     try:
         subprocess.run(
-            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv","pathspec",TOML_VERSION],
+            ["uv", "add", "--upgrade", "uv", "pip", "setuptools", "wheel", "python-dotenv","pathspec","pyyaml",TOML_VERSION],
             check=True,
             env=env,
             stdout=subprocess.DEVNULL,
@@ -67,7 +67,7 @@ def create_with_uv():
 
 def create_with_pip():
     subprocess.run(
-                [sys.executable, "-m", "pip", "--upgrade", "install", "uv", "setuptools", "wheel", "python-dotenv","pathspec",TOML_VERSION],
+                [sys.executable, "-m", "pip", "--upgrade", "install", "uv", "setuptools", "wheel", "python-dotenv","pathspec","pyyaml",TOML_VERSION],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,

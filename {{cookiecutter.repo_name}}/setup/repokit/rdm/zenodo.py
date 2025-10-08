@@ -10,8 +10,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
-
-from ..common import package_installer
+import requests
+import streamlit as st  # type: ignore
 from .publish import (
     
     PublishError,
@@ -42,11 +42,6 @@ from .publish import (
     build_packaging_plan_preserve_first_level,
     realize_packaging_plan_parallel,
 )
-
-#package_installer(required_libraries=["streamlit", "requests"])
-
-import requests
-import streamlit as st  # type: ignore
 
 # ========= Zenodo API (URL-based) =========
 

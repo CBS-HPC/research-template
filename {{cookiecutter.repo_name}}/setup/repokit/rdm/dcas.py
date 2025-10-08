@@ -4,13 +4,11 @@ import shutil
 import zipfile
 from pathlib import Path
 from typing import Union, Iterable, Dict, Any, List,Optional
-
-from ..common import load_from_env, PROJECT_ROOT, language_dirs, package_installer
-from .dataset import get_data_files
-
-#package_installer(required_libraries =  ['requests'])
-
 import requests
+
+
+from ..common import load_from_env, PROJECT_ROOT, language_dirs
+from .dataset import get_data_files
 
 # Download Readme template:
 def download_README_template(url:str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md", readme_file:str = "./README_DCAS_template.md"):
