@@ -518,7 +518,9 @@ def run_script(programming_language, script_command=None):
             rscript = check_path_format(load_from_env("RSCRIPT"))
             if rscript:
                 cmd = [rscript]
-                script_command = [script_command[0], script_command[2]]
+                if len(script_command) > 2 and script_command[1] == "--args":
+                    # If using -e, adjust command to avoid issues with spaces
+                    script_command = [script_command[0], script_command[2]]
             else:
                 cmd = [exe_path, "--vanilla", "-f"]
 
