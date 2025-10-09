@@ -22,7 +22,7 @@ def lint_r():
 
 
 def lint_matlab():
-    path = PROJECT_ROOT / "src" / "linting.m"
+    path = PROJECT_ROOT / "src"
     if not path.exists():
         print(f"ℹ️  Missing: {path}")
         return 
