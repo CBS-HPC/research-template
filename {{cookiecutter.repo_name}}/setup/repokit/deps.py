@@ -64,7 +64,19 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
                 print(f"⚠️ Failed to parse uv.lock: {e}")
 
         # Step 5: Add missing packages to uv.lock
-        missing_from_lock = [pkg for pkg in installed_pkgs if pkg not in locked_pkgs]
+        skip_markers = [
+            "# editable install with no version control (repokit",
+            "# local dev install",
+            "(path: "
+        ]
+
+        missing_from_lock = [
+            pkg
+            for pkg in installed_pkgs
+            if pkg not in locked_pkgs
+            and not any(m.casefold() in str(pkg).casefold() for m in skip_markers)
+        ]
+
         if missing_from_lock:
             env = os.environ.copy()
             env["UV_LINK_MODE"] = "copy"
