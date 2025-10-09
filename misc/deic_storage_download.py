@@ -5,7 +5,7 @@ import multiprocessing
 import argparse
 import pathlib
 
-from .general_tools import *
+from .common import *
 
 package_installer(required_libraries = ['beautifulsoup4'])
 

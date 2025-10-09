@@ -9,9 +9,6 @@
 ![Windows](https://img.shields.io/badge/tested%20on-Windows-blue?logo=windows&logoColor=white)
 ![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-blue?logo=linux&logoColor=white)
 
-
-> ⚠️ **Heads up!** This template is still under active development — features, structure, and documentation may evolve as we improve things.
-
 Welcome! This project template is built to help **researchers** create well-organized, automated, and publication-ready workflows that align with **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
 Powered by [Cookiecutter](https://cookiecutter.readthedocs.io/en/latest/), it supports **Python**, **R**, **Stata**, and **Matlab**, and comes with everything you need to manage code, data, dependencies, version control, and backups — all in one reproducibility-friendly framework.
@@ -369,11 +366,11 @@ source deactivate.sh
 <details>
 <summary><strong>🔧 CLI Tools</strong></summary><br>
 
-The `setup` Python package provides a collection of command-line tools to support project setup, dependency management, documentation, version control, and backup automation.
+The `repokit` Python package located in the `./setup` directory provides a collection of command-line tools to support project setup, dependency management, documentation, version control, and backup automation.
 
 > ℹ️ **Note**: The CLI tools are automatically installed as part of the project environment.  
 > You can also manually install or reinstall them using:  
-> `pip install -e ./setup`
+> `uv pip install -e ./setup` or `pip install -e ./setup`
 
 Once installed, the following commands are available from the terminal:
 
@@ -381,8 +378,7 @@ Once installed, the following commands are available from the terminal:
 |--------------------------|-----------------------------------------------------------------------------|
 | `backup`                 | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
 | `set-dataset`            | Initializes or registers datasets (e.g., add metadata, sync folders).       |
-| `update-dependencies`    | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`. |
-| `install-dependencies`   | Installs all dependencies for Python and R environments.                    |
+| `update-dependencies`    | Retrieves and updates Python and R dependencies listed in `./setup/` and `./src/`. |
 | `update-readme`          | Regenerates the `README.md` from current project metadata and structure.    |
 | `reset-templates`        | Regenerates script templates based on selected language.                    |
 | `code-examples`          | Generates realistic example scripts and notebooks.                          |
@@ -391,6 +387,7 @@ Once installed, the following commands are available from the terminal:
 | `dcas-migration`          | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
 | `dmp-update`          | Creates and updates `dmp.json` with meta-data from `pyproject.toml` or `cookiecutter.json` |
 | `dmp-editor`          | Launches a streamlit app to edit the `dmp.json` or publish datasets to Zenodo or Deic Dataverse |
+| `code-linting` | Runs language-aware linting: Python (Ruff + Mypy), R (lintr), MATLAB (checkcode). Executes per-language `linting.*` scripts if present. |
 
 
 #### 🛠️ Usage
@@ -414,7 +411,7 @@ The backup CLI is exposed as the `backup` command via the Python package defined
 
 ```toml
 [project.scripts]
-backup = "utils.backup_tools:main"
+backup = "repokit.backup:main"
 ```
 
 Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can run the following commands from the terminal:
@@ -487,7 +484,7 @@ set-dataset
 - Regenerates a DCAS-compatible dataset list (`dataset_list.md`)
 
 > 💡 Dataset metadata is stored in `dmp.json` using a normalized schema.  
-> 🔍 All dataset remapping logic happens inside the `utils.set_dataset` module.
+> 🔍 All dataset remapping logic happens inside the `repokit.rdm.dataset` module.
 
 ---
 </details>
@@ -496,7 +493,7 @@ set-dataset
 <details>
 <summary><strong>📦 <code>update-dependencies</code></strong></summary>
 
-The `update-dependencies` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across both `setup/` and `src/` (or `R/`, `stata/do/`).
+The `update-dependencies` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across both `./setup/` and `./src/` (or `./R/`, `./stata/do/`).
 
 This command is useful for keeping your project environment reproducible and ensuring that all scripts and notebooks reference installable dependencies.
 
@@ -510,9 +507,9 @@ update-dependencies
 
 - 📄 Regenerates `requirements.txt` using `pip freeze`
 - 📦 Ensures missing packages are added to `uv.lock` (if used)
-- 🧪 Scans the `setup/` and `src/` directories for imports and writes dependency lists:
-  - `setup/dependencies.txt`
-  - `src/dependencies.txt` (or `R/`, `stata/`)
+- 🧪 Scans the `setup/` and `./src/` directories for imports and writes dependency lists:
+  - `./setup/dependencies.txt`
+  - `./src/dependencies.txt` (or `R/`, `stata/`)
 - 📑 Updates and tags `environment.yml` and `requirements.txt` with platform-specific selectors (via `platform_rules`)
 - 🧠 Runs `renv` for R, or language-specific setup scripts for MATLAB and Stata
 
@@ -527,53 +524,6 @@ update-dependencies
 ✅ requirements.txt updated with platform tags
 ✅ Updated environment.yml with Conda-style platform tags
 ```
-
----
-</details>
-
-### <a id="install-dependencies"></a>
-<details>
-<summary><strong>📥 <code>install-dependencies</code></strong></summary>
-
-The `install-dependencies` command reads a plain text dependency list (typically `dependencies.txt`) and installs all required Python packages using `pip`.
-
-This is useful after scanning your code with `update-dependencies` and before pushing to CI or collaborating with others.
-
-#### 🔧 Usage
-
-```bash
-install-dependencies
-```
-
-> You can optionally specify a different dependency file:  
-> `install-dependencies path/to/dependencies.txt`
-
-#### ✅ What it does:
-
-- Reads the `Dependencies:` section of the given file (default: `dependencies.txt`)
-- Skips standard libraries and packages marked as "Not available"
-- Checks which packages are already installed
-- Installs missing packages using `pip`
-
-#### 📝 Example format of `dependencies.txt`:
-```
-Software version:
-Python 3.11.3
-
-Timestamp: 2024-07-12 15:43:21
-
-Files checked:
-src/s00_main.py
-src/s05_modeling.py
-
-Dependencies:
-pandas==2.2.2
-matplotlib==3.7.1
-seaborn==0.12.2
-```
-
-> ⚠️ This command installs **only Python dependencies**. R, MATLAB, and Stata dependencies are handled by other scripts (`update-dependencies`, `setup_renv`, etc.)
-
 ---
 </details>
 
@@ -635,12 +585,12 @@ code-examples
   - `s01_install_dependencies.*` – dependency setup
   - `s02_utils.*` – helper functions
   - `s03_data_collection.*` to `s06_visualization.*` – typical data workflow stages
-- Saves outputs in the appropriate `src/`, `R/`, `stata/do/`, etc.
+- Saves outputs in the appropriate `./src/`, `R/`, `stata/do/`, etc.
 - Calls:
   - `get_dependencies` to update `dependencies.txt`
   - `update-readme` to regenerate project metadata
 
-> 🧠 Uses templates from: `j2/example_templates`  
+> 🧠 Uses templates from: `./setup/repokit/temples/j2/example`  
 > 🗂️ Script locations depend on your selected programming language  
 > ⚠️ Existing files will be **overwritten** if they share the same name
 
@@ -677,11 +627,11 @@ reset-templates
 #### 📁 Output Paths
 
 - Scripts are placed in:
-  - `src/`, `R/`, `stata/do/`, or equivalent source directory
+  - `./src/`, `./R/`, `./stata/do/`, or equivalent source directory
 - Test templates are placed in:
-  - `tests/`, `tests/testthat/`, etc., depending on language
+  - `./tests/`, `./tests/testthat/`, etc., depending on language
 
-> 🧩 Uses Jinja2 templates stored in `j2/code_templates`  
+> 🧩 Uses Jinja2 templates stored in `./setup/repokit/temples/j2/code`  
 > 🔄 Existing scripts with the same name may be overwritten!
 
 ---
@@ -765,7 +715,7 @@ ci-control --off    # Disable CI
 
 #### 📁 Notes
 
-- Will auto-install CI templates from `j2/ci_templates/`  
+- Will auto-install CI templates from `./setup/repokit/temples/j2/ci/`  
 - Only runs if a valid `CODE_REPO` is set  
 - CI files can be removed manually using `remove_ci_configs()` in code
 
@@ -815,7 +765,7 @@ dcas-migration
 ```
 
 **Notes**
-- The tool also mirrors key project artifacts to the DCAS package, including your language-specific source tree (Python `src/`, R `R/`, Stata `stata/do/`, MATLAB `src/`), depending on the project’s configured primary language.
+- The tool also mirrors key project artifacts to the DCAS package, including your language-specific source tree (Python `./src/`, R `./R/`, Stata `./stata/do/`, MATLAB `./src/`), depending on the project’s configured primary language.
 - The README template is pulled from the Social Science Data Editors repository and saved as `README_template.md` so you can incorporate or adapt it when finalizing your DCAS package.
 
 </details>
@@ -884,15 +834,39 @@ dmp-editor
 dmp-editor ssh
 ```
 
-#### 🔧 Options
-- `ssh` — Run headless + show a ready-to-copy port-forward command.
-
 #### 🔑 Tokens (for publishing)
 - **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
 - **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
 
 </details>
 
+### <a id="code-linting"></a>
+<details>
+<summary><strong>🧹 <code>code-linting</code></strong></summary><br>
+
+`code-linting` runs project linting in a **language-aware** way. It looks for scaffolded scripts and executes them **if present**:
+
+- **Python** → `src/linting.py` → **Ruff** (formatter + linter) and **Mypy** (type checker)
+- **R** → `R/linting.R` → **lintr::lint_dir()** (auto-activates `renv` if `R/renv/activate.R` exists)
+- **MATLAB** → `src/linting.m` → **checkcode** (static analysis)
+
+### Usage
+
+```bash
+# Run all present languages
+code-linting
+```
+
+### Requirements
+- Python: `ruff`, `mypy`
+- R: `lintr` in your project’s `renv` (if used)
+- MATLAB: `matlab` CLI on `PATH`
+
+> The Python and MATLAB scripts live under `src/`, the R script under `R/`.
+
+> CI YAML: implement a dedicated lint job/stage
+
+</details>
 ---
 </details>
 
@@ -942,7 +916,7 @@ Script generation is **language-agnostic**: based on your selected language, the
 - `.do` (scripts) and `.ipynb` (notebooks) for Stata
 
 
-These starter scripts are placed in the `src/` directory and include:
+These starter scripts are placed in the `./src/` directory and include:
 
 ```
 ├── s00_main.*                  → orchestrates the full pipeline
@@ -1208,7 +1182,7 @@ This template uses a modular folder layout that promotes transparency, reproduci
 ├── setup/
 │   ├── pyproject.toml       # CLI tool registration and config
 │   ├── dependencies.txt     # Setup-specific Python dependencies
-│   └── utils/               # Utility scripts for setup and automation
+│   └── repokit/               # Utility scripts for setup and automation
 ```
 
 #### 🧬 Source Code

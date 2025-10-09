@@ -1,31 +1,96 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "setup"
+name = "repokit"
 version = "0.1"
 dependencies = [
-    "python-dotenv",
-    "pyyaml",
-    "requests",
-    "nbformat",
-    "beautifulsoup4"
+  "python-dotenv",
+  "PyYAML",
+  "requests",
+  "beautifulsoup4",
+  "nbformat",
+  "pathspec",
+  "psutil",
+  "py-cpuinfo",
+  "Jinja2",
+  "streamlit",
+  "jsonschema",
+  "dirhash",
+  "ruff>=0.6",
+  "mypy>=1.10",
+
+  # TOML read/write split:
+  'toml ; python_version < "3.11"',
+  'tomli-w ; python_version >= "3.11"',
 ]
+# (optional) declare your supported versions explicitly:
+# requires-python = ">=3.10"
 
 [project.scripts]
-backup = "utils.backup_tools:main"
-set-dataset = "utils.set_dataset:main"
-update-dependencies = "utils.get_dependencies:main"
-install-dependencies = "utils.install_dependencies:main"
-update-readme = "utils.readme_templates:main"
-reset-templates = "utils.code_templates:main"
-code-examples = "utils.example_templates:main"
-git-config = "utils.repo_tools:main"
-ci-control = "utils.ci_tools:ci_control"
-dcas-migration = "utils.dcas_migration:main"
-dmp-update = "utils.dmp_tools:main"
-dmp-editor = "utils.dmp_editor:cli"
+backup = "repokit.backup_tools:main"
+set-dataset = "repokit.rdm.dataset:main"
+update-dependencies = "repokit.deps:main"
+update-readme = "repokit.readme.template:main"
+reset-templates = "repokit.templates.code:main"
+code-examples = "repokit.templates.example:main"
+git-config = "repokit.git_remote:main"
+ci-control = "repokit.ci:ci_control"
+dcas-migration = "repokit.rdm.dcas:main"
+dmp-update = "repokit.rdm.dmp:main"
+dmp-editor = "repokit.rdm.editor:cli"
+code-linting = "repokit.linting:main"
+
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.6",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+  # type stubs for third-party libs you use (dev-only):
+  "types-requests",
+  "types-PyYAML",
+  "types-beautifulsoup4",
+  "types-psutil",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.ruff]
+line-length = 100
+# set to "py310" if your lowest supported Python is 3.10
+target-version = "py39"
+src = ["repokit", "tests"]
+extend-exclude = ["build", "dist", ".venv", ".mypy_cache", "__pycache__", "data", "notebooks"]
+
+[tool.ruff.lint]
+# Style + bug catchers + upgrades + perf + args + datetime + print/doc rules
+
+select = ["E","F","I","B","UP","SIM","PERF","ARG","DTZ","ERA","T20","D"] 
+ignore = []
+extend-ignore = ["D401", "T201","E501"]
+
+# allow prints in CLI entrypoints; relax docs in tests
+[tool.ruff.lint.per-file-ignores]
+
+
+[tool.ruff.format]
+# Ruff formatter is Black-compatible
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"  # or "google"
+
+[tool.mypy]
+# match to your lowest supported Python for best results
+python_version = "3.9"
+warn_unused_ignores = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+check_untyped_defs = true
+ignore_missing_imports = false
+exclude = '(^\.venv/|^build/|^dist/|^tests?/data/|^notebooks/)'
