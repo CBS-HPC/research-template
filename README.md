@@ -825,6 +825,22 @@ Interactive **Streamlit** editor for maDMPs with **per-dataset publish** buttons
 - **Tokens sidebar**: capture and persist `ZENODO_TOKEN` and `DATAVERSE_TOKEN` into `.env`.
 - **Load / Save / Download** with optional schema validation.
 
+#### 🖥️ Usage
+```bash
+# Default launch (Streamlit app)
+dmp-editor
+
+# Headless helper for remote servers (prints SSH port-forward instructions)
+dmp-editor ssh
+```
+
+#### 🔧 Options
+- `ssh` — Run headless + show a ready-to-copy port-forward command.
+
+#### 🔑 Tokens (for publishing)
+- **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
+- **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
+
 </details>
 
 ### <a id="code-linting"></a>
@@ -852,25 +868,6 @@ code-linting
 > The Python and MATLAB scripts live under `src/`, the R script under `R/`.
 
 </details>
-
-#### 🖥️ Usage
-```bash
-# Default launch (Streamlit app)
-dmp-editor
-
-# Headless helper for remote servers (prints SSH port-forward instructions)
-dmp-editor ssh
-```
-
-#### 🔧 Options
-- `ssh` — Run headless + show a ready-to-copy port-forward command.
-
-#### 🔑 Tokens (for publishing)
-- **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
-- **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
-
-</details>
-
 ---
 </details>
 
