@@ -304,14 +304,17 @@ conda env create -f environment.yml
 </details>
 
 """
-    setup += """#### Installing the `setup` package
+    setup += """#### Installing the `repokit` package
 
-Once you have installed the python environmnet Conda, Pip or Uv, you must also install the local `setup` package used for configuration and automation scripts:
+Once you have installed the python environmnet Conda, Pip or Uv, you must also install the local `repokit` package used for configuration and automation scripts:
 
 ```
-cd setup
-pip install -e .
-cd ..
+uv pip install -e ./setup
+```
+or 
+
+```
+pip install -e ./setup
 ```
 
 This makes CLI tools such as `run-setup`, `update-readme`, and `set-dataset` available in your environment.
@@ -542,27 +545,28 @@ def set_config_table(programming_language, project_root="."):
 
 def _set_cli():
     cli_section = """
-The `setup` Python package provides a collection of command-line utilities to support project configuration, dependency management, documentation, and reproducibility workflows.
+The `repokit` Python package located in the `./setup` directory provides a collection of command-line tools to support project setup, dependency management, documentation, version control, and backup automation.
 
-ℹ️ **Note**: To use these commands, you must first install the local `setup` package.  
+> ℹ️ **Note**: The CLI tools are automatically installed as part of the project environment.  
+> You can also manually install or reinstall them using:  
+> `uv pip install -e ./setup` or `pip install -e ./setup`
 
-Refer to the [Installation](#installation) section for details on how to install it using `pip install -e .` from the `setup/` directory.
-
-After installing the setup package, the following commands become available from the terminal:
-
+Once installed, the following commands are available from the terminal:
 
 | Command                  | Description                                                                 |
 |--------------------------|-----------------------------------------------------------------------------|
 | `backup`                 | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
 | `set-dataset`            | Initializes or registers datasets (e.g., add metadata, sync folders).       |
-| `update-dependencies`    | Retrieves and updates Python and R dependencies listed in `setup/` and `src/`. |
-| `install-dependencies`   | Installs all dependencies for Python and R environments.                    |
+| `update-dependencies`    | Retrieves and updates Python and R dependencies listed in `./setup/` and `./src/`. |
 | `update-readme`          | Regenerates the `README.md` from current project metadata and structure.    |
 | `reset-templates`        | Regenerates script templates based on selected language.                    |
 | `code-examples`          | Generates realistic example scripts and notebooks.                          |
 | `git-config`             | Applies Git configuration (e.g., user.name, user.email).                    |
 | `ci-control`             | Enables/disables Continuous Integration (CI) pipelines.                     |
-| `dcas-migrate` *(in progress)* | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
+| `dcas-migration`          | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
+| `dmp-update`          | Creates and updates `dmp.json` with meta-data from `pyproject.toml` or `cookiecutter.json` |
+| `dmp-editor`          | Launches a streamlit app to edit the `dmp.json` or publish datasets to Zenodo or Deic Dataverse |
+| `code-linting` | Runs language-aware linting: Python (Ruff + Mypy), R (lintr), MATLAB (checkcode). Executes per-language `linting.*` scripts if present. |
 
 #### 🛠️ Usage
 

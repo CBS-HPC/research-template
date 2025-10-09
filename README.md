@@ -864,6 +864,8 @@ code-linting
 
 > The Python and MATLAB scripts live under `src/`, the R script under `R/`.
 
+> CI YAML: implement a dedicated lint job/stage
+
 </details>
 ---
 </details>

@@ -15,9 +15,8 @@ if sys.version_info < (3, 11):
 
     tomli_w = None
 else:
-    import tomllib as toml
-
     import tomli_w
+    import tomllib as toml
 
 from .base import PROJECT_ROOT, install_uv
 from .paths import check_path_format, get_relative_path

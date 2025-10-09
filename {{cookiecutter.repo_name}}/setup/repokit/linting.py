@@ -1,5 +1,6 @@
-import sys
 import subprocess
+import sys
+
 from .common import (
     PROJECT_ROOT,
     load_from_env,
@@ -25,11 +26,12 @@ def lint_matlab():
     path = PROJECT_ROOT / "src"
     if not path.exists():
         print(f"ℹ️  Missing: {path}")
-        return 
+        return
     code_path = make_safe_path(str(path), "matlab")
     cmd = [f"addpath({code_path}); linting"]
     output = run_script("matlab", cmd)
     print(output)
+
 
 def lint_python() -> int:
     path = PROJECT_ROOT / "src" / "linting.py"
@@ -40,6 +42,7 @@ def lint_python() -> int:
     cmd = [sys.executable, str(path)]
     # Stream output directly to the console
     subprocess.run(cmd)
+
 
 def main() -> None:
     programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")

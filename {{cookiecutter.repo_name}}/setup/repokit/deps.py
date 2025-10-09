@@ -67,7 +67,7 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         skip_markers = [
             "# editable install with no version control (repokit",
             "# local dev install",
-            "(path: "
+            "(path: ",
         ]
 
         missing_from_lock = [

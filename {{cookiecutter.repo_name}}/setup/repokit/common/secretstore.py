@@ -23,9 +23,8 @@ if sys.version_info < (3, 11):
 
     tomli_w = None
 else:
-    import tomllib as toml
-
     import tomli_w
+    import tomllib as toml
 
 from dotenv import dotenv_values, load_dotenv
 

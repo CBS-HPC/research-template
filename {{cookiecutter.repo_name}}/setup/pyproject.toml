@@ -66,11 +66,14 @@ extend-exclude = ["build", "dist", ".venv", ".mypy_cache", "__pycache__", "data"
 
 [tool.ruff.lint]
 # Style + bug catchers + upgrades + perf + args + datetime + print/doc rules
-select = ["E", "F", "I", "B", "UP", "SIM", "PERF", "ARG", "DTZ", "T20", "ERA", "D"]
+
+select = ["E","F","I","B","UP","SIM","PERF","ARG","DTZ","ERA","T20","D"] 
 ignore = []
+extend-ignore = ["D401", "T201","E501"]
+
 # allow prints in CLI entrypoints; relax docs in tests
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
+
 
 [tool.ruff.format]
 # Ruff formatter is Black-compatible

@@ -14,9 +14,8 @@ if sys.version_info < (3, 11):
     READ_MODE = ("r", "utf-8")
     WRITE_MODE = ("w", "utf-8")
 else:
-    import tomllib as toml
-
     import tomli_w
+    import tomllib as toml
 
     OPEN_MODE = ("rb", None)
 
