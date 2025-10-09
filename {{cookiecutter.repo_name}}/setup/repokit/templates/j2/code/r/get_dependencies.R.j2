@@ -86,25 +86,62 @@ ensure_project_loaded <- function(folder_path) {
 }
 
 renv_init <- function(folder_path) {
+  
   lockfile <- file.path(folder_path, "renv.lock")
+
+  # small helper to swallow errors but keep going
+  safe_call <- function(expr, step) {
+    tryCatch(
+      force(expr),
+      error = function(e) {
+        message(sprintf("[WARN] %s failed: %s", step, conditionMessage(e)))
+        NULL
+      }
+    )
+  }
+
+  # Create/activate renv infra
   if (!file.exists(lockfile)) {
-    renv::init(project = folder_path, bare = TRUE, force = TRUE)
-    message("renv infrastructure created.")
+    safe_call(
+      renv::init(project = folder_path, bare = TRUE, force = TRUE),
+      "renv::init"
+    )
+    message("renv infrastructure created (or attempted).")
   } else {
     message("renv infrastructure already exists.")
+    safe_call(renv::activate(project = folder_path), "renv::activate")
   }
-  
-  renv::install(c("jsonlite", "rmarkdown", "rstudioapi","testthat","yaml","lintr"))
 
-  # Load to make sure they are added to .lock file
-  library(testthat)
-  library(jsonlite)
-  library(rmarkdown)
-  library(rstudioapi)
-  library(yaml)
-  library(lint)
-  
+  # Packages to ensure
+  pkgs <- c("jsonlite", "rmarkdown", "rstudioapi", "testthat", "yaml", "lintr")
+
+  # Try bulk install first (safe)
+  safe_call(renv::install(pkgs), "renv::install(pkgs)")
+
+  # Ensure each package is installed & loaded without failing the whole function
+  ensure_pkg <- function(pkg) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      safe_call(renv::install(pkg), sprintf("install %s", pkg))
+    }
+    tryCatch({
+      library(pkg, character.only = TRUE)
+      TRUE
+    }, error = function(e) {
+      message(sprintf("[WARN] library(%s) failed: %s", pkg, conditionMessage(e)))
+      FALSE
+    })
+  }
+
+  status <- vapply(pkgs, ensure_pkg, logical(1))
+  if (!all(status)) {
+    message(sprintf("Loaded %d/%d packages. See warnings above.", sum(status), length(status)))
+  } else {
+    message("All packages loaded.")
+  }
+
+  invisible(status)
 }
+
 
 safely_snapshot <- function(folder_path) {
   tryCatch({
