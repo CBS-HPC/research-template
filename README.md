@@ -379,7 +379,6 @@ Once installed, the following commands are available from the terminal:
 | `backup`                 | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
 | `set-dataset`            | Initializes or registers datasets (e.g., add metadata, sync folders).       |
 | `update-dependencies`    | Retrieves and updates Python and R dependencies listed in `./setup/` and `./src/`. |
-| `install-dependencies`   | Installs all dependencies for Python and R environments.                    |
 | `update-readme`          | Regenerates the `README.md` from current project metadata and structure.    |
 | `reset-templates`        | Regenerates script templates based on selected language.                    |
 | `code-examples`          | Generates realistic example scripts and notebooks.                          |
@@ -388,6 +387,7 @@ Once installed, the following commands are available from the terminal:
 | `dcas-migration`          | Validates and migrates the project structure to DCAS (Data and Code Availability Standard) format. |
 | `dmp-update`          | Creates and updates `dmp.json` with meta-data from `pyproject.toml` or `cookiecutter.json` |
 | `dmp-editor`          | Launches a streamlit app to edit the `dmp.json` or publish datasets to Zenodo or Deic Dataverse |
+| `code-linting` | Runs language-aware linting: Python (Ruff + Mypy), R (lintr), MATLAB (checkcode). Executes per-language `linting.*` scripts if present. |
 
 
 #### 🛠️ Usage
@@ -524,53 +524,6 @@ update-dependencies
 ✅ requirements.txt updated with platform tags
 ✅ Updated environment.yml with Conda-style platform tags
 ```
-
----
-</details>
-
-### <a id="install-dependencies"></a>
-<details>
-<summary><strong>📥 <code>install-dependencies</code></strong></summary>
-
-The `install-dependencies` command reads a plain text dependency list (typically `dependencies.txt`) and installs all required Python packages using `pip`.
-
-This is useful after scanning your code with `update-dependencies` and before pushing to CI or collaborating with others.
-
-#### 🔧 Usage
-
-```bash
-install-dependencies
-```
-
-> You can optionally specify a different dependency file:  
-> `install-dependencies path/to/dependencies.txt`
-
-#### ✅ What it does:
-
-- Reads the `Dependencies:` section of the given file (default: `dependencies.txt`)
-- Skips standard libraries and packages marked as "Not available"
-- Checks which packages are already installed
-- Installs missing packages using `pip`
-
-#### 📝 Example format of `dependencies.txt`:
-```
-Software version:
-Python 3.11.3
-
-Timestamp: 2024-07-12 15:43:21
-
-Files checked:
-src/s00_main.py
-src/s05_modeling.py
-
-Dependencies:
-pandas==2.2.2
-matplotlib==3.7.1
-seaborn==0.12.2
-```
-
-> ⚠️ This command installs **only Python dependencies**. R, MATLAB, and Stata dependencies are handled by other scripts (`update-dependencies`, `setup_renv`, etc.)
-
 ---
 </details>
 
@@ -871,6 +824,34 @@ Interactive **Streamlit** editor for maDMPs with **per-dataset publish** buttons
 - **Publish actions**: “Publish to Zenodo” / “Publish to DeiC Dataverse” per dataset.
 - **Tokens sidebar**: capture and persist `ZENODO_TOKEN` and `DATAVERSE_TOKEN` into `.env`.
 - **Load / Save / Download** with optional schema validation.
+
+</details>
+
+### <a id="code-linting"></a>
+<details>
+<summary><strong>🧹 <code>code-linting</code></strong></summary><br>
+
+`code-linting` runs project linting in a **language-aware** way. It looks for scaffolded scripts and executes them **if present**:
+
+- **Python** → `src/linting.py` → **Ruff** (formatter + linter) and **Mypy** (type checker)
+- **R** → `R/linting.R` → **lintr::lint_dir()** (auto-activates `renv` if `R/renv/activate.R` exists)
+- **MATLAB** → `src/linting.m` → **checkcode** (static analysis)
+
+### Usage
+
+```bash
+# Run all present languages
+code-linting
+```
+
+### Requirements
+- Python: `ruff`, `mypy`
+- R: `lintr` in your project’s `renv` (if used)
+- MATLAB: `matlab` CLI on `PATH`
+
+> The Python and MATLAB scripts live under `src/`, the R script under `R/`.
+
+</details>
 
 #### 🖥️ Usage
 ```bash
