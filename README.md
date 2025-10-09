@@ -834,9 +834,6 @@ dmp-editor
 dmp-editor ssh
 ```
 
-#### 🔧 Options
-- `ssh` — Run headless + show a ready-to-copy port-forward command.
-
 #### 🔑 Tokens (for publishing)
 - **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
 - **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
