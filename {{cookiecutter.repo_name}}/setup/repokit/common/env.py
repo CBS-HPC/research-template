@@ -7,8 +7,13 @@ import shutil
 import subprocess
 import sys
 from functools import wraps
-
 from dotenv import load_dotenv
+import ctypes
+try:
+    import winreg  # type: ignore[attr-defined]
+except ImportError:
+    winreg = None  # Not Windows
+
 
 if sys.version_info < (3, 11):
     import toml
@@ -235,6 +240,44 @@ def package_installer(required_libraries: list = None):
             print(f"❌ Failed to install {lib} with pip: {e}")
 
 
+def _win_add_to_user_path(path: str) -> bool:
+    """Add `path` to the current user's PATH via HKCU\Environment, de-duplicated.
+    Broadcasts WM_SETTINGCHANGE so new processes see it."""
+    reg_key = r"Environment"
+    # Read current PATH and type (REG_SZ or REG_EXPAND_SZ)
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_key, 0, winreg.KEY_READ) as k:
+            try:
+                cur, reg_type = winreg.QueryValueEx(k, "Path")
+            except FileNotFoundError:
+                cur, reg_type = "", winreg.REG_EXPAND_SZ
+    except OSError as e:
+        print(f"Failed to open registry for read: {e}")
+        return False
+
+    parts = [p for p in cur.split(";") if p]
+    new_norm = os.path.normcase(os.path.normpath(path))
+    if not any(os.path.normcase(os.path.normpath(p)) == new_norm for p in parts):
+        parts.append(path)
+        new_val = ";".join(parts)
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_key, 0, winreg.KEY_SET_VALUE) as k:
+                winreg.SetValueEx(k, "Path", 0, reg_type, new_val)
+        except OSError as e:
+            print(f"Failed to write PATH in registry: {e}")
+            return False
+
+        # Notify the system that env vars changed (future processes pick it up)
+        HWND_BROADCAST = 0xFFFF
+        WM_SETTINGCHANGE = 0x001A
+        SMTO_ABORTIFHUNG = 0x0002
+        ctypes.windll.user32.SendMessageTimeoutW(
+            HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment",
+            SMTO_ABORTIFHUNG, 5000, None
+        )
+    return True
+
+
 def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"):
     """
     Adds the path of an executable binary to the system PATH permanently.
@@ -258,7 +301,8 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
 
         if os_type == "windows":
             # Use setx to set the environment variable permanently in Windows
-            subprocess.run(["setx", "PATH", f"{path};%PATH%"], check=True)
+            _win_add_to_user_path(path)
+            #subprocess.run(["setx", "PATH", f"{path};%PATH%"], check=True)
         else:
             # On macOS/Linux, add the path to the shell profile file
             profile_file = os.path.expanduser("~/.bashrc")  # or ~/.zshrc depending on the shell
@@ -295,6 +339,72 @@ def exe_to_path(executable: str = None, path: str = None, env_file: str = ".env"
         return False
 
 
+def _norm_for_compare(p: str) -> str:
+    # normalize for robust equality (case-insensitive, no trailing slash, expand %VARS%)
+    p = p.strip().strip('"')
+    p = os.path.expandvars(p)
+    p = os.path.normpath(p).rstrip("\\/")
+    return os.path.normcase(p)
+
+
+def _win_remove_from_user_path(path: str) -> bool:
+    """Remove `path` from the current user's PATH (HKCU\\Environment), de-duplicated.
+    Broadcasts WM_SETTINGCHANGE so new processes see it, and updates this process' PATH."""
+    if os.name != "nt" or winreg is None:
+        print("Not on Windows; skipping registry PATH update.")
+        return False
+
+    reg_key = r"Environment"
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_key, 0, winreg.KEY_READ) as k:
+            try:
+                cur, reg_type = winreg.QueryValueEx(k, "Path")
+            except FileNotFoundError:
+                # Nothing to remove
+                return True
+    except OSError as e:
+        print(f"Failed to open HKCU\\{reg_key} for read: {e}")
+        return False
+
+    target = _norm_for_compare(path)
+    parts = [p for p in cur.split(";") if p]  # keep original text for survivors
+    kept = [p for p in parts if _norm_for_compare(p) != target]
+
+    if kept == parts:
+        # Already absent
+        return True
+
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_key, 0, winreg.KEY_SET_VALUE) as k:
+            if kept:
+                winreg.SetValueEx(k, "Path", 0, reg_type, ";".join(kept))
+            else:
+                # Optional: delete the value if empty
+                try:
+                    winreg.DeleteValue(k, "Path")
+                except FileNotFoundError:
+                    pass
+    except OSError as e:
+        print(f"Failed to write user PATH: {e}")
+        return False
+
+    # Notify system so **new** processes pick up the change
+    HWND_BROADCAST = 0xFFFF
+    WM_SETTINGCHANGE = 0x001A
+    SMTO_ABORTIFHUNG = 0x0002
+    ctypes.windll.user32.SendMessageTimeoutW(
+        HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment",
+        SMTO_ABORTIFHUNG, 5000, None
+    )
+
+    # Update this Python process' PATH too
+    cur_parts = [p for p in os.environ.get("PATH", "").split(";") if p]
+    os.environ["PATH"] = ";".join([p for p in cur_parts if _norm_for_compare(p) != target])
+
+    print(f"Path {path} removed permanently for the current user.")
+    return True
+
+
 def remove_from_env(path: str):
     """
     Removes a specific path from the system PATH for the current session and permanently if applicable.
@@ -325,7 +435,8 @@ def remove_from_env(path: str):
     if os_type == "windows":
         # Use setx to update PATH permanently on Windows
         try:
-            subprocess.run(["setx", "PATH", os.environ["PATH"]], check=True)
+            _win_remove_from_user_path(path)
+            #subprocess.run(["setx", "PATH", os.environ["PATH"]], check=True)
             print(f"Path {path} removed permanently on Windows.")
         except subprocess.CalledProcessError as e:
             print(f"Failed to update PATH permanently on Windows: {e}")

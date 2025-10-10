@@ -8,6 +8,9 @@ from datetime import datetime
 
 import cpuinfo
 import psutil
+import re
+from typing import Iterable, List, Union, Optional
+
 
 from ..common import PROJECT_ROOT, get_version, language_dirs, load_from_env, read_toml
 
@@ -374,17 +377,37 @@ The following dependencies have been detected for **{software_version}**:
     return setup
 
 
-def set_contact(authors, orcids, emails):
-    contact = ""
-    if authors:
-        contact += f"**Name:** {authors}\n\n"
-    if orcids:
-        contact += f"**ORCID:** {orcids}\n\n"
-    if emails:
-        contact += f"**Email:** {emails}\n\n"
+def _to_list(x: Optional[Union[str, Iterable[str]]]) -> List[str]:
+    """Turn a string (split on , or ;) or an iterable into a clean list."""
+    if x is None:
+        return []
+    if isinstance(x, str):
+        return [p.strip() for p in re.split(r"[;,]", x) if p.strip()]
+    return [str(p).strip() for p in x if str(p).strip()]
 
-    return contact
+def set_contact(authors=None, orcids=None, emails=None):
+    
+    a = _to_list(authors)
+    o = _to_list(orcids)
+    e = _to_list(emails)
 
+    n = max(len(a), len(o), len(e))
+    if n == 0:
+        return ""
+
+    blocks = []
+    for i in range(n):
+        lines = []
+        if i < len(a) and a[i]:
+            lines.append(f"**Name:** {a[i]}\n")
+        if i < len(o) and o[i]:
+            lines.append(f"**ORCID:** {o[i]}\n")
+        if i < len(e) and e[i]:
+            lines.append(f"**Email:** {e[i]}\n")
+        if lines:
+            blocks.append("\n".join(lines))
+
+    return "---\n\n".join(blocks) + ("---\n" if blocks else "")
 
 def find_scripts(folder_path, source_ext, notebook_ext):
     if isinstance(notebook_ext, str):

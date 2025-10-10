@@ -8,7 +8,7 @@ import zipfile
 
 import requests
 
-from .ci import ci_config
+from .ci import set_git_alis
 from .common import (
     PROJECT_ROOT,
     ensure_correct_kernel,
@@ -381,7 +381,7 @@ def main():
 
     # Create Remote Repository
     if setup_repo(version_control, code_repo, repo_name, project_description):
-        ci_config()
+        set_git_alis(PROJECT_ROOT)
 
 
 if __name__ == "__main__":
