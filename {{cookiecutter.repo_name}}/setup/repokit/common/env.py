@@ -348,7 +348,7 @@ def _norm_for_compare(p: str) -> str:
 
 
 def _win_remove_from_user_path(path: str) -> bool:
-    """Remove `path` from the current user's PATH (HKCU\\Environment), de-duplicated.
+    r"""Remove `path` from the current user's PATH (HKCU\\Environment), de-duplicated.
     Broadcasts WM_SETTINGCHANGE so new processes see it, and updates this process' PATH."""
     if os.name != "nt" or winreg is None:
         print("Not on Windows; skipping registry PATH update.")
