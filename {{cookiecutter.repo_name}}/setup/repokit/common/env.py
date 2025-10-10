@@ -241,7 +241,7 @@ def package_installer(required_libraries: list = None):
 
 
 def _win_add_to_user_path(path: str) -> bool:
-    """Add `path` to the current user's PATH via HKCU\Environment, de-duplicated.
+    r"""Add `path` to the current user's PATH via HKCU\Environment, de-duplicated.
     Broadcasts WM_SETTINGCHANGE so new processes see it."""
     reg_key = r"Environment"
     # Read current PATH and type (REG_SZ or REG_EXPAND_SZ)
