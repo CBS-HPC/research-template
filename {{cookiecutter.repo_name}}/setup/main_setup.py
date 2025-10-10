@@ -66,6 +66,9 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     finally:
         os.chdir(cwd)
 
+subprocess.run([sys.executable, "-m", "uv", "pip", "install","pyinstrument"])
+
+from pyinstrument import Profiler
 
 # Installing package:
 install_py_package("./setup")
@@ -243,6 +246,8 @@ def outro():
 
 
 if __name__ == "__main__":
+
+    p = Profiler(); p.start()
     setup_remote_backup()
 
     intro()
@@ -252,3 +257,4 @@ if __name__ == "__main__":
     remote_repo_setup()
 
     outro()
+    p.stop(); p.open_in_browser()
