@@ -208,3 +208,31 @@ def remote_user_info(remote_name):
 
     else:
         return None, None, None
+
+
+def prompt_user(question, options):
+    """
+    Prompts the user with a question and a list of options to select from.
+
+    Args:
+        question (str): The question to display to the user.
+        options (list): List of options to display.
+
+    Returns
+    -------
+        str: The user's selected option.
+    """
+    print(question)
+    for i, option in enumerate(options, start=1):
+        print(f"{i}. {option}")
+
+    while True:
+        try:
+            choice = int(input("Choose from above (enter number): "))
+            if 1 <= choice <= len(options):
+                selected_option = options[choice - 1]
+                return selected_option
+            else:
+                print(f"Invalid choice. Please select a number between 1 and {len(options)}.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")

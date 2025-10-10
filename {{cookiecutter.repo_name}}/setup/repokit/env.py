@@ -5,11 +5,36 @@ import shutil
 import subprocess
 import sys
 import urllib.request
-
 import yaml
 
 from .common import PROJECT_ROOT, ask_yes_no, exe_to_path, install_uv, is_installed, save_to_env
 
+def prompt_user(question, options):
+    """
+    Prompts the user with a question and a list of options to select from.
+
+    Args:
+        question (str): The question to display to the user.
+        options (list): List of options to display.
+
+    Returns
+    -------
+        str: The user's selected option.
+    """
+    print(question)
+    for i, option in enumerate(options, start=1):
+        print(f"{i}. {option}")
+
+    while True:
+        try:
+            choice = int(input("Choose from above (enter number): "))
+            if 1 <= choice <= len(options):
+                selected_option = options[choice - 1]
+                return selected_option
+            else:
+                print(f"Invalid choice. Please select a number between 1 and {len(options)}.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
 # Virtual Environment
 def setup_virtual_environment(
@@ -118,8 +143,23 @@ def setup_conda(
     install_path = os.path.abspath(install_path)
 
     if not is_installed("conda", "Conda"):
-        if not install_miniconda(install_path):
-            return False
+
+        question = "How would you like to install Conda?"
+        conda_type = prompt_user(question, ["miniconda (Licensed)", "miniforge (Open source)"])
+        options = [
+                        "Install Miniforge (open-source, conda-forge) [Recommended]",
+                        "Install Miniconda (Anaconda defaults; license may apply)",
+
+        ]
+        choice = prompt_user(question, options)
+
+        if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
+            if not install_miniforge(install_path):
+                return False
+        
+        if choice == "Install Miniconda (Anaconda defaults; license may apply)":
+            if not install_miniconda(install_path):
+                return False
 
     # Get the absolute path to the environment
     env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
@@ -349,6 +389,138 @@ def install_miniconda(install_path):
     finally:
         if installer_path and os.path.exists(installer_path):
             os.remove(installer_path)
+
+    return False
+
+
+def install_miniforge(install_path):
+    """
+    Install Miniforge3 (conda-forge's community installer) in a way that mirrors install_miniconda.
+    - Windows: overrides target to C:\\Users\\<user>\\miniforge3 and uses silent NSIS flags.
+    - macOS/Linux: uses the latest Miniforge .sh with -b -f -p.
+    - Adds 'conda' to PATH via exe_to_path(), runs init_conda(), and verifies with is_installed().
+    """
+    os_type = platform.system().lower()
+    download_dir = os.path.dirname(install_path)
+    installer_name = None
+    installer_path = None
+    url = None
+
+    # Normalize architecture
+    machine = platform.machine().lower()
+    is_x86_64 = machine in ("x86_64", "amd64")
+    is_arm64 = machine in ("arm64", "aarch64")
+    is_ppc64le = machine == "ppc64le"
+
+    # Map OS/arch -> Miniforge asset name
+    if os_type == "windows":
+        # Override to C:\Users\<username>\miniforge3
+        user_home = pathlib.Path.home()
+        install_path = str(user_home / "miniforge3")
+        print(f"Windows detected — overriding install path to: {install_path}")
+
+        download_dir = os.path.dirname(install_path)
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir, exist_ok=True)
+
+        # Miniforge currently publishes Windows x86_64 installers.
+        # Use x86_64 by default (works on most Windows, incl. x64 emulation on ARM).
+        arch_tag = "x86_64"
+
+        installer_name = f"Miniforge3-Windows-{arch_tag}.exe"
+        url = f"https://github.com/conda-forge/miniforge/releases/latest/download/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+
+        # Prepare Windows path format and clean pre-existing dir (mirrors your Miniconda logic)
+        install_path_win = os.path.abspath(install_path).replace("/", "\\")
+        if os.path.exists(install_path_win):
+            print(f"Removing existing directory before install: {install_path_win}")
+            shutil.rmtree(install_path_win)
+
+        # NSIS: /S (silent) and /D=... must be LAST and unquoted
+        install_command = (
+            f'"{installer_path}" /S /InstallationType=JustMe /AddToPath=0 /RegisterPython=0 /D={install_path_win}'
+        )
+
+    elif os_type == "darwin":
+        # macOS: choose arm64 on Apple Silicon, otherwise x86_64
+        arch_tag = "arm64" if (is_arm64) else "x86_64"
+        installer_name = f"Miniforge3-MacOSX-{arch_tag}.sh"
+        url = f"https://github.com/conda-forge/miniforge/releases/latest/download/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir, exist_ok=True)
+        install_command = ["bash", installer_path, "-b", "-f", "-p", install_path]
+
+    elif os_type == "linux":
+        # Linux: support x86_64, aarch64, ppc64le; default to x86_64 when unknown
+        if is_arm64:
+            arch_tag = "aarch64"
+        elif is_ppc64le:
+            arch_tag = "ppc64le"
+        else:
+            arch_tag = "x86_64"
+        installer_name = f"Miniforge3-Linux-{arch_tag}.sh"
+        url = f"https://github.com/conda-forge/miniforge/releases/latest/download/{installer_name}"
+        installer_path = os.path.join(download_dir, installer_name)
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir, exist_ok=True)
+        install_command = ["bash", installer_path, "-b", "-f", "-p", install_path]
+
+    else:
+        print("Unsupported operating system.")
+        return False
+
+    try:
+        print(f"Downloading {installer_name} from {url} to {download_dir}...")
+        urllib.request.urlretrieve(url, installer_path)
+        print("Download complete.")
+
+        print("Installing Miniforge3...")
+
+        if os_type == "windows":
+            subprocess.run(install_command, check=True, shell=True)
+        else:
+            subprocess.run(install_command, check=True)
+
+        # Remove installer after installation
+        if installer_path and os.path.exists(installer_path):
+            os.remove(installer_path)
+
+        # Determine conda executable path
+        conda_executable = (
+            os.path.join(install_path, "Scripts", "conda.exe")
+            if os_type == "windows"
+            else os.path.join(install_path, "bin", "conda")
+        )
+
+        if not os.path.exists(conda_executable):
+            print("Miniforge installation failed: conda executable not found.")
+            return False
+
+        # Add conda to PATH and initialize shell (reuses your helpers)
+        if exe_to_path("conda", os.path.dirname(conda_executable)):
+            if not init_conda():
+                return False
+        else:
+            return False
+
+        if is_installed("conda", "Conda"):
+            print("Miniforge3 installation complete.")
+            return True
+        else:
+            return False
+
+    except subprocess.CalledProcessError as e:
+        print(f"Installation failed during subprocess execution: {e}")
+    except Exception as e:
+        print(f"Installation failed: {e}")
+    finally:
+        if installer_path and os.path.exists(installer_path):
+            try:
+                os.remove(installer_path)
+            except Exception:
+                pass
 
     return False
 
