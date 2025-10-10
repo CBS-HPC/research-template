@@ -316,7 +316,8 @@ def git_push(flag: str, msg: str = "", path: str = None):
             is_installed("git")
             is_installed("datalad")
             is_installed("git-annex")
-            is_installed("rclone")
+            #is_installed("rclone")
+            install_rclone("./bin")
 
             subprocess.run(["datalad", "save", "-m", msg], check=True, cwd=path)
             push_all(path=path)

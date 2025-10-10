@@ -6,7 +6,6 @@ import sys
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
-
 def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tuple[bool, str]:
     """
     Install the local package at `setup_path`, preferring uv and falling back to pip.
@@ -66,14 +65,9 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     finally:
         os.chdir(cwd)
 
-subprocess.run([sys.executable, "-m", "uv", "pip", "install","pyinstrument"])
-
-from pyinstrument import Profiler
-
 # Installing package:
 install_py_package("./setup")
 
-from repokit.backup import setup_remote_backup
 from repokit.ci import ci_config
 from repokit.common import load_from_env, save_to_env, set_program_path
 from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
@@ -247,9 +241,6 @@ def outro():
 
 if __name__ == "__main__":
 
-    p = Profiler(); p.start()
-    setup_remote_backup()
-
     intro()
 
     version_setup()
@@ -257,4 +248,3 @@ if __name__ == "__main__":
     remote_repo_setup()
 
     outro()
-    p.stop(); p.open_in_browser()
