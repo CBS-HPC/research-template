@@ -405,9 +405,9 @@ def set_contact(authors=None, orcids=None, emails=None):
         if i < len(e) and e[i]:
             lines.append(f"**Email:** {e[i]}\n")
         if lines:
-            blocks.append("\n".join(lines))
+            blocks.append("\n\n".join(lines))
 
-    return "---\n\n".join(blocks) + ("---\n" if blocks else "")
+    return "---\n\n".join(blocks) + ("---\n\n" if blocks else "")
 
 def find_scripts(folder_path, source_ext, notebook_ext):
     if isinstance(notebook_ext, str):
