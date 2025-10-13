@@ -85,7 +85,8 @@ if [ "$env_manager" != "" ]; then
                     pip install uv
                 fi
 
-                uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
+                uv pip install --upgrade python-dotenv pathspec
+                #uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
             else
                 echo "Error: conda script not found."
             fi

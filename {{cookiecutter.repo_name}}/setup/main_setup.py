@@ -231,6 +231,8 @@ def outro():
         deactivate_to_delete,
     ]
 
+    print(load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter"))
+    print("dre")
     if load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() == "conda":
         print("hello")
         files_to_remove.append("./.venv")
