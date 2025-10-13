@@ -50,13 +50,16 @@ if ($env_manager -ne "") {
                 # (Optional safety) Ensure the var is gone even if 'deactivate' wasn’t available.
             #    Remove-Item Env:VIRTUAL_ENV -ErrorAction SilentlyContinue | Out-Null
             #}
+            
+            # Deactivate any active .venv environment
+            deactivate
 
             # Uninstall uv if present (pre-activation or wherever you put it)
-            #if (Get-Command uv -ErrorAction SilentlyContinue) {
-            #    try { python -m pip uninstall -y uv | Out-Null } catch {
-            #        try { pip uninstall -y uv | Out-Null } catch {}
-            #    }
-            #}
+            if (Get-Command uv -ErrorAction SilentlyContinue) {
+                try { python -m pip uninstall -y uv | Out-Null } catch {
+                    try { pip uninstall -y uv | Out-Null } catch {}
+                }
+            }
             
             Write-Output "Activating Conda environment: $env_path"
             conda activate $env_path
