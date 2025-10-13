@@ -37,7 +37,6 @@ def prompt_user(question, options):
             print("Invalid input. Please enter a number.")
 
 
-# Virtual Environment
 def setup_virtual_environment(
     version_control,
     python_env_manager,
@@ -81,7 +80,6 @@ def setup_virtual_environment(
     return env_name
 
 
-# Common Env Functions
 def load_env_file(extensions=[".yml", ".txt"]):  # FIX ME - NOT USED
     def get_file_path(extensions=[".yml", ".txt"]):
         """
@@ -129,7 +127,6 @@ def load_env_file(extensions=[".yml", ".txt"]):  # FIX ME - NOT USED
         return None
 
 
-# Conda Functions:
 def setup_conda(
     repo_name: str,
     conda_packages: list = [],
@@ -138,30 +135,30 @@ def setup_conda(
     conda_python_version: str = None,
 ):
 
-    if not is_installed("conda", "Conda"):
-        options = [
-                        "Install Miniforge (open-source, conda-forge) [Recommended]",
-                        "Install Miniconda (Anaconda defaults; license may apply)",
+    #if not is_installed("conda", "Conda"):
+    options = [
+                    "Install Miniforge (open-source, conda-forge) [Recommended]",
+                    "Install Miniconda (Anaconda defaults; license may apply)",
 
-        ]
-        choice = prompt_user("How would you like to install Conda?", options)
+    ]
+    choice = prompt_user("How would you like to install Conda?", options)
 
-        if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
+    if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
 
-            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniforge3"))
-            install_path = os.path.abspath(install_path)
+        install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniforge3"))
+        install_path = os.path.abspath(install_path)
 
-            if not install_miniforge(install_path):
-                return False
+        if not install_miniforge(install_path):
+            return False
+    
+    if choice == "Install Miniconda (Anaconda defaults; license may apply)":
         
-        if choice == "Install Miniconda (Anaconda defaults; license may apply)":
-            
-            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniconda3"))
-            install_path = os.path.abspath(install_path)
+        install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniconda3"))
+        install_path = os.path.abspath(install_path)
 
-            if not install_miniconda(install_path):
-                return False
-            tos_conda()
+        if not install_miniconda(install_path):
+            return False
+        tos_conda()
             
     # Get the absolute path to the environment
     env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
@@ -662,7 +659,6 @@ def update_env_yaml(
 
 
 # Venv and Virtualenv Functions
-
 
 def create_venv_env():
     """
