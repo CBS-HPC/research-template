@@ -198,7 +198,6 @@ def set_options(programming_language, version_control):
 main_setup = "./setup/main_setup.py"
 setup_bash = "./run_setup.sh"
 setup_powershell = "./run_setup.ps1"
-miniconda_path = "./bin/miniconda3"
 
 project_name = "{{cookiecutter.project_name}}"
 project_description = "Insert project description here"
@@ -430,7 +429,6 @@ env_path = setup_virtual_environment(
     repo_name,
     conda_r_version,
     conda_python_version,
-    miniconda_path,
 )
 
 if not env_path:

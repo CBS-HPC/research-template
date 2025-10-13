@@ -10,23 +10,44 @@ $env_path = $env_path -replace '\\', '/'
 $venvPath = ".venv"
 $uvLockFile = "uv.lock"
 
+# ---------- helper: safe removal ----------
+function Remove-PathSafe {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+    try {
+        if (Test-Path -LiteralPath $Path) {
+            # -LiteralPath avoids wildcard surprises
+            Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+            Write-Verbose "Removed '$Path'."
+        }
+    }
+    catch {
+        Write-Warning "Could not remove '$Path'. Continuing. $($_.Exception.Message)"
+        # swallow the error so the script never stops on removal failures
+    }
+}
+# -----------------------------------------
+
+
+
 # Activate the Python environment
 if ($env_manager -ne "") {
     switch ($env_manager.ToLower()) {
         "conda" {
             Write-Output "Activating Conda environment: $env_path"
             conda activate $env_path
+            
+            # Remove .venv folder and uv.lock file (non-fatal if removal fails)
+            Write-Output "Removing .venv directory (if present)..."
+            Remove-PathSafe -Path $venvPath
 
-            # Remove .venv folder and uv.lock file if they exist
-            if (Test-Path $venvPath) {
-                Write-Output "Removing .venv directory..."
-                    Remove-Item -Recurse -Force $venvPath
-            }
+            Write-Output "Removing uv.lock file (if present)..."
+            Remove-PathSafe -Path $uvLockFile
 
-            if (Test-Path $uvLockFile) {
-                Write-Output "Removing uv.lock file..."
-                Remove-Item -Force $uvLockFile
-            }
+
             if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
                 pip install uv
             }

@@ -11,6 +11,22 @@ main_setup=$3
 # Allow custom .env file path as first argument
 envFile=".env" 
 
+
+# -------- helpers --------
+# Remove a path but NEVER fail the script if the removal errors out.
+safe_rm_path() {
+    # usage: safe_rm_path "<path>"
+    # works for files or directories; errors are downgraded to warnings.
+    local target="$1"
+    # -f makes file removal non-erroring if missing; -r handles directories.
+    # If rm still errors (e.g., permissions), swallow it and continue.
+    rm -rf -- "$target" 2>/dev/null || {
+        echo "Warning: could not remove '$target'; continuing." >&2
+        return 0
+    }
+}
+# -------------------------
+
 load_conda() {
     local conda_path=""
 
@@ -51,12 +67,12 @@ if [ "$env_manager" != "" ]; then
                 # Cleanup: remove .venv folder and uv.lock file if they exist
                 if [ -d ".venv" ]; then
                     echo "Removing .venv directory..."
-                    rm -rf .venv
+                    safe_rm_path ".venv"
                 fi
                 
                 if [ -f "uv.lock" ]; then
                     echo "Removing uv.lock file..."
-                    rm -f uv.lock
+                    safe_rm_path uv.lock
                 fi
                 if ! command -v uv &>/dev/null; then
                     pip install uv

@@ -36,6 +36,7 @@ def prompt_user(question, options):
         except ValueError:
             print("Invalid input. Please enter a number.")
 
+
 # Virtual Environment
 def setup_virtual_environment(
     version_control,
@@ -44,7 +45,6 @@ def setup_virtual_environment(
     repo_name,
     conda_r_version,
     conda_python_version,
-    install_path="./bin/miniconda3",
 ):
     """
     Create a virtual environment for Python or R based on the specified programming language.
@@ -54,7 +54,6 @@ def setup_virtual_environment(
     - repo_name: str, name of the virtual environment.
     - programming_language: str, 'python' or 'R' to specify the language for the environment.
     """
-    install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
 
     env_name = None
 
@@ -67,7 +66,6 @@ def setup_virtual_environment(
             conda_r_version,
         )
         env_name = setup_conda(
-            install_path=install_path,
             repo_name=repo_name,
             conda_packages=conda_packages,
             env_file=None,
@@ -133,33 +131,38 @@ def load_env_file(extensions=[".yml", ".txt"]):  # FIX ME - NOT USED
 
 # Conda Functions:
 def setup_conda(
-    install_path: str,
     repo_name: str,
     conda_packages: list = [],
     env_file: str = None,
     conda_r_version: str = None,
     conda_python_version: str = None,
 ):
-    install_path = os.path.abspath(install_path)
 
-    #if not is_installed("conda", "Conda"):
+    if not is_installed("conda", "Conda"):
+        options = [
+                        "Install Miniforge (open-source, conda-forge) [Recommended]",
+                        "Install Miniconda (Anaconda defaults; license may apply)",
 
-    options = [
-                    "Install Miniforge (open-source, conda-forge) [Recommended]",
-                    "Install Miniconda (Anaconda defaults; license may apply)",
+        ]
+        choice = prompt_user("How would you like to install Conda?", options)
 
-    ]
-    choice = prompt_user("How would you like to install Conda?", options)
+        if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
 
-    if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
-        if not install_miniforge(install_path):
-            return False
-    
-    if choice == "Install Miniconda (Anaconda defaults; license may apply)":
-        if not install_miniconda(install_path):
-            return False
-        tos_conda()
+            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniforge3"))
+            install_path = os.path.abspath(install_path)
+
+            if not install_miniforge(install_path):
+                return False
         
+        if choice == "Install Miniconda (Anaconda defaults; license may apply)":
+            
+            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniconda3"))
+            install_path = os.path.abspath(install_path)
+
+            if not install_miniconda(install_path):
+                return False
+            tos_conda()
+            
     # Get the absolute path to the environment
     env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
 
@@ -292,7 +295,7 @@ def tos_conda():
         print("""To accept these channels' Terms of Service, run the following commands:
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs
-        Conda Terms of use øshell initialization complete.""")
+        Conda Terms of use .""")
         return True
 
     except Exception as e:

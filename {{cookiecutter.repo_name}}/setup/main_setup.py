@@ -220,7 +220,6 @@ def outro():
         deactivate_to_delete = "./deactivate.ps1"
 
     files_to_remove = [
-        "network_analysis.ipynb",
         "./setup/project_setup.py",
         "./run_setup.sh",
         "./run_setup.ps1",
@@ -228,6 +227,10 @@ def outro():
         activate_to_delete,
         deactivate_to_delete,
     ]
+
+    if load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() == "conda":
+        files_to_remove.append("./.venv")
+   
 
     # Deleting Setup scripts
     delete_files(files_to_remove)
