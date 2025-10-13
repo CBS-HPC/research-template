@@ -23,6 +23,8 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install", *editable_args]
     pip_cmd = [sys.executable, "-m", "pip", "install", *editable_args]
 
+
+    print(sys.executable)
     # Do work in the target directory, but restore CWD afterwards
     cwd = os.getcwd()
     os.chdir(setup_dir)
