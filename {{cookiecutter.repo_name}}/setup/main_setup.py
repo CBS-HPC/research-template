@@ -20,7 +20,6 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
 
     # Build the args once
     editable_args = ["-e", "."] if editable else ["."]
-    uv_cmd = ["uv", "pip", "install", *editable_args]
     uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install", *editable_args]
     pip_cmd = [sys.executable, "-m", "pip", "install", *editable_args]
 
@@ -28,19 +27,7 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     cwd = os.getcwd()
     os.chdir(setup_dir)
     try:
-        # 1) Try uv CLI first
-        try:
-            result = subprocess.run(uv_cmd, capture_output=True, text=True)
-            if result.returncode == 0:
-                print("Installation successful with uv.")
-                return True, "uv"
-            else:
-                print(f"uv failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
-        except FileNotFoundError:
-            # uv CLI not found
-            pass
-
-        # 2) Try `python -m uv` (if uv is importable as a module)
+        # 1) Try `python -m uv` (if uv is importable as a module)
         try:
             result = subprocess.run(uv_mod_cmd, capture_output=True, text=True)
             if result.returncode == 0:
@@ -231,10 +218,7 @@ def outro():
         deactivate_to_delete,
     ]
 
-    print(load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter"))
-    print("dre")
     if load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() == "conda":
-        print("hello")
         files_to_remove.append("./.venv")
    
 
