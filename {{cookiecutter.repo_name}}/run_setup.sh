@@ -25,6 +25,7 @@ safe_rm_path() {
         return 0
     }
 }
+
 # -------------------------
 
 load_conda() {
@@ -74,11 +75,11 @@ if [ "$env_manager" != "" ]; then
                     echo "Removing uv.lock file..."
                     safe_rm_path uv.lock
                 fi
-                if ! command -v uv &>/dev/null; then
-                    pip install uv
-                fi
+                #if ! command -v uv &>/dev/null; then
+                #    pip install uv
+                #fi
 
-                uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
+                #uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
             else
                 echo "Error: conda script not found."
             fi
@@ -95,7 +96,7 @@ if [ "$env_manager" != "" ]; then
                     fi
                     uv lock
                     uv add --upgrade uv pip setuptools wheel python-dotenv pathspec
-                fi  # <-- this was missing
+                fi
             else
                 echo "Error: venv activation script not found."
             fi
