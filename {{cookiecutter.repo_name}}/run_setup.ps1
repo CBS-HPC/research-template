@@ -59,8 +59,7 @@ if ($env_manager -ne "") {
                 pip install uv
             }
 
-            uv pip install --upgrade python-dotenv pathspec
-            #uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
+            uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec nbformat
         }
         "venv" {
             Write-Output "Activating venv: $env_path"
@@ -78,7 +77,7 @@ if ($env_manager -ne "") {
                     pip install uv
                 }
                 uv lock
-                uv add --upgrade uv pip setuptools wheel python-dotenv pathspec
+                uv add --upgrade uv pip setuptools wheel python-dotenv pathspec nbformat
             }
         }
         default {
