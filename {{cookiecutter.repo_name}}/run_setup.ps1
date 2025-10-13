@@ -19,12 +19,12 @@ if ($env_manager -ne "") {
 
             # Remove .venv folder and uv.lock file if they exist
             if (Test-Path $venvPath) {
-                Write-Output "Removing $venvPath..."
-                Remove-Item -Recurse -Force $venvPath
+                Write-Output "Removing .venv directory..."
+                    Remove-Item -Recurse -Force $venvPath
             }
 
             if (Test-Path $uvLockFile) {
-                Write-Output "Removing $uvLockFile..."
+                Write-Output "Removing uv.lock file..."
                 Remove-Item -Force $uvLockFile
             }
             if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {

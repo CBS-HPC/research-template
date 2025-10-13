@@ -142,25 +142,24 @@ def setup_conda(
 ):
     install_path = os.path.abspath(install_path)
 
-    if not is_installed("conda", "Conda"):
+    #if not is_installed("conda", "Conda"):
 
-        question = "How would you like to install Conda?"
-        conda_type = prompt_user(question, ["miniconda (Licensed)", "miniforge (Open source)"])
-        options = [
-                        "Install Miniforge (open-source, conda-forge) [Recommended]",
-                        "Install Miniconda (Anaconda defaults; license may apply)",
+    options = [
+                    "Install Miniforge (open-source, conda-forge) [Recommended]",
+                    "Install Miniconda (Anaconda defaults; license may apply)",
 
-        ]
-        choice = prompt_user(question, options)
+    ]
+    choice = prompt_user("How would you like to install Conda?", options)
 
-        if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
-            if not install_miniforge(install_path):
-                return False
+    if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
+        if not install_miniforge(install_path):
+            return False
+    
+    if choice == "Install Miniconda (Anaconda defaults; license may apply)":
+        if not install_miniconda(install_path):
+            return False
+        tos_conda()
         
-        if choice == "Install Miniconda (Anaconda defaults; license may apply)":
-            if not install_miniconda(install_path):
-                return False
-
     # Get the absolute path to the environment
     env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
 
@@ -276,6 +275,29 @@ def export_conda_env(env_path, output_file="environment.yml"):
         print("Conda is not installed or not found in PATH.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+
+def tos_conda():
+    """
+    Initializes Conda for the user's shell by running `conda init` and starting a new interactive shell session.
+
+    Returns
+    -------
+    - bool: True if Conda shell initialization is successful, False otherwise.
+    """
+
+    try:
+        subprocess.run(["conda", "tos", "accept", "--override-channels", "--channel", "https://repo.anaconda.com/pkgs/main"], check=True)
+        subprocess.run(["conda", "tos", "accept", "--override-channels", "--channel", "https://repo.anaconda.com/pkgs/r"], check=True)
+        print("""To accept these channels' Terms of Service, run the following commands:
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs
+        Conda Terms of use øshell initialization complete.""")
+        return True
+
+    except Exception as e:
+        print(f"Failed to initialize Conda shell: {e}")
+        return False
 
 
 def init_conda():
