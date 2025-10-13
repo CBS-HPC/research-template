@@ -37,9 +37,11 @@ function Remove-PathSafe {
 if ($env_manager -ne "") {
     switch ($env_manager.ToLower()) {
         "conda" {
-            # Uninstall uv if currently on PATH
+            # Uninstall uv if present (pre-activation or wherever you put it)
             if (Get-Command uv -ErrorAction SilentlyContinue) {
-                try { python -m pip uninstall -y uv | Out-Null } catch {}
+                try { python -m pip uninstall -y uv | Out-Null } catch {
+                    try { pip uninstall -y uv | Out-Null } catch {}
+                }
             }
             
             Write-Output "Activating Conda environment: $env_path"
