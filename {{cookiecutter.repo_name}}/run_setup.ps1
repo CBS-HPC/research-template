@@ -37,6 +37,11 @@ function Remove-PathSafe {
 if ($env_manager -ne "") {
     switch ($env_manager.ToLower()) {
         "conda" {
+            # Uninstall uv if currently on PATH
+            if (Get-Command uv -ErrorAction SilentlyContinue) {
+                try { python -m pip uninstall -y uv | Out-Null } catch {}
+            }
+            
             Write-Output "Activating Conda environment: $env_path"
             conda activate $env_path
             
@@ -48,11 +53,11 @@ if ($env_manager -ne "") {
             Remove-PathSafe -Path $uvLockFile
 
 
-            #if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
-            #    pip install uv
-            #}
+            if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+                pip install uv
+            }
 
-            #uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
+            uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
         }
         "venv" {
             Write-Output "Activating venv: $env_path"

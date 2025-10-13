@@ -65,6 +65,7 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     finally:
         os.chdir(cwd)
 
+
 def delete_files(file_paths: list = []):
     """
     Deletes a list of files specified by their paths.

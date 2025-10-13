@@ -61,6 +61,12 @@ if [ "$env_manager" != "" ]; then
             load_conda
             CONDA_ENV_PATH=$(realpath "$env_path")
             if [ -n "$CONDA_ENV_PATH" ] && [ -n "$CONDA" ]; then    
+                
+                if command -v uv >/dev/null 2>&1; then
+                    python -m pip uninstall -y uv >/dev/null 2>&1 || \
+                    pip uninstall -y uv >/dev/null 2>&1 || true
+                fi
+
                 echo "Activating Conda environment at $CONDA_ENV_PATH"
                 eval "$($CONDA/conda shell.bash hook)"
                 conda activate "$CONDA_ENV_PATH"
@@ -75,11 +81,11 @@ if [ "$env_manager" != "" ]; then
                     echo "Removing uv.lock file..."
                     safe_rm_path uv.lock
                 fi
-                #if ! command -v uv &>/dev/null; then
-                #    pip install uv
-                #fi
+                if ! command -v uv &>/dev/null; then
+                    pip install uv
+                fi
 
-                #uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
+                uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
             else
                 echo "Error: conda script not found."
             fi
