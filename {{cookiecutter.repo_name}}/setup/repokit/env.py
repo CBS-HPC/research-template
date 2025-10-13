@@ -25,12 +25,11 @@ def short_path_windows(p: str) -> str:
     res = GetShortPathNameW(p, buf, size)
     return buf.value if res else p
 
+
 def safe_env_prefix(env_path: pathlib.Path) -> str:
     sp = short_path_windows(str(env_path))
     # only use if it actually removed spaces
     return sp if " " not in sp else str(env_path)
-
-
 
 
 def prompt_user(question, options):
@@ -159,29 +158,29 @@ def setup_conda(
     conda_python_version: str = None,
 ):
 
-    #if not is_installed("conda", "Conda"):
+    if not is_installed("conda", "Conda"):
 
-    choice = prompt_user("How would you like to install Conda?",
-                        ["Install Miniforge (open-source, conda-forge) [Recommended]",
-                        "Install Miniconda (Anaconda defaults; license may apply)",])
+        choice = prompt_user("How would you like to install Conda?",
+                            ["Install Miniforge (open-source, conda-forge) [Recommended]",
+                            "Install Miniconda (Anaconda defaults; license may apply)",])
 
-    if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
+        if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
 
-        install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniforge3"))
-        install_path = os.path.abspath(install_path)
+            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniforge3"))
+            install_path = os.path.abspath(install_path)
 
-        if not install_miniforge(install_path):
-            return False
+            if not install_miniforge(install_path):
+                return False
+            
         
-    
-    if choice == "Install Miniconda (Anaconda defaults; license may apply)":
-        
-        install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniconda3"))
-        install_path = os.path.abspath(install_path)
+        if choice == "Install Miniconda (Anaconda defaults; license may apply)":
+            
+            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniconda3"))
+            install_path = os.path.abspath(install_path)
 
-        if not install_miniconda(install_path):
-            return False
-        tos_conda()
+            if not install_miniconda(install_path):
+                return False
+            tos_conda()
             
     # Get the absolute path to the environment
     #env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
@@ -189,6 +188,7 @@ def setup_conda(
     env_path = PROJECT_ROOT / pathlib.Path("./.conda")
     env_prefix = safe_env_prefix(env_path)
     env_path = str(env_path)
+    print(env_prefix)
 
     if env_file and (env_file.endswith(".yaml") or env_file.endswith(".txt")):
         if env_file.endswith(".txt"):

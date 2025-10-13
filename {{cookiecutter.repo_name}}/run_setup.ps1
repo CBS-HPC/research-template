@@ -10,7 +10,7 @@ $env_path = $env_path -replace '\\', '/'
 $venvPath = ".venv"
 $uvLockFile = "uv.lock"
 
-# ---------- helper: safe removal ----------
+# --- helper: return $true on success/absent, $false if removal failed ---
 function Remove-PathSafe {
     [CmdletBinding()]
     param(
@@ -19,16 +19,17 @@ function Remove-PathSafe {
     )
     try {
         if (Test-Path -LiteralPath $Path) {
-            # -LiteralPath avoids wildcard surprises
             Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
-            Write-Verbose "Removed '$Path'."
         }
+        # success if gone (or never existed)
+        return -not (Test-Path -LiteralPath $Path)
     }
     catch {
         Write-Warning "Could not remove '$Path'. Continuing. $($_.Exception.Message)"
-        # swallow the error so the script never stops on removal failures
+        return $false
     }
 }
+
 # -----------------------------------------
 
 
@@ -40,19 +41,22 @@ if ($env_manager -ne "") {
             Write-Output "Activating Conda environment: $env_path"
             conda activate $env_path
             
-            # Remove .venv folder and uv.lock file (non-fatal if removal fails)
+            # Remove .venv and uv.lock (non-fatal); record whether .venv is gone
             Write-Output "Removing .venv directory (if present)..."
-            Remove-PathSafe -Path $venvPath
+            $venvRemoved = Remove-PathSafe -Path $venvPath
 
             Write-Output "Removing uv.lock file (if present)..."
-            Remove-PathSafe -Path $uvLockFile
+            $uvLockRemoved = Remove-PathSafe -Path $uvLockFile
 
-
-            if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
-                pip install uv
+            if ($venvRemoved) {
+                if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+                    pip install uv
+                }
+                uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
             }
-
-            uv pip install --upgrade uv pip setuptools wheel python-dotenv pathspec
+            else {
+                Write-Warning "'.venv' could not be removed; skipping uv installs to avoid mixing environments."
+    }
         }
         "venv" {
             Write-Output "Activating venv: $env_path"

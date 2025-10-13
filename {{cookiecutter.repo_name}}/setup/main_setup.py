@@ -65,6 +65,35 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     finally:
         os.chdir(cwd)
 
+def delete_files(file_paths: list = []):
+    """
+    Deletes a list of files specified by their paths.
+
+    Args:
+        file_paths (list): A list of file paths to be deleted.
+
+    Returns
+    -------
+        dict: A dictionary with file paths as keys and their status as values.
+            The status can be "Deleted", "Not Found", or an error message.
+    """
+    results = {}
+    for file_path in file_paths:
+        file_path = str(
+            pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(file_path)
+        )
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                results[file_path] = "Deleted"
+            else:
+                results[file_path] = "Not Found"
+        except Exception as e:
+            results[file_path] = f"Error: {e}"
+
+    return results
+
+
 # Installing package:
 install_py_package("./setup")
 
@@ -178,33 +207,6 @@ def remote_repo_setup():
 
 
 def outro():
-    def delete_files(file_paths: list = []):
-        """
-        Deletes a list of files specified by their paths.
-
-        Args:
-            file_paths (list): A list of file paths to be deleted.
-
-        Returns
-        -------
-            dict: A dictionary with file paths as keys and their status as values.
-                The status can be "Deleted", "Not Found", or an error message.
-        """
-        results = {}
-        for file_path in file_paths:
-            file_path = str(
-                pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(file_path)
-            )
-            try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    results[file_path] = "Deleted"
-                else:
-                    results[file_path] = "Not Found"
-            except Exception as e:
-                results[file_path] = f"Error: {e}"
-
-        return results
 
     # Ensure the working directory is the project root
     os.chdir(PROJECT_DIR)
