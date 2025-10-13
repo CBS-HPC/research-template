@@ -6,6 +6,9 @@ import sys
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
+
+print(sys.executable)
+
 def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tuple[bool, str]:
     """
     Install the local package at `setup_path`, preferring uv and falling back to pip.
