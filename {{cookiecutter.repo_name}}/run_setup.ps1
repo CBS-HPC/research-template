@@ -31,12 +31,26 @@ function Remove-PathSafe {
 }
 # -----------------------------------------
 
-
-
 # Activate the Python environment
 if ($env_manager -ne "") {
     switch ($env_manager.ToLower()) {
         "conda" {
+
+            # Deactivate the venv at $venvPath, but only if it's the one currently active.
+            $activeVenv = $env:VIRTUAL_ENV
+            $targetVenv = Resolve-Path -LiteralPath $venvPath -ErrorAction SilentlyContinue |
+              Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
+
+
+            if ($activeVenv -and $targetVenv -and ((Resolve-Path $activeVenv).Path -eq $targetVenv)) {
+                # If the venv defined a 'deactivate' function (it does when active), use it.
+                if (Get-Command -Name deactivate -CommandType Function -ErrorAction SilentlyContinue) {
+                    deactivate
+                }
+                # (Optional safety) Ensure the var is gone even if 'deactivate' wasn’t available.
+                Remove-Item Env:VIRTUAL_ENV -ErrorAction SilentlyContinue | Out-Null
+            }
+
             # Uninstall uv if present (pre-activation or wherever you put it)
             if (Get-Command uv -ErrorAction SilentlyContinue) {
                 try { python -m pip uninstall -y uv | Out-Null } catch {
