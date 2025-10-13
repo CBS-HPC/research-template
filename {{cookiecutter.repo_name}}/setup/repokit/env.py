@@ -6,8 +6,32 @@ import subprocess
 import sys
 import urllib.request
 import yaml
+import ctypes
 
 from .common import PROJECT_ROOT, ask_yes_no, exe_to_path, install_uv, is_installed, save_to_env
+
+import ctypes
+
+def short_path_windows(p: str) -> str:
+    if platform.system() != "Windows":
+        return p
+    GetShortPathNameW = ctypes.windll.kernel32.GetShortPathNameW
+    GetShortPathNameW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint]
+    # first call to get required buffer size
+    size = GetShortPathNameW(p, None, 0)
+    if size == 0:
+        return p  # 8.3 might be disabled or path doesn't exist yet
+    buf = ctypes.create_unicode_buffer(size)
+    res = GetShortPathNameW(p, buf, size)
+    return buf.value if res else p
+
+def safe_env_prefix(env_path: pathlib.Path) -> str:
+    sp = short_path_windows(str(env_path))
+    # only use if it actually removed spaces
+    return sp if " " not in sp else str(env_path)
+
+
+
 
 def prompt_user(question, options):
     """
@@ -136,12 +160,10 @@ def setup_conda(
 ):
 
     #if not is_installed("conda", "Conda"):
-    options = [
-                    "Install Miniforge (open-source, conda-forge) [Recommended]",
-                    "Install Miniconda (Anaconda defaults; license may apply)",
 
-    ]
-    choice = prompt_user("How would you like to install Conda?", options)
+    choice = prompt_user("How would you like to install Conda?",
+                        ["Install Miniforge (open-source, conda-forge) [Recommended]",
+                        "Install Miniconda (Anaconda defaults; license may apply)",])
 
     if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
 
@@ -150,6 +172,7 @@ def setup_conda(
 
         if not install_miniforge(install_path):
             return False
+        
     
     if choice == "Install Miniconda (Anaconda defaults; license may apply)":
         
@@ -161,16 +184,20 @@ def setup_conda(
         tos_conda()
             
     # Get the absolute path to the environment
-    env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
+    #env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
+
+    env_path = PROJECT_ROOT / pathlib.Path("./.conda")
+    env_prefix = safe_env_prefix(env_path)
+    env_path = str(env_path)
 
     if env_file and (env_file.endswith(".yaml") or env_file.endswith(".txt")):
         if env_file.endswith(".txt"):
             env_file = generate_env_yml(repo_name, env_file)
         update_env_yaml(env_file, repo_name, conda_packages)
-        command = ["conda", "env", "create", "-f", env_file, "--prefix", env_path]
+        command = ["conda", "env", "create", "-f", env_file, "--prefix", env_prefix]
         msg = f'Conda environment "{repo_name}" created successfully from {env_file}.'
     else:
-        command = ["conda", "create", "--yes", "--prefix", env_path, "-c", "conda-forge"]
+        command = ["conda", "create", "--yes", "--prefix", env_prefix, "-c", "conda-forge"]
 
         command.extend(conda_packages)
         msg = f'Conda environment "{repo_name}" was created successfully. The following conda packages were installed: {conda_packages}.'
