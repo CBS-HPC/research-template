@@ -69,32 +69,53 @@ if ($env_manager -ne "") {
     switch ($env_manager.ToLower()) {
 
         "conda" {
-            Write-Output "Activating Conda environment (not required when using 'conda run'): $env_path"
-            conda activate $env_path
+            Write-Output "Using Conda with 'conda run' (no activation needed): $env_path"
 
-            # Clean up project venv artifacts so they can't hijack PATH/VS Code
+            # 0) If a venv left functions in this PS session, remove them so they can't hijack calls
+            'python','pip','uv' | ForEach-Object {
+                if (Get-Command $_ -CommandType Function -ErrorAction SilentlyContinue) {
+                    Remove-Item "Function:$_" -ErrorAction SilentlyContinue
+                }
+            }
+
+            # 1) Make sure nothing is locking .venv; step out and stop stray python using it
+            if ((Get-Location).Path -like "$venvPath*") {
+                Set-Location (Split-Path $venvPath -Parent)
+            }
+            Get-Process python -ErrorAction SilentlyContinue |
+                Where-Object { $_.Path -like "*\.venv\*" } |
+                Stop-Process -Force -ErrorAction SilentlyContinue
+
+            # 2) Remove local venv artifacts
             Write-Output "Removing .venv directory (if present)..."
             Remove-PathSafe -Path $venvPath
             Write-Output "Removing uv.lock file (if present)..."
             Remove-PathSafe -Path $uvLockFile
 
-            # Ensure tools live in the conda env (pinned with conda run)
+            # 3) Choose path vs name for conda run
             $condaArgs = if (Test-Path -LiteralPath $env_path) { @('-p', $env_path) } else { @('-n', $env_path) }
 
-            # 1) Make sure base build tooling is present (inside the target Conda env)
-            conda run @condaArgs --no-capture-output python -m pip install -U pip setuptools wheel
-
-            # 2) Install uv into that Conda env
-            conda run @condaArgs --no-capture-output python -m pip install -U uv
-
-            # (optional) sanity check
-            conda run @condaArgs --no-capture-output uv --version
-
-            # 3) Now use uv *inside that env* to install your packages
-            conda run @condaArgs --no-capture-output uv pip install --upgrade python-dotenv pathspec nbformat
-            
+            # 4) Install tools INSIDE the Conda env (note: python.exe / uv.exe to bypass PS functions)
+            conda run @condaArgs --no-capture-output python.exe -m pip install -U pip setuptools wheel
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+            conda run @condaArgs --no-capture-output python.exe -m pip install -U uv
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+            conda run @condaArgs --no-capture-output uv.exe pip install --upgrade python-dotenv pathspec nbformat
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+            # 5) Run the main script via conda run (again use python.exe)
+            if (Test-Path $main_setup) {
+                Write-Output "Running via: conda run $($condaArgs -join ' ') python.exe `"$main_setup`""
+                conda run @condaArgs --no-capture-output python.exe "$main_setup"
+                if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            } else {
+                Write-Output "Error: main setup script not found at $main_setup"
+                exit 1
+            }
         }
+
 
         "venv" {
             Write-Output "Activating venv: $env_path"
