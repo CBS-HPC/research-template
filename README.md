@@ -25,7 +25,7 @@ Whether you're preparing a replication package, submitting code and data for pee
 - 🧬 Multi-language support: Python, R, Stata, and Matlab  
 - 🗃️ Built-in version control options: Git, Datalad, or DVC  
 - 📦 Auto-generated scripts for analysis, modeling, and visualization  
-- 🔐 Environment management via Conda or venv (with UV support)  
+- 🔐 Environment management via Conda (miniforge) or venv (with UV support)  
 - ☁️ Backup integration with DeiC-Storage, Dropbox, and OneDrive  
 - 🚀 Remote repository setup for GitHub, GitLab, or Codeberg  
 - 🧪 Unit testing support, TDD scaffolds, and CI integration  
@@ -188,7 +188,7 @@ Set up isolated virtual environments using **Conda**, **UV (venv backend)**, or 
 ```
 ├── Python environment
 │   └── env_manager_python        → [Conda | UV]
-│       ├── If Conda:             → Prompts for Python version
+│       ├── If Conda :             → Prompts for Python version
 │       ├── If UV (venv backend): → Uses current Python kernel version
 │                                 → Creates a `.venv` directory for the environment
 │                                 → Initializes a UV project and generates `uv.lock` to capture dependencies
@@ -206,8 +206,7 @@ Set up isolated virtual environments using **Conda**, **UV (venv backend)**, or 
 ```
 
 **Environment manager options:**
-
-- [**Conda**](https://docs.conda.io/en/latest/) – A widely used environment and package manager for both Python and R. Supports precise version control, reproducibility, and cross-platform compatibility.  
+- [**Conda (Miniforge)**](https://github.com/conda-forge/miniforge) – A community-maintained minimal Conda distribution from conda-forge, preconfigured to use the conda-forge channel for consistent, reproducible, cross-platform environments (for both Python and R).
 - [**UV**](https://github.com/astral-sh/uv) – A fast, modern Python package manager and `venv` backend. Provides isolated environments and accelerated dependency resolution. Ideal for Python-only workflows.  
 - [**renv**](https://rstudio.github.io/renv/) – An R package for creating isolated, project-local environments. Captures exact package versions in a `renv.lock` file, enabling reproducibility similar to `requirements.txt` or `environment.yml`.
 
@@ -222,7 +221,7 @@ Regardless of your choice, the following files are generated to document your en
 
 ⚠️ If proprietary software (e.g., Stata, Matlab) is selected, the system will first **search your PATH**. If not found, you’ll be prompted to manually enter the executable path.  
 
-💡 Conda will be downloaded and installed automatically if it's not already available.
+💡 Conda (miniforge) will be downloaded and installed automatically if it's not already available.
 
 ---
 </details>

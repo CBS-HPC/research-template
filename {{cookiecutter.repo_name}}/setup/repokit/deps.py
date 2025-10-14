@@ -6,6 +6,7 @@ import subprocess
 import sys
 import sysconfig
 from datetime import datetime
+import re
 
 if sys.version_info < (3, 11):
     import toml
@@ -25,7 +26,7 @@ from .common import (
 from .env import export_conda_env
 
 
-def create_requirements_txt(requirements_file: str = "requirements.txt"):
+def create_requirements_txt_old(requirements_file: str = "requirements.txt"):
     """
     Writes pip freeze output to requirements.txt and ensures all installed packages
     are tracked in uv.lock (by running `uv add` on any missing).
@@ -94,7 +95,163 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
                     print(f"❌ Failed to add {pkg} via uv: {e}")
 
 
+
+def create_requirements_txt(requirements_file: str = "requirements.txt"):
+    """
+    Writes a cleaned 'pip freeze' to requirements.txt and ensures all *kept* packages
+    are tracked in uv.lock (adds any missing with `uv add`).
+
+    Skips lines that are editable, local-path, or VCS installs; and any custom skip markers.
+    """
+
+    project_root = PROJECT_ROOT
+    requirements_path = project_root / requirements_file
+    uv_lock_path = project_root / "uv.lock"
+
+    # --- 0) Skip rules used for BOTH requirements.txt and uv.lock sync ---
+    skip_markers = [
+        # custom markers you already use
+        "# editable install with no version control (repokit",
+        "# local dev install",
+        "(path:",
+        # common pip-freeze patterns to exclude from requirements.txt
+        # (editable / local path / VCS URIs)
+        # e.g. "-e .", "pkg @ file:///...", "pkg @ git+https://..."
+        # Keep these generic so they match widely.
+    ]
+    editable_re = re.compile(r"^\s*-e\s", re.IGNORECASE)
+    at_uri_re  = re.compile(r"\s@\s(?:file://|https?://|git\+)", re.IGNORECASE)
+
+    def should_skip_line(line: str) -> bool:
+        l = line.strip()
+        if not l:
+            return True
+        if any(m.lower() in l.lower() for m in skip_markers):
+            return True
+        if editable_re.search(l):
+            return True
+        if at_uri_re.search(l):
+            return True
+        return False
+
+    # --- 1) pip freeze ---
+    result = subprocess.run([sys.executable, "-m", "pip", "freeze"],
+                            capture_output=True, text=True)
+    if result.returncode != 0:
+        print("❌ Error running pip freeze:", result.stderr)
+        return
+
+    frozen_lines = result.stdout.strip().splitlines()
+
+    # --- 2) Filter lines for requirements.txt AND for uv.lock sync ---
+    filtered_lines = [ln for ln in frozen_lines if not should_skip_line(ln)]
+
+    # Package-name map (lower-cased) from filtered lines only
+    installed_pkgs = {
+        ln.split("==", 1)[0].strip().lower(): ln
+        for ln in filtered_lines
+        if "==" in ln
+    }
+
+    # --- 3) Write requirements.txt from filtered lines ---
+    with open(requirements_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(filtered_lines) + ("\n" if filtered_lines else ""))
+    print("📄 requirements.txt created (filtered).")
+
+    # --- 4) Parse uv.lock and collect already-locked packages ---
+    locked_pkgs = set()
+    if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
+        try:
+            with open(uv_lock_path, "rb") as f:
+                uv_data = toml.load(f)
+            for pkg in uv_data.get("package", []):
+                if isinstance(pkg, dict) and "name" in pkg:
+                    locked_pkgs.add(pkg["name"].lower())
+        except Exception as e:
+            print(f"⚠️ Failed to parse uv.lock: {e}")
+
+    # --- 5) Add any filtered (kept) packages missing from uv.lock ---
+    missing_from_lock = [name for name in installed_pkgs if name not in locked_pkgs]
+
+    if missing_from_lock:
+        env = os.environ.copy()
+        env["UV_LINK_MODE"] = "copy"
+        print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
+        for pkg in missing_from_lock:
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "uv", "add", pkg],
+                    check=True,
+                    env=env,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Failed to add {pkg} via uv: {e}")
+
+
+
 def create_conda_environment_yml(
+    env_name: str,
+    r_version: str | None = None,
+    requirements_file: str = "requirements.txt",
+    output_file: str = "environment.yml",
+    channels: tuple[str, ...] = ("conda-forge",),   # explicit channels; add "nodefaults" to block Anaconda defaults
+    pin_python_patch: bool = False,                 # False -> "3.12", True -> "3.12.3"
+):
+    """
+    Build environment.yml from a pip requirements.txt, current Python, and optional R.
+    - Declares channels (default: conda-forge only).
+    - Adds 'pip' to conda deps and nests pip packages under a 'pip:' sublist.
+    - Pins Python to major.minor by default to reduce solve failures.
+    """
+
+    requirements_path = (PROJECT_ROOT / pathlib.Path(requirements_file)).resolve()
+    output_path = (PROJECT_ROOT / pathlib.Path(output_file)).resolve()
+
+    if not requirements_path.exists():
+        raise FileNotFoundError(f"Requirements file not found: {requirements_path}")
+
+    # Python pin: prefer major.minor (easier to solve across channels)
+    py_out = subprocess.check_output([sys.executable, "--version"]).decode().strip()
+    py_ver = py_out.split()[1]  # e.g. "3.12.3"
+    if not pin_python_patch:
+        m = re.match(r"^(\d+\.\d+)", py_ver)
+        py_ver = m.group(1) if m else py_ver
+
+    # Read pip requirements (keep exactly what you froze/filtered)
+    with open(requirements_path, encoding="utf-8") as f:
+        pip_deps = [ln.strip() for ln in f if ln.strip() and not ln.startswith("#")]
+
+    # Base conda dependencies
+    conda_deps = [f"python={py_ver}", "pip"]
+
+    # Optional R
+    if r_version:
+        m = re.search(r"(\d+\.\d+(?:\.\d+)?)", r_version)
+        if m:
+            conda_deps.append(f"r-base={m.group(1)}")
+        else:
+            print(f"⚠️  Could not parse R version from: {r_version} (skipping r-base pin)")
+
+    # Add pip sublist
+    conda_deps.append({"pip": pip_deps})
+
+    # Compose environment
+    env = {
+        "name": env_name,
+        "channels": list(channels),
+        "dependencies": conda_deps,
+    }
+
+    # Write YAML
+    with open(output_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(env, f, sort_keys=False)
+
+    print(f"✅ Conda environment file created: {output_path}")
+
+
+def create_conda_environment_yml_old(
     env_name,
     r_version=None,
     requirements_file: str = "requirements.txt",
