@@ -569,7 +569,7 @@ def update_env_files():
             else None,
         )
     elif python_env_manager.lower() == "conda":
-        export_conda_env(repo_name)
+        export_conda_env()
 
     tag_requirements_txt(requirements_file="requirements.txt")
     tag_env_file(env_file="environment.yml")

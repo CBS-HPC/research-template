@@ -191,7 +191,7 @@ def set_conda_packages(
     return install_packages
 
 
-def export_conda_env(env_path, output_file="environment.yml"):
+def export_conda_env(env_path:str=None, output_file:str="environment.yml"):
     """
     Export the details of a conda environment to a YAML file using its path.
 
@@ -200,7 +200,12 @@ def export_conda_env(env_path, output_file="environment.yml"):
     - env_path: str or Path, full path to the conda environment directory.
     - output_file: str or Path, output YAML file path (default 'environment.yml').
     """
+
+    if not env_path:
+        env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))
+
     env_path = os.path.abspath(env_path)
+    
     output_file = os.path.abspath(output_file)
 
     def update_conda_env_file(file_path):
