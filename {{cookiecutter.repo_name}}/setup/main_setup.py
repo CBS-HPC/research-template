@@ -263,12 +263,16 @@ def outro():
     ]
 
     if load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() == "conda":
+        print("hello")
+        print(load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() )
         files_to_remove.append("./.venv")
+        print(files_to_remove)
    
 
     # Deleting Setup scripts
-    delete_files(files_to_remove)
-
+    delete_results = delete_files(files_to_remove)
+    print(delete_results)
+    
     # Updating README
     creating_readme(programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
 
