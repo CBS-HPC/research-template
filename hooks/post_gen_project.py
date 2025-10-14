@@ -56,59 +56,6 @@ def install_uv():
             return False
 
 
-
-def create_with_uv_old():
-    """Create virtual environment using uv with UV_LINK_MODE=copy to avoid hardlink errors."""
-
-    env = os.environ.copy()
-    env["UV_LINK_MODE"] = "copy"
-
-    # Run uv commands with environment forcing copy mode
-    subprocess.run(
-        ["uv", "venv"],
-        check=True,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    subprocess.run(
-        ["uv", "lock"],
-        check=True,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-
-    try:
-        subprocess.run(
-            [
-                "uv",
-                "add",
-                "--upgrade",
-                "uv",
-                "pip",
-                "setuptools",
-                "wheel",
-                "python-dotenv",
-                "pathspec",
-                "pyyaml",
-                TOML_VERSION,
-            ],
-            check=True,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except subprocess.CalledProcessError:
-        print(
-            "Failed to add packages with uv add --upgrade (even with link-mode=copy)."
-        )
-        raise
-
-    # Run the setup script and show output so user sees progress/errors
-    subprocess.run(["uv", "run", "setup/project_setup.py"], check=True, env=env)
-
-
 def create_with_uv():
     """Create virtual environment using uv with UV_LINK_MODE=copy to avoid hardlink errors,
     then run setup with the interpreter from .venv (not `uv run`)."""
@@ -156,7 +103,7 @@ def create_with_uv():
         print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
         raise
 
-    # Use the venv's python instead of `uv run`
+    # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
     python_exe = (
         os.path.join(".venv", "Scripts", "python.exe")
         if os.name == "nt"
