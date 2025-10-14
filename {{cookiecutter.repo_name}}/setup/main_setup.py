@@ -3,6 +3,8 @@ import pathlib
 import platform
 import subprocess
 import sys
+import shutil
+import stat
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
@@ -54,7 +56,48 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
         os.chdir(cwd)
 
 
-def delete_files(file_paths: list = []):
+def _on_rm_error(func, path, exc_info):
+    # Make read-only files writable (Windows) then retry
+    try:
+        os.chmod(path, stat.S_IWRITE)
+    except Exception:
+        pass
+    func(path)
+
+
+def delete_files(file_paths: list | None = None) -> dict:
+    """
+    Delete files or folders listed in `file_paths`.
+    Returns {absolute_path: "Deleted file" | "Deleted folder" | "Not Found" | "Error: ..."}.
+    Paths are resolved relative to the repo root two levels above this file (your original behavior).
+    """
+    if file_paths is None:
+        file_paths = []
+
+    results = {}
+    base = pathlib.Path(__file__).resolve().parent.parent
+
+    for raw in file_paths:
+        p = (base / pathlib.Path(raw)).resolve()
+        key = str(p)
+        try:
+            if not p.exists():
+                results[key] = "Not Found"
+            elif p.is_symlink() or p.is_file():
+                p.unlink()
+                results[key] = "Deleted file"
+            elif p.is_dir():
+                shutil.rmtree(p, onerror=_on_rm_error)
+                results[key] = "Deleted folder"
+            else:
+                results[key] = "Not Found"
+        except Exception as e:
+            results[key] = f"Error: {e}"
+
+    return results
+
+
+def delete_files_old(file_paths: list = []):
     """
     Deletes a list of files specified by their paths.
 
