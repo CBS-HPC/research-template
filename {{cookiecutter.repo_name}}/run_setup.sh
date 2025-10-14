@@ -116,6 +116,3 @@ if [ -f "$main_setup" ]; then
 else
     echo "Error: $main_setup not found."
 fi
-
-echo ""
-echo "Environment setup completed successfully."

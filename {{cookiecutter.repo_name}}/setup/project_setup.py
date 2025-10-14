@@ -4,6 +4,7 @@ import platform
 import re
 import subprocess
 import sys
+import shutil
 
 
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
@@ -88,6 +89,7 @@ def correct_format(programming_language, authors, orcids):
 
 
 def set_options(programming_language, version_control):
+    
     def is_valid_version(version: str, software: str) -> bool:
         """
         Validate if the inputted version follows the general versioning structure for R or Python.
@@ -110,7 +112,7 @@ def set_options(programming_language, version_control):
 
         return version == "" or bool(re.fullmatch(version_pattern[software.lower()], version))
 
-    def select_version():
+    def select_version(r_env_manager,python_env_manager):
         r_version = None
         if r_env_manager.lower() == "conda":
             r_version = input(
@@ -130,14 +132,30 @@ def set_options(programming_language, version_control):
 
         return r_version, python_version
 
+
+  
+    conda_label = (
+        "Conda (Choose Python version)"
+        if shutil.which("conda")
+        else f"Conda (Choose Python version — auto-installs Miniforge)"
+    )
+
     python_version = f"({subprocess.check_output([sys.executable, '--version']).decode().strip()})"
-    environment_opts = [f"UV (venv backend) {python_version}", "Conda (Choose Python Version)"]
+    environment_opts = [f"UV (venv backend) {python_version}", conda_label]
     python_env_manager = None
 
     if programming_language.lower() == "r":
+
+        conda_label = (
+        "Conda (Choose R version)"
+        if shutil.which("conda")
+        else f"Conda (Choose R version — auto-installs Miniforge)"
+        )
+
         question = "Do you want to create a new R environment using Conda or use Pre-installed R:"
-        r_env_manager = prompt_user(question, ["Conda (Choose R Version)", "Pre-installed R"])
-        r_env_manager = r_env_manager.replace("(Choose R Version)", "").strip()
+        r_env_manager = prompt_user(question, [conda_label, "Pre-installed R"])
+        if r_env_manager.startswith("Conda"):
+            r_env_manager = "Conda"
 
         question = "Python is used to setup functionalities. Do you also want to create a new python environment using (recommended):"
 
@@ -160,6 +178,15 @@ def set_options(programming_language, version_control):
     if not python_env_manager:
         python_env_manager = prompt_user(question, environment_opts)
 
+    if not python_env_manager:
+        python_env_manager = "Venv"
+    elif python_env_manager.startswith("Conda"):
+            python_env_manager = "Conda"
+    elif python_env_manager.startswith("UV"):
+            python_env_manager = "Venv"
+
+    conda_r_version, conda_python_version = select_version(r_env_manager,python_env_manager)
+
     if version_control in ["Git", "Datalad", "DVC"]:
         code_repo = prompt_user(
             "Do you want to setup a code reposity at:", ["GitHub", "GitLab", "Codeberg", "None"]
@@ -175,14 +202,21 @@ def set_options(programming_language, version_control):
     else:
         remote_storage = "None"
 
-    python_env_manager = python_env_manager.replace(python_version, "").strip()
-    python_env_manager = python_env_manager.replace("(Choose Python Version)", "").strip()
-    python_env_manager = python_env_manager.replace("UV (venv backend)", "Venv").strip()
+    #if not python_env_manager:
+    #    python_env_manager = "Venv"
+    #elif python_env_manager.startswith("Conda"):
+    #        python_env_manager = "Conda"
+    #elif python_env_manager.startswith("UV"):
+    #        python_env_manager = "Venv"
 
-    conda_r_version, conda_python_version = select_version()
+    #python_env_manager = python_env_manager.replace(python_version, "").strip()
+    #python_env_manager = python_env_manager.replace("(Choose Python Version)", "").strip()
+    #python_env_manager = python_env_manager.replace("UV (venv backend)", "Venv").strip()
 
-    if not python_env_manager:
-        python_env_manager = "Venv"
+    #conda_r_version, conda_python_version = select_version(r_env_manager,python_env_manager)
+
+    #if not python_env_manager:
+    #    python_env_manager = "Venv"
 
     return (
         programming_language,

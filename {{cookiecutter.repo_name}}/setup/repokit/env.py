@@ -10,33 +10,6 @@ import yaml
 from .common import PROJECT_ROOT, ask_yes_no, exe_to_path, install_uv, is_installed, save_to_env
 
 
-def prompt_user(question, options):
-    """
-    Prompts the user with a question and a list of options to select from.
-
-    Args:
-        question (str): The question to display to the user.
-        options (list): List of options to display.
-
-    Returns
-    -------
-        str: The user's selected option.
-    """
-    print(question)
-    for i, option in enumerate(options, start=1):
-        print(f"{i}. {option}")
-
-    while True:
-        try:
-            choice = int(input("Choose from above (enter number): "))
-            if 1 <= choice <= len(options):
-                selected_option = options[choice - 1]
-                return selected_option
-            else:
-                print(f"Invalid choice. Please select a number between 1 and {len(options)}.")
-        except ValueError:
-            print("Invalid input. Please enter a number.")
-
 
 def setup_virtual_environment(
     version_control,
@@ -138,25 +111,11 @@ def setup_conda(
 
     if not is_installed("conda", "Conda"):
 
-        choice = prompt_user("How would you like to install Conda?",
-                            ["Install Miniforge (open-source, conda-forge) [Recommended]",
-                            "Install Miniconda (Anaconda defaults; license may apply)",])
+        install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniforge3"))
+        install_path = os.path.abspath(install_path)
 
-        if choice == "Install Miniforge (open-source, conda-forge) [Recommended]":
-
-            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniforge3"))
-            install_path = os.path.abspath(install_path)
-
-            if not install_miniforge(install_path):
-                return False
-        else:
-            
-            install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniconda3"))
-            install_path = os.path.abspath(install_path)
-
-            if not install_miniconda(install_path):
-                return False
-            tos_conda()
+        if not install_miniforge(install_path):
+            return False
             
     # Get the absolute path to the environment
     env_path = str(PROJECT_ROOT / pathlib.Path("./.conda"))

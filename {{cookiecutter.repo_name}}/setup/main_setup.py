@@ -243,6 +243,7 @@ def outro():
     # Pushing to Git
     git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", "README.md updated")
 
+    print("Environment setup completed successfully.")
 
     if failed:
         print("The following files/folders need manual deletion:")

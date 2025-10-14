@@ -95,6 +95,3 @@ function Run-PythonScript {
 }
 
 Run-PythonScript -script_path $main_setup -label "main setup script"
-
-Write-Output ""
-Write-Output "Environment setup completed successfully."
