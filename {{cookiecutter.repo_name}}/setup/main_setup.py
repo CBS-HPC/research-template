@@ -81,47 +81,12 @@ def delete_files(file_paths: list | None = None) -> dict:
         p = (base / pathlib.Path(raw)).resolve()
         key = str(p)
         try:
-            if not p.exists():
-                results[key] = "Not Found"
-            elif p.is_symlink() or p.is_file():
+            if p.is_symlink() or p.is_file():
                 p.unlink()
-                results[key] = "Deleted file"
-            elif p.is_dir():
+            if p.is_dir():
                 shutil.rmtree(p, onerror=_on_rm_error)
-                results[key] = "Deleted folder"
-            else:
-                results[key] = "Not Found"
         except Exception as e:
             results[key] = f"Error: {e}"
-
-    return results
-
-
-def delete_files_old(file_paths: list = []):
-    """
-    Deletes a list of files specified by their paths.
-
-    Args:
-        file_paths (list): A list of file paths to be deleted.
-
-    Returns
-    -------
-        dict: A dictionary with file paths as keys and their status as values.
-            The status can be "Deleted", "Not Found", or an error message.
-    """
-    results = {}
-    for file_path in file_paths:
-        file_path = str(
-            pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(file_path)
-        )
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                results[file_path] = "Deleted"
-            else:
-                results[file_path] = "Not Found"
-        except Exception as e:
-            results[file_path] = f"Error: {e}"
 
     return results
 
@@ -270,14 +235,20 @@ def outro():
    
 
     # Deleting Setup scripts
-    delete_results = delete_files(files_to_remove)
-    print(delete_results)
-    
+    failed = delete_files(files_to_remove)
+
     # Updating README
     creating_readme(programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
 
     # Pushing to Git
     git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", "README.md updated")
+
+
+    if failed:
+        print("The following files/folders need manual deletion:")
+        for path, msg in failed.items():
+            print(f"  - {path} -> {msg}")
+
 
 
 if __name__ == "__main__":
