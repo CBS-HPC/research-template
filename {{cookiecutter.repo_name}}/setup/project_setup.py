@@ -7,6 +7,7 @@ import sys
 import shutil
 
 
+
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
     script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
     env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
@@ -88,7 +89,146 @@ def correct_format(programming_language, authors, orcids):
     return programming_language, authors, orcids
 
 
-def set_options(programming_language, version_control):
+def set_options(programming_language: str, version_control: str):
+    """
+    Ask the user for environment choices (Python & R), repo hosting, and optional
+    remote storage. Returns a 7-tuple:
+      (programming_language, python_env_manager, r_env_manager,
+       code_repo, remote_storage, conda_r_version, conda_python_version)
+
+    - python_env_manager ∈ {"Conda","Venv"}
+    - r_env_manager ∈ {"Conda","Pre-installed R",""}  (empty string when not relevant)
+    - *_version is None or a validated version string
+    """
+
+    # ---------------- helpers ----------------
+    def is_valid_version(version: str, software: str) -> bool:
+        patterns = {
+            "r": r"^4(\.\d+){0,2}$",        # '4', '4.x', '4.x.y'
+            "python": r"^3(\.\d+){0,2}$",   # '3', '3.x', '3.x.y'
+        }
+        key = software.lower()
+        if key not in patterns:
+            raise ValueError("software must be 'r' or 'python'")
+        return version == "" or bool(re.fullmatch(patterns[key], version))
+
+    def conda_label(kind: str) -> str:
+        """kind: 'Python' or 'R' -> label that mentions Miniforge auto-install if conda missing."""
+        has_conda = shutil.which("conda") is not None
+        base = f"Conda (Choose {kind} version)"
+        return base if has_conda else f"{base} — auto-installs Miniforge"
+
+    def select_versions(r_mgr: str, py_mgr: str) -> tuple[str | None, str | None]:
+        r_ver = None
+        if r_mgr.lower() == "conda":
+            r_ver = input(
+                "Optional: specify R version for Conda (e.g. '4.4.3', '4.3', or '4'). "
+                "Leave empty for Conda's default: "
+            ).strip()
+            if r_ver and not is_valid_version(r_ver, "r"):
+                print("Invalid R version format. Using default.")
+                r_ver = None
+
+        py_ver = None
+        if py_mgr.lower() == "conda":
+            py_ver = input(
+                "Optional: specify Python version for Conda (e.g. '3.12', '3.9.3', or '3'). "
+                "Leave empty for Conda's default: "
+            ).strip()
+            if py_ver and not is_valid_version(py_ver, "python"):
+                print("Invalid Python version format. Using default.")
+                py_ver = None
+
+        return r_ver, py_ver
+
+    def normalize_env_choice(label: str | None, default: str = "Venv") -> str:
+        """Map UI labels to canonical keys {'Conda','Venv'}."""
+        if not label:
+            return default
+        lab = label.lower()
+        if lab.startswith("conda"):
+            return "Conda"
+        if lab.startswith("uv"):  # "UV (venv backend) ..."
+            return "Venv"
+        return default
+    # -----------------------------------------
+
+    lang = (programming_language or "").strip()
+    lang_l = lang.lower()
+
+    # Python option labels
+    py_version_label = subprocess.check_output([sys.executable, "--version"]).decode().strip()
+    environment_opts = [
+        f"UV (venv backend) ({py_version_label})",
+        conda_label("Python"),
+    ]
+
+    # Decide R env manager (only relevant when primary language is R)
+    if lang_l == "r":
+        r_choice = prompt_user(
+            "R environment: use Conda or pre-installed R?",
+            [conda_label("R"), "Pre-installed R"]
+        )
+        r_env_manager = "Conda" if r_choice.lower().startswith("conda") else "Pre-installed R"
+
+        # Python is still used for setup; prefer Conda if we already chose it for R
+        python_env_manager = "Conda" if r_env_manager == "Conda" else None
+        python_question = "Python is needed for setup. Create a Python environment using:"
+    else:
+        r_env_manager = ""  # not relevant
+        python_env_manager = None
+        python_question = (
+            "Do you want to create a new Python environment using:"
+            if lang_l == "python"
+            else "Create a Python environment (used for project setup) using:"
+        )
+
+    # Force venv for languages where Conda isn't required/typical
+    if lang_l in {"stata", "matlab", "sas"}:
+        python_env_manager = "Venv"
+
+    # If still undecided, ask the Python env question
+    if python_env_manager is None:
+        choice = prompt_user(python_question, environment_opts)
+        python_env_manager = normalize_env_choice(choice)
+
+    # Final normalization (safety)
+    python_env_manager = normalize_env_choice(python_env_manager)
+
+    # Ask for optional versions (only when Conda is chosen)
+    conda_r_version, conda_python_version = select_versions(r_env_manager, python_env_manager)
+
+    # Repo host (only if version control is used)
+    vc_l = (version_control or "").strip().lower()
+    if vc_l in {"git", "datalad", "dvc"}:
+        code_repo = prompt_user(
+            "Choose a code repository host:",
+            ["GitHub", "GitLab", "Codeberg", "None"]
+        )
+    else:
+        code_repo = "None"
+
+    # Remote storage (only for DataLad/DVC)
+    if vc_l in {"datalad", "dvc"}:
+        remote_storage = prompt_user(
+            f"Set up remote storage for your {version_control} repo:",
+            ["Deic-Storage", "Dropbox", "Local Path", "None"]
+        )
+    else:
+        remote_storage = "None"
+
+    return (
+        programming_language,   # keep original casing
+        python_env_manager,     # "Conda" | "Venv"
+        r_env_manager,          # "Conda" | "Pre-installed R" | ""
+        code_repo,
+        remote_storage,
+        conda_r_version,        # None or str
+        conda_python_version,   # None or str
+    )
+
+
+def set_options_old(programming_language, version_control):
     
     def is_valid_version(version: str, software: str) -> bool:
         """
@@ -133,7 +273,6 @@ def set_options(programming_language, version_control):
         return r_version, python_version
 
 
-  
     conda_label = (
         "Conda (Choose Python version)"
         if shutil.which("conda")
@@ -201,22 +340,6 @@ def set_options(programming_language, version_control):
         )
     else:
         remote_storage = "None"
-
-    #if not python_env_manager:
-    #    python_env_manager = "Venv"
-    #elif python_env_manager.startswith("Conda"):
-    #        python_env_manager = "Conda"
-    #elif python_env_manager.startswith("UV"):
-    #        python_env_manager = "Venv"
-
-    #python_env_manager = python_env_manager.replace(python_version, "").strip()
-    #python_env_manager = python_env_manager.replace("(Choose Python Version)", "").strip()
-    #python_env_manager = python_env_manager.replace("UV (venv backend)", "Venv").strip()
-
-    #conda_r_version, conda_python_version = select_version(r_env_manager,python_env_manager)
-
-    #if not python_env_manager:
-    #    python_env_manager = "Venv"
 
     return (
         programming_language,
