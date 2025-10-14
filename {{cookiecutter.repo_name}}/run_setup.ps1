@@ -87,10 +87,10 @@ if ($env_manager -ne "") {
                 Stop-Process -Force -ErrorAction SilentlyContinue
 
             # 2) Remove local venv artifacts
-            Write-Output "Removing .venv directory (if present)..."
-            Remove-PathSafe -Path $venvPath
-            Write-Output "Removing uv.lock file (if present)..."
-            Remove-PathSafe -Path $uvLockFile
+            #Write-Output "Removing .venv directory (if present)..."
+            #Remove-PathSafe -Path $venvPath
+            #Write-Output "Removing uv.lock file (if present)..."
+            #Remove-PathSafe -Path $uvLockFile
 
             # 3) Choose path vs name for conda run
             $condaArgs = if (Test-Path -LiteralPath $env_path) { @('-p', $env_path) } else { @('-n', $env_path) }
