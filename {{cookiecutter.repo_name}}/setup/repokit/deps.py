@@ -26,76 +26,6 @@ from .common import (
 from .env import export_conda_env
 
 
-def create_requirements_txt_old(requirements_file: str = "requirements.txt"):
-    """
-    Writes pip freeze output to requirements.txt and ensures all installed packages
-    are tracked in uv.lock (by running `uv add` on any missing).
-    """
-    project_root = PROJECT_ROOT
-    requirements_path = project_root / requirements_file
-    uv_lock_path = project_root / "uv.lock"
-
-    # Step 1: Get pip freeze output
-    result = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True)
-    if result.returncode != 0:
-        print("❌ Error running pip freeze:", result.stderr)
-        return
-
-    # Step 2: Parse pip freeze output
-    frozen_lines = result.stdout.strip().splitlines()
-    installed_pkgs = {line.split("==")[0].lower(): line for line in frozen_lines if "==" in line}
-
-    # Step 3: Write pip freeze output to requirements.txt
-    with open(requirements_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(frozen_lines) + "\n")
-    print("📄 requirements.txt has been created successfully.")
-
-    if pathlib.Path("uv.lock").exists():
-        # Step 4: Parse uv.lock to get already-locked packages
-        locked_pkgs = set()
-        if uv_lock_path.exists() and uv_lock_path.stat().st_size > 0:
-            try:
-                with open(uv_lock_path, "rb") as f:
-                    # with open(uv_lock_path, "r", encoding="utf-8") as f:
-                    uv_data = toml.load(f)
-                    for pkg in uv_data.get("package", []):
-                        if isinstance(pkg, dict) and "name" in pkg:
-                            locked_pkgs.add(pkg["name"].lower())
-            except Exception as e:
-                print(f"⚠️ Failed to parse uv.lock: {e}")
-
-        # Step 5: Add missing packages to uv.lock
-        skip_markers = [
-            "# editable install with no version control (repokit",
-            "# local dev install",
-            "(path: ",
-        ]
-
-        missing_from_lock = [
-            pkg
-            for pkg in installed_pkgs
-            if pkg not in locked_pkgs
-            and not any(m.casefold() in str(pkg).casefold() for m in skip_markers)
-        ]
-
-        if missing_from_lock:
-            env = os.environ.copy()
-            env["UV_LINK_MODE"] = "copy"
-            print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
-            for pkg in missing_from_lock:
-                try:
-                    subprocess.run(
-                        [sys.executable, "-m", "uv", "add", pkg],
-                        check=True,
-                        env=env,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
-                except subprocess.CalledProcessError as e:
-                    print(f"❌ Failed to add {pkg} via uv: {e}")
-
-
-
 def create_requirements_txt(requirements_file: str = "requirements.txt"):
     """
     Writes a cleaned 'pip freeze' to requirements.txt and ensures all *kept* packages
@@ -190,7 +120,6 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
                 print(f"❌ Failed to add {pkg} via uv: {e}")
 
 
-
 def create_conda_environment_yml(
     env_name: str,
     r_version: str | None = None,
@@ -249,61 +178,6 @@ def create_conda_environment_yml(
         yaml.safe_dump(env, f, sort_keys=False)
 
     print(f"✅ Conda environment file created: {output_path}")
-
-
-def create_conda_environment_yml_old(
-    env_name,
-    r_version=None,
-    requirements_file: str = "requirements.txt",
-    output_file: str = "environment.yml",
-):
-    """
-    Creates a Conda environment.yml based on a pip requirements.txt file,
-    the current Python version, and optionally an R version.
-
-    Parameters
-    ----------
-    - requirements_file (str): Path to the pip requirements.txt file.
-    - output_file (str): Path to output the generated environment.yml file (default 'environment.yml').
-    - r_version (str, optional): R version string like "R version 4.4.3" (default None).
-    """
-    requirements_file = str(PROJECT_ROOT / pathlib.Path(requirements_file))
-    output_file = str(PROJECT_ROOT / pathlib.Path(output_file))
-
-    if not os.path.exists(requirements_file):
-        raise FileNotFoundError(f"Requirements file not found: {requirements_file}")
-
-    # Get the current Python version
-    version_output = subprocess.check_output([sys.executable, "--version"]).decode().strip()
-    python_version = version_output.split()[1]  # Get '3.10.12'
-
-    # Read the requirements.txt
-    with open(requirements_file, encoding="utf-8") as f:
-        pip_dependencies = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-
-    # Build the basic dependencies list
-    conda_dependencies = [f"python={python_version}"]
-
-    # If R version is provided, extract version number and add R base package
-    if r_version:
-        try:
-            # Expect input like "R version 4.4.3"
-            r_version_number = r_version.split()[-1]  # Get '4.4.3'
-            conda_dependencies.append(f"r-base={r_version_number}")
-        except Exception as e:
-            print(f"Warning: Could not parse R version. Got error: {e}")
-
-    # Add pip dependencies
-    conda_dependencies.append({"pip": pip_dependencies})
-
-    # Create environment.yml structure
-    conda_env = {"name": {env_name}, "dependencies": conda_dependencies}
-
-    # Write the environment.yml
-    with open(output_file, "w", encoding="utf-8") as f:
-        yaml.dump(conda_env, f, default_flow_style=False, sort_keys=False)
-
-    print(f"✅ Conda environment file created: {output_file}")
 
 
 def tag_env_file(env_file: str = "environment.yml"):
