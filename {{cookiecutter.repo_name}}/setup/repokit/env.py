@@ -6,7 +6,6 @@ import subprocess
 import sys
 import urllib.request
 import yaml
-import ctypes
 
 from .common import PROJECT_ROOT, ask_yes_no, exe_to_path, install_uv, is_installed, save_to_env
 
@@ -150,9 +149,7 @@ def setup_conda(
 
             if not install_miniforge(install_path):
                 return False
-            
-        
-        if choice == "Install Miniconda (Anaconda defaults; license may apply)":
+        else:
             
             install_path = str(PROJECT_ROOT / pathlib.Path("./bin/miniconda3"))
             install_path = os.path.abspath(install_path)
