@@ -178,7 +178,8 @@ def remote_repo_setup():
         if setup_repo(version_control, code_repo, repo_name, project_description):
             ci_config()
             return True
-        save_to_env("None", "CODE_REPO", ".cookiecutter")
+        
+        save_to_env(None, "CODE_REPO", ".cookiecutter")
         return False
 
     # Ensure the working directory is the project root
