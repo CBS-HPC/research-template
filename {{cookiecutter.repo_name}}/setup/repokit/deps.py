@@ -44,6 +44,7 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
         "# editable install with no version control (repokit",
         "# local dev install",
         "(path:",
+        "# Editable Git install with no remote (repokit==0.1)",
         # common pip-freeze patterns to exclude from requirements.txt
         # (editable / local path / VCS URIs)
         # e.g. "-e .", "pkg @ file:///...", "pkg @ git+https://..."
