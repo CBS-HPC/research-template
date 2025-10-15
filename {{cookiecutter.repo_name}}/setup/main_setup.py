@@ -170,10 +170,8 @@ def remote_repo_setup():
 
     def setup_remote_repository(version_control, code_repo, repo_name, project_description):
         """Handle repository creation and login based on selected platform."""
-        if not version_control or not os.path.isdir(".git"):
+        if not version_control or not os.path.isdir(".git") or not code_repo:
             return False
-
-        print(code_repo)
 
         if setup_repo(version_control, code_repo, repo_name, project_description):
             ci_config()

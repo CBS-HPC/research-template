@@ -7,7 +7,6 @@ import subprocess
 import sys
 import urllib.request
 import zipfile
-
 import requests
 
 from .common import (
@@ -656,7 +655,45 @@ def install_git_annex_remote_rclone(install_path):
         exe_to_path("git-annex-remote-rclone", repo_path)
 
 
+
 def datalad_create():
+    """
+    Create a DataLad dataset (if missing) and configure .gitattributes so that:
+      - All files are unlocked (stored in Git, not annexed)
+      - Except anything under ./data/** which goes to annex
+    """
+    gitattributes = PROJECT_ROOT / ".gitattributes"
+
+    def write_gitattributes():
+        # Last matching rule wins; keep 'data/**' AFTER '*' to override it.
+        lines = [
+            "* annex.largefiles=nothing\n",       # default: don't annex (i.e., unlocked)
+            "data/** annex.largefiles=anything\n" # but annex everything under ./data
+        ]
+        # Write idempotently (avoid duplicate lines, preserve other attrs if any)
+        existing = gitattributes.read_text().splitlines(True) if gitattributes.exists() else []
+        wanted = []
+        # Keep any non-annex.largefiles lines the user might already have
+        for ln in existing:
+            if "annex.largefiles=" not in ln:
+                wanted.append(ln)
+        # Append our two canonical lines
+        wanted.extend(lines)
+        gitattributes.write_text("".join(wanted))
+
+    # Initialize a DataLad dataset if needed
+    if not (PROJECT_ROOT / ".datalad").is_dir():
+        subprocess.run(["datalad", "create", "--force"], check=True)
+
+    # Ensure the attributes are set as requested
+    write_gitattributes()
+
+    # Save the state
+    subprocess.run(["datalad", "save", "-m", "Configure annex: unlock everything except ./data"], check=True)
+    print("DataLad dataset ready: unlocked all except ./data")
+
+
+def datalad_create_old():
     def unlock_files(files_to_unlock):
         attributes_file = ".gitattributes"
         with open(attributes_file, "a") as f:
