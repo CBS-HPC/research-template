@@ -44,7 +44,8 @@ def setup_git(version_control, code_repo):
         if not flag:
             flag, git_name, git_email = setup_git_config(version_control, git_name, git_email)
 
-        if flag and version_control == "Git":
+        if flag and version_control.lower() in ["git","datalad","dvc"]:
+        #if flag and version_control == "Git":    
             default_branch = "main" if code_repo.lower() in ["github", "codeberg"] else "master"
             flag = git_init(msg="Initial commit", branch_name=default_branch)
             # Creating its own git repo for "data"
