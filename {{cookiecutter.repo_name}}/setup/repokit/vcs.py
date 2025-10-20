@@ -650,7 +650,8 @@ def install_git_annex():
         try:
             print("hello2")
             subprocess.run(
-                [sys.executable, "-m", "uv", "tool", "update", "git-annex"],
+                [sys.executable, "-m", "uv", "tool", "install", "git-annex"],
+                #[sys.executable, "-m", "uv", "tool", "update", "git-annex"],
                 check=True,
                 capture_output=True,
             )
