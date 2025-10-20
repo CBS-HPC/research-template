@@ -656,8 +656,14 @@ def install_git_annex():
             )
             print("hello3")
             return True
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
             print("hello4")
+            if e.stdout:
+                print("--- stdout ---")
+                print(e.stdout.strip())
+            if e.stderr:
+                print("--- stderr ---")
+                print(e.stderr.strip())
             return False
 
     # Check if git-annex is installed
