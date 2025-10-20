@@ -337,6 +337,7 @@ def git_push(flag: str, msg: str = "", path: str = None):
                         print("Pushed all branches to origin.")
             else:
                 print("No commit created — nothing to push.")
+            
             return True
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
@@ -416,7 +417,7 @@ def dvc_init(remote_storage, code_repo, repo_name):
     elif remote_storage in ["Dropbox", "Deic-Storage"]:
         dvc_deic_storage(repo_name)
 
-    folders = ["data", "reports", "docs"]
+    folders = ["data"]
     for folder in folders:
         subprocess.run(["dvc", "add", folder], check=True)
 

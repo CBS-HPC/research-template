@@ -26,7 +26,7 @@ from .common import (
 from .env import export_conda_env
 
 
-def create_requirements_txt(requirements_file: str = "requirements.txt"):
+def create_requirements_txt(requirements_file: str = "requirements.txt",lock_all_packages: bool = False):
     """
     Writes a cleaned 'pip freeze' to requirements.txt and ensures all *kept* packages
     are tracked in uv.lock (adds any missing with `uv add`).
@@ -102,23 +102,25 @@ def create_requirements_txt(requirements_file: str = "requirements.txt"):
             print(f"⚠️ Failed to parse uv.lock: {e}")
 
     # --- 5) Add any filtered (kept) packages missing from uv.lock ---
-    missing_from_lock = [name for name in installed_pkgs if name not in locked_pkgs]
 
-    if missing_from_lock:
-        env = os.environ.copy()
-        env["UV_LINK_MODE"] = "copy"
-        print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
-        for pkg in missing_from_lock:
-            try:
-                subprocess.run(
-                    [sys.executable, "-m", "uv", "add", pkg],
-                    check=True,
-                    env=env,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            except subprocess.CalledProcessError as e:
-                print(f"❌ Failed to add {pkg} via uv: {e}")
+    if lock_all_packages:
+        missing_from_lock = [name for name in installed_pkgs if name not in locked_pkgs]
+
+        if missing_from_lock:
+            env = os.environ.copy()
+            env["UV_LINK_MODE"] = "copy"
+            print(f"🔄 Adding missing packages to uv.lock: {missing_from_lock}")
+            for pkg in missing_from_lock:
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "uv", "add", pkg],
+                        check=True,
+                        env=env,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                except subprocess.CalledProcessError as e:
+                    print(f"❌ Failed to add {pkg} via uv: {e}")
 
 
 def create_conda_environment_yml(
@@ -431,11 +433,11 @@ def setup_stata(programming_language, msg: str):
         print(msg)
 
 
-def update_env_files():
+def update_env_files(lock_all_packages: bool = False):
     programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
     python_env_manager = load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter")
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
-    create_requirements_txt("requirements.txt")
+    create_requirements_txt(requirements_file="requirements.txt",lock_all_packages=lock_all_packages)
     if python_env_manager.lower() == "venv":
         create_conda_environment_yml(
             repo_name,
