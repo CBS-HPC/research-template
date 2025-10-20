@@ -643,7 +643,7 @@ def install_git_annex():
             return False
 
     def _uv_installer():
-
+        print("hello")
         if not install_uv():
             return False
         
