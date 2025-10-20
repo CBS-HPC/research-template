@@ -18,6 +18,7 @@ from .common import (
     is_installed,
     load_from_env,
     save_to_env,
+    install_uv,
 )
 
 
@@ -545,7 +546,7 @@ def setup_datalad(version_control, remote_storage, code_repo, repo_name):
 
 
 def install_datalad():
-    if not is_installed("datalad", "Datalad"):
+    def _pip_installer():
         try:
             if not shutil.which("datalad-installer"):
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "datalad-installer"])
@@ -557,6 +558,7 @@ def install_datalad():
                 print("Error during datalad installation.")
                 return False
             print("datalad installed successfully.")
+            return True
         except subprocess.CalledProcessError as e:
             print(f"An error occurred: {e}")
             return False
@@ -565,6 +567,27 @@ def install_datalad():
                 "One of the required commands was not found. Please ensure Python, pip, and Git are installed and in your PATH."
             )
             return False
+
+    def _uv_installer():
+
+        if not install_uv():
+            return False
+        
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "uv", "tool", "install", "datalad"],
+                check=True,
+                capture_output=True,
+            )
+            return True
+        except subprocess.CalledProcessError:
+            return False
+    
+    if not is_installed("datalad", "Datalad"):
+
+        if not _uv_installer():
+            return _pip_installer()
+
     return True
 
 
@@ -578,8 +601,14 @@ def install_git_annex():
         str: The installation path of git-annex if installed successfully.
         None: If the installation fails.
     """
-    # Check if git-annex is installed
-    if not is_installed("git-annex", "Git-Annex"):
+    def _is_windows():
+        return os.name == "nt"  # or: sys.platform.startswith("win")
+    
+    def _windows_installer():
+        
+        if not _is_windows():
+            return False
+          
         try:
             # Ensure datalad-installer is available
             if not shutil.which("datalad-installer"):
@@ -608,12 +637,44 @@ def install_git_annex():
                 # if not is_installed('git-annex', 'Git-Annex'):
                 return False
 
+            return True
         except subprocess.CalledProcessError as e:
             print(f"Error during git-annex installation: {e}")
             return False
         except Exception as e:
             print(f"Unexpected error: {e}")
             return False
+
+    def _uv_installer():
+
+        if not install_uv():
+            return False
+        
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "uv", "tool", "update", "git-annex"],
+                check=True,
+                capture_output=True,
+            )
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    # Check if git-annex is installed
+    if not is_installed("git-annex", "Git-Annex"):
+        installed = False
+
+        # Try uv first (all platforms)
+        if _uv_installer():
+            installed = True
+        else:
+            # On Windows, try the Windows-specific installer as a fallback
+            if _is_windows():
+                installed = _windows_installer()
+
+        if not installed:
+            return False
+        
     # Configure git to use the git-annex filter process
     try:
         subprocess.check_call(
@@ -655,7 +716,6 @@ def install_git_annex_remote_rclone(install_path):
         exe_to_path("git-annex-remote-rclone", repo_path)
 
 
-
 def datalad_create():
     """
     Create a DataLad dataset (if missing) and configure .gitattributes so that:
@@ -691,39 +751,6 @@ def datalad_create():
     # Save the state
     subprocess.run(["datalad", "save", "-m", "Configure annex: unlock everything except ./data"], check=True)
     print("DataLad dataset ready: unlocked all except ./data")
-
-
-def datalad_create_old():
-    def unlock_files(files_to_unlock):
-        attributes_file = ".gitattributes"
-        with open(attributes_file, "a") as f:
-            for file in files_to_unlock:
-                f.write(f"{file} annex.largefiles=nothing\n")
-
-    # Initialize a Git repository if one does not already exist
-    if not os.path.isdir(".datalad"):
-        files_to_unlock = [
-            "src/**",
-            "R/**",
-            "stata/**",
-            "setup/**",
-            "docs/**",
-            "config/**",
-            "README.md",
-            "LICENSE.txt",
-            "environment.yml",
-            "setup.ps1",
-            "setup.sh",
-            "CITATION.cff",
-            "dmp.json",
-            "hardware_information.txt",
-        ]  # FIX ME
-        subprocess.run(["datalad", "create", "--force"], check=True)
-        unlock_files(files_to_unlock)
-        subprocess.run(["datalad", "save", "-m", "Initial commit"], check=True)
-    else:
-        print("I is already a Datalad project")
-        return
 
 
 def datalad_deic_storage(repo_name):

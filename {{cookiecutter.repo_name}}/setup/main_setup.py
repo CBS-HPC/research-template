@@ -95,7 +95,7 @@ def delete_files(file_paths: list | None = None) -> dict:
 install_py_package("./setup")
 
 from repokit.ci import ci_config
-from repokit.common import load_from_env, save_to_env, set_program_path
+from repokit.common import load_from_env, save_to_env, set_program_path,set_packages,package_installer
 from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
 from repokit.git_remote import setup_repo, setup_version_control
 from repokit.rdm.dmp import main as dmp_update
@@ -130,6 +130,10 @@ def intro():
     authors = load_from_env("AUTHORS", ".cookiecutter")
     orcids = load_from_env("ORCIDS", ".cookiecutter")
 
+
+    # Install required packages
+    package_installer(required_libraries=set_packages(version_control, programming_language))
+    
     # Set to .env
     set_program_path(programming_language)
 

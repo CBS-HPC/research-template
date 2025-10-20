@@ -101,28 +101,28 @@ def write_uv_requires(toml_file: str = "pyproject.toml"):
 def set_packages(version_control, programming_language):
     if not programming_language or not version_control:
         return []
-
-    install_packages = [
-        "python-dotenv",
-        "pyyaml",
-        "requests",
-        "beautifulsoup4",
-        "nbformat",
-        "setuptools",
-        "pathspec",
-        "psutil",
-        "py-cpuinfo",
-        "jinja2",
-        "streamlit",
-        "jsonschema",
-        "dirhash",
-    ]
+    install_packages = []
+    #install_packages = [
+    #    "python-dotenv",
+    #    "pyyaml",
+    #    "requests",
+    #    "beautifulsoup4",
+    #    "nbformat",
+    #    "setuptools",
+    #    "pathspec",
+    #    "psutil",
+    #    "py-cpuinfo",
+    #    "jinja2",
+    #    "streamlit",
+    #    "jsonschema",
+    #    "dirhash",
+    #]
 
     # Add toml package if Python version < 3.11
-    if sys.version_info < (3, 11):
-        install_packages.append("toml")
-    else:
-        install_packages.append("tomli-w")
+    #if sys.version_info < (3, 11):
+    #    install_packages.append("toml")
+    #else:
+    #    install_packages.append("tomli-w")
 
     if programming_language.lower() == "python":
         install_packages.extend(["jupyterlab", "pytest"])
@@ -135,8 +135,8 @@ def set_packages(version_control, programming_language):
 
     if version_control.lower() == "dvc" and not is_installed("dvc", "DVC"):
         install_packages.extend(["dvc[all]"])
-    elif version_control.lower() == "datalad" and not is_installed("datalad", "Datalad"):
-        install_packages.extend(["datalad-installer", "datalad", "pyopenssl"])
+    #elif version_control.lower() == "datalad" and not is_installed("datalad", "Datalad"):
+    #    install_packages.extend(["datalad-installer", "datalad", "pyopenssl"])
 
     return install_packages
 
