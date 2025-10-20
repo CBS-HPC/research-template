@@ -24,7 +24,7 @@ from .vcs import setup_version_control
 
 def setup_repo(version_control, code_repo, repo_name, project_description):
     if repo_login(version_control, repo_name, code_repo):
-        return repo_create(code_repo, repo_name, project_description)
+        return repo_create(code_repo, repo_name, project_description, version_control)
     else:
         return False
 
@@ -114,7 +114,7 @@ def repo_login(version_control=None, repo_name=None, code_repo=None):
         return False
 
 
-def repo_create(code_repo, repo_name, project_description,version_control):
+def repo_create(code_repo, repo_name, project_description, version_control):
     try:
         user, token, hostname, privacy_setting = get_login_credentials(code_repo, repo_name)
         if not token:
