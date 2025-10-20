@@ -313,14 +313,10 @@ def git_push(flag: str, msg: str = "", path: str = None):
     try:
         if os.path.isdir(os.path.join(path, ".datalad")):
             # Ensure required tools are installed
-            is_installed("git")
-            is_installed("datalad")
-            is_installed("git-annex")
-            #is_installed("rclone")
-            install_rclone("./bin")
-
-            subprocess.run(["datalad", "save", "-m", msg], check=True, cwd=path)
-            push_all(path=path)
+            if is_installed("git") and is_installed("datalad") and is_installed("git-annex") and install_rclone("./bin"):
+                subprocess.run(["datalad", "save", "-m", msg], check=True, cwd=path)
+                if flag:
+                    push_all(path=path)
 
         elif os.path.isdir(os.path.join(path, ".git")):
             if git_commit(msg, path=path):
