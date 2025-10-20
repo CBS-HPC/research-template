@@ -591,6 +591,13 @@ def setup_datalad(version_control, remote_storage, code_repo, repo_name):
     install_rclone("./bin")
     install_git_annex_remote_rclone("./bin")
 
+    # deactivate data/ in .gitignore
+    gitignore = pathlib.Path(PROJECT_ROOT / ".gitignore")
+    if gitignore.exists():
+        lines = gitignore.read_text().splitlines()
+        new_lines = [line.replace("data/", "#data/") if line.startswith("data/") else line for line in lines]
+        gitignore.write_text("\n".join(new_lines) + "\n")
+
     # Create datalad dataset
     datalad_create()
 
