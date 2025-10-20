@@ -684,11 +684,14 @@ def install_git_annex():
 
 
 def install_git_annex_remote_rclone(install_path):
+    
     def clone_git_annex_remote_rclone(install_path):
         """Clone the git-annex-remote-rclone repository to the specified bin folder."""
         repo_url = "https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git"
         repo_name = os.path.basename(repo_url).replace(".git", "")
-        repo_path = os.path.join(install_path, repo_name)
+        #repo_path = os.path.join(install_path, repo_name)
+        repo_path = str(pathlib.Path(install_path) / pathlib.Path(repo_name))
+
 
         # Create the bin folder if it doesn't exist
         install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
@@ -698,11 +701,10 @@ def install_git_annex_remote_rclone(install_path):
         if os.path.isdir(repo_path):
             print(f"The repository '{repo_name}' already exists in {install_path}.")
         else:
-            print(f"Cloning {repo_url} into {repo_path}...")
             subprocess.run(["git", "clone", repo_url, repo_path], check=True)
+            print(f"Repository cloned successfully to {repo_path}.")
 
         repo_path = os.path.abspath(repo_path)  # Convert to absolute path
-        print(f"Repository cloned successfully to {repo_path}.")
         return repo_path
 
     # Clone https://github.com/git-annex-remote-rclone/git-annex-remote-rclone.git
