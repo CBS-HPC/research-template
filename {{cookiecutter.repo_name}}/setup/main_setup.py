@@ -247,8 +247,9 @@ def outro():
     creating_readme(programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
 
     # Pushing to Git
+    print("dre")
     git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", "README.md updated")
-
+    print("dre2")
     print("Environment setup completed successfully.")
 
     if failed:
