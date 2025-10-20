@@ -7,6 +7,7 @@ import sys
 import sysconfig
 from datetime import datetime
 import re
+import argparse
 
 if sys.version_info < (3, 11):
     import toml
@@ -478,14 +479,23 @@ def update_code_dependency():
     else:
         print("not implemented yet")
 
+def _str2bool(v):
+    if isinstance(v, bool):
+        return v
+    s = str(v).strip().lower()
+    if s in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if s in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError("Expected a boolean value (true/false).")
 
 @ensure_correct_kernel
-def main():
+def main(lock_all_packages: bool = False):
     # Ensure the working directory is the project root
     os.chdir(PROJECT_ROOT)
 
     print("Updating 'requirements.txt','environment.yml'")
-    update_env_files()
+    update_env_files(lock_all_packages=lock_all_packages)
 
     # Run dependencies search
     update_setup_dependency()
@@ -493,4 +503,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Update environment files and dependency metadata.")
+    parser.add_argument(
+        "--lock_all_packages",
+        type=_str2bool,
+        nargs="?",
+        const=True,            # allows just --lock_all_packages to mean True
+        default=False,
+        help="Lock all package versions in the generated files (default: False). "
+             "Accepts true/false, yes/no, 1/0."
+    )
+    args = parser.parse_args()
+    main(lock_all_packages=args.lock_all_packages)

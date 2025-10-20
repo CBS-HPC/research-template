@@ -375,12 +375,66 @@ def setup_dvc(version_control, remote_storage, code_repo, repo_name):
 
 def install_dvc():
     """
+    Install DVC, preferring `uv pip install dvc` and falling back to `pip install dvc`.
+    Returns True on success, False otherwise.
+    """
+    # If already present, we're done.
+    if is_installed("dvc", "DVC"):
+        return True
+
+    def _run(desc, cmd, check=True):
+        try:
+            res = subprocess.run(cmd, check=check, capture_output=True, text=True)
+            return True, res
+        except subprocess.CalledProcessError as e:
+            print(f"[{desc}] failed with exit code {e.returncode}")
+            if e.stdout:
+                print("--- stdout ---")
+                print(e.stdout.strip())
+            if e.stderr:
+                print("--- stderr ---")
+                print(e.stderr.strip())
+            return False, e
+
+    # 1) Try uv-based install first (if uv is available/installed)
+
+    if install_uv() :
+        ok, _ = _run(
+            "uv pip install dvc",
+            [sys.executable, "-m", "uv", "pip", "install", "dvc"]
+            #[sys.executable, "-m", "uv", "pip", "install", "dvc[all]"]
+        )
+        if ok and is_installed("dvc", "DVC"):
+            print("DVC has been installed successfully via uv.")
+            return True
+        else:
+            print("uv-based install did not result in a working DVC; trying pip fallback…")
+    else:
+        print("uv not available; trying pip fallback…")
+
+    # 2) Fallback: regular pip install
+    ok, _ = _run(
+        "pip install dvc",
+        [sys.executable, "-m", "pip", "install", "dvc"]
+    )
+    if not ok or not is_installed("dvc", "DVC"):
+        print("Error during DVC installation.")
+        return False
+
+    print("DVC has been installed successfully via pip.")
+    return True
+
+
+def install_dvc_old():
+    """
     Install DVC using pip.
     """
+
     if not is_installed("dvc", "DVC"):
         try:
             # Install DVC via pip
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "dvc[all]"])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "dvc"])
+            #subprocess.check_call([sys.executable, "-m", "pip", "install", "dvc[all]"])
             if not is_installed("dvc", "DVC"):
                 print("Error during datalad installation.")
                 return False
@@ -414,8 +468,10 @@ def dvc_init(remote_storage, code_repo, repo_name):
     # Add dvc remote storage
     if remote_storage == "Local Path":
         dvc_local_storage(repo_name)
-    elif remote_storage in ["Dropbox", "Deic-Storage"]:
+    elif remote_storage == "Deic-Storage":
         dvc_deic_storage(repo_name)
+    elif remote_storage == "Dropbox":
+        print("Not implemented yet")
 
     folders = ["data"]
     for folder in folders:
@@ -542,6 +598,29 @@ def setup_datalad(version_control, remote_storage, code_repo, repo_name):
         datalad_deic_storage(repo_name)
 
 
+def _uv_installer(package_name:str = None):
+    
+    if not package_name:
+            return False
+    if not install_uv():
+        return False
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "uv", "tool", "install", "git-annex"],
+            check=True,
+            capture_output=True,
+        )
+        return True
+    except subprocess.CalledProcessError as e:
+        if e.stdout:
+            print("--- stdout ---")
+            print(e.stdout.strip())
+        if e.stderr:
+            print("--- stderr ---")
+            print(e.stderr.strip())
+        return False
+
+
 def install_datalad():
     def _pip_installer():
         try:
@@ -565,24 +644,9 @@ def install_datalad():
             )
             return False
 
-    def _uv_installer():
-
-        if not install_uv():
-            return False
-        
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "uv", "tool", "install", "datalad"],
-                check=True,
-                capture_output=True,
-            )
-            return True
-        except subprocess.CalledProcessError:
-            return False
-    
     if not is_installed("datalad", "Datalad"):
 
-        if not _uv_installer():
+        if not _uv_installer(package_name="datalad"):
             return _pip_installer()
 
     return True
@@ -642,37 +706,12 @@ def install_git_annex():
             print(f"Unexpected error: {e}")
             return False
 
-    def _uv_installer():
-        print("hello")
-        if not install_uv():
-            print("hello1")
-            return False
-        try:
-            print("hello2")
-            subprocess.run(
-                [sys.executable, "-m", "uv", "tool", "install", "git-annex"],
-                #[sys.executable, "-m", "uv", "tool", "update", "git-annex"],
-                check=True,
-                capture_output=True,
-            )
-            print("hello3")
-            return True
-        except subprocess.CalledProcessError as e:
-            print("hello4")
-            if e.stdout:
-                print("--- stdout ---")
-                print(e.stdout.strip())
-            if e.stderr:
-                print("--- stderr ---")
-                print(e.stderr.strip())
-            return False
-
     # Check if git-annex is installed
     if not is_installed("git-annex", "Git-Annex"):
         installed = False
 
         # Try uv first (all platforms)
-        if _uv_installer():
+        if _uv_installer(package_name="git-annex"):
             installed = True
         else:
             # On Windows, try the Windows-specific installer as a fallback
@@ -763,13 +802,14 @@ def datalad_create():
 
 
 def datalad_deic_storage(repo_name):
+    
     def git_annex_remote(remote_name, target, prefix):
         """
         Creates a git annex remote configuration for 'deic-storage' using rclone.
         """
-        remote_name = "deic-storage"
-        target = "dropbox-for-friends"  # Change this to your actual target as needed
-        prefix = "my_awesome_dataset"  # Change this to your desired prefix
+        #remote_name = "deic-storage"
+        #target = "dropbox-for-friends"  # Change this to your actual target as needed
+        #prefix = "my_awesome_dataset"  # Change this to your desired prefix
 
         # Construct the command
         command = [
