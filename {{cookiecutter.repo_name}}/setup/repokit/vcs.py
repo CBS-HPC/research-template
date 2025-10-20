@@ -645,16 +645,19 @@ def install_git_annex():
     def _uv_installer():
         print("hello")
         if not install_uv():
+            print("hello1")
             return False
-        
         try:
+            print("hello2")
             subprocess.run(
                 [sys.executable, "-m", "uv", "tool", "update", "git-annex"],
                 check=True,
                 capture_output=True,
             )
+            print("hello3")
             return True
         except subprocess.CalledProcessError:
+            print("hello4")
             return False
 
     # Check if git-annex is installed
