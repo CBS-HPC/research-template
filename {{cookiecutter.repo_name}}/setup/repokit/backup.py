@@ -114,10 +114,15 @@ def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
     exclude_args = []
     for pattern in exclude_patterns:
         exclude_args.extend(["--exclude", pattern])
-    with change_dir("./data"):
-        _ = git_commit(msg="Rclone Backup", path=os.getcwd())
-        git_log_to_file(".gitlog")
+
+    
+    if os.path.exists(".git") and not os.path.exists(".datalad") and not os.path.exists(".dvc"):
+        with change_dir("./data"):
+            _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
+            git_log_to_file(os.path.join(".gitlog"))
+    
     git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", "Rclone Backup")
+
     command_sync = ["rclone", "sync", folder_to_backup, rclone_repo, "--verbose"] + exclude_args
     remote_name = rclone_repo.split(":")[0]
     try:

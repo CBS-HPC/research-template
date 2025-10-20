@@ -708,10 +708,14 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
 
+
     if change_flag:
-        with change_dir("./data"):
+        if os.path.exists(".datalad") or os.path.exists(".dvc"):
             _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
-            git_log_to_file(os.path.join(".gitlog"))
+        elif os.path.exists(".git"):
+            with change_dir("./data"):
+                _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
+                git_log_to_file(os.path.join(".gitlog"))
 
 
 if __name__ == "__main__":

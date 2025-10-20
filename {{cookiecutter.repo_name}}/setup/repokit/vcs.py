@@ -50,13 +50,9 @@ def setup_git(version_control, code_repo):
             
             flag = git_init(msg="Initial commit", branch_name=default_branch)
             # Creating its own git repo for "data"
-            if flag:
+            if version_control.lower() == "git" and flag:
                 with change_dir("./data"):
-                    flag = git_init(msg="Initial commit", branch_name="data", path=os.getcwd())
-                    subprocess.run(
-                        ["git", "config", "--global", "init.defaultBranch", default_branch],
-                        check=True,
-                    )
+                    flag = git_init(msg="Initial commit - /data git repo", branch_name="data", path=os.getcwd())
                     git_log_to_file(os.path.join(".gitlog"))
         if flag:
             save_to_env(git_name, "GIT_USER")
@@ -259,7 +255,52 @@ def git_init(msg, branch_name, path: str = None):
     return False
 
 
-def git_commit(msg: str = "", path: str = None) -> str:
+def git_commit(msg: str = "", path: str | None = None, recursive: bool = True) -> bool:
+    """
+    Save/commit changes in `path`.
+    - DataLad dataset: `datalad save` (recursive by default)
+    - Plain Git repo:  `git add -A && git commit -m`
+    Returns True on success or if there was nothing to commit; False on error.
+    """
+    path = str(path or PROJECT_ROOT)
+    p = pathlib.Path(path)
+
+    is_datalad = (p / ".datalad").is_dir() and is_installed("datalad")
+    is_git = (p / ".git").is_dir() and is_installed("git")
+
+    try:
+        if is_datalad:
+            # DataLad: save (recursively if requested)
+            cmd = ["datalad", "save", "-m", msg] if msg else ["datalad", "save"]
+            if recursive:
+                cmd.insert(2, "-r")  # datalad save -r -m "..."
+            try:
+                subprocess.run(cmd, check=True, cwd=path)
+            except subprocess.CalledProcessError:
+                # Typically datalad returns success even when "notneeded",
+                # but if it errs, treat "no changes" as non-fatal.
+                print("No DataLad changes to save.")
+            return True
+
+        if is_git:
+            # Git: stage everything and commit
+            subprocess.run(["git", "add", "-A"], check=True, cwd=path)
+            try:
+                commit_cmd = ["git", "commit", "-m", msg] if msg else ["git", "commit", "--allow-empty", "-m", ""]
+                subprocess.run(commit_cmd, check=True, cwd=path)
+            except subprocess.CalledProcessError:
+                print("No Git changes to commit.")
+            return True
+
+        print("Not a Git/DataLad repository at:", path)
+        return False
+
+    except subprocess.CalledProcessError as e:
+        print(f"Commit/save failed: {e}")
+        return False
+
+
+def git_commit_old(msg: str = "", path: str = None) -> str:
     """Commits changes to Git in the given path and returns the commit hash."""
     if not path:
         path = str(PROJECT_ROOT)
@@ -313,32 +354,26 @@ def git_push(flag: str, msg: str = "", path: str = None):
     if not path:
         path = str(PROJECT_ROOT)
     try:
-        if os.path.isdir(os.path.join(path, ".datalad")):
-            # Ensure required tools are installed
-            if is_installed("git") and is_installed("datalad") and is_installed("git-annex") and install_rclone("./bin"):
-                subprocess.run(["datalad", "save", "-m", msg], check=True, cwd=path)
-                if flag:
-                    push_all(path=path)
-
-        elif os.path.isdir(os.path.join(path, ".git")):
-            if git_commit(msg, path=path):
-                if flag:
-                    result = subprocess.run(
-                        ["git", "branch", "--show-current"],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                        cwd=path,
-                    )
-                    branch = result.stdout.strip()
-                    if branch:
-                        subprocess.run(["git", "push", "origin", branch], check=True, cwd=path)
-                        print(f"Pushed current branch '{branch}' to origin.")
-                    else:
-                        subprocess.run(["git", "push", "--all"], check=True, cwd=path)
-                        print("Pushed all branches to origin.")
-            else:
-                print("No commit created — nothing to push.")
+        if git_commit(msg, path=path):
+            if flag and os.path.isdir(os.path.join(path, ".datalad")):
+                push_all(path=path)
+            elif flag and os.path.isdir(os.path.join(path, ".git")):
+                result = subprocess.run(
+                    ["git", "branch", "--show-current"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    cwd=path,
+                )
+                branch = result.stdout.strip()
+                if branch:
+                    subprocess.run(["git", "push", "origin", branch], check=True, cwd=path)
+                    print(f"Pushed current branch '{branch}' to origin.")
+                else:
+                    subprocess.run(["git", "push", "--all"], check=True, cwd=path)
+                    print("Pushed all branches to origin.")
+        else:
+            print("No commit created — nothing to push.")
             
             return True
     except subprocess.CalledProcessError as e:
@@ -475,11 +510,10 @@ def dvc_init(remote_storage, code_repo, repo_name):
     elif remote_storage == "Dropbox":
         print("Not implemented yet")
 
-    folders = ["data"]
-    for folder in folders:
-        subprocess.run(["dvc", "add", folder], check=True)
 
-    _ = git_commit("Initial commit")
+    subprocess.run(["dvc", "add", "data"], check=True)
+    
+    _ = git_commit("Initial commit - Initialize DVC repository with data folder.")
     print("Created an initial commit.")
 
 
