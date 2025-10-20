@@ -134,7 +134,8 @@ def set_packages(version_control, programming_language):
         install_packages.extend(["jupyterlab", "saspy"])
 
     if version_control.lower() == "dvc" and not is_installed("dvc", "DVC"):
-        install_packages.extend(["dvc[all]"])
+        #install_packages.extend(["dvc[all]"])
+        install_packages.extend(["dvc"])
     #elif version_control.lower() == "datalad" and not is_installed("datalad", "Datalad"):
     #    install_packages.extend(["datalad-installer", "datalad", "pyopenssl"])
 

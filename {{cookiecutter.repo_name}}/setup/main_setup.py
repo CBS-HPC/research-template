@@ -195,7 +195,7 @@ def remote_repo_setup():
     project_description = load_from_env("PROJECT_DESCRIPTION", ".cookiecutter")
 
     # Create Remote Repository
-    flag = setup_remote_repository(version_control, code_repo, repo_name, project_description)
+    _ = setup_remote_repository(version_control, code_repo, repo_name, project_description)
 
     print("Creating 'requirements.txt','environment.yml'")
     update_env_files()
@@ -203,10 +203,8 @@ def remote_repo_setup():
     update_code_dependency()
 
     # Pushing to Git
-    push_msg = (
-        " Created `requirements.txt`, `environment.yml`,`dependencies.txt` and updated in README.md"
-    )
-    git_push(flag, push_msg)
+
+    #git_push(flag, " Created `requirements.txt`, `environment.yml`,`dependencies.txt` and updated in README.md")
 
 
 def outro():
@@ -247,7 +245,10 @@ def outro():
     creating_readme(programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
 
     # Pushing to Git
-    git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", "README.md updated")
+    #git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", "README.md updated")
+    git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", " Created `requirements.txt`, `environment.yml`,`dependencies.txt`, files deleted and updated in README.md")
+
+
     print("Environment setup completed successfully.")
 
     if failed:
