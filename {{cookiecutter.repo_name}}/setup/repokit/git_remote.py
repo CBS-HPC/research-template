@@ -210,7 +210,9 @@ def repo_create(code_repo, repo_name, project_description, version_control):
         if version_control.lower() == "datalad":
             # Register the Git host as a DataLad sibling
             # (idempotent: won't fail if already there)
-            subprocess.run(["datalad", "siblings", "add", "-s", "origin", "--url", remote_url], check=False)
+            #subprocess.run(["datalad", "siblings", "add", "-s", "origin", "--url", remote_url], check=False)
+            subprocess.run(["datalad", "siblings", "configure", "-s", "origin", "--url", remote_url], check=False)
+
 
             # Push Git history (and recursively subdatasets if any)
             subprocess.check_call(["datalad", "push", "--to", "origin", "-r"])
@@ -221,107 +223,6 @@ def repo_create(code_repo, repo_name, project_description, version_control):
             subprocess.check_call(["git", "push", "-u", "origin", default_branch])
             print(f"Repository pushed to {hostname} on branch '{default_branch}'.")
 
-        return True
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        print(f"Failed to create '{user}/{repo_name}' on {code_repo.capitalize()}")
-        return False
-
-
-def repo_create_old(code_repo, repo_name, project_description,version_control):
-    try:
-        user, token, hostname, privacy_setting = get_login_credentials(code_repo, repo_name)
-        if not token:
-            raise ValueError("Authentication token not found.")
-
-        code_repo_lower = code_repo.lower()
-        if code_repo_lower not in ["github", "gitlab", "codeberg"]:
-            raise ValueError(
-                "Unsupported code repository. Choose 'github', 'gitlab', or 'codeberg'."
-            )
-
-        def create_github():
-            api_url = "https://api.github.com/user/repos"
-            headers = {
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json",
-            }
-            payload = {
-                "name": repo_name,
-                "description": project_description,
-                "private": (privacy_setting == "private"),
-                "auto_init": False,
-            }
-            response = requests.post(api_url, headers=headers, json=payload)
-            if response.status_code == 201:
-                print(f"Repository '{repo_name}' created successfully on GitHub.")
-            elif response.status_code == 422 and "already exists" in response.text.lower():
-                print(f"Repository '{repo_name}' already exists on GitHub.")
-            else:
-                raise Exception(
-                    f"GitHub repo creation failed: {response.status_code} {response.text}"
-                )
-
-        def create_gitlab():
-            api_url = f"https://{hostname}/api/v4/projects"
-            headers = {"PRIVATE-TOKEN": token}
-            payload = {
-                "name": repo_name,
-                "description": project_description,
-                "visibility": "private" if privacy_setting == "private" else "public",
-                "initialize_with_readme": False,
-            }
-            response = requests.post(api_url, headers=headers, data=payload)
-            if response.status_code == 201:
-                print(f"Repository '{repo_name}' created successfully on GitLab.")
-            elif response.status_code == 400 and "has already been taken" in response.text.lower():
-                print(f"Repository '{repo_name}' already exists on GitLab.")
-            else:
-                raise Exception(
-                    f"GitLab repo creation failed: {response.status_code} {response.text}"
-                )
-
-        def create_codeberg():
-            api_url = f"https://{hostname}/api/v1/user/repos"
-            headers = {"Content-Type": "application/json", "Authorization": f"token {token}"}
-            payload = {
-                "name": repo_name,
-                "description": project_description,
-                "private": (privacy_setting == "private"),
-                "auto_init": False,
-            }
-            response = requests.post(api_url, headers=headers, json=payload)
-            if response.status_code == 201:
-                print(f"Repository '{repo_name}' created successfully on Codeberg.")
-            elif response.status_code == 409:
-                print(f"Repository '{repo_name}' already exists on Codeberg.")
-            else:
-                raise Exception(
-                    f"Codeberg repo creation failed: {response.status_code} {response.text}"
-                )
-
-        # Create or check the repo
-        if code_repo_lower == "github":
-            create_github()
-        elif code_repo_lower == "gitlab":
-            create_gitlab()
-        elif code_repo_lower == "codeberg":
-            create_codeberg()
-
-        # Setup remote URL and push
-        default_branch = "main" if code_repo_lower in ["github", "codeberg"] else "master"
-        remote_url = f"https://{user}:{token}@{hostname}/{user}/{repo_name}.git"
-
-        remotes = subprocess.run(["git", "remote"], capture_output=True, text=True)
-        if "origin" not in remotes.stdout:
-            subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
-        else:
-            subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
-
-        subprocess.run(["git", "config", "--global", "credential.helper", "store"], check=True)
-        subprocess.run(["git", "push", "-u", "origin", default_branch], check=True)
-        print(f"Repository pushed to {hostname} on branch '{default_branch}'.")
         return True
 
     except Exception as e:
