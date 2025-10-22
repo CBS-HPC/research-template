@@ -9,6 +9,8 @@ import urllib.request
 import zipfile
 import requests
 
+import re
+
 from .common import (
     PROJECT_ROOT,
     ask_yes_no,
@@ -300,25 +302,6 @@ def git_commit(msg: str = "", path: str | None = None, recursive: bool = True) -
         return False
 
 
-def git_commit_old(msg: str = "", path: str = None) -> str:
-    """Commits changes to Git in the given path and returns the commit hash."""
-    if not path:
-        path = str(PROJECT_ROOT)
-
-    if os.path.isdir(os.path.join(path, ".git")) and is_installed("git"):
-        try:
-            # Stage all changes
-            subprocess.run(["git", "add", "."], check=True, cwd=path)
-            try:
-                subprocess.run(["git", "commit", "-m", msg], check=True, cwd=path)
-            except subprocess.CalledProcessError:
-                print("No changes to commit.")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred: {e}")
-            return False
-
-
 def git_push(flag: str, msg: str = "", path: str = None):
     def push_all(remote="origin", path: str = None):
         if not path:
@@ -462,31 +445,6 @@ def install_dvc():
     return True
 
 
-def install_dvc_old():
-    """
-    Install DVC using pip.
-    """
-
-    if not is_installed("dvc", "DVC"):
-        try:
-            # Install DVC via pip
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "dvc"])
-            #subprocess.check_call([sys.executable, "-m", "pip", "install", "dvc[all]"])
-            if not is_installed("dvc", "DVC"):
-                print("Error during datalad installation.")
-                return False
-            print("DVC has been installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"An error occurred during DVC installation: {e}")
-            return False
-        except FileNotFoundError:
-            print(
-                "Python or pip was not found. Please ensure Python and pip are installed and in your PATH."
-            )
-            return False
-    return True
-
-
 def dvc_init(remote_storage, code_repo, repo_name):
     # Initialize a Git repository if one does not already exist
     if not os.path.isdir(".git"):
@@ -607,6 +565,75 @@ def dvc_local_storage(repo_name):
     dvc_remote = get_remote_path(repo_name)
     if dvc_remote:
         subprocess.run(["dvc", "remote", "add", "-d", "remote_storage", dvc_remote], check=True)
+
+
+def set_dvc(f: str | os.PathLike | None = None) -> bool:
+    """
+    Add a file or directory to DVC (dvc add <f>) with safeguards:
+      - Requires a DVC-initialized repo (PROJECT_ROOT/.dvc exists).
+      - Skips if <f>.dvc exists (already added).
+      - Skips if any ancestor directory of <f> has an existing <ancestor>.dvc
+        (meaning <f> is already covered by a directory out).
+      - On success, stages typical DVC files for Git and makes a commit.
+    Returns True if an add/commit happened (or was already tracked), False on error.
+    """
+    if f is None:
+        print("No path provided.")
+        return False
+
+    root = pathlib.Path(PROJECT_ROOT).resolve()
+    if not (root / ".dvc").exists():
+        print("This is not a DVC project (missing .dvc). Skipping.")
+        return False
+
+    p = (root / f).resolve()
+    try:
+        p.relative_to(root)
+    except ValueError:
+        print(f"Path is outside the project: {p}")
+        return False
+
+    if not p.exists():
+        print(f"Path does not exist: {p}")
+        return False
+
+    # Compute repo-relative POSIX path (what DVC expects)
+    rel = os.path.relpath(p, root).replace("\\", "/")
+    rel_dvc = root / f"{rel}.dvc"
+
+    # --- Safeguard 1: exact path already added?
+    if rel_dvc.exists():
+        print(f"Already tracked by DVC: {rel}. (Found {rel}.dvc)")
+        return True
+
+    # --- Safeguard 2: covered by a parent directory out?
+    # If any ancestor has <ancestor>.dvc, then rel is already inside a tracked dir.
+    ancestor = pathlib.Path(rel)
+    for parent in [ancestor] + list(ancestor.parents):
+        if parent == pathlib.Path("."):
+            continue
+        parent_dvc = root / f"{parent.as_posix()}.dvc"
+        if parent_dvc.exists():
+            print(f"Already tracked by DVC via parent: {parent.as_posix()}.dvc")
+            return True
+
+    # Not tracked yet → dvc add
+    try:
+        subprocess.run(["dvc", "add", rel], cwd=root, check=True)
+
+        # Stage DVC/Git metadata; some may not exist — that's fine.
+        to_stage = [f"{rel}.dvc", ".gitignore", ".dvc", ".dvcignore", "dvc.yaml", "dvc.lock"]
+        subprocess.run(["git", "add", "--"] + to_stage, cwd=root, check=False)
+
+        # Make a commit (non-fatal if nothing staged for commit)
+        subprocess.run(["git", "commit", "-m", f"Track with DVC: {rel}"], cwd=root, check=False)
+
+        print(f"DVC added: {rel}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"dvc add failed for {rel}: {e}")
+        return False
 
 
 # Datalad Setup Functions
@@ -819,7 +846,7 @@ def datalad_create():
         # Last matching rule wins; keep 'data/**' AFTER '*' to override it.
         lines = [
             "* annex.largefiles=nothing\n",       # default: don't annex (i.e., unlocked)
-            "data/** annex.largefiles=anything\n" # but annex everything under ./data
+           # "data/** annex.largefiles=anything\n" # but annex everything under ./data
         ]
         # Write idempotently (avoid duplicate lines, preserve other attrs if any)
         existing = gitattributes.read_text().splitlines(True) if gitattributes.exists() else []
@@ -948,203 +975,156 @@ def datalad_local_storage(repo_name, remote_storage):
         )
 
 
+
 def _run(cmd, cwd, check=True, capture=False):
-    return subprocess.run(
-        cmd, cwd=str(cwd), check=check,
-        capture_output=capture, text=True
-    )
+    return subprocess.run(cmd, cwd=str(cwd), check=check,
+                          capture_output=capture, text=True)
 
-def _git_tracks_anything(root: pathlib.Path, rel: str) -> bool:
-    # returns True if Git currently tracks any path under rel/
-    p = _run(["git", "ls-files", "--stage", "--", rel], cwd=root, check=False, capture=True)
-    return bool((p.stdout or "").strip())
+def _relposix(root: pathlib.Path, p: pathlib.Path) -> str:
+    return os.path.relpath(p, root).replace("\\", "/")
 
-def _ensure_initial_commit_and_annex(sub_path: pathlib.Path) -> None:
-    """Make sure the subdataset has an initial commit AND a usable annex."""
-    # 1) Do we have any commit?
-    has_head = _run(["git", "rev-parse", "--verify", "HEAD"], cwd=sub_path, check=False).returncode == 0
-    if not has_head:
-        # datalad create should have committed .datalad/.gitattributes,
-        # but if it failed, create a minimal initial commit now.
-        # also ensure annex is initialized and annex.version is set
-        # (git-annex init sets both uuid+version)
-        _run(["git", "add", "-A"], cwd=sub_path, check=False)
-        _run(["git", "commit", "--allow-empty", "-m", "Initial dataset"], cwd=sub_path, check=False)
+def _is_registered_subdataset(root: pathlib.Path, rel_posix: str, abs_path: pathlib.Path) -> bool:
+    """Return True if rel_posix is a registered subdataset of root."""
+    # Prefer DataLad (accurate)
+    try:
+        out = _run(["datalad", "subdatasets", "--recursive", "--result-renderer", "json"],
+                   cwd=root, check=False, capture=True).stdout or ""
+        abs_posix = abs_path.as_posix()
+        if any(f'"path": "{abs_posix}"' in line for line in out.splitlines()):
+            return True
+    except Exception:
+        pass
+    # Fallback: check .gitmodules listing
+    gm = root / ".gitmodules"
+    if gm.exists():
+        out = _run(["git", "config", "-f", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"],
+                   cwd=root, check=False, capture=True).stdout or ""
+        for line in out.splitlines():
+            try:
+                _key, path = line.split(None, 1)
+            except ValueError:
+                continue
+            if path.replace("\\", "/") == rel_posix:
+                return True
+    return False
 
-    # 2) annex sanity: annex.version must exist
-    out = _run(["git", "config", "--get", "annex.version"], cwd=sub_path, check=False, capture=True)
-    if out.returncode != 0 or not (out.stdout or "").strip():
-        # (re)init annex to set version/uuid
-        _run(["git", "annex", "init"], cwd=sub_path, check=True)
-        # ensure there is a commit recording annex config if needed
-        _run(["git", "add", "-A"], cwd=sub_path, check=False)
-        _run(["git", "commit", "--allow-empty", "-m", "Initialize annex"], cwd=sub_path, check=False)
 
-def datalad_make_subdataset(target: str | os.PathLike,
-                            base_dir: str | os.PathLike = "data") -> pathlib.Path:
+def _ensure_attr_for_path(root: pathlib.Path, rel_posix: str, is_dir: bool) -> bool:
     """
-    Convert a *directory* into a DataLad subdataset (robust & idempotent).
+    Ensure .gitattributes has a correct annex rule for this path.
 
-    - Refuses files (single files stay in the superdataset).
-    - If already a dataset:
-        * If not registered: register it.
-        * If registered: no-op.
-    - If not yet a dataset:
-        * Untrack from superdataset **only if** git currently tracks anything there.
-        * datalad create --force
-        * ensure initial commit & annex metadata
-        * register & save
+    - Escapes spaces in the path (e.g., 'my file.ipynb' -> 'my\ file.ipynb').
+    - If 'data/** annex.largefiles=anything' exists anywhere, remove it.
+    - Removes any existing annex.largefiles rule for the same path, then appends ours.
+    - Returns True if .gitattributes was changed.
     """
-    root = pathlib.Path(PROJECT_ROOT).resolve()
-    if not (root / ".datalad").is_dir():
-        raise RuntimeError(f"{root} is not a DataLad dataset (no .datalad/). Initialize it first.")
+    ga = root / ".gitattributes"
 
-    t = pathlib.Path(target)
-    # bare name → put under base_dir; otherwise keep given path
-    if not t.is_absolute():
-        sub_path = (root / (base_dir if len(t.parts) == 1 else "") / t).resolve()
-    else:
-        sub_path = t.resolve()
+    def _escape_for_gitattributes(path: str) -> str:
+        # ensure POSIX separators, then escape spaces
+        return path.replace("\\", "/").replace(" ", r"\ ")
 
-    # must be inside project
-    sub_path.relative_to(root)
+    # Build the exact rule with escaped spaces
+    escaped = _escape_for_gitattributes(rel_posix)
+    pattern = f"{escaped}/**" if is_dir else escaped
+    rule = f"{pattern} annex.largefiles=anything\n"
 
-    if sub_path.exists() and sub_path.is_file():
-        raise ValueError(f"{sub_path} is a file. Single-file datasets stay in the superdataset.")
-
-    # ensure dir exists
-    sub_path.mkdir(parents=True, exist_ok=True)
-    rel = os.path.relpath(sub_path, start=root).replace("\\", "/")
-
-    # --- already a dataset? just (re)register and return
-    if (sub_path / ".datalad").is_dir():
-        # check registration
-        out = _run(
-            ["datalad", "subdatasets", "--recursive", "--result-renderer", "json"],
-            cwd=root, check=False, capture=True
-        ).stdout or ""
-        already_registered = any(f'"path": "{sub_path.as_posix()}"' in line for line in out.splitlines())
-        if not already_registered:
-            _run(["datalad", "subdatasets", "--add", rel], cwd=root, check=False)
-            _run(["datalad", "save", "-d", str(root),
-                  "-m", f"Register existing subdataset {rel}", rel],
-                 cwd=root, check=False)
-        return sub_path
-
-    # --- fresh conversion path
-
-    # 1) Untrack from superdataset index only if Git tracks anything there
-    if _git_tracks_anything(root, rel):
-        _run(["git", "rm", "-r", "--cached", "--ignore-unmatch", rel], cwd=root, check=True)
-        # Save the untracking (don’t force a path-bound commit if Git had nothing)
-        _run(["datalad", "save", "-d", str(root),
-              "-m", f"Untrack contents before making subdataset {rel}"],
-             cwd=root, check=False)
-
-    # 2) Ensure .gitignore allows the directory entry (so gitlink can be committed)
-    gi = root / ".gitignore"
-    if gi.exists():
-        lines = gi.read_text(encoding="utf-8").splitlines()
-        top = rel.split("/", 1)[0]
-        if f"{top}/" in lines and f"!{top}/" not in lines:
-            lines.append(f"!{top}/")
-            gi.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            _run(["datalad", "save", "-d", str(root),
-                  "-m", f"Adjust .gitignore for subdataset {top}/"], cwd=root, check=False)
-
-    # 3) Create the subdataset (works for non-empty dirs)
-    _run(["datalad", "create", "-d", str(root), "-c", "yoda", "--force", rel],
-         cwd=root, check=True)
-
-    # 4) Ensure it actually has a commit and a sane annex state
-    _ensure_initial_commit_and_annex(sub_path)
-
-    # 5) (Re)register & save pointer in superdataset
-    _run(["datalad", "subdatasets", "--add", rel], cwd=root, check=False)
-    _run(["datalad", "-C", rel, "save", "-m", "Initialize/convert to subdataset"],
-         cwd=root, check=False)
-    _run(["datalad", "save", "-d", str(root), "-m", f"Register subdataset {rel}", rel],
-         cwd=root, check=False)
-
-    return sub_path
-
-
-def datalad_make_subdataset_old(target: str | os.PathLike, base_dir: str | os.PathLike = "data") -> pathlib.Path:
-    """
-    Convert a *directory* into a DataLad subdataset.
-    - Works when the directory is non-empty (uses --force).
-    - Does NOT uninstall any annex; only untracks the path from the superdataset index.
-    - Single files are refused (keep them in the superdataset).
-    """
-    root = pathlib.Path(PROJECT_ROOT).resolve()
-    if not (root / ".datalad").is_dir():
-        raise RuntimeError(f"{root} is not a DataLad dataset (no .datalad/). Initialize it first.")
-
-    t = pathlib.Path(target)
-    # Bare name → place under ./data/<name>; otherwise keep given relative/absolute Path
-    if not t.is_absolute():
-        sub_path = (root / (base_dir if len(t.parts) == 1 else "") / t).resolve()
-    else:
-        sub_path = t.resolve()
-
-    # must be inside project
-    sub_path.relative_to(root)
-
-    if sub_path.exists() and sub_path.is_file():
-        raise ValueError(f"{sub_path} is a file. Single-file datasets stay in the superdataset.")
-
-    # ensure directory exists
-    sub_path.mkdir(parents=True, exist_ok=True)
-
-    rel = os.path.relpath(sub_path, start=root).replace("\\", "/")
-
-    # 1) Untrack from superdataset index (but keep files on disk)
-    #    This avoids any annex “uninstall/dead” logic on the root.
-    subprocess.run(
-        ["git", "rm", "-r", "--cached", "--ignore-unmatch", rel],
-        cwd=root, check=False
-    )
-
-    # 2) Make sure .gitignore allows the directory entry so the gitlink can be committed
-    gi = root / ".gitignore"
-    if gi.exists():
-        lines = gi.read_text(encoding="utf-8").splitlines()
-        top = rel.split("/", 1)[0]
-        if f"{top}/" in lines and f"!{top}/" not in lines:
-            lines.append(f"!{top}/")
-            gi.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-    # 3) Create/register the subdataset (OK in non-empty dir thanks to --force)
-    if not (sub_path / ".datalad").is_dir():
-        subprocess.run(
-            ["datalad", "create", "-d", str(root), "-c", "yoda", "--force", rel],
-            cwd=root, check=True
-        )
-    else:
-        subprocess.run(["datalad", "subdatasets", "--add", rel], cwd=root, check=False)
-
-    # 4) Save inside subdataset and record pointer in superdataset
-    subprocess.run(["datalad", "-C", rel, "save", "-m", "Initialize/convert to subdataset"], cwd=root, check=False)
-    subprocess.run(["datalad", "save", "-d", str(root), "-m", f"Register subdataset {rel}", rel], cwd=root, check=False)
-
-    return sub_path
-
-
-def datalad_annex_for_file(file_path: pathlib.Path):
-    """Make sure this specific file is annexed by the superdataset."""
-    rel = os.path.relpath(file_path, PROJECT_ROOT).replace("\\", "/")
-    ga = PROJECT_ROOT / ".gitattributes"
-    line = f"{rel} annex.largefiles=anything\n"
-
+    # Read existing lines
     existing = ga.read_text(encoding="utf-8").splitlines(True) if ga.exists() else []
-    if not any(l.strip() == line.strip() for l in existing):
-        # keep other attrs, drop duplicate largefiles lines for the same file
-        kept = [l for l in existing if not (l.startswith(rel) and "annex.largefiles=" in l)]
-        kept.append(line)
-        ga.write_text("".join(kept), encoding="utf-8")
 
-    # save the attribute change + the file content in the superdataset
-    subprocess.run(["datalad", "save", "-m", f"Annex policy for {rel}"], check=False, cwd=PROJECT_ROOT)
+    # Helper to normalize a line for comparison (collapse whitespace)
+    def _norm(s: str) -> str:
+        return re.sub(r"\s+", " ", s.strip())
+
+    # If identical rule is already present → no change needed
+    rule_norm = _norm(rule)
+    if any(_norm(line) == rule_norm for line in existing):
+        return False
+
+    kept: list[str] = []
+    changed = False
+
+    for ln in existing:
+        ln_norm = _norm(ln)
+
+        # 1) Drop the global 'data/** annex.largefiles=anything' if present
+        if ln_norm == "data/** annex.largefiles=anything":
+            changed = True
+            continue
+
+        # 2) Drop any prior annex.largefiles rule targeting this same path (escaped or not)
+        #    We match lines whose first token equals our pattern (escaped) or the unescaped variant.
+        tokens = ln.strip().split()
+        if tokens:
+            first_tok = tokens[0]
+            # consider both escaped and unescaped forms as same target
+            same_target = first_tok in {pattern, (rel_posix + "/**" if is_dir else rel_posix)}
+            if same_target and any(tok.startswith("annex.largefiles=") for tok in tokens[1:]):
+                changed = True
+                continue
+
+        kept.append(ln)
+
+    # Append our canonical rule
+    kept.append(rule)
+    ga.write_text("".join(kept), encoding="utf-8")
+    return True
+
+
+def _ensure_attr_for_path_old(root: pathlib.Path, rel_posix: str, is_dir: bool) -> bool:
+    """Ensure .gitattributes annex rule exists for path. Return True if changed."""
+    ga = root / ".gitattributes"
+    rule = f"{rel_posix}/** annex.largefiles=anything\n" if is_dir else f"{rel_posix} annex.largefiles=anything\n"
+    existing = ga.read_text(encoding="utf-8").splitlines(True) if ga.exists() else []
+    if any(line.strip() == rule.strip() for line in existing):
+        return False
+    kept = [ln for ln in existing if not (ln.startswith(rel_posix) and "annex.largefiles=" in ln)]
+    kept.append(rule)
+    ga.write_text("".join(kept), encoding="utf-8")
+    return True
+
+def set_datalad(path: str | os.PathLike) -> bool:
+    """
+    Track a file/dir in the superdataset (no subdatasets).
+    SAFEGUARD: if the path is a registered subdataset, refuse.
+
+    Returns True if something changed/saved, False if no-op or refused.
+    """
+    root = pathlib.Path(PROJECT_ROOT).resolve()
+    if not (root / ".datalad").is_dir():
+        return
+
+    abs_path = (root / path).resolve()
+    try:
+        abs_path.relative_to(root)
+    except ValueError:
+        raise RuntimeError(f"Path is outside project: {abs_path}")
+    if not abs_path.exists():
+        raise FileNotFoundError(abs_path)
+
+    rel_posix = _relposix(root, abs_path)
+    is_dir = abs_path.is_dir()
+
+    # --- SAFEGUARD: refuse if already a subdataset, unless explicit flatten allowed
+    if _is_registered_subdataset(root, rel_posix, abs_path):
+        return False
+
+    changed = False
+
+    # Ensure annex policy for this path
+    if _ensure_attr_for_path(root, rel_posix, is_dir=is_dir):
+        changed = True
+        _run(["git", "add", "--", ".gitattributes"], cwd=root, check=False)
+
+    # Stage the path itself (files or directory)
+    _run(["git", "add", "--", rel_posix], cwd=root, check=False)
+
+    # Save (non-fatal if nothing to save)
+    _run(["datalad", "save", "-m", f"Track in superdataset: {rel_posix}", rel_posix],
+         cwd=root, check=False)
+
+    return changed
+
 
 
 # rclone

@@ -2,19 +2,21 @@ import os
 import re
 import shutil
 import subprocess
-from pathlib import Path
+import pathlib 
+import yaml
 
+from ..common import is_installed
 
 # -------- helpers -------------------------------------------------------------
 
-def _is_installed(cmd: str) -> bool:
-    return shutil.which(cmd) is not None
-
-def _run(cmd: list[str], cwd: Path, check: bool = True, capture: bool = False):
+def _run(cmd: list[str], cwd: pathlib.Path, check: bool = True, capture: bool = False):
     return subprocess.run(
         cmd, cwd=str(cwd), check=check,
         capture_output=capture, text=True
     )
+
+
+# DATALAD CLEANING UTILITIES
 
 # ---------- .gitattributes cleanup -------------------------------------------
 
@@ -36,7 +38,7 @@ def _non_wildcard_prefix(pathspec: str) -> str:
         buf.append(ch)
     return "".join(buf)
 
-def _pathspec_exists(root: Path, pathspec: str) -> bool:
+def _pathspec_exists(root: pathlib.Path, pathspec: str) -> bool:
     """Decide if a .gitattributes pathspec still points to anything on disk."""
     if pathspec == "*":
         return True  # keep global default rules
@@ -52,7 +54,7 @@ def _pathspec_exists(root: Path, pathspec: str) -> bool:
         return True
     return (root / prefix.replace("/", os.sep)).exists()
 
-def clean_gitattributes(project_root: Path) -> int:
+def clean_gitattributes(project_root: pathlib.Path) -> int:
     """Remove .gitattributes lines whose pathspecs no longer exist."""
     ga = project_root / ".gitattributes"
     if not ga.exists():
@@ -89,7 +91,7 @@ def clean_gitattributes(project_root: Path) -> int:
 
 # ---------- subdataset cleanup -----------------------------------------------
 
-def _list_absent_submodules_via_gitmodules(project_root: Path) -> list[str]:
+def _list_absent_submodules_via_gitmodules(project_root: pathlib.Path) -> list[str]:
     """
     Fallback: parse .gitmodules for submodule paths and report those whose
     working tree dirs are missing.
@@ -112,7 +114,7 @@ def _list_absent_submodules_via_gitmodules(project_root: Path) -> list[str]:
             absent.append(path)
     return absent
 
-def _git_unregister_submodule(project_root: Path, rel_path: str) -> None:
+def _git_unregister_submodule(project_root: pathlib.Path, rel_path: str) -> None:
     """
     Unregister a submodule from Git (dir may already be gone).
     Keeps worktree if present; removes gitlink and .gitmodules section.
@@ -127,17 +129,15 @@ def _git_unregister_submodule(project_root: Path, rel_path: str) -> None:
     if (project_root / ".gitmodules").exists():
         _run(["git", "add", ".gitmodules"], cwd=project_root, check=False)
 
-def clean_missing_subdatasets(project_root: Path) -> list[str]:
+def clean_subdatasets(project_root: pathlib.Path) -> list[str]:
     """
     Unregister subdatasets that were manually deleted from disk.
     Prefers DataLad; falls back to plain Git submodule cleanup.
     Returns a list of paths that were cleaned.
     """
 
-
-    
     cleaned: list[str] = []
-    if _is_installed("datalad"):
+    if is_installed("datalad"):
         # Ask DataLad for subdatasets that are absent on disk
         res = _run(
             ["datalad", "subdatasets", "--state", "absent", "--recursive", "--result-renderer", "json"],
@@ -148,7 +148,7 @@ def clean_missing_subdatasets(project_root: Path) -> list[str]:
             # Cheap parse; each JSON line contains "path": "<abs path>"
             m = re.search(r'"path"\s*:\s*"([^"]+)"', line)
             if m:
-                abs_path = Path(m.group(1))
+                abs_path = pathlib.Path(m.group(1))
                 try:
                     rel = abs_path.relative_to(project_root)
                     missing.append(rel.as_posix())
@@ -180,24 +180,89 @@ def clean_missing_subdatasets(project_root: Path) -> list[str]:
             _run(["git", "commit", "-m", f"Unregister {len(cleaned)} removed subdataset(s)"], cwd=project_root, check=False)
         except Exception:
             pass
-        #print(f"[subdatasets] cleaned: {', '.join(cleaned)}")
-    #else:
-        #print("[subdatasets] no missing subdatasets to clean.")
+
     return cleaned
 
 # ---------- entry point -------------------------------------------------------
 
-def clean_project(project_root: str | Path = ".") -> None:
-    root = Path(project_root).resolve()
+def datalad_cleanning(project_root: str | pathlib.Path = ".") -> None:
+    root = pathlib.Path(project_root).resolve()
     if not (root / ".git").is_dir():
         raise SystemExit(f"Not a Git repo: {root}")
 
-    #print(f"== Cleaning project at {root}")
-    removed_attr = clean_gitattributes(root)
-    cleaned_subds = clean_missing_subdatasets(root)
-    #print("== Done.")
-    #if removed_attr or cleaned_subds:
-        #print("Tip: push the changes when ready:")
-        #print("  datalad push --to origin -r  # or: git push")
+    _ = clean_gitattributes(root)
+    _ = clean_subdatasets(root)
+
+# DVC CLEANING UTILITIES
+
+def _load_dvc_file(p: pathlib.Path):
+    """
+    Load a .dvc file and return list of outs (as POSIX strings).
+    Falls back to a simple parser if PyYAML isn't available.
+    """
+    txt = p.read_text(encoding="utf-8")
+
+    data = yaml.safe_load(txt) or {}
+    outs = data.get("outs") or []
+    paths = []
+    for item in outs:
+        if isinstance(item, dict) and "path" in item and item["path"]:
+            paths.append(str(item["path"]))
+    return paths
 
 
+def dvc_cleaning(project_root: str | os.PathLike = ".") -> list[str]:
+    """
+    Remove stale DVC-tracked datasets whose workspace content was deleted manually.
+
+    Looks for *.dvc files (from `dvc add`) and, if *all* their declared outs are
+    missing on disk, runs `dvc remove <file>.dvc` and commits the change.
+
+    Returns a list of repo-relative .dvc paths that were removed.
+    """
+    root = pathlib.Path(project_root).resolve()
+    if not (root / ".dvc").exists():
+        #print("Not a DVC project (missing .dvc).")
+        return []
+
+    removed: list[str] = []
+    dvc_files = [p for p in root.rglob("*.dvc") if p.name != "dvc.yaml"]  # safety
+
+    for dvcf in sorted(dvc_files):
+        # repo-relative POSIX paths
+        rel_dvc = os.path.relpath(dvcf, root).replace("\\", "/")
+        outs = _load_dvc_file(dvcf)
+
+        if not outs:
+            # Nothing to check; treat as stale tracker
+            try:
+                _run(["dvc", "remove", rel_dvc], cwd=root, check=True)
+                removed.append(rel_dvc)
+                continue
+            except subprocess.CalledProcessError as e:
+                continue
+
+        # Check if all outs are missing
+        all_missing = True
+        for out in outs:
+            wp = (dvcf.parent / out).resolve()
+            if wp.exists():
+                all_missing = False
+                break
+
+        if all_missing:
+            try:
+                _run(["dvc", "remove", rel_dvc], cwd=root, check=True)
+                removed.append(rel_dvc)
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to remove {rel_dvc}: {e}")
+
+    if removed:
+        try:
+            # Stage and commit cleanup; be tolerant if nothing to commit
+            _run(["git", "add", "-A"], cwd=root, check=False)
+            _run(["git", "commit", "-m", f"Cleanup DVC: unregister {len(removed)} deleted dataset(s)"], cwd=root, check=False)
+        except Exception:
+            pass
+
+    return removed

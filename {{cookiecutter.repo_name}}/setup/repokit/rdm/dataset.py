@@ -9,10 +9,11 @@ from datetime import datetime
 from typing import Any
 import subprocess
 
+
 from dirhash import dirhash as _dirhash  # <-- import the function
 
 from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct_kernel, read_toml
-from ..vcs import git_commit, git_log_to_file,datalad_annex_for_file,datalad_make_subdataset
+from ..vcs import git_commit, git_log_to_file, set_datalad, set_dvc
 from .dmp import (
     DEFAULT_DMP_PATH,
     LICENSE_LINKS,
@@ -30,7 +31,7 @@ from .dmp import (
     to_bytes_mb,
 )
 
-from .clean import clean_project
+from .clean import datalad_cleanning, dvc_cleaning
 
 DEFAULT_UPDATE_FIELDS = []  # top-level fields
 DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]  # nested fields to update
@@ -691,35 +692,14 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     print(f"{readme_path} successfully updated with dataset section.")
 
 
-def set_datalad(f:str=None):
-
-    if not os.path.exists(".datalad"):
-        return
-    
-    p = pathlib.Path(f)
-    if p.is_dir():
-        # directories → convert to subdataset (annex-by-default)
-        try:
-            datalad_make_subdataset(f, base_dir="data")
-            print(f"Converted directory to subdataset: {f}")
-        except Exception as e:
-            print(f"Subdataset conversion skipped for {f}: {e}")
-    else:
-        # single files → keep in superdataset; ensure they are annexed here
-        try:
-            if p.is_file():
-                datalad_annex_for_file(p)
-                # save file itself (annex will pick it up according to .gitattributes)
-                subprocess.run(["datalad", "save", "-m", f"Track file {p.name}"], check=False, cwd=PROJECT_ROOT)
-        except Exception as e:
-            print(f"Annex policy not applied for file {f}: {e}")
-
-
 @ensure_correct_kernel
 def main():
     os.chdir(PROJECT_ROOT)
 
-    clean_project(PROJECT_ROOT)
+    if os.path.exists(".datalad"):
+        datalad_cleanning(PROJECT_ROOT)
+    elif os.path.exists(".dvc"):
+        dvc_cleaning(PROJECT_ROOT)
 
     data_files, _ = get_data_files()
 
@@ -727,6 +707,9 @@ def main():
 
     json_path = remove_missing_datasets(json_path=DEFAULT_DMP_PATH)
 
+    if not data_files:
+        return
+    
     file_descriptions = read_toml(
         folder=PROJECT_ROOT,
         json_filename="./file_descriptions.json",
@@ -744,7 +727,7 @@ def main():
             set_datalad(f)
         elif os.path.exists(".dvc"):
             set_dvc(f)
-            
+
     try:
         markdown_table, _ = generate_dataset_table(json_path, file_descriptions)
         if markdown_table:
@@ -752,7 +735,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
 
-    if change_flag and os.path.exists(".git") and not os.path.exists(".datalad"):
+    if change_flag and os.path.exists(".git") and not os.path.exists(".datalad") and not os.path.exists(".dvc"):
         with change_dir("./data"):
             _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
             git_log_to_file(os.path.join(".gitlog"))
