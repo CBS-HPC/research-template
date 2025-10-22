@@ -390,6 +390,15 @@ def setup_dvc(version_control, remote_storage, code_repo, repo_name):
     # Install datalad
     if not install_dvc():
         return
+    
+ 
+    # deactivate data/ in .gitignore
+    gitignore = pathlib.Path(PROJECT_ROOT / ".gitignore")
+    if gitignore.exists():
+        lines = gitignore.read_text().splitlines()
+        new_lines = [line.replace("data/", "#data/") if line.startswith("data/") else line for line in lines]
+        gitignore.write_text("\n".join(new_lines) + "\n")
+    
     dvc_init(remote_storage, code_repo, repo_name)
 
 
@@ -566,8 +575,101 @@ def dvc_local_storage(repo_name):
     if dvc_remote:
         subprocess.run(["dvc", "remote", "add", "-d", "remote_storage", dvc_remote], check=True)
 
-
 def set_dvc(f: str | os.PathLike | None = None) -> bool:
+    """
+    Add a file or directory to DVC (dvc add <f>) with safeguards:
+      - Requires a DVC-initialized repo (PROJECT_ROOT/.dvc exists).
+      - Skips if <f>.dvc exists (already added).
+      - Skips if any ancestor directory of <f> has an existing <ancestor>.dvc
+        (meaning <f> is already covered by a directory out).
+      - On success, stages typical DVC files for Git and makes a commit.
+    Returns True if an add/commit happened (or was already tracked), False on error.
+    """
+    if f is None:
+        print("No path provided.")
+        return False
+    
+    root = pathlib.Path(PROJECT_ROOT).resolve()
+    if not (root / ".dvc").exists():
+        print("This is not a DVC project (missing .dvc). Skipping.")
+        return False
+    
+    p = (root / f).resolve()
+    try:
+        p.relative_to(root)
+    except ValueError:
+        print(f"Path is outside the project: {p}")
+        return False
+    
+    if not p.exists():
+        print(f"Path does not exist: {p}")
+        return False
+    
+    # Compute repo-relative POSIX path (what DVC expects)
+    rel = os.path.relpath(p, root).replace("\\", "/")
+    rel_dvc = root / f"{rel}.dvc"
+    
+    # --- Safeguard 1: exact path already added?
+    if rel_dvc.exists():
+        print(f"Already tracked by DVC: {rel}. (Found {rel}.dvc)")
+        return True
+    
+    # --- Safeguard 2: covered by a parent directory out?
+    ancestor = pathlib.Path(rel)
+    for parent in [ancestor] + list(ancestor.parents):
+        if parent == pathlib.Path("."):
+            continue
+        parent_dvc = root / f"{parent.as_posix()}.dvc"
+        if parent_dvc.exists():
+            print(f"Already tracked by DVC via parent: {parent.as_posix()}.dvc")
+            return True
+    
+    # --- Safeguard 3: Check if .dvc file would be git-ignored
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "-v", f"{rel}.dvc"],
+            cwd=root,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print(f"ERROR: {rel}.dvc would be git-ignored.")
+            print(f"Reason: {result.stdout.strip()}")
+            return False
+    except Exception:
+        pass
+    
+    # Not tracked yet → dvc add
+    try:
+        result = subprocess.run(
+            ["dvc", "add", rel], 
+            cwd=root, 
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        
+        # Stage DVC/Git metadata; some may not exist — that's fine.
+        to_stage = [f"{rel}.dvc"]
+
+        subprocess.run(["git", "add", "--"] + to_stage, cwd=root, check=False)
+        
+        # Make a commit (non-fatal if nothing staged for commit)
+        subprocess.run(["git", "commit", "-m", f"Track with DVC: {rel}"], cwd=root, check=False)
+        
+        print(f"DVC added: {rel}")
+        return True
+    
+    except subprocess.CalledProcessError as e:
+        print(f"dvc add failed for {rel}:")
+        if e.stdout:
+            print(f"STDOUT: {e.stdout}")
+        if e.stderr:
+            print(f"STDERR: {e.stderr}")
+        return False
+  
+    
+def set_dvc_old(f: str | os.PathLike | None = None) -> bool:
     """
     Add a file or directory to DVC (dvc add <f>) with safeguards:
       - Requires a DVC-initialized repo (PROJECT_ROOT/.dvc exists).

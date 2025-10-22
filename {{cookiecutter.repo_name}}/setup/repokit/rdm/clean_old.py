@@ -183,7 +183,7 @@ def clean_subdatasets(project_root: pathlib.Path) -> list[str]:
 
 # ---------- entry point -------------------------------------------------------
 
-def datalad_cleanning(project_root: str | pathlib.Path = ".") -> None:
+def datalad_cleaning(project_root: str | pathlib.Path = ".") -> None:
     root = pathlib.Path(project_root).resolve()
     if not (root / ".git").is_dir():
         raise SystemExit(f"Not a Git repo: {root}")
@@ -199,7 +199,7 @@ def _load_dvc_file(p: pathlib.Path):
     Falls back to a simple parser if PyYAML isn't available.
     """
     txt = p.read_text(encoding="utf-8")
-
+    
     data = yaml.safe_load(txt) or {}
     outs = data.get("outs") or []
     paths = []
@@ -208,29 +208,30 @@ def _load_dvc_file(p: pathlib.Path):
             paths.append(str(item["path"]))
     return paths
 
-
 def dvc_cleaning(project_root: str | os.PathLike = ".") -> list[str]:
     """
     Remove stale DVC-tracked datasets whose workspace content was deleted manually.
-
+    
     Looks for *.dvc files (from `dvc add`) and, if *all* their declared outs are
     missing on disk, runs `dvc remove <file>.dvc` and commits the change.
-
+    
     Returns a list of repo-relative .dvc paths that were removed.
     """
     root = pathlib.Path(project_root).resolve()
     if not (root / ".dvc").exists():
         #print("Not a DVC project (missing .dvc).")
         return []
-
+    
     removed: list[str] = []
-    dvc_files = [p for p in root.rglob("*.dvc") if p.name != "dvc.yaml"]  # safety
-
+    # Filter out directories and dvc.yaml
+    dvc_files = [p for p in root.rglob("*.dvc") 
+                 if p.is_file() and p.name != "dvc.yaml"]
+    
     for dvcf in sorted(dvc_files):
         # repo-relative POSIX paths
         rel_dvc = os.path.relpath(dvcf, root).replace("\\", "/")
         outs = _load_dvc_file(dvcf)
-
+        
         if not outs:
             # Nothing to check; treat as stale tracker
             try:
@@ -239,7 +240,7 @@ def dvc_cleaning(project_root: str | os.PathLike = ".") -> list[str]:
                 continue
             except subprocess.CalledProcessError as e:
                 continue
-
+        
         # Check if all outs are missing
         all_missing = True
         for out in outs:
@@ -247,14 +248,14 @@ def dvc_cleaning(project_root: str | os.PathLike = ".") -> list[str]:
             if wp.exists():
                 all_missing = False
                 break
-
+        
         if all_missing:
             try:
                 _run(["dvc", "remove", rel_dvc], cwd=root, check=True)
                 removed.append(rel_dvc)
             except subprocess.CalledProcessError as e:
                 print(f"Failed to remove {rel_dvc}: {e}")
-
+    
     if removed:
         try:
             # Stage and commit cleanup; be tolerant if nothing to commit
@@ -262,5 +263,5 @@ def dvc_cleaning(project_root: str | os.PathLike = ".") -> list[str]:
             _run(["git", "commit", "-m", f"Cleanup DVC: unregister {len(removed)} deleted dataset(s)"], cwd=root, check=False)
         except Exception:
             pass
-
+    
     return removed

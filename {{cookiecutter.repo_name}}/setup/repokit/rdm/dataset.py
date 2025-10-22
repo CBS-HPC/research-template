@@ -7,13 +7,12 @@ from collections.abc import Iterable
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
-import subprocess
+
 
 
 from dirhash import dirhash as _dirhash  # <-- import the function
 
 from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct_kernel, read_toml
-from ..vcs import git_commit, git_log_to_file, set_datalad, set_dvc
 from .dmp import (
     DEFAULT_DMP_PATH,
     LICENSE_LINKS,
@@ -30,11 +29,54 @@ from .dmp import (
     save_json,
     to_bytes_mb,
 )
-
-from .clean import datalad_cleanning, dvc_cleaning
+from ..vcs.git_w import git_commit, git_log_to_file
+from ..vcs.datalad_w import set_datalad, datalad_cleaning
+from ..vcs.dvc_w import set_dvc, dvc_cleaning
+#from .clean import datalad_cleanning, dvc_cleaning
 
 DEFAULT_UPDATE_FIELDS = []  # top-level fields
 DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]  # nested fields to update
+IGNORE_DICT = {
+    # Git
+    ".git",
+    ".gitignore",
+    ".gitkeep",
+    ".gitlog",
+    ".gitattributes",
+    ".gitmodules",      # Git submodules
+    
+    # DVC
+    ".dvc",
+    ".dvcignore",
+    "dvc.yaml",
+    "dvc.lock",
+    ".dvc.tmp",         # DVC temporary files
+    
+    # DataLad
+    ".datalad",
+    ".gitannex",        # Git-annex (used by DataLad)
+    
+    # Common metadata/system files
+    ".DS_Store",        # macOS
+    "Thumbs.db",        # Windows
+    "desktop.ini",      # Windows
+    ".directory",       # KDE
+    
+    # Editor/IDE
+    ".vscode",
+    ".idea",
+    ".vs",
+    
+    # Python
+    "__pycache__",
+    "*.pyc",
+    ".pytest_cache",
+    ".mypy_cache",
+    
+    # Documentation/metadata (optional, depends on your use case)
+    "README.md",
+    "LICENSE",
+}
 
 def get_hash(path, algo: str = "sha256"):
     """
@@ -52,7 +94,7 @@ def get_hash(path, algo: str = "sha256"):
 
         elif os.path.isdir(path):
             try:
-                return _dirhash(path, algo)          # function call, not module
+                return _dirhash(path, algo, ignore = IGNORE_DICT)          # function call, not module
             except Exception:
                 # e.g., truly empty directory: give stable hash of empty content
                 return hashlib.new(algo, b"").hexdigest()
@@ -79,17 +121,25 @@ def get_file_info(file_paths):
     return number_of_files, total_size, file_formats, individual_sizes_mb
 
 
-def get_all_files(destination):
+def get_all_files(destination, ignore=None):
+    if ignore is None:
+        ignore = {}
     all_files = set()
-    for root, _, files in os.walk(destination):
+    for root, dirs, files in os.walk(destination):
+        # Filter out ignored directories (modifies in-place to prevent traversal)
+        dirs[:] = [d for d in dirs if d not in ignore and not d.startswith(".")]
+        
+        # Add non-ignored files
         for file in files:
-            all_files.add(os.path.join(root, file))
+            if file not in ignore and not file.startswith("."):
+                all_files.add(os.path.join(root, file))
     return all_files
+
 
 
 def get_data_files(base_dir="./data", ignore=None, recursive=False):
     if ignore is None:
-        ignore = {".git", ".gitignore", ".gitkeep", ".gitlog"}
+        ignore = {}
     all_files = []
     try:
         subdirs = [
@@ -428,7 +478,7 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
         data_files = [destination]
     else:
         os.makedirs(destination, exist_ok=True)
-        data_files = sorted(get_all_files(destination))
+        data_files = sorted(get_all_files(destination,ignore=IGNORE_DICT))
 
     number_of_files, total_size_mb, file_formats, individual_sizes_mb = get_file_info(data_files)
 
@@ -703,11 +753,11 @@ def main():
     os.chdir(PROJECT_ROOT)
 
     if os.path.exists(".datalad"):
-        datalad_cleanning(PROJECT_ROOT)
+        datalad_cleaning(PROJECT_ROOT)
     elif os.path.exists(".dvc"):
         dvc_cleaning(PROJECT_ROOT)
 
-    data_files, _ = get_data_files()
+    data_files, _ = get_data_files(ignore=IGNORE_DICT)
 
     create_or_update_dmp_from_schema(dmp_path=DEFAULT_DMP_PATH)
 
