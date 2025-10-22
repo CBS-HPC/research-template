@@ -82,13 +82,11 @@ def clean_gitattributes(project_root: pathlib.Path) -> int:
 
     if removed:
         ga.write_text("".join(kept), encoding="utf-8")
-        #print(f"[.gitattributes] removed {len(removed)} dangling rule(s). Backup at {backup}")
-       # for ln in removed:
-            #print("  -", (_first_token(ln) or ln.strip()))
-    #else:
-        #print("[.gitattributes] no dangling entries found.")
-    return len(removed)
 
+    # Delete backup file
+    backup.unlink()
+
+    return len(removed)
 # ---------- subdataset cleanup -----------------------------------------------
 
 def _list_absent_submodules_via_gitmodules(project_root: pathlib.Path) -> list[str]:

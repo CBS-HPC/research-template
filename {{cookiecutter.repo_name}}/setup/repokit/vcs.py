@@ -469,9 +469,9 @@ def dvc_init(remote_storage, code_repo, repo_name):
         print("Not implemented yet")
 
 
-    subprocess.run(["dvc", "add", "data"], check=True)
+    #subprocess.run(["dvc", "add", "data"], check=True)
     
-    _ = git_commit("Initial commit - Initialize DVC repository with data folder.")
+    _ = git_commit("Initial commit - Initialize DVC.")
     print("Created an initial commit.")
 
 
@@ -975,13 +975,14 @@ def datalad_local_storage(repo_name, remote_storage):
         )
 
 
-
 def _run(cmd, cwd, check=True, capture=False):
     return subprocess.run(cmd, cwd=str(cwd), check=check,
                           capture_output=capture, text=True)
 
+
 def _relposix(root: pathlib.Path, p: pathlib.Path) -> str:
     return os.path.relpath(p, root).replace("\\", "/")
+
 
 def _is_registered_subdataset(root: pathlib.Path, rel_posix: str, abs_path: pathlib.Path) -> bool:
     """Return True if rel_posix is a registered subdataset of root."""
@@ -1009,79 +1010,71 @@ def _is_registered_subdataset(root: pathlib.Path, rel_posix: str, abs_path: path
     return False
 
 
+
 def _ensure_attr_for_path(root: pathlib.Path, rel_posix: str, is_dir: bool) -> bool:
     """
-    Ensure .gitattributes has a correct annex rule for this path.
+    Ensure .gitattributes has a correct annex rule for rel_posix.
 
-    - Escapes spaces in the path (e.g., 'my file.ipynb' -> 'my\ file.ipynb').
-    - If 'data/** annex.largefiles=anything' exists anywhere, remove it.
-    - Removes any existing annex.largefiles rule for the same path, then appends ours.
-    - Returns True if .gitattributes was changed.
+    Rules:
+      - Use double quotes around the pattern if it contains spaces or tabs.
+      - Remove any generic 'data/** annex.largefiles=anything' if present.
+      - Remove any previous annex.largefiles rule for the same target.
+      - Append our canonical rule and write back.
+    Returns True if the file changed.
     """
     ga = root / ".gitattributes"
 
-    def _escape_for_gitattributes(path: str) -> str:
-        # ensure POSIX separators, then escape spaces
-        return path.replace("\\", "/").replace(" ", r"\ ")
+    # Normalize path to POSIX
+    rel_posix = rel_posix.replace("\\", "/")
+    pattern = f"{rel_posix}/**" if is_dir else rel_posix
 
-    # Build the exact rule with escaped spaces
-    escaped = _escape_for_gitattributes(rel_posix)
-    pattern = f"{escaped}/**" if is_dir else escaped
-    rule = f"{pattern} annex.largefiles=anything\n"
+    # Quote if contains whitespace
+    if any(ch.isspace() for ch in pattern):
+        pattern_fmt = f"\"{pattern}\""
+    else:
+        pattern_fmt = pattern
 
-    # Read existing lines
+    rule = f"{pattern_fmt} annex.largefiles=anything\n"
+
     existing = ga.read_text(encoding="utf-8").splitlines(True) if ga.exists() else []
 
-    # Helper to normalize a line for comparison (collapse whitespace)
     def _norm(s: str) -> str:
+        # collapse inner whitespace for comparisons
         return re.sub(r"\s+", " ", s.strip())
 
-    # If identical rule is already present → no change needed
-    rule_norm = _norm(rule)
-    if any(_norm(line) == rule_norm for line in existing):
-        return False
-
-    kept: list[str] = []
     changed = False
+    kept: list[str] = []
+
+    # If our exact rule already exists, no change needed
+    rule_norm = _norm(rule)
+    if any(_norm(ln) == rule_norm for ln in existing):
+        return False
 
     for ln in existing:
         ln_norm = _norm(ln)
 
-        # 1) Drop the global 'data/** annex.largefiles=anything' if present
+        # Drop the global 'data/** annex.largefiles=anything'
         if ln_norm == "data/** annex.largefiles=anything":
             changed = True
             continue
 
-        # 2) Drop any prior annex.largefiles rule targeting this same path (escaped or not)
-        #    We match lines whose first token equals our pattern (escaped) or the unescaped variant.
+        # Remove any prior rule for this target (quoted or unquoted)
         tokens = ln.strip().split()
         if tokens:
-            first_tok = tokens[0]
-            # consider both escaped and unescaped forms as same target
-            same_target = first_tok in {pattern, (rel_posix + "/**" if is_dir else rel_posix)}
+            first = tokens[0]
+            # acceptable prior "first token" variants for the same target
+            same_target = first in {pattern, f"\"{pattern}\""}
             if same_target and any(tok.startswith("annex.largefiles=") for tok in tokens[1:]):
                 changed = True
                 continue
 
         kept.append(ln)
 
-    # Append our canonical rule
     kept.append(rule)
     ga.write_text("".join(kept), encoding="utf-8")
     return True
 
 
-def _ensure_attr_for_path_old(root: pathlib.Path, rel_posix: str, is_dir: bool) -> bool:
-    """Ensure .gitattributes annex rule exists for path. Return True if changed."""
-    ga = root / ".gitattributes"
-    rule = f"{rel_posix}/** annex.largefiles=anything\n" if is_dir else f"{rel_posix} annex.largefiles=anything\n"
-    existing = ga.read_text(encoding="utf-8").splitlines(True) if ga.exists() else []
-    if any(line.strip() == rule.strip() for line in existing):
-        return False
-    kept = [ln for ln in existing if not (ln.startswith(rel_posix) and "annex.largefiles=" in ln)]
-    kept.append(rule)
-    ga.write_text("".join(kept), encoding="utf-8")
-    return True
 
 def set_datalad(path: str | os.PathLike) -> bool:
     """
@@ -1114,17 +1107,18 @@ def set_datalad(path: str | os.PathLike) -> bool:
     # Ensure annex policy for this path
     if _ensure_attr_for_path(root, rel_posix, is_dir=is_dir):
         changed = True
+
         _run(["git", "add", "--", ".gitattributes"], cwd=root, check=False)
 
     # Stage the path itself (files or directory)
-    _run(["git", "add", "--", rel_posix], cwd=root, check=False)
+    #_run(["git", "add", "--", rel_posix], cwd=root, check=False)
+    _run(["git", "-c", "core.safecrlf=false", "add", "--", rel_posix], cwd=root, check=False)
 
     # Save (non-fatal if nothing to save)
     _run(["datalad", "save", "-m", f"Track in superdataset: {rel_posix}", rel_posix],
          cwd=root, check=False)
 
     return changed
-
 
 
 # rclone

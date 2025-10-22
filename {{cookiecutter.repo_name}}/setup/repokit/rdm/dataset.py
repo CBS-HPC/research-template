@@ -227,15 +227,21 @@ def datasets_to_json(
             merged["modified"] = existing.get("modified")
 
         datasets[idx] = merged
+
+
         if changed_flag:
-            print(f"Updated DMP entry for {merged.get('title')}.")
+            print(f"Updated DMP entry for {existing_x.get("destination", merged.get('title'))}.")
+            #print(f"Updated DMP entry for {merged.get('title')}.")
             any_change_flag = True
         else:
-            print(f"No changes detected for DMP entry: {merged.get('title')}.")
+            print(f"No changes detected for DMP entry: {existing_x.get("destination", merged.get('title'))}.")
+            #print(f"No changes detected for DMP entry: {merged.get('title')}.")
 
     else:
+        entry_x = get_extension_payload(entry or {}, "x_dcas") or {}
         datasets.append(entry)
-        print(f"Added DMP entry for {entry.get('title')}.")
+        print(f"Added DMP entry for {entry_x.get("destination", entry.get('title'))}.")
+       # print(f"Added DMP entry for {entry.get('title')}.")
         any_change_flag = True
 
     # Sort by x_dcas.data_type then title
