@@ -948,6 +948,206 @@ def datalad_local_storage(repo_name, remote_storage):
         )
 
 
+def _run(cmd, cwd, check=True, capture=False):
+    return subprocess.run(
+        cmd, cwd=str(cwd), check=check,
+        capture_output=capture, text=True
+    )
+
+def _git_tracks_anything(root: pathlib.Path, rel: str) -> bool:
+    # returns True if Git currently tracks any path under rel/
+    p = _run(["git", "ls-files", "--stage", "--", rel], cwd=root, check=False, capture=True)
+    return bool((p.stdout or "").strip())
+
+def _ensure_initial_commit_and_annex(sub_path: pathlib.Path) -> None:
+    """Make sure the subdataset has an initial commit AND a usable annex."""
+    # 1) Do we have any commit?
+    has_head = _run(["git", "rev-parse", "--verify", "HEAD"], cwd=sub_path, check=False).returncode == 0
+    if not has_head:
+        # datalad create should have committed .datalad/.gitattributes,
+        # but if it failed, create a minimal initial commit now.
+        # also ensure annex is initialized and annex.version is set
+        # (git-annex init sets both uuid+version)
+        _run(["git", "add", "-A"], cwd=sub_path, check=False)
+        _run(["git", "commit", "--allow-empty", "-m", "Initial dataset"], cwd=sub_path, check=False)
+
+    # 2) annex sanity: annex.version must exist
+    out = _run(["git", "config", "--get", "annex.version"], cwd=sub_path, check=False, capture=True)
+    if out.returncode != 0 or not (out.stdout or "").strip():
+        # (re)init annex to set version/uuid
+        _run(["git", "annex", "init"], cwd=sub_path, check=True)
+        # ensure there is a commit recording annex config if needed
+        _run(["git", "add", "-A"], cwd=sub_path, check=False)
+        _run(["git", "commit", "--allow-empty", "-m", "Initialize annex"], cwd=sub_path, check=False)
+
+def datalad_make_subdataset(target: str | os.PathLike,
+                            base_dir: str | os.PathLike = "data") -> pathlib.Path:
+    """
+    Convert a *directory* into a DataLad subdataset (robust & idempotent).
+
+    - Refuses files (single files stay in the superdataset).
+    - If already a dataset:
+        * If not registered: register it.
+        * If registered: no-op.
+    - If not yet a dataset:
+        * Untrack from superdataset **only if** git currently tracks anything there.
+        * datalad create --force
+        * ensure initial commit & annex metadata
+        * register & save
+    """
+    root = pathlib.Path(PROJECT_ROOT).resolve()
+    if not (root / ".datalad").is_dir():
+        raise RuntimeError(f"{root} is not a DataLad dataset (no .datalad/). Initialize it first.")
+
+    t = pathlib.Path(target)
+    # bare name → put under base_dir; otherwise keep given path
+    if not t.is_absolute():
+        sub_path = (root / (base_dir if len(t.parts) == 1 else "") / t).resolve()
+    else:
+        sub_path = t.resolve()
+
+    # must be inside project
+    sub_path.relative_to(root)
+
+    if sub_path.exists() and sub_path.is_file():
+        raise ValueError(f"{sub_path} is a file. Single-file datasets stay in the superdataset.")
+
+    # ensure dir exists
+    sub_path.mkdir(parents=True, exist_ok=True)
+    rel = os.path.relpath(sub_path, start=root).replace("\\", "/")
+
+    # --- already a dataset? just (re)register and return
+    if (sub_path / ".datalad").is_dir():
+        # check registration
+        out = _run(
+            ["datalad", "subdatasets", "--recursive", "--result-renderer", "json"],
+            cwd=root, check=False, capture=True
+        ).stdout or ""
+        already_registered = any(f'"path": "{sub_path.as_posix()}"' in line for line in out.splitlines())
+        if not already_registered:
+            _run(["datalad", "subdatasets", "--add", rel], cwd=root, check=False)
+            _run(["datalad", "save", "-d", str(root),
+                  "-m", f"Register existing subdataset {rel}", rel],
+                 cwd=root, check=False)
+        return sub_path
+
+    # --- fresh conversion path
+
+    # 1) Untrack from superdataset index only if Git tracks anything there
+    if _git_tracks_anything(root, rel):
+        _run(["git", "rm", "-r", "--cached", "--ignore-unmatch", rel], cwd=root, check=True)
+        # Save the untracking (don’t force a path-bound commit if Git had nothing)
+        _run(["datalad", "save", "-d", str(root),
+              "-m", f"Untrack contents before making subdataset {rel}"],
+             cwd=root, check=False)
+
+    # 2) Ensure .gitignore allows the directory entry (so gitlink can be committed)
+    gi = root / ".gitignore"
+    if gi.exists():
+        lines = gi.read_text(encoding="utf-8").splitlines()
+        top = rel.split("/", 1)[0]
+        if f"{top}/" in lines and f"!{top}/" not in lines:
+            lines.append(f"!{top}/")
+            gi.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            _run(["datalad", "save", "-d", str(root),
+                  "-m", f"Adjust .gitignore for subdataset {top}/"], cwd=root, check=False)
+
+    # 3) Create the subdataset (works for non-empty dirs)
+    _run(["datalad", "create", "-d", str(root), "-c", "yoda", "--force", rel],
+         cwd=root, check=True)
+
+    # 4) Ensure it actually has a commit and a sane annex state
+    _ensure_initial_commit_and_annex(sub_path)
+
+    # 5) (Re)register & save pointer in superdataset
+    _run(["datalad", "subdatasets", "--add", rel], cwd=root, check=False)
+    _run(["datalad", "-C", rel, "save", "-m", "Initialize/convert to subdataset"],
+         cwd=root, check=False)
+    _run(["datalad", "save", "-d", str(root), "-m", f"Register subdataset {rel}", rel],
+         cwd=root, check=False)
+
+    return sub_path
+
+
+def datalad_make_subdataset_old(target: str | os.PathLike, base_dir: str | os.PathLike = "data") -> pathlib.Path:
+    """
+    Convert a *directory* into a DataLad subdataset.
+    - Works when the directory is non-empty (uses --force).
+    - Does NOT uninstall any annex; only untracks the path from the superdataset index.
+    - Single files are refused (keep them in the superdataset).
+    """
+    root = pathlib.Path(PROJECT_ROOT).resolve()
+    if not (root / ".datalad").is_dir():
+        raise RuntimeError(f"{root} is not a DataLad dataset (no .datalad/). Initialize it first.")
+
+    t = pathlib.Path(target)
+    # Bare name → place under ./data/<name>; otherwise keep given relative/absolute Path
+    if not t.is_absolute():
+        sub_path = (root / (base_dir if len(t.parts) == 1 else "") / t).resolve()
+    else:
+        sub_path = t.resolve()
+
+    # must be inside project
+    sub_path.relative_to(root)
+
+    if sub_path.exists() and sub_path.is_file():
+        raise ValueError(f"{sub_path} is a file. Single-file datasets stay in the superdataset.")
+
+    # ensure directory exists
+    sub_path.mkdir(parents=True, exist_ok=True)
+
+    rel = os.path.relpath(sub_path, start=root).replace("\\", "/")
+
+    # 1) Untrack from superdataset index (but keep files on disk)
+    #    This avoids any annex “uninstall/dead” logic on the root.
+    subprocess.run(
+        ["git", "rm", "-r", "--cached", "--ignore-unmatch", rel],
+        cwd=root, check=False
+    )
+
+    # 2) Make sure .gitignore allows the directory entry so the gitlink can be committed
+    gi = root / ".gitignore"
+    if gi.exists():
+        lines = gi.read_text(encoding="utf-8").splitlines()
+        top = rel.split("/", 1)[0]
+        if f"{top}/" in lines and f"!{top}/" not in lines:
+            lines.append(f"!{top}/")
+            gi.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    # 3) Create/register the subdataset (OK in non-empty dir thanks to --force)
+    if not (sub_path / ".datalad").is_dir():
+        subprocess.run(
+            ["datalad", "create", "-d", str(root), "-c", "yoda", "--force", rel],
+            cwd=root, check=True
+        )
+    else:
+        subprocess.run(["datalad", "subdatasets", "--add", rel], cwd=root, check=False)
+
+    # 4) Save inside subdataset and record pointer in superdataset
+    subprocess.run(["datalad", "-C", rel, "save", "-m", "Initialize/convert to subdataset"], cwd=root, check=False)
+    subprocess.run(["datalad", "save", "-d", str(root), "-m", f"Register subdataset {rel}", rel], cwd=root, check=False)
+
+    return sub_path
+
+
+def datalad_annex_for_file(file_path: pathlib.Path):
+    """Make sure this specific file is annexed by the superdataset."""
+    rel = os.path.relpath(file_path, PROJECT_ROOT).replace("\\", "/")
+    ga = PROJECT_ROOT / ".gitattributes"
+    line = f"{rel} annex.largefiles=anything\n"
+
+    existing = ga.read_text(encoding="utf-8").splitlines(True) if ga.exists() else []
+    if not any(l.strip() == line.strip() for l in existing):
+        # keep other attrs, drop duplicate largefiles lines for the same file
+        kept = [l for l in existing if not (l.startswith(rel) and "annex.largefiles=" in l)]
+        kept.append(line)
+        ga.write_text("".join(kept), encoding="utf-8")
+
+    # save the attribute change + the file content in the superdataset
+    subprocess.run(["datalad", "save", "-m", f"Annex policy for {rel}"], check=False, cwd=PROJECT_ROOT)
+
+
+# rclone
 def install_rclone(install_path):
     """Download and extract rclone to the specified bin folder."""
 

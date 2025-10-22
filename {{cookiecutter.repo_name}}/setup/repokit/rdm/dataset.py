@@ -7,11 +7,12 @@ from collections.abc import Iterable
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
+import subprocess
 
-import dirhash
+from dirhash import dirhash as _dirhash  # <-- import the function
 
 from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct_kernel, read_toml
-from ..vcs import git_commit, git_log_to_file
+from ..vcs import git_commit, git_log_to_file,datalad_annex_for_file,datalad_make_subdataset
 from .dmp import (
     DEFAULT_DMP_PATH,
     LICENSE_LINKS,
@@ -29,14 +30,16 @@ from .dmp import (
     to_bytes_mb,
 )
 
+from .clean import clean_project
+
 DEFAULT_UPDATE_FIELDS = []  # top-level fields
 DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]  # nested fields to update
-
 
 def get_hash(path, algo: str = "sha256"):
     """
     Get the hash of a file or folder.
     Uses hashlib for files and dirhash for directories.
+    For empty directories, returns the digest of empty bytes for stability.
     """
     try:
         if os.path.isfile(path):
@@ -45,14 +48,21 @@ def get_hash(path, algo: str = "sha256"):
                 for chunk in iter(lambda: f.read(8192), b""):
                     h.update(chunk)
             return h.hexdigest()
+
         elif os.path.isdir(path):
-            return dirhash(path, algo)
+            try:
+                return _dirhash(path, algo)          # function call, not module
+            except Exception:
+                # e.g., truly empty directory: give stable hash of empty content
+                return hashlib.new(algo, b"").hexdigest()
+
         else:
             raise ValueError(f"{path} does not exist or is not a valid file or directory.")
+
     except Exception as e:
         print(f"Error while calculating hash for {path}: {e}")
         return None
-
+    
 
 def get_file_info(file_paths):
     number_of_files = 0
@@ -681,9 +691,35 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
     print(f"{readme_path} successfully updated with dataset section.")
 
 
+def set_datalad(f:str=None):
+
+    if not os.path.exists(".datalad"):
+        return
+    
+    p = pathlib.Path(f)
+    if p.is_dir():
+        # directories → convert to subdataset (annex-by-default)
+        try:
+            datalad_make_subdataset(f, base_dir="data")
+            print(f"Converted directory to subdataset: {f}")
+        except Exception as e:
+            print(f"Subdataset conversion skipped for {f}: {e}")
+    else:
+        # single files → keep in superdataset; ensure they are annexed here
+        try:
+            if p.is_file():
+                datalad_annex_for_file(p)
+                # save file itself (annex will pick it up according to .gitattributes)
+                subprocess.run(["datalad", "save", "-m", f"Track file {p.name}"], check=False, cwd=PROJECT_ROOT)
+        except Exception as e:
+            print(f"Annex policy not applied for file {f}: {e}")
+
+
 @ensure_correct_kernel
 def main():
     os.chdir(PROJECT_ROOT)
+
+    clean_project(PROJECT_ROOT)
 
     data_files, _ = get_data_files()
 
@@ -698,9 +734,17 @@ def main():
         toml_path="pyproject.toml",
     )
 
+    change_flag = False
     for f in data_files:
-        change_flag, json_path = dataset(destination=f, json_path=json_path)
-
+        flag, json_path = dataset(destination=f, json_path=json_path)
+        if not flag:
+            continue
+        change_flag = True
+        if os.path.exists(".datalad"):
+            set_datalad(f)
+        elif os.path.exists(".dvc"):
+            set_dvc(f)
+            
     try:
         markdown_table, _ = generate_dataset_table(json_path, file_descriptions)
         if markdown_table:
@@ -708,14 +752,10 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
 
-
-    if change_flag:
-        if os.path.exists(".datalad") or os.path.exists(".dvc"):
+    if change_flag and os.path.exists(".git") and not os.path.exists(".datalad"):
+        with change_dir("./data"):
             _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
-        elif os.path.exists(".git"):
-            with change_dir("./data"):
-                _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
-                git_log_to_file(os.path.join(".gitlog"))
+            git_log_to_file(os.path.join(".gitlog"))
 
 
 if __name__ == "__main__":
