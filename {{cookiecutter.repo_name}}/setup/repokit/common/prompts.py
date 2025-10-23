@@ -1,6 +1,7 @@
 import getpass
 import os
 
+from .base import PROJECT_ROOT
 from .paths import check_path_format
 from .secretstore import load_from_env, save_to_env
 
@@ -140,7 +141,12 @@ def remote_user_info(remote_name):
     def ensure_repo_suffix(folder, repo):
         folder = folder.strip().replace("\\", "/").rstrip("/")
         if not folder.endswith(repo):
-            return os.path.join(folder, repo).replace("\\", "/")
+            folder = os.path.join(folder, repo).replace("\\", "/")
+        
+        # Add "_backup" suffix if folder equals PROJECT_ROOT
+        if folder == PROJECT_ROOT:
+            folder = folder + "_backup"
+        
         return folder
 
     if remote_name.strip().lower() == "deic storage":

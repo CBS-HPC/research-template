@@ -257,7 +257,8 @@ def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
             print(f"⚠️ Warning: Could not purge remote folder '{remote_path}': {e}")
         except Exception as e:
             print(f"Unexpected error during purge: {e}")
-
+    else:
+        return
     # Step 2: Delete the remote from rclone config
     try:
         subprocess.run(["rclone", "config", "delete", remote_name], check=True)
@@ -317,14 +318,15 @@ def setup_remote_backup(remote_name: str = None):
             remote_name = "deic-storage"
 
         email, password, base_folder = remote_user_info(remote_name.lower())
-        if install_rclone("./bin"):
-            add_remote(remote_name.lower(), email, password)
-            add_folder(remote_name.lower(), base_folder)
+        #if install_rclone("./bin"):
+        add_remote(remote_name.lower(), email, password)
+        add_folder(remote_name.lower(), base_folder)
     else:
         install_rclone("./bin")
 
 
 def list_supported_remote_types():
+    #if install_rclone("./bin"):
     try:
         result = subprocess.run(
             ["rclone", "help", "backends"], check=True, stdout=subprocess.PIPE, text=True
@@ -483,47 +485,48 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
 
 @ensure_correct_kernel
 def main():
-    parser = argparse.ArgumentParser(description="Backup manager CLI using rclone")
-    subparsers = parser.add_subparsers(dest="command")
+    if install_rclone("./bin"):
+        parser = argparse.ArgumentParser(description="Backup manager CLI using rclone")
+        subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("list", help="List rclone remotes and mapped folders")
+        subparsers.add_parser("list", help="List rclone remotes and mapped folders")
 
-    add = subparsers.add_parser("add", help="Add a remote and folder mapping")
-    add.add_argument("--remote", required=True)
+        add = subparsers.add_parser("add", help="Add a remote and folder mapping")
+        add.add_argument("--remote", required=True)
 
-    push = subparsers.add_parser("push", help="Push local folder to a remote")
-    push.add_argument("--remote", required=True)
+        push = subparsers.add_parser("push", help="Push local folder to a remote")
+        push.add_argument("--remote", required=True)
 
-    delete = subparsers.add_parser("delete", help="Delete a remote and its mapping")
-    delete.add_argument("--remote", required=True)
+        delete = subparsers.add_parser("delete", help="Delete a remote and its mapping")
+        delete.add_argument("--remote", required=True)
 
-    diff = subparsers.add_parser("diff", help="Generate a diff report for a remote")
-    diff.add_argument("--remote", required=True)
+        diff = subparsers.add_parser("diff", help="Generate a diff report for a remote")
+        diff.add_argument("--remote", required=True)
 
-    types = subparsers.add_parser("types", help="List supported rclone remote types")
+        types = subparsers.add_parser("types", help="List supported rclone remote types")
 
-    pull = subparsers.add_parser("pull", help="Pull backup from a remote")
-    pull.add_argument("--remote", required=True)
-    pull.add_argument("--dest", default=None)
+        pull = subparsers.add_parser("pull", help="Pull backup from a remote")
+        pull.add_argument("--remote", required=True)
+        pull.add_argument("--dest", default=None)
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
-    if args.command == "list":
-        list_remotes()
-    elif args.command == "add":
-        setup_remote_backup(args.remote)
-    elif args.command == "push":
-        push_backup(args.remote)
-    elif args.command == "delete":
-        delete_remote(args.remote)
-    elif args.command == "diff":
-        generate_diff_report(args.remote)
-    elif args.command == "types":
-        list_supported_remote_types()
-    elif args.command == "pull":
-        pull_backup(args.remote, args.dest)
-    else:
-        parser.print_help()
+        if args.command == "list":
+            list_remotes()
+        elif args.command == "add":
+            setup_remote_backup(args.remote)
+        elif args.command == "push":
+            push_backup(args.remote)
+        elif args.command == "delete":
+            delete_remote(args.remote)
+        elif args.command == "diff":
+            generate_diff_report(args.remote)
+        elif args.command == "types":
+            list_supported_remote_types()
+        elif args.command == "pull":
+            pull_backup(args.remote, args.dest)
+        else:
+            parser.print_help()
 
 
 if __name__ == "__main__":
