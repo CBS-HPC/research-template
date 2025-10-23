@@ -140,12 +140,17 @@ def remote_user_info(remote_name):
 
     def ensure_repo_suffix(folder, repo):
         folder = folder.strip().replace("\\", "/").rstrip("/")
+        
+        # Normalize PROJECT_ROOT for comparison
+        normalized_project_root = PROJECT_ROOT.replace("\\", "/").rstrip("/")
+        
+        # Check if paths are the same
+        if os.path.normpath(folder) == os.path.normpath(normalized_project_root):
+            folder = folder + "_backup"
+        
+        # Then ensure repo name is in the path
         if not folder.endswith(repo):
             folder = os.path.join(folder, repo).replace("\\", "/")
-        
-        # Add "_backup" suffix if folder equals PROJECT_ROOT
-        if folder == PROJECT_ROOT:
-            folder = folder + "_backup"
         
         return folder
 
