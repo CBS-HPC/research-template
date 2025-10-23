@@ -4,16 +4,165 @@ import os
 import subprocess
 import tempfile
 from datetime import datetime
+import getpass
+
+
 
 from .common import (
     PROJECT_ROOT,
     change_dir,
     ensure_correct_kernel,
     load_from_env,
-    remote_user_info,
+    save_to_env,
     toml_ignore,
 )
 from .vcs import git_commit, git_log_to_file, git_push, install_rclone
+
+
+def ensure_repo_suffix(folder, repo):
+    folder = folder.strip().replace("\\", "/").rstrip("/")
+    
+    # Then ensure repo name is in the path
+    if not folder.endswith(repo):
+        folder = os.path.join(folder, repo).replace("\\", "/")
+    
+    # Check if folder is within PROJECT_ROOT
+    project_root_normalized = os.path.normpath(str(PROJECT_ROOT))
+    folder_normalized = os.path.normpath(folder)
+    
+    # Check if folder is inside or equal to PROJECT_ROOT
+    if folder_normalized.startswith(project_root_normalized):
+        folder = project_root_normalized + "_backup"
+
+    return folder
+
+
+def remote_user_info(remote_name):
+    """Prompt for remote login credentials and base folder path."""
+
+
+    if remote_name.strip().lower() == "deic storage":
+        remote_name = "deic-storage"
+
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
+
+    if remote_name.lower() == "deic-storage":
+        email = load_from_env("DEIC_EMAIL")
+        password = load_from_env("DEIC_PASS")
+        base_folder = load_from_env("DEIC_BASE")
+
+        if email and password and base_folder:
+            base_folder = ensure_repo_suffix(base_folder, repo_name)
+            return email, password, base_folder
+
+        default_email = load_from_env("EMAIL", ".cookiecutter")
+        default_base = f"RClone_backup/{repo_name}"
+        base_folder = (
+            input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        )
+        base_folder = ensure_repo_suffix(base_folder, repo_name)
+
+        email = password = None
+        while not email or not password:
+            email = (
+                input(f"Please enter email to Deic-Storage [{default_email}]: ").strip()
+                or default_email
+            )
+            password = getpass.getpass("Please enter password to Deic-Storage: ").strip()
+
+            if not email or not password:
+                print("Both email and password are required.\n")
+
+        print(f"\nUsing email: {email}")
+        print(f"Using base folder: {base_folder}\n")
+
+        save_to_env(email, "DEIC_EMAIL")
+        save_to_env(password, "DEIC_PASS")
+        save_to_env(base_folder, "DEIC_BASE")
+
+        return email, password, base_folder
+
+    elif remote_name.lower() == "local":
+        base_folder = (
+            input("Please enter the local path for rclone: ")
+            .strip()
+            .replace("'", "")
+            .replace('"', "")
+        )
+        base_folder = check_path_format(base_folder)
+        if not os.path.isdir(base_folder):
+            print(f"Error: The specified local path does not exist{base_folder}")
+            return None, None, None
+        base_folder = ensure_repo_suffix(base_folder, repo_name)
+        return None, None, base_folder
+
+    elif remote_name.lower() != "none":
+        default_base = f"RClone_backup/{repo_name}"
+        base_folder = (
+            input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
+        )
+        base_folder = ensure_repo_suffix(base_folder, repo_name)
+        return None, None, base_folder
+
+    else:
+        return None, None, None
+
+
+def handle_lumi_o_remote(remote_name):
+    """Handle LUMI-O remote configuration and credentials."""
+    
+    # Default to private if just "lumi-o"
+    if remote_name.lower() == "lumi-o":
+        remote_type = "private"
+    else:
+        remote_type = "private" if "private" in remote_name.lower() else "public"
+    
+    # Try to load existing credentials
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
+    project_id = load_from_env("LUMI_PROJECT_ID")
+    access_key = load_from_env("LUMI_ACCESS_KEY")
+    secret_key = load_from_env("LUMI_SECRET_KEY")
+    base_folder = load_from_env(f"LUMI_BASE_{remote_type.upper()}")
+    
+    if project_id and access_key and secret_key and base_folder:
+        base_folder = ensure_repo_suffix(base_folder, repo_name)
+        # Update remote_name to actual format: lumi-{project_id}-{private|public}
+        actual_remote_name = f"lumi-{project_id}-{remote_type}"
+        return access_key, secret_key, base_folder, actual_remote_name
+    
+    # Prompt for credentials
+    default_base = f"RClone_backup/{repo_name}"
+    base_folder = (
+        input(f"Enter base folder for LUMI-O ({remote_type}) [{default_base}]: ").strip() 
+        or default_base
+    )
+    base_folder = ensure_repo_suffix(base_folder, repo_name)
+    
+    print("\nGet your LUMI-O credentials from: https://auth.lumidata.eu")
+    
+    project_id = access_key = secret_key = None
+    while not project_id or not access_key or not secret_key:
+        project_id = input("Please enter LUMI project ID (e.g., 465000001): ").strip()
+        access_key = input("Please enter LUMI access key: ").strip()
+        secret_key = getpass.getpass("Please enter LUMI secret key: ").strip()
+        
+        if not project_id or not access_key or not secret_key:
+            print("All three fields (project ID, access key, secret key) are required.\n")
+    
+    print(f"\nUsing project ID: {project_id}")
+    print(f"Using base folder: {base_folder}")
+    print(f"Remote type: {remote_type}\n")
+    
+    # Save credentials
+    save_to_env(project_id, "LUMI_PROJECT_ID")
+    save_to_env(access_key, "LUMI_ACCESS_KEY")
+    save_to_env(secret_key, "LUMI_SECRET_KEY")
+    save_to_env(base_folder, f"LUMI_BASE_{remote_type.upper()}")
+    
+    # Update remote_name to actual format
+    actual_remote_name = f"lumi-{project_id}-{remote_type}"
+    
+    return project_id, access_key, secret_key, base_folder
 
 
 def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
@@ -177,7 +326,7 @@ def check_rclone_remote(remote_name):
         return False
 
 
-def add_remote(remote_name: str = "deic-storage", email: str = None, password: str = None):
+def add_remote(remote_name: str = "deic-storage", email: str = None, password: str = None,project_id: str = None, access_key: str = None, secret_key: str = None):
     remote_name = remote_name.lower()
 
     if remote_name.strip().lower() == "deic storage":
@@ -215,6 +364,48 @@ def add_remote(remote_name: str = "deic-storage", email: str = None, password: s
             "pass",
             password,
         ]
+
+    elif remote_name in ["lumi-o", "lumi-o-private", "lumi-o-public"]:
+        # LUMI-O S3 storage configuration
+        if not all([project_id, access_key, secret_key]):
+            print("Error: LUMI-O requires project_id, access_key, and secret_key")
+            print("Get your credentials from https://auth.lumidata.eu")
+            return
+        
+        # Determine remote type and ACL
+        if remote_name == "lumi-o-public":
+            remote_type = "public"
+            acl = "public-read"
+        else:
+            # Default to private for "lumi-o" and "lumi-o-private"
+            remote_type = "private"
+            acl = "private"
+        
+        # Create remote name
+        actual_remote = f"lumi-{project_id}-{remote_type}"
+        
+        # Create remote command
+        command = [
+            "rclone",
+            "config",
+            "create",
+            actual_remote,
+            "s3",
+            "provider",
+            "Other",
+            "endpoint",
+            "https://lumidata.eu",
+            "access_key_id",
+            access_key,
+            "secret_access_key",
+            secret_key,
+            "region",
+            "other-v2-signature",
+            "acl",
+            acl,
+        ]
+        
+              
     elif remote_name in ["dropbox", "onedrive"]:
         print(f"You will need to authorize rclone with {remote_name}")
         command = ["rclone", "config", "create", remote_name, remote_name]
@@ -281,12 +472,22 @@ def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
             print(f"Error updating JSON config: {e}")
 
 
-def add_folder(remote_name, base_folder):
+def add_folder(remote_name:str = None, base_folder:str = None, project_id: str = None):
+    
     if remote_name.strip().lower() == "deic storage":
         remote_name = "deic-storage"
+    elif remote_name.lower() in ["lumi-o", "lumi-o-private"]:
+        remote_name = f"lumi-{project_id}-private"
+        rclone_cmd = "lsd"
+    elif remote_name.lower() == "lumi-o-public": 
+        rclone_cmd = "lsd"
+        remote_name = f"lumi-{project_id}-public"
+    else:
+        rclone_cmd = "lsf"
+
 
     while True:
-        check_command = ["rclone", "lsf", f"{remote_name}:/{base_folder}"]
+        check_command = ["rclone", rclone_cmd, f"{remote_name}:/{base_folder}"]
         result = subprocess.run(check_command, capture_output=True, text=True)
         if result.returncode == 0 and result.stdout.strip():
             choice = (
@@ -317,10 +518,15 @@ def setup_remote_backup(remote_name: str = None):
         if remote_name.strip().lower() == "deic storage":
             remote_name = "deic-storage"
 
-        email, password, base_folder = remote_user_info(remote_name.lower())
-        #if install_rclone("./bin"):
-        add_remote(remote_name.lower(), email, password)
-        add_folder(remote_name.lower(), base_folder)
+        if remote_name.lower() in ["lumi-o", "lumi-o-private", "lumi-o-public"]:
+            project_id, access_key, secret_key, base_folder= handle_lumi_o_remote(remote_name)
+            email, password = None, None
+        else:
+            email, password, base_folder = remote_user_info(remote_name.lower())
+            project_id, access_key, secret_key = None, None, None
+
+        add_remote(remote_name.lower(), email, password,project_id, access_key, secret_key)
+        add_folder(remote_name.lower(), base_folder,project_id)
     else:
         install_rclone("./bin")
 

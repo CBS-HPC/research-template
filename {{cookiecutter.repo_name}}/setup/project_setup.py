@@ -245,7 +245,7 @@ data_license = "{{cookiecutter.data_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
-remote_backup = "none"
+
 
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
 (
@@ -262,7 +262,6 @@ from repokit.common import (
     ask_yes_no,
     check_path_format,
     git_user_info,
-    remote_user_info,
     repo_user_info,
     save_to_env,
 )
@@ -450,8 +449,7 @@ git_user_info(version_control)
 # Set git repo info
 repo_user, _, _, _ = repo_user_info(version_control, repo_name, code_repo)
 
-# RClone remote login info
-remote_user_info(remote_backup)
+
 
 # Create Virtual Environment
 from repokit.env import setup_virtual_environment
