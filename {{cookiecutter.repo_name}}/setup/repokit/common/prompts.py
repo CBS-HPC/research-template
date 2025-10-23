@@ -141,17 +141,18 @@ def remote_user_info(remote_name):
     def ensure_repo_suffix(folder, repo):
         folder = folder.strip().replace("\\", "/").rstrip("/")
         
-        # Normalize PROJECT_ROOT for comparison
-        normalized_project_root = PROJECT_ROOT.replace("\\", "/").rstrip("/")
-        
-        # Check if paths are the same
-        if os.path.normpath(folder) == os.path.normpath(normalized_project_root):
-            folder = folder + "_backup"
-        
         # Then ensure repo name is in the path
         if not folder.endswith(repo):
             folder = os.path.join(folder, repo).replace("\\", "/")
         
+        # Check if folder is within PROJECT_ROOT
+        project_root_normalized = os.path.normpath(str(PROJECT_ROOT))
+        folder_normalized = os.path.normpath(folder)
+        
+        # Check if folder is inside or equal to PROJECT_ROOT
+        if folder_normalized.startswith(project_root_normalized):
+            folder = project_root_normalized + "_backup"
+
         return folder
 
     if remote_name.strip().lower() == "deic storage":

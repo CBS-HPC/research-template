@@ -54,7 +54,7 @@ def save_rclone_json(remote_name: str, folder_path: str, json_path="./bin/rclone
     }
     with open(json_path, "w") as f:
         json.dump(data, f, indent=2)
-        print(f"Saved rclone path for '{remote_name}' to {json_path}")
+        print(f"Saved rclone path ({folder_path}) for '{remote_name}' to {json_path}")
 
 
 def load_all_rclone_json(json_path="./bin/rclone_remote.json"):
