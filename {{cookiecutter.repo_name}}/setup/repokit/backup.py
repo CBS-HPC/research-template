@@ -13,7 +13,7 @@ from .common import (
     remote_user_info,
     toml_ignore,
 )
-from .vcs.git_w import git_commit, git_log_to_file, git_push, install_rclone
+from .vcs import git_commit, git_log_to_file, git_push, install_rclone
 
 
 def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:

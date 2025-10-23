@@ -5,28 +5,9 @@ import subprocess
 import sys
 import yaml
 
-from .git_w import setup_git, git_commit, _run
-from ..common import PROJECT_ROOT, is_installed, install_uv
+from .git_w import git_commit
+from ..common import PROJECT_ROOT, is_installed, install_uv, _run
 
-
-def setup_dvc(version_control, remote_storage, code_repo, repo_name):
-    # Install Git
-    if not setup_git(version_control, code_repo):
-        return
-
-    # Install datalad
-    if not install_dvc():
-        return
-    
- 
-    # deactivate data/ in .gitignore
-    gitignore = pathlib.Path(PROJECT_ROOT / ".gitignore")
-    if gitignore.exists():
-        lines = gitignore.read_text().splitlines()
-        new_lines = [line.replace("data/", "#data/") if line.startswith("data/") else line for line in lines]
-        gitignore.write_text("\n".join(new_lines) + "\n")
-    
-    dvc_init(remote_storage, code_repo, repo_name)
 
 
 def install_dvc():
@@ -107,6 +88,7 @@ def dvc_init(remote_storage, code_repo, repo_name):
 
     #subprocess.run(["dvc", "add", "data"], check=True)
     
+  
     _ = git_commit("Initial commit - Initialize DVC.")
     print("Created an initial commit.")
 
@@ -322,6 +304,8 @@ def dvc_cleaning(project_root: str | os.PathLike = ".") -> list[str]:
     
     Returns a list of repo-relative .dvc paths that were removed.
     """
+
+    
     root = pathlib.Path(project_root).resolve()
     if not (root / ".dvc").exists():
         #print("Not a DVC project (missing .dvc).")

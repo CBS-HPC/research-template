@@ -4,69 +4,17 @@ import platform
 import subprocess
 import urllib.request
 
-
 from ..common import (
     PROJECT_ROOT,
     ask_yes_no,
-    change_dir,
     exe_to_path,
     git_user_info,
     is_installed,
     load_from_env,
-    save_to_env,
 
 )
 
-
-# -------- helpers -------------------------------------------------------------
-
-def _run(cmd: list[str], cwd: pathlib.Path, check: bool = True, capture: bool = False):
-    return subprocess.run(
-        cmd, cwd=str(cwd), check=check,
-        capture_output=capture, text=True
-    )
-
-# Version Control
-def setup_version_control(version_control, remote_storage, code_repo, repo_name):
-    """Handle repository creation and log-in based on selected platform."""
-    if version_control.lower() == "git":
-        setup_git(version_control, code_repo)
-    if version_control.lower() == "datalad":
-        setup_datalad(version_control, remote_storage, code_repo, repo_name)
-    elif version_control.lower() == "dvc":
-        setup_dvc(version_control, remote_storage, code_repo, repo_name)
-
-
 # Git Functions:
-def setup_git(version_control, code_repo):
-    if install_git("./bin/git"):
-        # Ensure that chdir is at project folder
-        os.chdir(PROJECT_ROOT)
-
-        flag, git_name, git_email = check_git_config()
-
-        if not flag:
-            flag, git_name, git_email = setup_git_config(version_control, git_name, git_email)
-
-        if flag and version_control.lower() in ["git","datalad","dvc"]: 
-            
-            default_branch = "main" if code_repo.lower() in ["github", "codeberg"] else "master"
-            
-            flag = git_init(msg="Initial commit", branch_name=default_branch)
-            # Creating its own git repo for "data"
-            if version_control.lower() == "git" and flag:
-                with change_dir("./data"):
-                    flag = git_init(msg="Initial commit - /data git repo", branch_name="data", path=os.getcwd())
-                    git_log_to_file(os.path.join(".gitlog"))
-        if flag:
-            save_to_env(git_name, "GIT_USER")
-            save_to_env(git_email, "GIT_EMAIL")
-
-        return flag
-    else:
-        return False
-
-
 def install_git(install_path=None):
     """
     Installs Git if it is not already installed.
@@ -381,71 +329,5 @@ def git_log_to_file(output_file_path):
         print(f"Git log has been saved to {output_file_path}")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
-
-
-# rclone
-def install_rclone(install_path):
-    """Download and extract rclone to the specified bin folder."""
-
-    def download_rclone(install_path="./bin"):
-        os_type = platform.system().lower()
-
-        # Set the URL and executable name based on the OS
-        if os_type == "windows":
-            url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
-            rclone_executable = "rclone.exe"
-        elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
-            url = (
-                "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
-                if os_type == "linux"
-                else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
-            )
-            rclone_executable = "rclone"
-        else:
-            print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
-            return None
-
-        # Create the bin folder if it doesn't exist
-        install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
-        os.makedirs(install_path, exist_ok=True)
-
-        # Download rclone
-        local_zip = os.path.join(install_path, "rclone.zip")
-        print(f"Downloading rclone for {os_type} to {local_zip}...")
-        response = requests.get(url)
-        if response.status_code == 200:
-            with open(local_zip, "wb") as file:
-                file.write(response.content)
-            print("Download complete.")
-        else:
-            print("Failed to download rclone. Please check the URL.")
-            return None
-
-        # Extract the rclone executable
-        print("Extracting rclone...")
-        with zipfile.ZipFile(local_zip, "r") as zip_ref:
-            zip_ref.extractall(install_path)
-
-        rclone_folder = glob.glob(os.path.join(install_path, "rclone-*"))
-
-        if not rclone_folder or len(rclone_folder) > 1:
-            print(f"More than one 'rclone-*' folder detected in {install_path}")
-            return None
-
-        # Clean up by deleting the zip file
-        os.remove(local_zip)
-
-        rclone_path = os.path.join(install_path, rclone_folder[0], rclone_executable)
-        print(f"rclone installed successfully at {rclone_path}.")
-
-        rclone_path = os.path.abspath(rclone_path)
-
-        os.chmod(rclone_path, 0o755)
-        return rclone_path
-
-    if not is_installed("rclone", "Rclone"):
-        rclone_path = download_rclone(install_path)
-        return exe_to_path("rclone", os.path.dirname(rclone_path))
-    return True
 
 

@@ -1,47 +1,12 @@
-import glob
 import os
 import pathlib
-import platform
 import shutil
 import subprocess
 import sys
-import zipfile
-import requests
 import re
 
-from .git_w import setup_git,  _run
-from ..common import PROJECT_ROOT, exe_to_path, is_installed, install_uv
 
-
-def setup_datalad(version_control, remote_storage, code_repo, repo_name):
-    # Install Git
-    if not setup_git(version_control, code_repo):
-        return
-    # Install git-annex
-    if not install_git_annex():
-        return
-    # Install datalad
-    if not install_datalad():
-        return
-
-    # Install rclone git-annex-remote-rclone
-    install_rclone("./bin")
-    install_git_annex_remote_rclone("./bin")
-
-    # deactivate data/ in .gitignore
-    gitignore = pathlib.Path(PROJECT_ROOT / ".gitignore")
-    if gitignore.exists():
-        lines = gitignore.read_text().splitlines()
-        new_lines = [line.replace("data/", "#data/") if line.startswith("data/") else line for line in lines]
-        gitignore.write_text("\n".join(new_lines) + "\n")
-
-    # Create datalad dataset
-    datalad_create()
-
-    if remote_storage == "Local Path":
-        datalad_local_storage(repo_name, remote_storage)
-    elif remote_storage in ["Dropbox", "Deic-Storage"]:
-        datalad_deic_storage(repo_name)
+from ..common import PROJECT_ROOT, exe_to_path, is_installed, install_uv, _run
 
 
 def _uv_installer(package_name:str = None):
@@ -664,71 +629,5 @@ def datalad_cleaning(project_root: str | pathlib.Path = ".") -> None:
 
     _ = clean_gitattributes(root)
     _ = clean_subdatasets(root)
-
-
-# rclone
-def install_rclone(install_path):
-    """Download and extract rclone to the specified bin folder."""
-
-    def download_rclone(install_path="./bin"):
-        os_type = platform.system().lower()
-
-        # Set the URL and executable name based on the OS
-        if os_type == "windows":
-            url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
-            rclone_executable = "rclone.exe"
-        elif os_type in ["linux", "darwin"]:  # "Darwin" is the system name for macOS
-            url = (
-                "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
-                if os_type == "linux"
-                else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
-            )
-            rclone_executable = "rclone"
-        else:
-            print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
-            return None
-
-        # Create the bin folder if it doesn't exist
-        install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
-        os.makedirs(install_path, exist_ok=True)
-
-        # Download rclone
-        local_zip = os.path.join(install_path, "rclone.zip")
-        print(f"Downloading rclone for {os_type} to {local_zip}...")
-        response = requests.get(url)
-        if response.status_code == 200:
-            with open(local_zip, "wb") as file:
-                file.write(response.content)
-            print("Download complete.")
-        else:
-            print("Failed to download rclone. Please check the URL.")
-            return None
-
-        # Extract the rclone executable
-        print("Extracting rclone...")
-        with zipfile.ZipFile(local_zip, "r") as zip_ref:
-            zip_ref.extractall(install_path)
-
-        rclone_folder = glob.glob(os.path.join(install_path, "rclone-*"))
-
-        if not rclone_folder or len(rclone_folder) > 1:
-            print(f"More than one 'rclone-*' folder detected in {install_path}")
-            return None
-
-        # Clean up by deleting the zip file
-        os.remove(local_zip)
-
-        rclone_path = os.path.join(install_path, rclone_folder[0], rclone_executable)
-        print(f"rclone installed successfully at {rclone_path}.")
-
-        rclone_path = os.path.abspath(rclone_path)
-
-        os.chmod(rclone_path, 0o755)
-        return rclone_path
-
-    if not is_installed("rclone", "Rclone"):
-        rclone_path = download_rclone(install_path)
-        return exe_to_path("rclone", os.path.dirname(rclone_path))
-    return True
 
 

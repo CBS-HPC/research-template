@@ -23,6 +23,7 @@ from .env import (
     package_installer,
     remove_from_env,
     run_script,
+    _run,
     set_packages,
     set_program_path,
     write_uv_requires,
@@ -87,6 +88,7 @@ __all__ = (
     "get_version",
     "set_program_path",
     "run_script",
+    "_run",
     "ensure_correct_kernel",
     # tomlutils
     "toml_ignore",

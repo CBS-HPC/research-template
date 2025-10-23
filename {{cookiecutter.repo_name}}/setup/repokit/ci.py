@@ -5,7 +5,7 @@ import subprocess
 
 from .common import PROJECT_ROOT, ensure_correct_kernel, get_version, load_from_env
 from .templates.jinja import patch_jinja_templates, set_jinja_templates
-from .vcs.git_w import git_push
+from .vcs import git_push
 
 
 @ensure_correct_kernel

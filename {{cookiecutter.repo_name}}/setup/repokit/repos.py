@@ -17,7 +17,7 @@ from .common import (
     load_from_env,
     repo_user_info,
 )
-from .vcs.git_w import setup_version_control
+from .vcs import setup_version_control
 
 # GitHub, Gitlad and Codeberg Functions
 

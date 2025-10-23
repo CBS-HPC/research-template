@@ -29,10 +29,10 @@ from .dmp import (
     save_json,
     to_bytes_mb,
 )
-from ..vcs.git_w import git_commit, git_log_to_file
-from ..vcs.datalad_w import set_datalad, datalad_cleaning
-from ..vcs.dvc_w import set_dvc, dvc_cleaning
-#from .clean import datalad_cleanning, dvc_cleaning
+
+
+from ..vcs import git_commit, git_log_to_file, set_datalad, datalad_cleaning, set_dvc, dvc_cleaning
+
 
 DEFAULT_UPDATE_FIELDS = []  # top-level fields
 DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]  # nested fields to update

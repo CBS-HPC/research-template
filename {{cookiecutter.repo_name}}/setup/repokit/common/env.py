@@ -657,6 +657,12 @@ def run_script(programming_language, script_command=None):
         return f"Error running script: {e.stderr.strip() if e.stderr else str(e)}"
 
 
+def _run(cmd: list[str], cwd: pathlib.Path, check: bool = True, capture: bool = False):
+    return subprocess.run(
+        cmd, cwd=str(cwd), check=check,
+        capture_output=capture, text=True
+    )
+
 def ensure_correct_kernel(func):
     """Decorator to ensure the function runs with the correct Python kernel."""
 

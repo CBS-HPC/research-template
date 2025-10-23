@@ -97,11 +97,11 @@ install_py_package("./setup")
 from repokit.ci import ci_config
 from repokit.common import load_from_env, save_to_env, set_program_path,set_packages,package_installer
 from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
-from repokit.git_remote import setup_repo, setup_version_control
+from repokit.repos import setup_repo, setup_version_control
 from repokit.rdm.dmp import main as dmp_update
 from repokit.readme.template import create_citation_file, creating_readme
 from repokit.templates.code import create_scripts
-from repokit.vcs.git_w import git_push
+from repokit.vcs import git_push
 
 
 def intro():
