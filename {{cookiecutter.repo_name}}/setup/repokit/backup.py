@@ -7,7 +7,6 @@ from datetime import datetime
 import getpass
 
 
-
 from .common import (
     PROJECT_ROOT,
     change_dir,
@@ -15,11 +14,12 @@ from .common import (
     load_from_env,
     save_to_env,
     toml_ignore,
+    check_path_format,
 )
 from .vcs import git_commit, git_log_to_file, git_push, install_rclone
 
 
-def ensure_repo_suffix(folder, repo):
+def _ensure_repo_suffix(folder, repo):
     folder = folder.strip().replace("\\", "/").rstrip("/")
     
     # Then ensure repo name is in the path
@@ -37,12 +37,8 @@ def ensure_repo_suffix(folder, repo):
     return folder
 
 
-def remote_user_info(remote_name):
+def _remote_user_info(remote_name):
     """Prompt for remote login credentials and base folder path."""
-
-
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
 
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
 
@@ -52,15 +48,15 @@ def remote_user_info(remote_name):
         base_folder = load_from_env("DEIC_BASE")
 
         if email and password and base_folder:
-            base_folder = ensure_repo_suffix(base_folder, repo_name)
-            return email, password, base_folder
+            base_folder = _ensure_repo_suffix(base_folder, repo_name)
+            return remote_name, email, password, base_folder
 
         default_email = load_from_env("EMAIL", ".cookiecutter")
         default_base = f"RClone_backup/{repo_name}"
         base_folder = (
             input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
         )
-        base_folder = ensure_repo_suffix(base_folder, repo_name)
+        base_folder = _ensure_repo_suffix(base_folder, repo_name)
 
         email = password = None
         while not email or not password:
@@ -80,7 +76,7 @@ def remote_user_info(remote_name):
         save_to_env(password, "DEIC_PASS")
         save_to_env(base_folder, "DEIC_BASE")
 
-        return email, password, base_folder
+        return remote_name, email, password, base_folder
 
     elif remote_name.lower() == "local":
         base_folder = (
@@ -92,31 +88,35 @@ def remote_user_info(remote_name):
         base_folder = check_path_format(base_folder)
         if not os.path.isdir(base_folder):
             print(f"Error: The specified local path does not exist{base_folder}")
-            return None, None, None
-        base_folder = ensure_repo_suffix(base_folder, repo_name)
-        return None, None, base_folder
+            return remote_name, None, None, None
+        base_folder = _ensure_repo_suffix(base_folder, repo_name)
+        return remote_name, None, None, base_folder
 
+    elif "lumi" in remote_name.lower():
+        remote_type = "public" if "public" in remote_name.lower() else "private"
+        base_folder = load_from_env(f"LUMI_BASE_{remote_type.upper()}")
+        if not base_folder:
+            remote_name, base_folder = _handle_lumi_o_remote(remote_name)
+        
+        return remote_name, None, None, base_folder
+ 
     elif remote_name.lower() != "none":
         default_base = f"RClone_backup/{repo_name}"
         base_folder = (
             input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
         )
-        base_folder = ensure_repo_suffix(base_folder, repo_name)
-        return None, None, base_folder
+        base_folder = _ensure_repo_suffix(base_folder, repo_name)
+        return remote_name, None, None, base_folder
 
     else:
-        return None, None, None
+        return remote_name, None, None, None
 
 
-def handle_lumi_o_remote(remote_name):
+def _handle_lumi_o_remote(remote_name):
     """Handle LUMI-O remote configuration and credentials."""
     
-    # Default to private if just "lumi-o"
-    if remote_name.lower() == "lumi-o":
-        remote_type = "private"
-    else:
-        remote_type = "private" if "private" in remote_name.lower() else "public"
-    
+    remote_type = "public" if "public" in remote_name.lower() else "private"
+
     # Try to load existing credentials
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
     project_id = load_from_env("LUMI_PROJECT_ID")
@@ -125,10 +125,10 @@ def handle_lumi_o_remote(remote_name):
     base_folder = load_from_env(f"LUMI_BASE_{remote_type.upper()}")
     
     if project_id and access_key and secret_key and base_folder:
-        base_folder = ensure_repo_suffix(base_folder, repo_name)
+        base_folder = _ensure_repo_suffix(base_folder, repo_name)
         # Update remote_name to actual format: lumi-{project_id}-{private|public}
-        actual_remote_name = f"lumi-{project_id}-{remote_type}"
-        return access_key, secret_key, base_folder, actual_remote_name
+        remote_name = f"lumi-{project_id}-{remote_type}"
+        return remote_name, base_folder
     
     # Prompt for credentials
     default_base = f"RClone_backup/{repo_name}"
@@ -136,7 +136,7 @@ def handle_lumi_o_remote(remote_name):
         input(f"Enter base folder for LUMI-O ({remote_type}) [{default_base}]: ").strip() 
         or default_base
     )
-    base_folder = ensure_repo_suffix(base_folder, repo_name)
+    base_folder = _ensure_repo_suffix(base_folder, repo_name)
     
     print("\nGet your LUMI-O credentials from: https://auth.lumidata.eu")
     
@@ -160,15 +160,12 @@ def handle_lumi_o_remote(remote_name):
     save_to_env(base_folder, f"LUMI_BASE_{remote_type.upper()}")
     
     # Update remote_name to actual format
-    actual_remote_name = f"lumi-{project_id}-{remote_type}"
+    remote_name = f"lumi-{project_id}-{remote_type}"
     
-    return project_id, access_key, secret_key, base_folder
+    return remote_name, base_folder 
 
 
-def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
+def _load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
     if not os.path.exists(json_path):
         print(f"No rclone registry found at {json_path}")
         return None
@@ -184,10 +181,7 @@ def load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> 
     return entry
 
 
-def save_rclone_json(remote_name: str, folder_path: str, json_path="./bin/rclone_remote.json"):
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
+def _save_rclone_json(remote_name: str, folder_path: str, json_path="./bin/rclone_remote.json"):
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     data = {}
     if os.path.exists(json_path):
@@ -206,7 +200,7 @@ def save_rclone_json(remote_name: str, folder_path: str, json_path="./bin/rclone
         print(f"Saved rclone path ({folder_path}) for '{remote_name}' to {json_path}")
 
 
-def load_all_rclone_json(json_path="./bin/rclone_remote.json"):
+def _load_all_rclone_json(json_path="./bin/rclone_remote.json"):
     if not os.path.exists(json_path):
         return {}
     try:
@@ -216,9 +210,7 @@ def load_all_rclone_json(json_path="./bin/rclone_remote.json"):
         return {}
 
 
-def update_last_sync(remote_name: str, success=True, json_path="./bin/rclone_remote.json"):
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
+def _update_last_sync(remote_name: str, success=True, json_path="./bin/rclone_remote.json"):
 
     if not os.path.exists(json_path):
         return
@@ -236,11 +228,9 @@ def update_last_sync(remote_name: str, success=True, json_path="./bin/rclone_rem
         print(f"Failed to update sync status: {e}")
 
 
-def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
-    rclone_repo = load_rclone_json(remote_name)
+def _rclone_sync(remote_name: str = None, folder_to_backup: str = None):
+   
+    rclone_repo = _load_rclone_json(remote_name)
 
     if not rclone_repo:
         print("remote has not been configured")
@@ -277,13 +267,13 @@ def rclone_sync(remote_name: str = None, folder_to_backup: str = None):
     try:
         subprocess.run(command_sync, check=True)
         print(f"Folder '{folder_to_backup}' successfully synchronized with '{rclone_repo}'.")
-        update_last_sync(remote_name, success=True)
+        _update_last_sync(remote_name, success=True)
     except subprocess.CalledProcessError as e:
         print(f"Failed to sync folder to remote: {e}")
-        update_last_sync(remote_name, success=False)
+        _update_last_sync(remote_name, success=False)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        update_last_sync(remote_name, success=False)
+        _update_last_sync(remote_name, success=False)
 
 
 def list_remotes():
@@ -296,7 +286,7 @@ def list_remotes():
         rclone_configured = set()
 
     print("\n📁 Mapped Backup Folders:")
-    paths = load_all_rclone_json()
+    paths = _load_all_rclone_json()
     if not paths:
         print("  No folders registered.")
     else:
@@ -309,9 +299,6 @@ def list_remotes():
 
 
 def check_rclone_remote(remote_name):
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
     try:
         result = subprocess.run(
             ["rclone", "listremotes"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -326,70 +313,51 @@ def check_rclone_remote(remote_name):
         return False
 
 
-def add_remote(remote_name: str = "deic-storage", email: str = None, password: str = None,project_id: str = None, access_key: str = None, secret_key: str = None):
+def _add_remote(remote_name: str = None, email: str = None, password: str = None):
     remote_name = remote_name.lower()
 
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
-    if remote_name == "deic-storage":
-        command = [
-            "rclone",
-            "config",
-            "create",
-            remote_name,
-            "sftp",
-            "host",
-            "sftp.storage.deic.dk",
-            "port",
-            "2222",
-            "user",
-            email,
-            "pass",
-            password,
-        ]
-    elif remote_name == "erda":
-        command = [
-            "rclone",
-            "config",
-            "create",
-            remote_name,
-            "sftp",
-            "host",
-            "io.erda.dk",
-            "port",
-            "22",
-            "user",
-            email,
-            "pass",
-            password,
-        ]
-
-    elif remote_name in ["lumi-o", "lumi-o-private", "lumi-o-public"]:
-        # LUMI-O S3 storage configuration
-        if not all([project_id, access_key, secret_key]):
-            print("Error: LUMI-O requires project_id, access_key, and secret_key")
-            print("Get your credentials from https://auth.lumidata.eu")
-            return
+    if remote_name in ["deic-storage", "erda"]:
+        # SFTP configuration for DEIC Storage and ERDA
+        if remote_name == "deic-storage":
+            host = "sftp.storage.deic.dk"
+            port = "2222"
+        else:  # erda
+            host = "io.erda.dk"
+            port = "22"
         
+        command = [
+            "rclone",
+            "config",
+            "create",
+            remote_name,
+            "sftp",
+            "host",
+            host,
+            "port",
+            port,
+            "user",
+            email,
+            "pass",
+            password,
+        ]
+
+    elif "lumi" in remote_name.lower():
+
+        access_key = load_from_env("LUMI_ACCESS_KEY")
+        secret_key = load_from_env("LUMI_SECRET_KEY")
+
         # Determine remote type and ACL
-        if remote_name == "lumi-o-public":
-            remote_type = "public"
+        if "public" in remote_name.lower():
             acl = "public-read"
         else:
-            # Default to private for "lumi-o" and "lumi-o-private"
-            remote_type = "private"
             acl = "private"
-        
-        # Create remote name
-        actual_remote = f"lumi-{project_id}-{remote_type}"
         
         # Create remote command
         command = [
             "rclone",
             "config",
             "create",
-            actual_remote,
+            remote_name,
             "s3",
             "provider",
             "Other",
@@ -404,13 +372,11 @@ def add_remote(remote_name: str = "deic-storage", email: str = None, password: s
             "acl",
             acl,
         ]
-        
-              
-    elif remote_name in ["dropbox", "onedrive"]:
-        print(f"You will need to authorize rclone with {remote_name}")
+                
+    elif remote_name in ["dropbox", "onedrive","local"]:
+        if remote_name in ["dropbox", "onedrive"]:
+            print(f"You will need to authorize rclone with {remote_name}")
         command = ["rclone", "config", "create", remote_name, remote_name]
-    elif remote_name == "local":
-        command = ["rclone", "config", "create", remote_name, "local"]
     else:
         # Fetch all backend types from rclone
         output = list_supported_remote_types()
@@ -433,12 +399,45 @@ def add_remote(remote_name: str = "deic-storage", email: str = None, password: s
         print(f"Failed to create rclone remote: {e}")
 
 
+def _add_folder(remote_name:str = None, base_folder:str = None):
+    
+    if "lumi" in remote_name.lower():
+        rclone_cmd = "lsd"
+    else:
+        rclone_cmd = "lsf"
+
+    while True:
+        #check_command = ["rclone", rclone_cmd, f"{remote_name}:/{base_folder}"]
+        check_command = ["rclone", rclone_cmd, f"{remote_name}:{base_folder}"]
+        result = subprocess.run(check_command, capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            choice = (
+                input(
+                    f"'{base_folder}' exists on '{remote_name}'. Overwrite (o), rename (n), cancel (c)? [o/n/c]: "
+                )
+                .strip()
+                .lower()
+            )
+            if choice == "o":
+                break
+            elif choice == "n":
+                base_folder = input("New folder name: ").strip()
+            else:
+                print("Cancelled.")
+                return None
+        else:
+            break
+    try:
+        subprocess.run(["rclone", "mkdir", f"{remote_name}:{base_folder}"], check=True)
+        _save_rclone_json(remote_name, base_folder)
+    except Exception as e:
+        print(f"Error creating folder: {e}")
+
+
 def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
 
     # Step 1: Attempt to delete the actual remote directory if it exists
-    remote_path = load_rclone_json(remote_name, json_path)
+    remote_path = _load_rclone_json(remote_name, json_path)
     if remote_path:
         try:
             print(f"Attempting to purge remote folder at: {remote_path}")
@@ -472,61 +471,11 @@ def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
             print(f"Error updating JSON config: {e}")
 
 
-def add_folder(remote_name:str = None, base_folder:str = None, project_id: str = None):
-    
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-    elif remote_name.lower() in ["lumi-o", "lumi-o-private"]:
-        remote_name = f"lumi-{project_id}-private"
-        rclone_cmd = "lsd"
-    elif remote_name.lower() == "lumi-o-public": 
-        rclone_cmd = "lsd"
-        remote_name = f"lumi-{project_id}-public"
-    else:
-        rclone_cmd = "lsf"
-
-
-    while True:
-        check_command = ["rclone", rclone_cmd, f"{remote_name}:/{base_folder}"]
-        result = subprocess.run(check_command, capture_output=True, text=True)
-        if result.returncode == 0 and result.stdout.strip():
-            choice = (
-                input(
-                    f"'{base_folder}' exists on '{remote_name}'. Overwrite (o), rename (n), cancel (c)? [o/n/c]: "
-                )
-                .strip()
-                .lower()
-            )
-            if choice == "o":
-                break
-            elif choice == "n":
-                base_folder = input("New folder name: ").strip()
-            else:
-                print("Cancelled.")
-                return None
-        else:
-            break
-    try:
-        subprocess.run(["rclone", "mkdir", f"{remote_name}:{base_folder}"], check=True)
-        save_rclone_json(remote_name, base_folder)
-    except Exception as e:
-        print(f"Error creating folder: {e}")
-
-
-def setup_remote_backup(remote_name: str = None):
+def setup_backup(remote_name: str = None):
     if remote_name:
-        if remote_name.strip().lower() == "deic storage":
-            remote_name = "deic-storage"
-
-        if remote_name.lower() in ["lumi-o", "lumi-o-private", "lumi-o-public"]:
-            project_id, access_key, secret_key, base_folder= handle_lumi_o_remote(remote_name)
-            email, password = None, None
-        else:
-            email, password, base_folder = remote_user_info(remote_name.lower())
-            project_id, access_key, secret_key = None, None, None
-
-        add_remote(remote_name.lower(), email, password,project_id, access_key, secret_key)
-        add_folder(remote_name.lower(), base_folder,project_id)
+        remote_name, email, password, base_folder = _remote_user_info(remote_name.lower())
+        _add_remote(remote_name.lower(), email, password)
+        _add_folder(remote_name.lower(), base_folder)
     else:
         install_rclone("./bin")
 
@@ -549,7 +498,7 @@ def list_supported_remote_types():
 
 def generate_diff_report(remote_name):
     def run_diff(remote):
-        remote_path = load_rclone_json(remote)
+        remote_path = _load_rclone_json(remote)
         if not remote_path:
             print(f"No path found for remote '{remote}'.")
             return
@@ -575,74 +524,31 @@ def generate_diff_report(remote_name):
             except subprocess.CalledProcessError as e:
                 print(f"Failed to generate diff report for '{remote}': {e}")
 
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
     if remote_name.lower() == "all":
-        for remote in load_all_rclone_json().keys():
+        for remote in _load_all_rclone_json().keys():
             run_diff(remote)
     else:
         run_diff(remote_name)
 
 
 def push_backup(remote_name):
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
 
     os.chdir(PROJECT_ROOT)
 
     if not install_rclone("./bin"):
         return
     if remote_name.lower() == "all":
-        all_remotes = load_all_rclone_json()
+        all_remotes = _load_all_rclone_json()
         for remote_name in all_remotes:
-            rclone_sync(remote_name.lower())
+            _rclone_sync(remote_name.lower())
     else:
-        rclone_repo = load_rclone_json(remote_name.lower())
+        rclone_repo = _load_rclone_json(remote_name.lower())
         if not rclone_repo:
-            email, password, base_folder = remote_user_info(remote_name.lower())
-            add_remote(remote_name.lower(), email, password)
-            add_folder(remote_name.lower(), base_folder)
+            remote_name, email, password, base_folder = _remote_user_info(remote_name.lower())
+            _add_remote(remote_name.lower(), email, password)
+            _add_folder(remote_name.lower(), base_folder)
 
-        rclone_sync(remote_name.lower())
-
-
-def generate_diff_report(remote_name):
-    def run_diff(remote):
-        remote_path = load_rclone_json(remote)
-        if not remote_path:
-            print(f"No path found for remote '{remote}'.")
-            return
-        with tempfile.NamedTemporaryFile() as temp:
-            command = [
-                "rclone",
-                "diff",
-                ".",
-                remote_path,
-                "--dry-run",
-                "--no-traverse",
-                "--differ",
-                "--missing-on-dst",
-                "--missing-on-src",
-                "--output",
-                temp.name,
-            ]
-            try:
-                subprocess.run(command, check=True)
-                with open(temp.name) as f:
-                    diff_output = f.read()
-                print(f"\n📊 Diff report for '{remote}':\n{diff_output or '[No differences]'}")
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to generate diff report for '{remote}': {e}")
-
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
-    if remote_name.lower() == "all":
-        for remote in load_all_rclone_json().keys():
-            run_diff(remote)
-    else:
-        run_diff(remote_name)
+        _rclone_sync(remote_name.lower())
 
 
 def pull_backup(remote_name: str = None, destination_folder: str = None):
@@ -652,10 +558,7 @@ def pull_backup(remote_name: str = None, destination_folder: str = None):
         print("Error: No remote specified for pulling backup.")
         return
 
-    if remote_name.strip().lower() == "deic storage":
-        remote_name = "deic-storage"
-
-    rclone_repo = load_rclone_json(remote_name)
+    rclone_repo = _load_rclone_json(remote_name)
     if not rclone_repo:
         print("Remote has not been configured or not found in registry.")
         return
@@ -717,10 +620,18 @@ def main():
 
         args = parser.parse_args()
 
+        if hasattr(args, 'remote') and args.remote:
+            remote = args.remote.strip().lower()
+            
+            if remote == "deic storage":
+                args.remote = "deic-storage"
+            elif "lumi" in remote:
+                args.remote, _ = _handle_lumi_o_remote(args.remote)
+        
         if args.command == "list":
             list_remotes()
         elif args.command == "add":
-            setup_remote_backup(args.remote)
+            setup_backup(args.remote)
         elif args.command == "push":
             push_backup(args.remote)
         elif args.command == "delete":
