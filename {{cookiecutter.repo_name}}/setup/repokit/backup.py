@@ -52,7 +52,7 @@ def _remote_user_info(remote_name):
             return remote_name, email, password, base_folder
 
         default_email = load_from_env("EMAIL", ".cookiecutter")
-        default_base = f"RClone_backup/{repo_name}"
+        default_base = f"rclone-backup/{repo_name}"
         base_folder = (
             input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
         )
@@ -101,7 +101,7 @@ def _remote_user_info(remote_name):
         return remote_name, None, None, base_folder
  
     elif remote_name.lower() != "none":
-        default_base = f"RClone_backup/{repo_name}"
+        default_base = f"rclone-backup/{repo_name}"
         base_folder = (
             input(f"Enter base folder for {remote_name} [{default_base}]: ").strip() or default_base
         )
@@ -131,7 +131,7 @@ def _handle_lumi_o_remote(remote_name):
         return remote_name, base_folder
     
     # Prompt for credentials
-    default_base = f"RClone_backup/{repo_name}"
+    default_base = f"rclone-backup/{repo_name}"
     base_folder = (
         input(f"Enter base folder for LUMI-O ({remote_type}) [{default_base}]: ").strip() 
         or default_base
@@ -399,17 +399,18 @@ def _add_remote(remote_name: str = None, email: str = None, password: str = None
         print(f"Failed to create rclone remote: {e}")
 
 
+
 def _add_folder(remote_name:str = None, base_folder:str = None):
-    
-    if "lumi" in remote_name.lower():
-        rclone_cmd = "lsd"
-    else:
-        rclone_cmd = "lsf"
+     
+    if "lumi" in remote_name.lower(): # S3
+        check_cmd = ["rclone","lsd", f"{remote_name}:/{base_folder}"]
+        mkdir_cmd = ["rclone","mkdir", f"{remote_name}:/{base_folder}"]
+    else: # SFTP or Local
+        check_cmd = ["rclone","lsf", f"{remote_name}:/{base_folder}"]
+        mkdir_cmd = ["rclone","mkdir", f"{remote_name}:/{base_folder}"]
 
     while True:
-        #check_command = ["rclone", rclone_cmd, f"{remote_name}:/{base_folder}"]
-        check_command = ["rclone", rclone_cmd, f"{remote_name}:{base_folder}"]
-        result = subprocess.run(check_command, capture_output=True, text=True)
+        result = subprocess.run(check_cmd, capture_output=True, text=True)
         if result.returncode == 0 and result.stdout.strip():
             choice = (
                 input(
@@ -424,14 +425,15 @@ def _add_folder(remote_name:str = None, base_folder:str = None):
                 base_folder = input("New folder name: ").strip()
             else:
                 print("Cancelled.")
-                return None
+                return
         else:
             break
     try:
-        subprocess.run(["rclone", "mkdir", f"{remote_name}:{base_folder}"], check=True)
+        subprocess.run(mkdir_cmd, check=True)
         _save_rclone_json(remote_name, base_folder)
     except Exception as e:
         print(f"Error creating folder: {e}")
+
 
 
 def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
