@@ -417,11 +417,11 @@ Once your environment is activated (see [🚀 Project Activation](#-project-acti
 
 **📌 Setup a Remote**
 ```
-backup add --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup add --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🚀 Push to Remote**
 ```
-backup push --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup push --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 This command performs the following:
 - Commits and pushes the root Git project (if version control is enabled)
@@ -430,15 +430,15 @@ This command performs the following:
 
 **📥 Pull Backup from Remote**
 ```
-backup pull --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup pull --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📊 View Differences Before Sync**
 ```
-backup diff --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup diff --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🧹 Remove Remote**
 ```
-backup delete --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup delete --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📋 List Configured Remotes and Sync Status**
 ```
@@ -1094,11 +1094,11 @@ Once your environment is activated (see [🚀 Project Activation](#-project-acti
 
 **📌 Setup a Remote**
 ```
-backup add --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup add --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🚀 Push to Remote**
 ```
-backup push --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup push --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 This command performs the following:
 - Commits and pushes the root Git project (if version control is enabled)
@@ -1107,15 +1107,15 @@ This command performs the following:
 
 **📥 Pull Backup from Remote**
 ```
-backup pull --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup pull --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📊 View Differences Before Sync**
 ```
-backup diff --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup diff --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🧹 Remove Remote**
 ```
-backup delete --remote deic-storage  # (or erda, dropbox, onedrive, local)
+backup delete --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📋 List Configured Remotes and Sync Status**
 ```

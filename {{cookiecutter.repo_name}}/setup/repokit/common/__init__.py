@@ -38,7 +38,7 @@ from .paths import (
 )
 
 # ---- common.prompt ----
-from .prompts import ask_yes_no, git_user_info, remote_user_info, repo_user_info, split_multi
+from .prompts import ask_yes_no, git_user_info, repo_user_info, split_multi
 
 # ---- common.secretstore ----
 from .secretstore import (
@@ -75,7 +75,6 @@ __all__ = (
     "split_multi",
     "git_user_info",
     "repo_user_info",
-    "remote_user_info",
     # env (topic module)
     "create_uv_project",
     "write_uv_requires",
