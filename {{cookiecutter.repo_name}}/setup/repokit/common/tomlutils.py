@@ -3,6 +3,7 @@ import os
 import sys
 
 import pathspec
+from pathspec.patterns import GitWildMatchPattern
 
 if sys.version_info < (3, 11):
     import toml
@@ -57,7 +58,7 @@ def toml_ignore(
     if ignore_filename and os.path.exists(ignore_path):
         with open(ignore_path, encoding="utf-8") as f:
             patterns = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+        spec = pathspec.PathSpec.from_lines(GitWildMatchPattern, patterns)
         return spec, patterns
 
     toml_full_path = toml_path if os.path.isabs(toml_path) else os.path.join(folder, toml_path)
@@ -70,7 +71,7 @@ def toml_ignore(
                 patterns = patterns.get(toml_key, [])
             if isinstance(patterns, list):
                 patterns = [p.strip() for p in patterns if isinstance(p, str)]
-                spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+                spec = pathspec.PathSpec.from_lines(GitWildMatchPattern, patterns)
                 return spec, patterns
         except Exception as e:
             print(f"❌ Error reading [{tool_name}] from {toml_full_path}: {e}")

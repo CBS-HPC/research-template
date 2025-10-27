@@ -4,9 +4,10 @@ import json
 import os
 import pathlib
 import re
-
 import pathspec
 import yaml
+from pathspec.patterns import GitWildMatchPattern
+
 
 from ..common import (
     PROJECT_ROOT,
@@ -24,9 +25,12 @@ from .sections import main_text, read_dependencies
 def merge_pathspecs(
     spec_a: pathspec.PathSpec,
     spec_b: pathspec.PathSpec,
-    style: str = "gitwildmatch",
+    pattern_class=GitWildMatchPattern,
     dedupe: bool = True,
 ) -> pathspec.PathSpec:
+    """
+    Merge two PathSpec objects into a single PathSpec.
+    """
     # Pull the raw pattern text out of each compiled Pattern
     patterns = [p.pattern for p in getattr(spec_a, "patterns", [])] + [
         p.pattern for p in getattr(spec_b, "patterns", [])
@@ -36,7 +40,7 @@ def merge_pathspecs(
         seen = set()
         patterns = [x for x in patterns if not (x in seen or seen.add(x))]
 
-    return pathspec.PathSpec.from_lines(style, patterns)
+    return pathspec.PathSpec.from_lines(pattern_class, patterns)
 
 
 def datasets_ignore(
@@ -44,12 +48,8 @@ def datasets_ignore(
     base: str | pathlib.Path | None = None,
 ) -> pathspec.PathSpec:
     """
-    Read dmp.json and build a gitwildmatch PathSpec containing ONLY
-    directory destinations. Patterns are:
-      - relative to `base` (if provided)
-      - forward-slashed
-      - guaranteed to end with "/"
-      - deduplicated (order-preserving)
+    Read datasets JSON and build a gitwildmatch PathSpec to ignore contents
+    of dataset directories.
     """
 
     def _to_dir_pattern(p: str | pathlib.Path, base: str | pathlib.Path | None) -> str:
@@ -60,14 +60,17 @@ def datasets_ignore(
         s = p.as_posix()
         if s.startswith("./"):
             s = s[2:]
-        if not s.endswith("/"):
-            s += "/"
+        # Remove trailing slash if present
+        s = s.rstrip("/")
+        # Add /** to match all contents within the directory
+        s += "/**"
         return s
 
     datasets_json = pathlib.Path(datasets_json)
 
+    # Return empty PathSpec if file doesn't exist
     if not os.path.exists(datasets_json):
-        return None
+        return pathspec.PathSpec.from_lines(GitWildMatchPattern, [])
 
     with open(datasets_json, encoding="utf-8") as f:
         payload = json.load(f)
@@ -75,21 +78,32 @@ def datasets_ignore(
     patterns: list[str] = []
     seen: set[str] = set()
 
-    for ds in payload.get("datasets", []):
-        dest = str(ds.get("destination", "")).strip()
-        if not dest:
-            continue
-        # treat as directory if it either ends with a separator or has no file extension
-        is_dir = dest.endswith(("\\", "/")) or pathlib.Path(dest).suffix == ""
-        if not is_dir:
-            continue
-        pat = _to_dir_pattern(dest, base=base)
-        if pat not in seen:
-            seen.add(pat)
-            patterns.append(pat)
+    # Access datasets under "dmp" key
+    dmp_data = payload.get("dmp", {})
+    datasets = dmp_data.get("dataset", []) or []
 
-    # Build and return a PathSpec using gitwildmatch
-    return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+    for ds in datasets:
+        # distribution can be a list; handle robustly
+        distributions = ds.get("distribution", []) or []
+        if isinstance(distributions, dict):  # tolerate dict as well
+            distributions = [distributions]
+
+        for dist in distributions:
+            access = dist.get("access_url") or ""
+            if not access:
+                continue
+            # Treat as directory if it ends with a separator or has no file extension
+            is_dir = access.endswith(("/", "\\")) or pathlib.Path(access).suffix == ""
+            if not is_dir:
+                continue
+
+            pat = _to_dir_pattern(access, base=base)
+            if pat not in seen:
+                seen.add(pat)
+                patterns.append(pat)
+
+    return pathspec.PathSpec.from_lines(GitWildMatchPattern, patterns)
+
 
 
 # README.md
@@ -105,6 +119,7 @@ def creating_readme(programming_language="None"):
     file_descriptions = str(PROJECT_ROOT / pathlib.Path("./file_descriptions.json"))
     readme_file = str(PROJECT_ROOT / pathlib.Path("./README.md"))
     code_path = str(PROJECT_ROOT / pathlib.Path(code_path))
+    dmp_json = str(PROJECT_ROOT / pathlib.Path("./dmp.json"))
 
     update_file_descriptions(programming_language, readme_file, file_descriptions)
 
@@ -116,7 +131,7 @@ def creating_readme(programming_language="None"):
         tool_name="file_descriptions",
         toml_path="pyproject.toml",
     )
-    markdown_table, _ = generate_dataset_table("./dmp.json", file_descriptions)
+    markdown_table, _ = generate_dataset_table(dmp_json , file_descriptions)
 
     if markdown_table:
         dataset_to_readme(markdown_table)
@@ -127,12 +142,14 @@ def creating_readme(programming_language="None"):
         tool_name="treeignore",
         toml_key="patterns",
     )
-    dataset_list = datasets_ignore(datasets_json="dmp.json")
+
+   
+    dataset_list = datasets_ignore(datasets_json=dmp_json,base=str(PROJECT_ROOT))
 
     if dataset_list:
         ignore_list = merge_pathspecs(ignore_list, dataset_list)
 
-    create_tree(readme_file, ignore_list, file_descriptions)
+    create_tree(readme_file, ignore_list, file_descriptions,str(PROJECT_ROOT))
 
 
 def generate_readme(
@@ -167,7 +184,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
     - root_folder (str): The root folder to generate the tree structure from. Defaults to the current working directory.
     """
 
-    def generate_tree(folder_path, file_descriptions, ignore_spec=None, prefix="", root_path=None):
+    def generate_tree(folder_path, file_descriptions, ignore_list=None, prefix="", root_path=None):
         """
         Recursively generates a tree structure of the folder, respecting ignore rules.
 
@@ -175,7 +192,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         ----------
         - folder_path (str): The current folder path.
         - file_descriptions (dict): Optional descriptions for files.
-        - ignore_spec (PathSpec): PathSpec object for ignore rules.
+        - ignore_list (PathSpec): PathSpec object for ignore rules.
         - prefix (str): The prefix for the current level of the tree.
         - root_path (str): The root path of the project, needed for correct relative paths.
         """
@@ -192,8 +209,16 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
                 "\\", "/"
             )  # Always use forward slashes
 
-            if ignore_spec and ignore_spec.match_file(rel_path):
-                continue
+            # Check if item should be ignored
+            if ignore_list:
+                if os.path.isdir(item_path):
+                    # Only skip the directory itself if it is explicitly ignored.
+                    # Do NOT probe with a trailing slash; that makes 'dir/**' hide the dir entry.
+                    if ignore_list.match_file(rel_path):
+                        continue
+                else:
+                    if ignore_list.match_file(rel_path):
+                        continue
 
             is_last = index == len(items) - 1
             tree_symbol = "└── " if is_last else "├── "
@@ -211,7 +236,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
                     generate_tree(
                         item_path,
                         file_descriptions,
-                        ignore_spec=ignore_spec,
+                        ignore_list=ignore_list,
                         prefix=child_prefix,
                         root_path=root_path,
                     )
@@ -251,7 +276,7 @@ def create_tree(readme_file=None, ignore_list=None, file_descriptions=None, root
         tree_structure = generate_tree(
             folder_path=root_folder,
             file_descriptions=file_descriptions,
-            ignore_spec=ignore_list,
+            ignore_list=ignore_list,
             root_path=root_folder,
         )
 

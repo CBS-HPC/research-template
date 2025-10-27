@@ -48,18 +48,19 @@ patterns = [
 # ============================================================
 [tool.treeignore]
 patterns = [
-  "bin/",
-  "utils/",
-  ".conda/",
-  ".venv/",
-  "renv/",
-  ".git/",
-  ".github/",
-  ".datalad/",
-  ".gitkeep",
-  ".env",
-  "__pycache__",
-  "setup.egg-info"
+    "bin/",
+    "utils/",
+    ".conda/",
+    ".venv/",
+    "renv/",
+    ".git/",
+    ".github/",
+    ".datalad/",
+    ".gitkeep",
+    ".env",
+    "__pycache__",
+    "repokit/",
+    "repokit.egg-info/",
 ]
 
 # ============================================================
