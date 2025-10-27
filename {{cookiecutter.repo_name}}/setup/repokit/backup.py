@@ -96,9 +96,9 @@ def _remote_user_info(remote_name):
         remote_type = "public" if "public" in remote_name.lower() else "private"
         base_folder = load_from_env(f"LUMI_BASE_{remote_type.upper()}")
         if not base_folder:
-            remote_name, base_folder = _handle_lumi_o_remote(remote_name)
+            remote_name, base_folder, access_key, secret_key  = _handle_lumi_o_remote(remote_name)
         
-        return remote_name, None, None, base_folder
+        return remote_name, access_key, secret_key, base_folder
  
     elif remote_name.lower() != "none":
         default_base = f"rclone-backup/{repo_name}"
@@ -110,6 +110,22 @@ def _remote_user_info(remote_name):
 
     else:
         return remote_name, None, None, None
+
+
+def _check_lumi_o_credentials(repo_name: str, command: str = "add"):
+    project_id = load_from_env("LUMI_PROJECT_ID")
+
+    if not project_id and command == "add":
+        repo_name, _, _, _ = _handle_lumi_o_remote(repo_name)
+        return repo_name
+    elif not project_id and command != "add":
+        print(f"{repo_name} remote not found. Please set up the remote first by running 'backup add --remote {repo_name}'.")
+        return None
+    else:
+        # project_id exists - construct remote_name
+        remote_type = "public" if "public" in repo_name.lower() else "private"
+        remote_name = f"lumi-{project_id}-{remote_type}"
+        return remote_name
 
 
 def _handle_lumi_o_remote(remote_name):
@@ -128,7 +144,7 @@ def _handle_lumi_o_remote(remote_name):
         base_folder = _ensure_repo_suffix(base_folder, repo_name)
         # Update remote_name to actual format: lumi-{project_id}-{private|public}
         remote_name = f"lumi-{project_id}-{remote_type}"
-        return remote_name, base_folder
+        return remote_name, base_folder, access_key, secret_key
     
     # Prompt for credentials
     default_base = f"rclone-backup/{repo_name}"
@@ -162,7 +178,7 @@ def _handle_lumi_o_remote(remote_name):
     # Update remote_name to actual format
     remote_name = f"lumi-{project_id}-{remote_type}"
     
-    return remote_name, base_folder 
+    return remote_name, base_folder, access_key, secret_key 
 
 
 def _load_rclone_json(remote_name: str, json_path="./bin/rclone_remote.json") -> str:
@@ -313,7 +329,7 @@ def check_rclone_remote(remote_name):
         return False
 
 
-def _add_remote(remote_name: str = None, email: str = None, password: str = None):
+def _add_remote(remote_name: str = None, login_key: str = None, pass_key: str = None):
     remote_name = remote_name.lower()
 
     if remote_name in ["deic-storage", "erda"]:
@@ -336,15 +352,12 @@ def _add_remote(remote_name: str = None, email: str = None, password: str = None
             "port",
             port,
             "user",
-            email,
+            login_key,
             "pass",
-            password,
+            pass_key,
         ]
 
     elif "lumi" in remote_name.lower():
-
-        access_key = load_from_env("LUMI_ACCESS_KEY")
-        secret_key = load_from_env("LUMI_SECRET_KEY")
 
         # Determine remote type and ACL
         if "public" in remote_name.lower():
@@ -364,9 +377,9 @@ def _add_remote(remote_name: str = None, email: str = None, password: str = None
             "endpoint",
             "https://lumidata.eu",
             "access_key_id",
-            access_key,
+            login_key,
             "secret_access_key",
-            secret_key,
+            pass_key,
             "region",
             "other-v2-signature",
             "acl",
@@ -475,8 +488,8 @@ def delete_remote(remote_name: str, json_path="./bin/rclone_remote.json"):
 
 def setup_backup(remote_name: str = None):
     if remote_name:
-        remote_name, email, password, base_folder = _remote_user_info(remote_name.lower())
-        _add_remote(remote_name.lower(), email, password)
+        remote_name, login_key, pass_key, base_folder = _remote_user_info(remote_name.lower())
+        _add_remote(remote_name.lower(), login_key, pass_key)
         _add_folder(remote_name.lower(), base_folder)
     else:
         install_rclone("./bin")
@@ -546,8 +559,8 @@ def push_backup(remote_name):
     else:
         rclone_repo = _load_rclone_json(remote_name.lower())
         if not rclone_repo:
-            remote_name, email, password, base_folder = _remote_user_info(remote_name.lower())
-            _add_remote(remote_name.lower(), email, password)
+            remote_name, login_key, pass_key, base_folder = _remote_user_info(remote_name.lower())
+            _add_remote(remote_name.lower(), login_key, pass_key)
             _add_folder(remote_name.lower(), base_folder)
 
         _rclone_sync(remote_name.lower())
@@ -628,7 +641,9 @@ def main():
             if remote == "deic storage":
                 args.remote = "deic-storage"
             elif "lumi" in remote:
-                args.remote, _ = _handle_lumi_o_remote(args.remote)
+                args.remote = _check_lumi_o_credentials(repo_name = args.remote,command = args.command)
+                if args.remote is None:
+                    return
         
         if args.command == "list":
             list_remotes()
