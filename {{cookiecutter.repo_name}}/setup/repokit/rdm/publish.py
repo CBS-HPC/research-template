@@ -10,6 +10,8 @@ import zipfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
+from ..common import PROJECT_ROOT
+
 # ========= Exceptions / constants =========
 
 
@@ -167,7 +169,7 @@ def files_from_x_dcas(ds: dict) -> list[str]:
     Authoritative list from extension[].x_dcas.data_files. Normalize/resolve paths.
     """
     out: list[str] = []
-    project_root = Path(__file__).resolve().parent.parent.parent
+
     for ext in _norm_list(ds.get("extension", [])):
         if not isinstance(ext, dict):
             continue
@@ -177,7 +179,7 @@ def files_from_x_dcas(ds: dict) -> list[str]:
                 continue
             pp = os.path.normpath(p.replace("\\", "/"))
             if not os.path.isabs(pp):
-                pp = os.path.normpath(os.path.join(project_root, pp))
+                pp = os.path.normpath(os.path.join(PROJECT_ROOT, pp))
             out.append(pp)
     # unique, preserve order
     seen, uniq = set(), []
@@ -186,6 +188,7 @@ def files_from_x_dcas(ds: dict) -> list[str]:
             seen.add(p)
             uniq.append(p)
     return uniq
+
 
 
 def regular_files_existing(paths: list[str]) -> list[str]:

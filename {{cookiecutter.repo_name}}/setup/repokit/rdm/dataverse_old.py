@@ -7,7 +7,7 @@ Publish a dataset from an maDMP to DeiC Dataverse (demo) with:
 - Structure-preserving zips (first-level folders) with sharding/merging as needed
 - Double-zip workaround so Dataverse does not auto-unpack our archives
 - Rich maDMP -> Dataverse citation metadata mapping
-- Robust retries for API calls and uploads, including PARALLEL file uploads
+- Robust retries for API calls and uploads
 
 Usage (CLI):
   python dataverse.py --dmp path/to/dmp.json --token <API_TOKEN> --publish
@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 import os
-import stat
 import tempfile
 import time
 import zipfile
@@ -25,11 +24,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import random
 from typing import Any
-from threading import Thread
+
 import requests
 import streamlit as st  # type: ignore
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 
 from .publish import (
     DATAVERS_SUBJECTS,
@@ -46,17 +43,18 @@ from .publish import (
     _guess_dataset,
     _has_personal_or_sensitive,
     _norm_list,
-    _normalize_orcid,  # note: we redefine a local helper below (kept for compatibility)
+    _normalize_orcid,
     append_packaging_note,
     description_from_madmp,
     estimate_zip_total_bytes,
     files_from_x_dcas,
     realize_packaging_plan_parallel,
+    regular_files_existing,
     sizes_bytes,
 )
 
 # ============================================================================
-# Configuration
+# Configuration (requested constants)
 # ============================================================================
 
 # Packaging heuristics
@@ -67,9 +65,6 @@ TARGET_MAX_PER_ARCHIVE: int = int(DATAVERSE_MAX_FILE_SIZE_BYTES * 0.92)
 # Important: Dataverse auto-unpacks single ZIP uploads.
 # When we must package, we create *double-zipped* archives to prevent auto-unpack.
 DOUBLE_ZIP_TO_PREVENT_UNPACK: bool = True
-
-# Parallel upload tuning (threads)
-DATAVERSE_UPLOAD_WORKERS: int = 5  # 3–6 is usually a sweet spot
 
 
 # ============================================================================
@@ -101,6 +96,24 @@ def _dv_post_json(
     raise PublishError(f"Dataverse request failed after retries: POST {url}")
 
 
+def _dv_post_files(
+    url: str, token: str, files: dict, data: dict, timeout: int = DEFAULT_TIMEOUT
+) -> requests.Response:
+    for attempt in range(6):
+        try:
+            r = requests.post(
+                url, headers=_dv_headers(token), files=files, data=data, timeout=timeout
+            )
+        except requests.RequestException:
+            _retry_sleep(attempt)
+            continue
+        if r.status_code in RETRY_STATUS:
+            _retry_sleep(attempt)
+            continue
+        return r
+    raise PublishError(f"Dataverse file upload failed after retries: POST {url}")
+
+
 def _dv_create_dataset(
     base_url: str, token: str, dataverse_alias: str, dataset_version_json: dict
 ) -> dict:
@@ -112,6 +125,34 @@ def _dv_create_dataset(
         except Exception:
             detail = r.text
         raise PublishError(f"Dataverse create dataset failed: {r.status_code} {detail}")
+    return r.json()
+
+
+def _dv_upload_file(
+    base_url: str,
+    token: str,
+    dataset_id: int,
+    filepath: str,
+    description: str | None = None,
+    directory_label: str | None = None,
+    restrict: bool = False,
+) -> dict:
+    url = f"{base_url.rstrip('/')}/api/datasets/{dataset_id}/add"
+    json_data = {"description": description or ""}
+    if directory_label:
+        json_data["directoryLabel"] = directory_label
+    if restrict:
+        json_data["restrict"] = True
+    data = {"jsonData": json.dumps(json_data)}
+    with open(filepath, "rb") as fh:
+        files = {"file": (os.path.basename(filepath), fh)}
+        r = _dv_post_files(url, token, files=files, data=data)
+    if not r.ok:
+        try:
+            detail = r.json()
+        except Exception:
+            detail = r.text
+        raise PublishError(f"Dataverse upload failed ({filepath}): {r.status_code} {detail}")
     return r.json()
 
 
@@ -128,80 +169,6 @@ def _dv_publish_dataset(
             detail = r.text
         raise PublishError(f"Dataverse publish failed: {r.status_code} {detail}")
     return r.json()
-
-
-# ============================================================================
-# Parallel upload helpers (Session + ThreadPool)
-# ============================================================================
-
-def _dv_session(token: str) -> requests.Session:
-    s = requests.Session()
-    s.headers.update({"X-Dataverse-key": token})
-    return s
-
-
-def _dv_upload_file_session(
-    session: requests.Session,
-    base_url: str,
-    dataset_id: int,
-    filepath: str,
-    description: str | None,
-    directory_label: str | None,
-    restrict: bool,
-    timeout: int = DEFAULT_TIMEOUT,
-) -> str:
-    """Single file upload using an existing Session (keep-alive). Returns basename on success."""
-    url = f"{base_url.rstrip('/')}/api/datasets/{dataset_id}/add"
-    json_data = {"description": description or ""}
-    if directory_label:
-        json_data["directoryLabel"] = directory_label
-    if restrict:
-        json_data["restrict"] = True
-
-    data = {"jsonData": json.dumps(json_data)}
-    with open(filepath, "rb") as fh:
-        files = {"file": (os.path.basename(filepath), fh)}
-        r = session.post(url, files=files, data=data, timeout=timeout)
-
-    if not r.ok:
-        try:
-            detail = r.json()
-        except Exception:
-            detail = r.text
-        raise PublishError(f"Dataverse upload failed ({filepath}): {r.status_code} {detail}")
-
-    return os.path.basename(filepath)
-
-
-def _dv_upload_many_parallel(
-    base_url: str,
-    token: str,
-    dataset_id: int,
-    paths: list[str],
-    directory_label_for: dict[str, str | None],
-    restrict: bool,
-    workers: int = DATAVERSE_UPLOAD_WORKERS,
-) -> tuple[list[str], list[str]]:
-    """Upload many files in parallel (threaded). Returns (uploaded_basenames, error_messages)."""
-    if not paths:
-        return [], []
-    uploaded: list[str] = []
-    errors: list[str] = []
-    with _dv_session(token) as sess, ThreadPoolExecutor(max_workers=workers) as ex:
-        futs = {}
-        for fp in paths:
-            lbl = directory_label_for.get(fp)
-            fut = ex.submit(
-                _dv_upload_file_session, sess, base_url, dataset_id, fp, None, lbl, restrict
-            )
-            futs[fut] = fp
-
-        for fut in as_completed(futs):
-            try:
-                uploaded.append(fut.result())
-            except Exception as e:
-                errors.append(f"{os.path.basename(futs[fut])}: {e}")
-    return uploaded, errors
 
 
 # ============================================================================
@@ -621,7 +588,6 @@ def _build_dataverse_packaging_plan(files: list[str]) -> DVPlan:
             if not members:
                 continue
             all_fit = all(os.path.getsize(m) <= DATAVERSE_MAX_FILE_SIZE_BYTES for m in members)
-            # Be conservative with singles in root: only a very small set
             if all_fit and len(members) <= 3:
                 for m in members:
                     singles.append(m)
@@ -759,132 +725,198 @@ def _build_dataverse_packaging_plan(files: list[str]) -> DVPlan:
 
 
 # ============================================================================
-# Utility: allow directories to pass through to packaging (keeps dirs & files)
-# ============================================================================
-
-
-def paths_existing_for_packaging(paths: list[str]) -> list[str]:
-    """
-    Keep existing files OR directories (follow symlinks). Skip broken/unreadable paths.
-    Returns normalized absolute paths.
-    """
-    out: list[str] = []
-    for raw in paths:
-        try:
-            p = Path(raw)
-            if not p.exists():
-                continue
-            t = p.resolve()
-            if t.is_file() or t.is_dir():
-                out.append(str(t))
-        except OSError:
-            continue
-    return out
-
-# ============================================================================
 # Publish flow
 # ============================================================================
 
 
-def _dv_worker_upload_then_publish(
-    *,
+def publish_dataset_to_dataverse(
     dmp_path: str,
-    dataset_title: str | None,
-    base_url: str,
     token: str,
-    ds_id: int,
-    restrict_files: bool,
-    publish: bool,
-) -> None:
-    """
-    Background worker:
-      - re-read DMP
-      - compute file list
-      - plan -> realize packaging (zips)
-      - parallel upload to Dataverse
-      - optional publish
-    """
-    try:
-        with open(dmp_path, encoding="utf-8") as fh:
-            _dmp = json.load(fh)
-        ds = _guess_dataset(_dmp, dataset_title or None)
+    dataverse_alias: str,
+    base_url: str,
+    dataset_id_selector: str | None = None,
+    publish: bool = False,
+    release_type: str = "major",
+) -> dict[str, Any]:
+    with open(dmp_path, encoding="utf-8") as fh:
+        dmp = json.load(fh)
 
-        # Privacy gate
-        sensitive = _has_personal_or_sensitive(ds)
+    ds = _guess_dataset(dmp, dataset_id_selector)
 
-        # Files from x_dcas (keep files AND dirs for packaging)
-        xdcas_files = files_from_x_dcas(ds)
+    # ── Privacy gate: metadata-only if personal/sensitive is set ─────────────────
+    sensitive = _has_personal_or_sensitive(ds)
 
-        # Resolve relative paths against DMP location
-        dmp_dir = str(Path(dmp_path).resolve().parent)
-        resolved: list[str] = []
-        for p in xdcas_files:
-            resolved.append(p if os.path.isabs(p) else os.path.normpath(os.path.join(dmp_dir, p)))
-        xdcas_files = resolved
+    # Authoritative file list from x_dcas
+    xdcas_files = files_from_x_dcas(ds)
 
-        uploads_raw = [] if sensitive else paths_existing_for_packaging(xdcas_files)
-        pre_count = len(uploads_raw)
-        if sensitive or pre_count == 0:
-            return  # metadata-only (by design)
 
-        # Build one packaging plan (no zips yet)
-        dvplan = _build_dataverse_packaging_plan(uploads_raw)
-
-        # Realize plan (create inner zips) in parallel
-        inner_paths = realize_packaging_plan_parallel(dvplan.plan)
-
-        # Add small singles the plan intentionally left out of zips
-        for p, _lbl in dvplan.directory_label_for.items():
-            if os.path.isfile(p) and p not in inner_paths:
-                inner_paths.append(p)
-
-        # Optional double-zip wrapper (to avoid auto-unpack)
-        final_paths: list[str] = []
-        if dvplan.double_zipped:
-            for fp in inner_paths:
-                if fp.lower().endswith(".zip") and os.path.getsize(fp) <= DATAVERSE_MAX_FILE_SIZE_BYTES:
-                    outer = os.path.join(
-                        os.path.dirname(fp), os.path.basename(fp).replace(".zip", "_outer.zip")
-                    )
-                    with zipfile.ZipFile(outer, "w", compression=ZIP_COMPRESSION, allowZip64=True) as zf:
-                        zf.write(fp, arcname=os.path.basename(fp))
-                    if os.path.getsize(outer) <= DATAVERSE_MAX_FILE_SIZE_BYTES:
-                        final_paths.append(outer)
-                        # carry forward the label mapping from inner zip to outer zip
-                        dvplan.directory_label_for[outer] = dvplan.directory_label_for.get(fp)
-                    # else skip as too big
-                else:
-                    final_paths.append(fp)
+    # Resolve relative paths against the DMP file location
+    dmp_dir = str(Path(dmp_path).resolve().parent)
+    resolved: list[str] = []
+    for p in xdcas_files:
+        if os.path.isabs(p):
+            resolved.append(p)
         else:
-            final_paths = inner_paths
+            resolved.append(os.path.normpath(os.path.join(dmp_dir, p)))
+    xdcas_files = resolved
 
-        # Guardrails
-        final_paths = [
-            fp for fp in final_paths
-            if os.path.exists(fp) and os.path.getsize(fp) <= DATAVERSE_MAX_FILE_SIZE_BYTES
-        ]
-        if not final_paths:
-            return
+ 
+    uploads_raw = [] if sensitive else regular_files_existing(xdcas_files)
+    skipped_due_to_privacy = xdcas_files if sensitive else []
 
-        # Parallel upload to Dataverse
-        _uploaded, _errs = _dv_upload_many_parallel(
-            base_url, token, ds_id, final_paths, dvplan.directory_label_for, restrict_files
-        )
+    # Build metadata first (without packaging note yet)
+    dataset_version, extra = build_dataverse_dataset_version_from_madmp(
+        dmp, dataset_id_selector, sensitive_flag=sensitive, skipped_files=skipped_due_to_privacy
+    )
+
+    # Pre-measure
+    pre_total, _ = sizes_bytes(uploads_raw)
+    pre_count = len(uploads_raw)
+
+    # Plan packaging (no zips created yet)
+    packaging_report: list[dict] = []
+    planned_final_paths: list[str] = []
+    directory_label_for: dict[str, str | None] = {}
+
+    if not sensitive and pre_count > 0:
+        dvplan = _build_dataverse_packaging_plan(uploads_raw)
+        packaging_report = dvplan.report
+        planned_final_paths = [(it.zip_path if it.kind == "zip" else it.path) for it in dvplan.plan]
+        # Include singles that will be uploaded as-is
+        for p, _lbl in dvplan.directory_label_for.items():
+            if os.path.isfile(p) and p not in planned_final_paths:
+                planned_final_paths.append(p)
+        directory_label_for = dvplan.directory_label_for
+    else:
+        planned_final_paths = []
+
+    # Append PACKAGING NOTE (+ info on double-zip) to dsDescription
+    ds_fields = dataset_version["datasetVersion"]["metadataBlocks"]["citation"]["fields"]
+    note = append_packaging_note(
+        next(
+            (
+                f["value"][0]["dsDescriptionValue"]["value"]
+                for f in ds_fields
+                if f.get("typeName") == "dsDescription"
+            ),
+            "No description provided.",
+        ),
+        pre_files=pre_count,
+        pre_bytes=pre_total,
+        final_paths=planned_final_paths,
+        report=packaging_report,
+    )
+    if not sensitive and planned_final_paths and DOUBLE_ZIP_TO_PREVENT_UNPACK:
+        note += "\n\n[INFO] Zip containers are uploaded as *double-zipped* archives to prevent automatic unpacking by Dataverse."
+
+    # replace the dsDescriptionValue text
+    for f in ds_fields:
+        if f.get("typeName") == "dsDescription":
+            f["value"][0]["dsDescriptionValue"]["value"] = note
+            break
+
+    # Create dataset (metadata-only first)
+    resp = _dv_create_dataset(base_url, token, dataverse_alias, dataset_version)
+    data = resp.get("data") or {}
+    ds_id = data.get("id")
+    pid = data.get("persistentId") or data.get("identifier")
+    if not ds_id:
+        raise PublishError(f"Dataverse: missing dataset id in response: {resp}")
+
+    uploaded: list[str] = []
+    skipped_too_big: list[str] = []
+    try:
+        # Determine file restrict flag from maDMP distribution.data_access
+        def _first_distribution(_ds: dict) -> dict:
+            d = _ds.get("distribution")
+            if isinstance(d, dict):
+                return d
+            if isinstance(d, list) and d:
+                return d[0]
+            return {}
+
+        access = (_first_distribution(ds).get("data_access") or "").strip().lower()
+        restrict_files = (access in {"shared", "closed"}) or sensitive
+
+        # Realize packaging and upload
+        if not sensitive and planned_final_paths:
+            dvplan = _build_dataverse_packaging_plan(uploads_raw)
+            inner_paths = realize_packaging_plan_parallel(dvplan.plan)
+
+            # Also add small singles that were not zipped
+            for p, _lbl in dvplan.directory_label_for.items():
+                if os.path.isfile(p) and p not in inner_paths:
+                    inner_paths.append(p)
+
+            final_paths: list[str] = []
+
+            # Wrap each created zip as an OUTER zip to prevent auto-unpack (if enabled)
+            if dvplan.double_zipped:
+                for fp in inner_paths:
+                    if (
+                        fp.lower().endswith(".zip")
+                        and os.path.getsize(fp) <= DATAVERSE_MAX_FILE_SIZE_BYTES
+                    ):
+                        outer = os.path.join(
+                            os.path.dirname(fp), os.path.basename(fp).replace(".zip", "_outer.zip")
+                        )
+                        with zipfile.ZipFile(
+                            outer, "w", compression=ZIP_COMPRESSION, allowZip64=True
+                        ) as zf:
+                            zf.write(fp, arcname=os.path.basename(fp))
+                        if os.path.getsize(outer) <= DATAVERSE_MAX_FILE_SIZE_BYTES:
+                            final_paths.append(outer)
+                            # carry forward the label mapping from the inner zip to the outer zip
+                            dvplan.directory_label_for[outer] = dvplan.directory_label_for.get(fp)
+                        else:
+                            skipped_too_big.append(os.path.basename(outer))
+                    else:
+                        final_paths.append(fp)
+            else:
+                final_paths = inner_paths
+
+            # Final guardrails
+            if len(final_paths) > DATAVERSE_MAX_FILES_TOTAL:
+                raise PublishError(
+                    "Final upload set still exceeds 100 files; please split the dataset."
+                )
+
+            for fp in final_paths:
+                if os.path.getsize(fp) > DATAVERSE_MAX_FILE_SIZE_BYTES:
+                    skipped_too_big.append(os.path.basename(fp))
+                    continue
+                lbl = dvplan.directory_label_for.get(fp)
+                _dv_upload_file(
+                    base_url, token, ds_id, fp, directory_label=lbl, restrict=restrict_files
+                )
+                uploaded.append(os.path.basename(fp))
+
         # Optional publish
+        publish_result = None
         if publish:
-            _dv_publish_dataset(base_url, token, ds_id, release_type="major")
+            publish_result = _dv_publish_dataset(base_url, token, ds_id, release_type=release_type)
 
-    except Exception as e:
-        # swallow exceptions in background to avoid killing Streamlit; log if you prefer
-        try:
-            print("[dv worker error]", e)
-        except Exception:
-            pass
+        landing = f"{base_url.rstrip('/')}/dataset.xhtml?persistentId={pid}" if pid else None
+        return {
+            "dataset_id": ds_id,
+            "persistentId": pid,
+            "landing_page": landing,
+            "uploaded_files": uploaded,
+            "skipped_files": [*skipped_due_to_privacy, *skipped_too_big],
+            "sensitive_or_personal": sensitive,
+            "published": bool(publish_result),
+            "dataset_title": extra.get("dataset_title"),
+            "dataverse_base_url": base_url,
+            "dataverse_alias": dataverse_alias,
+        }
     finally:
-        try:
-            os.unlink(dmp_path)
-        except Exception:
-            pass
+        # Temporary workdir clean-up is best-effort (Zip creation happens in temp dirs)
+        pass
+
+
+# ============================================================================
+# Streamlit wrapper
+# ============================================================================
 
 
 def streamlit_publish_to_dataverse(
@@ -898,122 +930,44 @@ def streamlit_publish_to_dataverse(
     allow_reused: bool = False,
     release_type: str = "major",
 ) -> dict[str, Any]:
-    """
-    Create a Dataverse dataset WITH metadata first (so the draft is visible immediately),
-    then start a background worker that packages + uploads files and optionally publishes.
-
-    IMPORTANT: This variant does *not* run the packaging planner up front.
-    It only shows a lightweight preview (counts/bytes) and defers planning
-    and zipping to the background worker right before upload.
-    """
-    # Block reused datasets unless explicitly allowed (keep existing behavior)
+    # Block reused datasets unless explicitly allowed (matches your editor logic)
     if (
         str(dataset.get("is_reused", "")).strip().lower() in {"true", "1", "yes"}
         and not allow_reused
     ):
         raise PublishError("Blocked: dataset is marked re-used (is_reused=true) in the DMP.")
 
-    # Write DMP to a temp file the worker can read later
     with tempfile.NamedTemporaryFile(
         suffix=".json", delete=False, mode="w", encoding="utf-8"
     ) as tf:
         json.dump(dmp, tf, ensure_ascii=False, indent=2)
         dmp_path = tf.name
-
-    # Lightweight preview only (no planning)
-    ds_preview = _guess_dataset(dmp, dataset.get("title") or None)
-    sensitive_preview = _has_personal_or_sensitive(ds_preview)
-
-    # Resolve + existence check (cheap)
-    xdcas_files = files_from_x_dcas(ds_preview)
-    dmp_dir = str(Path(dmp_path).resolve().parent)
-    resolved_preview = [
-        p if os.path.isabs(p) else os.path.normpath(os.path.join(dmp_dir, p))
-        for p in xdcas_files
-    ]
-    uploads_raw_preview = [] if sensitive_preview else [p for p in resolved_preview if os.path.exists(p)]
-    pre_total, _ = sizes_bytes(uploads_raw_preview)
-    pre_count = len(uploads_raw_preview)
-
-    # Build metadata for the visible draft
-    skipped_due_to_privacy = resolved_preview if sensitive_preview else []
-    dataset_version, _extra = build_dataverse_dataset_version_from_madmp(
-        dmp,
-        dataset.get("title") or None,
-        sensitive_flag=sensitive_preview,
-        skipped_files=skipped_due_to_privacy,
-    )
-
-    # Add a *lazy* PACKAGING NOTE (no planned paths/report yet)
-    ds_fields = dataset_version["datasetVersion"]["metadataBlocks"]["citation"]["fields"]
-    base_desc = next(
-        (
-            f["value"][0]["dsDescriptionValue"]["value"]
-            for f in ds_fields
-            if f.get("typeName") == "dsDescription"
-        ),
-        "No description provided.",
-    )
-
-    # Keep the preview cheap: show counts/bytes only; say packing will be computed at upload time.
-    base_desc = append_packaging_note(
-        base_desc,
-        pre_files=pre_count,
-        pre_bytes=pre_total,
-        final_paths=[],      # ← no planning yet
-        report=[],           # ← no report yet
-    )
-    base_desc += "\n\n[INFO] Packaging is deferred. Archives will be computed just before upload."
-
-    if not sensitive_preview and DOUBLE_ZIP_TO_PREVENT_UNPACK:
-        base_desc += "\n[NOTE] Zip containers may be double-zipped to prevent auto-unpacking."
-
-    for f in ds_fields:
-        if f.get("typeName") == "dsDescription":
-            f["value"][0]["dsDescriptionValue"]["value"] = base_desc
-            break
-
-    # 1) Create the dataset (metadata-only) — immediately visible as a draft
-    resp = _dv_create_dataset(base_url, token, alias, dataset_version)
-    data = resp.get("data") or {}
-    ds_id = data.get("id")
-    pid = data.get("persistentId") or data.get("identifier")
-    if not ds_id:
+    try:
+        result = publish_dataset_to_dataverse(
+            dmp_path=dmp_path,
+            token=token,
+            dataverse_alias=alias,
+            base_url=base_url,
+            dataset_id_selector=dataset.get("title") or None,
+            publish=publish,
+            release_type=release_type,
+        )
+        if st is not None:
+            landing = result.get("landing_page")
+            pid = result.get("persistentId")
+            if not landing and pid:
+                landing = f"{base_url.rstrip('/')}/dataset.xhtml?persistentId={pid}"
+            if landing:
+                msg = "published" if result.get("published") else "draft created"
+                st.success(f"✅ Dataverse {msg} — [Open dataset]({landing})")
+            if result.get("sensitive_or_personal"):
+                skipped = result.get("skipped_files") or []
+                if skipped:
+                    st.warning(
+                        f"Files not uploaded due to personal/sensitive data or size limits: {', '.join(os.path.basename(x) for x in skipped)}"
+                    )
+    finally:
         try:
             os.unlink(dmp_path)
         except Exception:
             pass
-        raise PublishError(f"Dataverse: missing dataset id in response: {resp}")
-
-    # Compute 'restrict' now (cheap)
-    def _first_distribution(_ds: dict) -> dict:
-        d = _ds.get("distribution")
-        if isinstance(d, dict): return d
-        if isinstance(d, list) and d: return d[0]
-        return {}
-    access = (_first_distribution(ds_preview).get("data_access") or "").strip().lower()
-    restrict_files = (access in {"shared", "closed"}) or sensitive_preview
-
-    # 2) Show draft link immediately
-    html_url = f"{base_url.rstrip('/')}/dataset.xhtml?persistentId={pid}" if pid else None
-    if st is not None and html_url:
-        st.success(
-            f"✅ Dataverse draft created [Open in Dataverse]({html_url}). Packaging & upload will start shortly in the background."
-        )
-
-    # 3) Fire-and-forget background worker; it will do the *actual* planning right before upload
-    Thread(
-        target=_dv_worker_upload_then_publish,
-        kwargs=dict(
-            dmp_path=dmp_path,                         # worker re-reads DMP
-            dataset_title=dataset.get("title") or None,
-            base_url=base_url,
-            token=token,
-            ds_id=ds_id,
-            restrict_files=restrict_files,
-            publish=(publish and release_type == "major"),
-        ),
-        daemon=True,
-    ).start()
-
-
