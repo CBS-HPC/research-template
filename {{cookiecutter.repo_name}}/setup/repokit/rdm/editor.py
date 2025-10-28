@@ -377,6 +377,101 @@ def _enum_label_for(path: tuple, option_value: str) -> str:
 
 
 def edit_primitive(label: str, value: Any, path: tuple, ns: str | None = None) -> Any:
+    # Special handling for is_reused: use dropdown instead of checkbox
+    if path and path[-1] == "is_reused":
+        key = _key_for(*path, ns, "is_reused_select")
+        current = "yes" if _coerce_to_bool(value) else "no"
+        selected = st.selectbox(
+            label,
+            options=["no", "yes"],
+            index=0 if current == "no" else 1,
+            key=key,
+            help="Select 'yes' if this dataset reuses existing data",
+        )
+        return selected == "yes"
+    
+    if _is_boolean_schema(path):
+        keyb = _key_for(*path, ns, "bool")
+        return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
+
+    if _is_format_schema(path, "date"):
+        base_key = _key_for(*path, ns, "date")
+        enable_key = _key_for(*path, ns, "date_enabled")
+        pending_key = _key_for(*path, ns, "date_pending")
+        set_key = _key_for(*path, ns, "date_set_btn")
+        clear_key = _key_for(*path, ns, "date_clear_btn")
+
+        existing = _parse_iso_date(value)
+        if enable_key not in st.session_state:
+            st.session_state[enable_key] = bool(existing)
+        enabled = bool(st.session_state[enable_key])
+
+        c1, c2 = st.columns([4, 1])
+        with c2:
+            st.markdown("<div style='height:0.15rem'></div>", unsafe_allow_html=True)
+            if enabled:
+                has_date_now = (base_key in st.session_state) or bool(existing)
+                if st.button("Clear", key=clear_key, disabled=not has_date_now):
+                    st.session_state.pop(base_key, None)
+                    st.session_state[enable_key] = False
+                    enabled = False
+            else:
+                if st.button("Set date", key=set_key):
+                    st.session_state[enable_key] = True
+                    st.session_state[pending_key] = True
+                    enabled = True
+        with c1:
+            seed_today = bool(st.session_state.pop(pending_key, False))
+            cur = (
+                date.today()
+                if (seed_today and not existing)
+                else (st.session_state.get(base_key) or existing or date.today())
+            )
+            picked = st.date_input(label, value=cur, key=base_key, disabled=not enabled)
+        return "" if not enabled else (picked.isoformat() if isinstance(picked, date) else "")
+
+    mode, options = _enum_info_for_path(path)
+    if mode == "single" and options:
+        sel_key = _key_for(*path, ns, "enum")
+        options_ui = list(options)
+        custom_label = None
+        if value not in (None, "") and value not in options_ui:
+            custom_label = f"(custom) {value}"
+            options_ui = [custom_label] + options_ui
+            default_index = 0
+        else:
+            try:
+                default_index = options_ui.index(value)
+            except Exception:
+                default_index = 0
+        selected = st.selectbox(
+            label,
+            options_ui,
+            index=default_index,
+            key=sel_key,
+            format_func=lambda opt: _enum_label_for(path, opt if opt != custom_label else value),
+        )
+        return value if (custom_label and selected == custom_label) else selected
+
+    key = _key_for(*path, ns, "prim")
+    if isinstance(value, bool):
+        return st.checkbox(label, value=value, key=key)
+    if isinstance(value, int):
+        txt = st.text_input(label, str(value), key=key)
+        try:
+            return int(txt) if txt != "" else None
+        except Exception:
+            return value
+    if isinstance(value, float):
+        txt = st.text_input(label, str(value), key=key)
+        try:
+            return float(txt) if txt != "" else None
+        except Exception:
+            return value
+    txt = st.text_input(label, "" if value is None else str(value), key=key)
+    return txt
+
+def edit_primitive_old(label: str, value: Any, path: tuple, ns: str | None = None) -> Any:
     if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
         keyb = _key_for(*path, ns, "bool")
         return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
@@ -458,7 +553,6 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: str | None = None) -
     txt = st.text_input(label, "" if value is None else str(value), key=key)
     return txt
 
-
 def edit_array(
     arr: list[Any],
     path: tuple,
@@ -490,12 +584,19 @@ def edit_array(
         label = path[-1] if path else title_singular
         st.caption(f"{label} — single entry")
         arr[0] = edit_any(arr[0], path=(*path, 0), ns=ns)
-        if removable_items and st.button(
-            f"Remove this {title_singular.lower()}", key=_key_for(*path, ns, "rm_single")
-        ):
-            arr.clear()
+        if removable_items:
+            if st.button(
+                f"🗑️ Remove this {title_singular.lower()}", 
+                key=_key_for(*path, ns, "rm_single")
+            ):
+                arr.clear()
+                #st.success(f"{title_singular} removed")
+                st.rerun()
         return arr
-    to_delete: list[int] = []
+    
+    # Track deletion separately - don't modify list while iterating
+    item_to_delete = None
+    
     for i, item in enumerate(list(arr)):
         heading = f"{title_singular} #{i + 1}"
         if isinstance(item, dict):
@@ -504,13 +605,23 @@ def edit_array(
                     heading = f"{title_singular} #{i + 1}: {item[pick]}"
                     break
         with st.expander(heading, expanded=False):
-            arr[i] = edit_any(item, path=(*path, i), ns=ns)
-            if removable_items and st.button(
-                f"Remove this {title_singular.lower()}", key=_key_for(*path, i, ns, "rm")
-            ):
-                to_delete.append(i)
-    for i in reversed(to_delete):
-        del arr[i]
+            # Only edit if we're not deleting this item
+            if item_to_delete != i:
+                arr[i] = edit_any(item, path=(*path, i), ns=ns)
+            
+            if removable_items:
+                if st.button(
+                    f"🗑️ Remove this {title_singular.lower()}", 
+                    key=_key_for(*path, i, ns, "rm")
+                ):
+                    item_to_delete = i
+    
+    # Perform deletion after iteration is complete
+    if item_to_delete is not None:
+        del arr[item_to_delete]
+        #st.success(f"{title_singular} #{item_to_delete + 1} removed")
+        st.rerun()
+    
     return arr
 
 
@@ -623,6 +734,7 @@ def find_default_dmp_path(start: Path | None = None) -> Path:
     return Path("./dmp.json") if not Path(DEFAULT_DMP_PATH).exists() else Path(DEFAULT_DMP_PATH)
 
 
+
 def draw_root_section(dmp_root: dict[str, Any]) -> None:
     st.subheader("Root")
     dmp_root.setdefault("schema", dmp_root.get("schema") or SCHEMA_URLS[SCHEMA_VERSION])
@@ -678,6 +790,7 @@ def draw_projects_section(dmp_root: dict[str, Any]) -> None:
     with cols[0]:
         if st.button("➕ Add project", key=_key_for("project", "add")):
             projects.append(templates["project"])
+            st.rerun()
     dmp_root["project"] = edit_array(
         projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None
     )
@@ -691,14 +804,23 @@ def draw_datasets_section(dmp_root: dict) -> None:
     with top[0]:
         if st.button("➕ Add dataset", key=_key_for("dataset", "add")):
             datasets.append(templates["dataset"])
-            st.success("Dataset added")
+            st.rerun()
 
     def _is_unknown(v: Any) -> bool:
         s = str(v or "").strip().lower()
         return s in {"unknown", "unkown", ""}
 
+    # Track deletion and privacy changes separately - don't modify list while iterating
+    dataset_to_delete = None
+    privacy_changed = False
+    privacy_message = ""
+    is_reused_changed = False
+    
     for i, ds in enumerate(list(datasets)):
         with st.expander(f"Dataset #{i + 1}: {ds.get('title') or 'Dataset'}", expanded=False):
+            # Store previous is_reused state to detect changes
+            prev_is_reused = _is_reused(ds)
+            
             is_reused = _is_reused(ds)
             has_unknown_privacy = _is_unknown(ds.get("personal_data")) or _is_unknown(
                 ds.get("sensitive_data")
@@ -729,8 +851,7 @@ def draw_datasets_section(dmp_root: dict) -> None:
 
             with cols[0]:
                 if st.button("🗑️ Remove this dataset", key=f"rm_ds_{i}"):
-                    del datasets[i]
-                    st.stop()
+                    dataset_to_delete = i
 
             with cols[1]:
                 if st.button("Publish to Zenodo", key=f"pub_zen_{i}", disabled=zen_disabled):
@@ -789,31 +910,56 @@ def draw_datasets_section(dmp_root: dict) -> None:
                         )
                     else:
                         st.caption(
-                            "⚠️ No collection (alias) detected. We’ll try to infer it, or set one in the sidebar."
+                            "⚠️ No collection (alias) detected. We'll try to infer it, or set one in the sidebar."
                         )
 
             with cols[3]:
                 st.checkbox(
-                    "Allow publish reused?",
+                    "Override reuse restriction",
                     key=override_key,
                     value=allow_override,
                     disabled=not is_reused,
-                    help="Enabled only when 'is_reused' is set on this dataset.",
+                    help="Enable publishing even when 'is_reused' is set to 'yes'. Only available when dataset is marked as reused.",
                 )
 
-            datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
+            # Only edit if we're not deleting this dataset
+            if dataset_to_delete != i:
+                datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
 
-            changed = False
-            changed |= _enforce_privacy_access(datasets[i])
-            changed |= _normalize_license_by_access(datasets[i])
-            changed |= _ensure_open_has_license(datasets[i])
-            if changed:
-                st.session_state["__last_rule_msg__"] = (
-                    "Privacy flags require closed access; adjusted access/license fields."
-                    if _has_privacy_flags(datasets[i])
-                    else "Adjusted license to match access."
-                )
-                st.rerun()
+                # Check if is_reused changed
+                new_is_reused = _is_reused(datasets[i])
+                if prev_is_reused != new_is_reused:
+                    is_reused_changed = True
+
+                # Check for privacy-related changes but DON'T rerun yet
+                changed = False
+                changed |= _enforce_privacy_access(datasets[i])
+                changed |= _normalize_license_by_access(datasets[i])
+                changed |= _ensure_open_has_license(datasets[i])
+                
+                if changed and not privacy_changed:
+                    privacy_changed = True
+                    privacy_message = (
+                        "Privacy flags require closed access; adjusted access/license fields."
+                        if _has_privacy_flags(datasets[i])
+                        else "Adjusted license to match access."
+                    )
+    
+    # Perform deletion after iteration is complete (higher priority)
+    if dataset_to_delete is not None:
+        del datasets[dataset_to_delete]
+        # Clean up any session state related to this dataset
+        st.session_state.pop(f"allow_reused_{dataset_to_delete}", None)
+        st.rerun()
+    
+    # Rerun if is_reused changed to update button states
+    if is_reused_changed:
+        st.rerun()
+    
+    # Show privacy validation message if changes occurred (no rerun needed - changes already applied)
+    if privacy_changed:
+        st.info(privacy_message)
+
 
 
 def _is_reused(ds: dict) -> bool:
