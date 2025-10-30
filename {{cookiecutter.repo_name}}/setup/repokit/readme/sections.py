@@ -385,6 +385,7 @@ def _to_list(x: Optional[Union[str, Iterable[str]]]) -> List[str]:
         return [p.strip() for p in re.split(r"[;,]", x) if p.strip()]
     return [str(p).strip() for p in x if str(p).strip()]
 
+
 def set_contact(authors=None, orcids=None, emails=None):
     
     a = _to_list(authors)
@@ -407,7 +408,8 @@ def set_contact(authors=None, orcids=None, emails=None):
         if lines:
             blocks.append("\n\n".join(lines))
 
-    return "---\n\n".join(blocks) + ("---\n\n" if blocks else "")
+    return "\n\n---\n\n".join(blocks) + ("\n\n---\n\n" if blocks else "")
+
 
 def find_scripts(folder_path, source_ext, notebook_ext):
     if isinstance(notebook_ext, str):
