@@ -105,8 +105,6 @@ def datasets_ignore(
     return pathspec.PathSpec.from_lines(GitWildMatchPattern, patterns)
 
 
-
-# README.md
 def creating_readme(programming_language="None"):
     programming_language = programming_language.lower()
 
@@ -489,7 +487,6 @@ def update_file_descriptions(
     update_descriptions(json_file, readme_file)
 
 
-# CITATION.cff
 def create_citation_file(
     project_name, version, authors, orcids, code_repo, doi=None, release_date=None
 ):

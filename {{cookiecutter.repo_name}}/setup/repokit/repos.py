@@ -8,7 +8,7 @@ import zipfile
 
 import requests
 
-from .ci import set_git_alis
+from .ci import ci_config
 from .common import (
     PROJECT_ROOT,
     ensure_correct_kernel,
@@ -16,8 +16,10 @@ from .common import (
     is_installed,
     load_from_env,
     repo_user_info,
+    prompt_user
 )
 from .vcs import setup_version_control
+from .readme.template import create_citation_file
 
 # GitHub, Gitlad and Codeberg Functions
 
@@ -388,16 +390,44 @@ def main():
     os.chdir(PROJECT_ROOT)
 
     version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
-    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
     code_repo = load_from_env("CODE_REPO", ".cookiecutter")
+
+    if not version_control:
+        version_control = prompt_user(
+            "Choose a version control:",
+            ["Git", "Datalad", "DVC", "None"]
+        )
+        if version_control== "None":
+            version_control = None
+
+    if not version_control:
+        return
+
+    if not code_repo:
+        code_repo = prompt_user(
+            "Choose a code repository host:",
+            ["GitHub", "GitLab", "Codeberg", "None"]
+        )
+        if code_repo == "None":
+            code_repo = None
+
+    repo_name = load_from_env("REPO_NAME", ".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION", ".cookiecutter")
     remote_storage = load_from_env("REMOTE_STORAGE", ".cookiecutter")
+    project_name = load_from_env("PROJECT_NAME", ".cookiecutter")
+    version = load_from_env("VERSION", ".cookiecutter")
+    authors = load_from_env("AUTHORS", ".cookiecutter")
+    orcids = load_from_env("ORCIDS", ".cookiecutter")
 
     setup_version_control(version_control, remote_storage, code_repo, repo_name)
 
     # Create Remote Repository
     if setup_repo(version_control, code_repo, repo_name, project_description):
-        set_git_alis(PROJECT_ROOT)
+        ci_config()
+
+        create_citation_file(
+            project_name, version, authors, orcids, code_repo, doi=None, release_date=None
+        )
 
 
 if __name__ == "__main__":
