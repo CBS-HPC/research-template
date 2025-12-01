@@ -111,21 +111,6 @@ def create_scripts(programming_language):
             {"script_name": "s00_workflow"},
         )
 
-    #tests_map = {
-    #    "python": ("./tests", "py"),
-    #    "r": ("./tests/testthat", "R"),
-    #    "matlab": ("./tests", "m"),
-    #    "stata": ("./tests", "do"),
-    #}
-
-    # unit test templates
-    #folder_path, extension = tests_map[programming_language]
-    #template_name = f"test_template.{extension}.j2"
-
-    #for base in scripts:
-    #    create_script_from_template(
-    #        programming_language, folder_path, template_name, f"test_{base}", {"base": base}
-    #    )
 
 
 @ensure_correct_kernel

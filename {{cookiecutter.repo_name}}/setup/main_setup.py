@@ -125,6 +125,7 @@ def intro():
 
     programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
     version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
+    code_repo = load_from_env("CODE_REPO", ".cookiecutter")
     project_name = load_from_env("PROJECT_NAME", ".cookiecutter")
     version = load_from_env("VERSION", ".cookiecutter")
     authors = load_from_env("AUTHORS", ".cookiecutter")
@@ -144,9 +145,10 @@ def intro():
     create_scripts(programming_language)
 
     # Create a citation file
-    create_citation_file(
-        project_name, version, authors, orcids, version_control, doi=None, release_date=None
-    )
+    if code_repo.lower() in ["github","gitlab","codeberg"]:
+        create_citation_file(
+            project_name, version, authors, orcids, code_repo, doi=None, release_date=None
+        )
 
     # Creating README
     creating_readme(programming_language)
