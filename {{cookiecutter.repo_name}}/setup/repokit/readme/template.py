@@ -502,6 +502,13 @@ def create_citation_file(
         doi (str): DOI of the project. Optional.
         release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
     """
+
+    file = str(PROJECT_ROOT / pathlib.Path("CITATION.cff"))
+
+    # If the file already exists, do nothing
+    if file.exists():
+        return
+
     # Split authors and ORCIDs into lists
     author_names = re.split(r"[;,]", authors) if authors else []
     orcid_list = re.split(r"[;,]", orcids) if orcids else []
@@ -575,7 +582,7 @@ def create_citation_file(
     }
 
     # Write to CITATION.cff
-    file = str(PROJECT_ROOT / pathlib.Path("CITATION.cff"))
+
     with open(file, "w") as cff_file:
         yaml.dump(citation_data, cff_file, sort_keys=False)
 
