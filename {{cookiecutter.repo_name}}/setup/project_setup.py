@@ -266,14 +266,8 @@ from repokit.common import (
     save_to_env,
     PROJECT_ROOT
 )
-
-print(doc_license, data_license, code_license)
-
-if (
-    str(doc_license).lower() == "none"
-    and str(data_license).lower() == "none"
-    and str(code_license).lower() != "none"
-    ):
+# Remove LICENSE file if nocode license is selected
+if ( not doc_license and not data_license and not code_license):
     license_path = PROJECT_ROOT / "LICENSE.md"
 
     if license_path.exists():
