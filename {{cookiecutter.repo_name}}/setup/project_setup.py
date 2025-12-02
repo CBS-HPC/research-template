@@ -278,7 +278,7 @@ print(code_license.lower())
 if (
         str(doc_license).lower() == "none"
         and str(data_license).lower() == "none"
-        and str(code_license).lower() != "none"
+        and str(code_license).lower() == "none"
     ):
     license_path = PROJECT_ROOT / "LICENSE.txt"
     print(license_path)
