@@ -68,6 +68,7 @@ except ImportError:
         reorder_dmp_keys,
         repair_empty_enums,
         today_iso,
+        update_cookiecutter_from_dmp,
     )
 
     # from repokit.rdm.publish import *
@@ -1662,13 +1663,29 @@ def main() -> None:
             st.rerun()
 
         out_for_dl = _current_ordered_output()
-        st.download_button(
+
+        download_clicked = st.download_button(
             "⬇️ Download JSON",
             data=json.dumps(out_for_dl, indent=4, ensure_ascii=False).encode("utf-8"),
             file_name=Path(st.session_state["save_path"]).name or "dmp.json",
             mime="application/json",
             key="download",
         )
+
+        if download_clicked:
+            # When the user downloads, also sync cookiecutter.json from *this* DMP
+            try:
+                save_path = Path(st.session_state["save_path"]).resolve()
+                # Ensure the on-disk DMP matches what was just downloaded
+                save_path.write_text(
+                    json.dumps(out_for_dl, indent=4, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+                update_cookiecutter_from_dmp(dmp_path=save_path)
+                # Optional small hint in the UI (non-blocking)
+                st.caption("✅ cookiecutter.json updated from downloaded DMP")
+            except Exception as e:
+                st.warning(f"cookiecutter.json could not be updated: {e}")
 
     # Main editor area
     data = ensure_dmp_shape(st.session_state["data"])

@@ -540,6 +540,161 @@ def _apply_cookiecutter_meta(
     apply_defaults_in_place(prj0, templates["project"])
 
 
+def _cookie_meta_from_dmp(data: dict[str, Any]) -> dict[str, str]:
+    """
+    Extract cookiecutter-style fields from a DMP structure.
+
+    Inverse of `_apply_cookiecutter_meta` / `_set_contacts`:
+
+      dmp.title            -> PROJECT_NAME
+      dmp.description      -> PROJECT_DESCRIPTION
+      dmp.contact + contributor[*]
+        -> AUTHORS, EMAIL, ORCIDS (semicolon-separated)
+      dataset[].distribution[].license[].license_ref
+        -> DATA_LICENSE (via LICENSE_LINKS inverse mapping, first match wins)
+
+    Returns only keys that can be inferred from the DMP.
+    """
+    dmp = (data or {}).get("dmp") or {}
+    out: dict[str, str] = {}
+
+    # --- Project title / description ---
+    title = (dmp.get("title") or "").strip()
+    desc = (dmp.get("description") or "").strip()
+    if title:
+        out["PROJECT_NAME"] = title
+        # REPO_NAME is often same as project name if not explicitly set
+        out.setdefault("REPO_NAME", title)
+    if desc:
+        out["PROJECT_DESCRIPTION"] = desc
+
+    # --- Authors / emails / orcids (contact + contributors) ---
+    authors: list[str] = []
+    emails: list[str] = []
+    orcids: list[str] = []
+
+    def _add_person(name: Any, mbox: Any, id_obj: Any, id_key: str) -> None:
+        if isinstance(name, str) and name.strip():
+            authors.append(name.strip())
+        if isinstance(mbox, str) and mbox.strip():
+            emails.append(mbox.strip())
+        if isinstance(id_obj, dict):
+            ident = id_obj.get("identifier")
+            id_type = (id_obj.get("type") or "").lower()
+            if isinstance(ident, str) and ident.strip():
+                if not id_type or id_type == id_key:
+                    orcids.append(ident.strip())
+
+    contact = dmp.get("contact") or {}
+    _add_person(
+        contact.get("name"),
+        contact.get("mbox"),
+        contact.get("contact_id"),
+        "orcid",
+    )
+
+    for c in dmp.get("contributor") or []:
+        if not isinstance(c, dict):
+            continue
+        _add_person(
+            c.get("name"),
+            c.get("mbox"),
+            c.get("contributor_id"),
+            "orcid",
+        )
+
+    # Cookie expects multi-values in a single string; split_multi() on read
+    # will likely handle ';', ',', and newlines, so we join with '; '.
+    if authors:
+        out["AUTHORS"] = "; ".join(authors)
+    if emails:
+        out["EMAIL"] = "; ".join(emails)
+    if orcids:
+        out["ORCIDS"] = "; ".join(orcids)
+
+    # --- DATA_LICENSE (inverse of LICENSE_LINKS) ---
+    # Look at the first non-empty license_ref in any dataset/distribution
+    license_ref: str | None = None
+    for ds in dmp.get("dataset") or []:
+        if not isinstance(ds, dict):
+            continue
+        for dist in ds.get("distribution") or []:
+            if not isinstance(dist, dict):
+                continue
+            for lic in dist.get("license") or []:
+                if not isinstance(lic, dict):
+                    continue
+                ref = (lic.get("license_ref") or "").strip()
+                if ref:
+                    license_ref = ref
+                    break
+            if license_ref:
+                break
+        if license_ref:
+            break
+
+    if license_ref:
+        # Invert LICENSE_LINKS mapping (short -> URL) to recover a short code
+        inverse = {v: k for k, v in LICENSE_LINKS.items()}
+        code = inverse.get(license_ref)
+        if code:
+            out["DATA_LICENSE"] = code
+
+    return out
+
+def update_cookiecutter_from_dmp(
+    dmp_path: Path = DEFAULT_DMP_PATH,
+    cookie_path: Path | None = None,
+    overwrite: bool = True,
+) -> Path | None:
+    """
+    Update cookiecutter fields using values from the DMP.
+
+    - Loads DMP from `dmp_path`.
+    - Extracts cookie-like fields with `_cookie_meta_from_dmp`.
+    - Updates (and optionally overwrites) keys in cookiecutter.json.
+
+    If `cookie_path` is None, uses PROJECT_ROOT / "cookiecutter.json".
+
+    Returns the path to the updated cookiecutter file, or None on failure.
+    """
+    if cookie_path is None:
+        cookie_path = PROJECT_ROOT / "cookiecutter.json"
+
+    dmp_data = load_json(dmp_path)
+    if not dmp_data:
+        print(f"No DMP found at {dmp_path}; nothing to update.")
+        return None
+
+    new_fields = _cookie_meta_from_dmp(dmp_data)
+    if not new_fields:
+        print("No cookiecutter fields could be inferred from DMP; nothing to update.")
+        return None
+
+    # Load existing cookie config if present
+    if cookie_path.exists():
+        try:
+            with cookie_path.open("r", encoding="utf-8") as f:
+                cookie = json.load(f)
+        except Exception:
+            cookie = {}
+    else:
+        cookie = {}
+
+    # Apply updates
+    for key, value in new_fields.items():
+        if overwrite or not cookie.get(key):
+            cookie[key] = value
+
+    # Write back
+    cookie_path.parent.mkdir(parents=True, exist_ok=True)
+    with cookie_path.open("w", encoding="utf-8") as f:
+        json.dump(cookie, f, indent=4, ensure_ascii=False)
+
+    print(f"cookiecutter.json updated at {cookie_path}")
+    return cookie_path
+
+
 def now_iso_minute() -> str:
     """RFC 3339 / JSON Schema 'date-time' with UTC 'Z' and seconds precision."""
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
