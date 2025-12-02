@@ -264,7 +264,22 @@ from repokit.common import (
     git_user_info,
     repo_user_info,
     save_to_env,
+    PROJECT_ROOT
 )
+
+if (
+    str(doc_license).lower() == "none"
+    and str(data_license).lower() == "none"
+    and str(code_license).lower() != "none"
+    ):
+    license_path = PROJECT_ROOT / "LICENSE.md"
+
+if license_path.exists():
+    try:
+        license_path.unlink()
+        print(f"Deleted license file: {license_path}")
+    except Exception as e:
+        print(f"Failed to delete {license_path}: {e}")
 
 
 def set_programming_language(programming_language, r_env_manager):
