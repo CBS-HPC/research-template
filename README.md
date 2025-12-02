@@ -26,7 +26,7 @@ Whether you're preparing a replication package, submitting code and data for pee
 - 🗃️ Built-in version control options: Git, Datalad, or DVC  
 - 📦 Auto-generated scripts for analysis, modeling, and visualization  
 - 🔐 Environment management via Conda (miniforge) or venv (with UV support)  
-- ☁️ Backup integration with DeiC-Storage, Dropbox, and OneDrive  
+- ☁️ Backup integration with ERDA, Dropbox, and OneDrive  
 - 🚀 Remote repository setup for GitHub, GitLab, or Codeberg  
 - 🧪 Unit testing support, TDD scaffolds, and CI integration  
 - 🧾 Auto-generated metadata files: `README.md`, `LICENSE.txt`, `CITATION.cff`
@@ -394,7 +394,7 @@ Once installed, the following commands are available from the terminal:
 After activating your environment (see [🚀 Project Activation](#-project-activation)), run any command directly:
 
 ```bash
-backup push --remote deic-storage
+backup push --remote erda
 update-dependencies
 set-dataset
 reset-templates
@@ -417,11 +417,11 @@ Once your environment is activated (see [🚀 Project Activation](#-project-acti
 
 **📌 Setup a Remote**
 ```
-backup add --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup add --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🚀 Push to Remote**
 ```
-backup push --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup push --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 This command performs the following:
 - Commits and pushes the root Git project (if version control is enabled)
@@ -430,15 +430,15 @@ This command performs the following:
 
 **📥 Pull Backup from Remote**
 ```
-backup pull --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup pull --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📊 View Differences Before Sync**
 ```
-backup diff --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup diff --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🧹 Remove Remote**
 ```
-backup delete --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup delete --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📋 List Configured Remotes and Sync Status**
 ```
@@ -1077,7 +1077,6 @@ Data loss can compromise months or years of research. To support **reproducible*
 
 Supported backup targets include:
 
-- [**DeIC-Storage**](https://storage.deic.dk/) – configured via **SFTP with password and MFA**  
 - [**ERDA**](https://erda.dk/) – configured via **SFTP with password and MFA**  
 - [**Dropbox**](https://www.dropbox.com/)  
 - [**OneDrive**](https://onedrive.live.com/)  
@@ -1094,11 +1093,11 @@ Once your environment is activated (see [🚀 Project Activation](#-project-acti
 
 **📌 Setup a Remote**
 ```
-backup add --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup add --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🚀 Push to Remote**
 ```
-backup push --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup push --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 This command performs the following:
 - Commits and pushes the root Git project (if version control is enabled)
@@ -1107,15 +1106,15 @@ This command performs the following:
 
 **📥 Pull Backup from Remote**
 ```
-backup pull --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup pull --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📊 View Differences Before Sync**
 ```
-backup diff --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup diff --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **🧹 Remove Remote**
 ```
-backup delete --remote deic-storage  # (other options: erda, dropbox, onedrive, local or all)
+backup delete --remote erda  # (other options: erda, dropbox, onedrive, local or all)
 ```
 **📋 List Configured Remotes and Sync Status**
 ```

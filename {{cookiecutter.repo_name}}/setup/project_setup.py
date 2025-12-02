@@ -212,7 +212,7 @@ def set_options(programming_language: str, version_control: str):
     if vc_l in {"datalad", "dvc"}:
         remote_storage = prompt_user(
             f"Set up remote storage for your {version_control} repo:",
-            ["Deic-Storage", "Dropbox", "Local Path", "None"]
+            ["Dropbox", "Local Path", "None"]
         )
     else:
         remote_storage = "None"

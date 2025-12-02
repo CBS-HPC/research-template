@@ -15,6 +15,7 @@ from .common import (
     exe_to_path,
     is_installed,
     load_from_env,
+    save_to_env,
     repo_user_info,
     prompt_user
 )
@@ -392,25 +393,24 @@ def main():
     version_control = load_from_env("VERSION_CONTROL", ".cookiecutter")
     code_repo = load_from_env("CODE_REPO", ".cookiecutter")
 
-    if not version_control:
+    if version_control == "None":
         version_control = prompt_user(
             "Choose a version control:",
             ["Git", "Datalad", "DVC", "None"]
         )
-        if version_control== "None":
-            version_control = None
+        save_to_env(code_repo, "VERSION_CONTROL", ".cookiecutter")
 
-    if not version_control:
+    if version_control=="None":
         return
 
-    if not code_repo:
+    if code_repo == "None":
         code_repo = prompt_user(
             "Choose a code repository host:",
             ["GitHub", "GitLab", "Codeberg", "None"]
         )
-        if code_repo == "None":
-            code_repo = None
 
+        save_to_env(code_repo, "CODE_REPO", ".cookiecutter")
+ 
     repo_name = load_from_env("REPO_NAME", ".cookiecutter")
     project_description = load_from_env("PROJECT_DESCRIPTION", ".cookiecutter")
     remote_storage = load_from_env("REMOTE_STORAGE", ".cookiecutter")

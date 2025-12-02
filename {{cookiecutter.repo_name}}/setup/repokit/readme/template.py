@@ -503,7 +503,7 @@ def create_citation_file(
         release_date (str): Release date in YYYY-MM-DD format. Defaults to empty if not provided.
     """
 
-    file = str(PROJECT_ROOT / pathlib.Path("CITATION.cff"))
+    file = PROJECT_ROOT / pathlib.Path("CITATION.cff")
 
     # If the file already exists, do nothing
     if file.exists():

@@ -598,7 +598,7 @@ Once installed, the following commands are available from the terminal:
 After activating your environment (see [🚀 Project Activation](#-project-activation)), run any command directly:
 
 ```bash
-backup push --remote deic-storage
+backup push --remote erda
 update-dependencies
 set-dataset
 reset-templates
