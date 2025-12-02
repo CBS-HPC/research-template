@@ -267,14 +267,6 @@ from repokit.common import (
     PROJECT_ROOT
 )
 # Remove LICENSE file if nocode license is selected
-
-print(type(doc_license))
-print(type(data_license))
-print(type(code_license))   
-print(doc_license.lower())
-print(data_license.lower())
-print(code_license.lower())
-
 if (
         str(doc_license).lower() == "none"
         and str(data_license).lower() == "none"
@@ -285,7 +277,6 @@ if (
     if license_path.exists():
         try:
             license_path.unlink()
-            print(f"Deleted license file: {license_path}")
         except Exception as e:
             print(f"Failed to delete {license_path}: {e}")
 
