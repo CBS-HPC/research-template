@@ -267,6 +267,8 @@ from repokit.common import (
     PROJECT_ROOT
 )
 
+print(doc_license, data_license, code_license)
+
 if (
     str(doc_license).lower() == "none"
     and str(data_license).lower() == "none"
@@ -274,12 +276,12 @@ if (
     ):
     license_path = PROJECT_ROOT / "LICENSE.md"
 
-if license_path.exists():
-    try:
-        license_path.unlink()
-        print(f"Deleted license file: {license_path}")
-    except Exception as e:
-        print(f"Failed to delete {license_path}: {e}")
+    if license_path.exists():
+        try:
+            license_path.unlink()
+            print(f"Deleted license file: {license_path}")
+        except Exception as e:
+            print(f"Failed to delete {license_path}: {e}")
 
 
 def set_programming_language(programming_language, r_env_manager):
