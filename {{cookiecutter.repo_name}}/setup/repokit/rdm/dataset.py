@@ -464,10 +464,10 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
 
     cookie = (
         read_toml(
-            folder=str(PROJECT_ROOT),
-            json_filename="cookiecutter.json",
-            tool_name="cookiecutter",
-            toml_path="pyproject.toml",
+            folder = str(PROJECT_ROOT),
+            json_filename = "cookiecutter.json",
+            tool_name = "cookiecutter",
+            toml_path = "pyproject.toml",
         )
         or {}
     )

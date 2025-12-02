@@ -472,87 +472,6 @@ def edit_primitive(label: str, value: Any, path: tuple, ns: str | None = None) -
     txt = st.text_input(label, "" if value is None else str(value), key=key)
     return txt
 
-def edit_primitive_old(label: str, value: Any, path: tuple, ns: str | None = None) -> Any:
-    if _is_boolean_schema(path) or (path and path[-1] == "is_reused"):
-        keyb = _key_for(*path, ns, "bool")
-        return st.checkbox(label, value=_coerce_to_bool(value), key=keyb)
-
-    if _is_format_schema(path, "date"):
-        base_key = _key_for(*path, ns, "date")
-        enable_key = _key_for(*path, ns, "date_enabled")
-        pending_key = _key_for(*path, ns, "date_pending")
-        set_key = _key_for(*path, ns, "date_set_btn")
-        clear_key = _key_for(*path, ns, "date_clear_btn")
-
-        existing = _parse_iso_date(value)
-        if enable_key not in st.session_state:
-            st.session_state[enable_key] = bool(existing)
-        enabled = bool(st.session_state[enable_key])
-
-        c1, c2 = st.columns([4, 1])
-        with c2:
-            st.markdown("<div style='height:0.15rem'></div>", unsafe_allow_html=True)
-            if enabled:
-                has_date_now = (base_key in st.session_state) or bool(existing)
-                if st.button("Clear", key=clear_key, disabled=not has_date_now):
-                    st.session_state.pop(base_key, None)
-                    st.session_state[enable_key] = False
-                    enabled = False
-            else:
-                if st.button("Set date", key=set_key):
-                    st.session_state[enable_key] = True
-                    st.session_state[pending_key] = True
-                    enabled = True
-        with c1:
-            seed_today = bool(st.session_state.pop(pending_key, False))
-            cur = (
-                date.today()
-                if (seed_today and not existing)
-                else (st.session_state.get(base_key) or existing or date.today())
-            )
-            picked = st.date_input(label, value=cur, key=base_key, disabled=not enabled)
-        return "" if not enabled else (picked.isoformat() if isinstance(picked, date) else "")
-
-    mode, options = _enum_info_for_path(path)
-    if mode == "single" and options:
-        sel_key = _key_for(*path, ns, "enum")
-        options_ui = list(options)
-        custom_label = None
-        if value not in (None, "") and value not in options_ui:
-            custom_label = f"(custom) {value}"
-            options_ui = [custom_label] + options_ui
-            default_index = 0
-        else:
-            try:
-                default_index = options_ui.index(value)
-            except Exception:
-                default_index = 0
-        selected = st.selectbox(
-            label,
-            options_ui,
-            index=default_index,
-            key=sel_key,
-            format_func=lambda opt: _enum_label_for(path, opt if opt != custom_label else value),
-        )
-        return value if (custom_label and selected == custom_label) else selected
-
-    key = _key_for(*path, ns, "prim")
-    if isinstance(value, bool):
-        return st.checkbox(label, value=value, key=key)
-    if isinstance(value, int):
-        txt = st.text_input(label, str(value), key=key)
-        try:
-            return int(txt) if txt != "" else None
-        except Exception:
-            return value
-    if isinstance(value, float):
-        txt = st.text_input(label, str(value), key=key)
-        try:
-            return float(txt) if txt != "" else None
-        except Exception:
-            return value
-    txt = st.text_input(label, "" if value is None else str(value), key=key)
-    return txt
 
 def edit_array(
     arr: list[Any],
@@ -779,27 +698,41 @@ def draw_root_section(dmp_root: dict[str, Any]) -> None:
     add_col, _ = st.columns([1, 6])
     with add_col:
         if st.button("➕ Add contributor", key=_key_for("dmp", "contributor", "add", "bottom")):
-            dmp_root["contributor"].append(deepcopy(default_contrib))
+            contribs = dmp_root.setdefault("contributor", [])
+            contribs.append(deepcopy(default_contrib))
             st.rerun()
 
 
 def draw_projects_section(dmp_root: dict[str, Any]) -> None:
     st.subheader("Projects")
-    projects: list[dict[str, Any]] = dmp_root.setdefault("project", [])
+    projects = dmp_root.get("project")
+    if not isinstance(projects, list):
+        projects = []
+        dmp_root["project"] = projects
+
     cols = st.columns(2)
     templates = dmp_default_templates()
     with cols[0]:
         if st.button("➕ Add project", key=_key_for("project", "add")):
             projects.append(templates["project"])
             st.rerun()
+
     dmp_root["project"] = edit_array(
-        projects, path=("dmp", "project"), title_singular="Project", removable_items=True, ns=None
+        projects,
+        path=("dmp", "project"),
+        title_singular="Project",
+        removable_items=True,
+        ns=None,
     )
 
 
 def draw_datasets_section(dmp_root: dict) -> None:
     st.subheader("Datasets")
-    datasets = dmp_root.setdefault("dataset", [])
+    datasets = dmp_root.get("dataset")
+    if not isinstance(datasets, list):
+        datasets = []
+        dmp_root["dataset"] = datasets
+
     top = st.columns([1, 3])
     templates = dmp_default_templates()
     with top[0]:
@@ -960,7 +893,6 @@ def draw_datasets_section(dmp_root: dict) -> None:
     # Show privacy validation message if changes occurred (no rerun needed - changes already applied)
     if privacy_changed:
         st.info(privacy_message)
-
 
 
 def _is_reused(ds: dict) -> bool:
@@ -1460,6 +1392,7 @@ def _json_hash_for_autosave(obj: dict[str, Any]) -> str:
 def _autosave_if_changed() -> None:
     """
     If the DMP content changed since last snapshot, bump modified and write to disk.
+    Also sync cookiecutter.json from the current DMP.
     """
     if "save_path" not in st.session_state or not st.session_state["save_path"]:
         return
@@ -1489,14 +1422,24 @@ def _autosave_if_changed() -> None:
         pass
 
     try:
-        base_path.write_text(json.dumps(to_save, indent=4, ensure_ascii=False), encoding="utf-8")
+        base_path.write_text(
+            json.dumps(to_save, indent=4, ensure_ascii=False),
+            encoding="utf-8",
+        )
         st.session_state["__autosave_last_hash__"] = current_hash
         st.session_state["__autosave_feedback__"] = (
             f"💾 Autosaved {base_path.name} at {datetime.now().strftime('%H:%M:%S')}"
         )
+
+        # NEW: keep cookiecutter.json in sync with the autosaved DMP
+        try:
+            update_cookiecutter_from_dmp(dmp_path=base_path)
+        except Exception as e:
+            # Don't break the editor if cookie update fails; just surface a hint
+            st.session_state["__autosave_feedback__"] += f" (cookiecutter sync failed: {e})"
+
     except Exception as e:
         st.session_state["__autosave_feedback__"] = f"⚠️ Autosave failed: {e}"
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # App

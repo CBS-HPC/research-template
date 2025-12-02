@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..common import PROJECT_ROOT, read_toml, split_multi
+from ..common import PROJECT_ROOT, read_toml, write_toml, split_multi
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -20,6 +20,11 @@ def save_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+JSON_FILENAME = "cookiecutter.json"
+TOOL_NAME = "cookiecutter"
+TOML_PATH = "pyproject.toml"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -258,10 +263,10 @@ def dmp_default_templates(now_dt: str | None = None, today: str | None = None) -
 
     cookie = (
         read_toml(
-            folder=str(PROJECT_ROOT),
-            json_filename="cookiecutter.json",
-            tool_name="cookiecutter",
-            toml_path="pyproject.toml",
+            folder = str(PROJECT_ROOT),
+            json_filename = JSON_FILENAME,
+            tool_name = TOOL_NAME,
+            toml_path= TOML_PATH,
         )
         or {}
     )
@@ -495,10 +500,10 @@ def _apply_cookiecutter_meta(
     """
     cookie = (
         read_toml(
-            folder=str(project_root),
-            json_filename="cookiecutter.json",
-            tool_name="cookiecutter",
-            toml_path="pyproject.toml",
+            folder = str(project_root),
+            json_filename = JSON_FILENAME,
+            tool_name = TOOL_NAME,
+            toml_path = TOML_PATH,
         )
         or {}
     )
@@ -644,7 +649,6 @@ def _cookie_meta_from_dmp(data: dict[str, Any]) -> dict[str, str]:
 
 def update_cookiecutter_from_dmp(
     dmp_path: Path = DEFAULT_DMP_PATH,
-    cookie_path: Path | None = None,
     overwrite: bool = True,
 ) -> Path | None:
     """
@@ -658,9 +662,8 @@ def update_cookiecutter_from_dmp(
 
     Returns the path to the updated cookiecutter file, or None on failure.
     """
-    if cookie_path is None:
-        cookie_path = PROJECT_ROOT / "cookiecutter.json"
 
+   
     dmp_data = load_json(dmp_path)
     if not dmp_data:
         print(f"No DMP found at {dmp_path}; nothing to update.")
@@ -671,15 +674,12 @@ def update_cookiecutter_from_dmp(
         print("No cookiecutter fields could be inferred from DMP; nothing to update.")
         return None
 
-    # Load existing cookie config if present
-    if cookie_path.exists():
-        try:
-            with cookie_path.open("r", encoding="utf-8") as f:
-                cookie = json.load(f)
-        except Exception:
-            cookie = {}
-    else:
-        cookie = {}
+    cookie = read_toml(
+            folder = str(PROJECT_ROOT),
+            json_filename = JSON_FILENAME,
+            tool_name = TOOL_NAME,
+            toml_path = TOML_PATH,
+        )    
 
     # Apply updates
     for key, value in new_fields.items():
@@ -687,12 +687,14 @@ def update_cookiecutter_from_dmp(
             cookie[key] = value
 
     # Write back
-    cookie_path.parent.mkdir(parents=True, exist_ok=True)
-    with cookie_path.open("w", encoding="utf-8") as f:
-        json.dump(cookie, f, indent=4, ensure_ascii=False)
+    write_toml(
+            data = cookie,
+            folder = str(PROJECT_ROOT),
+            json_filename = JSON_FILENAME,
+            tool_name = TOOL_NAME,
+            toml_path = TOML_PATH,
+        )
 
-    print(f"cookiecutter.json updated at {cookie_path}")
-    return cookie_path
 
 
 def now_iso_minute() -> str:
