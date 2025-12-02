@@ -267,7 +267,11 @@ from repokit.common import (
     PROJECT_ROOT
 )
 # Remove LICENSE file if nocode license is selected
-if ( not doc_license and not data_license and not code_license):
+if (
+        str(doc_license).lower() == "none"
+        and str(data_license).lower() == "none"
+        and str(code_license).lower() != "none"
+    ):
     license_path = PROJECT_ROOT / "LICENSE.txt"
     print(license_path)
     if license_path.exists():
