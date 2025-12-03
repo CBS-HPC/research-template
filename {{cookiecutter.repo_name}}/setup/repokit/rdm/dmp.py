@@ -9,6 +9,56 @@ from typing import Any
 from ..common import PROJECT_ROOT, read_toml, write_toml, split_multi
 
 
+def _parse_dataset_path(raw: str | Path) -> dict:
+    """
+    Normalize dataset path strings like:
+      "data", "data/", "./data", "./data/", "./data/*", "data/*"
+    into a dict:
+      {"parent_path": Path(...), "sub_dir": bool}
+
+    - parent_path is kept as a *relative* Path (no absolute/resolve).
+    - sub_dir is True if the pattern ends with '/*' or '\\*'.
+    """
+    # Start from a string, normalise slashes
+    s = str(raw).strip().replace("\\", "/")
+    sub_dir = False
+
+    # Handle trailing '/*'
+    if s.endswith("/*"):
+        sub_dir = True
+        s = s[:-2]  # strip the '/*'
+
+    # Strip leading './' so "./data" and "data" canonicalise the same
+    if s.startswith("./"):
+        s = s[2:]
+
+    # Strip trailing slashes so "data/" -> "data"
+    s = s.rstrip("/")
+
+    # If it ended up empty (e.g. "./", "/"), treat as current dir
+    if not s:
+        s = "."
+
+    # Use normpath to clean up things like "data/." → "data"
+    s = os.path.normpath(s)
+
+    # IMPORTANT: do NOT resolve; keep it relative if it was relative
+    parent_path = Path(s)
+
+    return {"parent_path": parent_path, "sub_dir": sub_dir}
+
+def load_default_dataset_path() -> dict:
+    cfg = read_toml(
+        folder=str(PROJECT_ROOT),
+        json_filename=JSON_FILENAME,
+        tool_name="datasets",
+        toml_path=TOML_PATH,
+    ) or {}
+
+    patterns = cfg.get("patterns") or []
+    first_pattern = next((p for p in patterns if p), None)
+    return _parse_dataset_path(first_pattern or "./data/*")
+
 def load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -73,6 +123,9 @@ SCHEMA_URLS: dict[str, str] = {
 }
 
 DEFAULT_DMP_PATH = Path("./dmp.json")
+
+
+DEFAULT_DATASET_PATH = load_default_dataset_path()
 
 
 def schema_version_from_url(url: str, default: str = "1.2") -> str:
@@ -647,6 +700,7 @@ def _cookie_meta_from_dmp(data: dict[str, Any]) -> dict[str, str]:
 
     return out
 
+
 def update_cookiecutter_from_dmp(
     dmp_path: Path = DEFAULT_DMP_PATH,
     overwrite: bool = True,
@@ -694,7 +748,6 @@ def update_cookiecutter_from_dmp(
             tool_name = TOOL_NAME,
             toml_path = TOML_PATH,
         )
-
 
 
 def now_iso_minute() -> str:
@@ -780,20 +833,82 @@ def to_bytes_mb(mb) -> int | None:
 
 
 def norm_rel_urlish(p: str | None) -> str | None:
+    """
+    Normalise a path-or-URL-ish string:
+
+    - Returns None for empty / non-string input.
+    - Converts backslashes to forward slashes.
+    - If it's an absolute path under PROJECT_ROOT, make it relative to PROJECT_ROOT.
+    - Strips leading './'.
+    """
     if not p or not isinstance(p, str):
         return None
+
     p2 = p.strip().replace("\\", "/")
-    while p2.startswith("./") or p2.startswith(".\\"):
+    if not p2:
+        return None
+
+    # Try to treat as filesystem path and relativise under PROJECT_ROOT if possible
+    try:
+        path_obj = Path(p2)
+        if path_obj.is_absolute():
+            try:
+                rel = path_obj.relative_to(PROJECT_ROOT)
+                p2 = rel.as_posix()
+            except ValueError:
+                # Not under PROJECT_ROOT → leave as-is
+                p2 = path_obj.as_posix()
+        else:
+            # Already relative; normalise but don't resolve
+            p2 = path_obj.as_posix()
+    except Exception:
+        # If Path() chokes on something truly URL-ish, just keep the cleaned string
+        pass
+
+    # Strip leading "./" segments
+    while p2.startswith("./"):
         p2 = p2[2:]
+
     return p2 or None
 
 
 def data_type_from_path(p: str) -> str:
-    parts = Path(p.replace("\\", "/")).parts
-    if "data" in parts:
-        i = parts.index("data")
-        if i + 1 < len(parts):
-            return parts[i + 1]
+    """
+    Infer a data type from a path using DEFAULT_DATASET_PATH.
+
+    - If DEFAULT_DATASET_PATH["sub_dir"] is True:
+        type = first component under parent_path
+        e.g. ./data/raw/file.csv  -> "raw"
+
+    - If DEFAULT_DATASET_PATH["sub_dir"] is False:
+        always return "Uncategorised".
+    """
+    cfg = DEFAULT_DATASET_PATH
+    parent = Path(cfg["parent_path"])
+    use_subdirs = bool(cfg.get("sub_dir", False))
+
+    # If we're not using subdirs for typing, always uncategorised
+    if not use_subdirs:
+        return "Uncategorised"
+
+    # Normalise and make path relative to parent; fall back if impossible
+    norm = Path(p.replace("\\", "/"))
+    try:
+        rel = norm.relative_to(parent)
+    except ValueError:
+        # Try with resolved paths (handles mixed absolute/relative)
+        try:
+            rel = norm.resolve().relative_to(parent.resolve())
+        except Exception:
+            return "Uncategorised"
+
+    parts = rel.parts
+
+    # Expect parent/<type>/...
+    if len(parts) >= 2:
+        # parts[0] = subdir under parent
+        return parts[0]
+
     return "Uncategorised"
 
 

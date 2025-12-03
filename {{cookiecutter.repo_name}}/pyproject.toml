@@ -31,6 +31,15 @@ REMOTE_STORAGE = "None"
 CODE_REPO = "None"
 PYTHON_VERSION = "None"
 
+
+# ============================================================
+# Defines the dataset folders to be included in data management
+# ============================================================
+[tool.datasets]
+patterns = [
+  "data/*"
+]
+
 # ============================================================
 # Ignore patterns for remote sync tools like Rclone
 # Replaces: .rcloneignore

@@ -228,6 +228,21 @@ def set_options(programming_language: str, version_control: str):
     )
 
 
+def delete_license(doc_license, data_license, code_license):
+    # Remove LICENSE file if nocode license is selected
+    if (
+            str(doc_license).lower() == "none"
+            and str(data_license).lower() == "none"
+            and str(code_license).lower() == "none"
+        ):
+        license_path = PROJECT_ROOT / "LICENSE.txt"
+        print(license_path)
+        if license_path.exists():
+            try:
+                license_path.unlink()
+            except Exception as e:
+                print(f"Failed to delete {license_path}: {e}")
+
 
 main_setup = "./setup/main_setup.py"
 setup_bash = "./run_setup.sh"
@@ -245,6 +260,9 @@ data_license = "{{cookiecutter.data_license}}"
 repo_name = "{{cookiecutter.repo_name}}"
 version_control = "{{cookiecutter.version_control}}"
 programming_language = "{{cookiecutter.programming_language}}"
+
+# Utility function to delete license file
+delete_license(doc_license, data_license, code_license)
 
 
 programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
@@ -266,19 +284,6 @@ from repokit.common import (
     save_to_env,
     PROJECT_ROOT
 )
-# Remove LICENSE file if nocode license is selected
-if (
-        str(doc_license).lower() == "none"
-        and str(data_license).lower() == "none"
-        and str(code_license).lower() == "none"
-    ):
-    license_path = PROJECT_ROOT / "LICENSE.txt"
-    print(license_path)
-    if license_path.exists():
-        try:
-            license_path.unlink()
-        except Exception as e:
-            print(f"Failed to delete {license_path}: {e}")
 
 
 def set_programming_language(programming_language, r_env_manager):

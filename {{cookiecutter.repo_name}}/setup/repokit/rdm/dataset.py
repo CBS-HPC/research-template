@@ -16,6 +16,7 @@ from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct
 from .dmp import (
     DEFAULT_DMP_PATH,
     LICENSE_LINKS,
+    DEFAULT_DATASET_PATH,
     create_or_update_dmp_from_schema,
     data_type_from_path,
     dmp_default_templates,
@@ -35,7 +36,11 @@ from ..vcs import git_commit, git_log_to_file, set_datalad, datalad_cleaning, se
 
 
 DEFAULT_UPDATE_FIELDS = []  # top-level fields
+
+
 DEFAULT_UPDATE_DIST_FIELDS = ["format", "byte_size"]  # nested fields to update
+
+
 IGNORE_DICT = {
     # Git
     ".git",
@@ -77,6 +82,7 @@ IGNORE_DICT = {
     "README.md",
     "LICENSE",
 }
+
 
 def get_hash(path, algo: str = "sha256"):
     """
@@ -136,27 +142,78 @@ def get_all_files(destination, ignore=None):
     return all_files
 
 
+def get_data_files(ignore=None, recursive=False):
+    """
+    Collect data files under DEFAULT_DATASET_PATH["parent_path"].
 
-def get_data_files(base_dir="./data", ignore=None, recursive=False):
+    Behavior:
+    - If DEFAULT_DATASET_PATH["sub_dir"] is False:
+        * Only list files directly under parent_path (no subdir traversal).
+    - If DEFAULT_DATASET_PATH["sub_dir"] is True:
+        * For each first-level subdir, collect files inside it.
+        * If recursive=True, walk nested subdirs via os.walk.
+    Returns:
+        (all_files, subdirs)
+        all_files: list of file paths
+        subdirs:   list of first-level subdirectory names
+    """
     if ignore is None:
-        ignore = {}
-    all_files = []
+        ignore = set()
+    else:
+        ignore = set(ignore)
+
+    cfg = DEFAULT_DATASET_PATH
+
+
+    parent = pathlib.Path(cfg["parent_path"])
+    parent_str = os.fspath(parent)
+    use_subdirs = bool(cfg.get("sub_dir", False))
+
+    all_files: list[str] = []
+    subdirs: list[str] = []
+
     try:
-        subdirs = [
-            name for name in os.listdir(base_dir) if name not in ignore and not name.startswith(".")
+        entries = [
+            name
+            for name in os.listdir(parent_str)
+            if name not in ignore and not name.startswith(".")
         ]
     except FileNotFoundError:
         return [], []
-    subdirs = sorted(subdirs)
-    for sub in subdirs:
-        sub_path = os.path.join(base_dir, sub)
-        if os.path.isdir(sub_path):
-            iterator = os.walk(sub_path) if recursive else [(sub_path, [], os.listdir(sub_path))]
+
+    if use_subdirs:
+        # Only traverse into subdirectories, not files at parent level
+        subdirs = sorted(
+            name
+            for name in entries
+            if os.path.isdir(os.path.join(parent_str, name))
+        )
+
+        for sub in subdirs:
+            sub_path = os.path.join(parent_str, sub)
+            if recursive:
+                iterator = os.walk(sub_path)
+            else:
+                try:
+                    files_here = os.listdir(sub_path)
+                except FileNotFoundError:
+                    files_here = []
+                iterator = [(sub_path, [], files_here)]
+
             for root, dirs, files in iterator:
+                # filter out ignored/hidden dirs
                 dirs[:] = [d for d in dirs if d not in ignore and not d.startswith(".")]
                 for fn in files:
                     if fn not in ignore and not fn.startswith("."):
                         all_files.append(os.path.join(root, fn))
+    else:
+        for name in entries:
+            full = os.path.join(parent_str, name)
+            all_files.append(full)
+            if os.path.isdir(full):
+                subdirs.append(name)
+        subdirs.sort()
+
     return all_files, subdirs
 
 
@@ -792,7 +849,7 @@ def main():
         print(f"Error: {e}")
 
     if change_flag and os.path.exists(".git") and not os.path.exists(".datalad") and not os.path.exists(".dvc"):
-        with change_dir("./data"):
+        with change_dir(DEFAULT_DATASET_PATH["parent_path"]):
             _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
             git_log_to_file(os.path.join(".gitlog"))
 

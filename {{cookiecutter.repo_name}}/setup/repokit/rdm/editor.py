@@ -717,13 +717,30 @@ def draw_projects_section(dmp_root: dict[str, Any]) -> None:
             projects.append(templates["project"])
             st.rerun()
 
-    dmp_root["project"] = edit_array(
-        projects,
-        path=("dmp", "project"),
-        title_singular="Project",
-        removable_items=True,
-        ns=None,
-    )
+    # Track deletion separately
+    project_to_delete = None
+
+    for i, proj in enumerate(projects):
+        # edit_any for projects uses ns=None, so edit_primitive keys are:
+        # _key_for("dmp", "project", i, "title", "prim")
+        title_key = _key_for("dmp", "project", i, "title", "prim")
+        live_title = st.session_state.get(title_key, proj.get("title") or proj.get("name"))
+        header_title = (live_title or proj.get("title") or proj.get("name") or "Project").strip() or "Project"
+
+        with st.expander(f"Project #{i + 1}: {header_title}", expanded=False):
+            projects[i] = edit_any(proj, path=("dmp", "project", i), ns=None)
+
+            if st.button(
+                "🗑️ Remove this project",
+                key=_key_for("dmp", "project", i, "rm"),
+            ):
+                project_to_delete = i
+
+    if project_to_delete is not None:
+        del projects[project_to_delete]
+        st.rerun()
+
+    dmp_root["project"] = projects
 
 
 def draw_datasets_section(dmp_root: dict) -> None:
@@ -749,12 +766,18 @@ def draw_datasets_section(dmp_root: dict) -> None:
     privacy_changed = False
     privacy_message = ""
     is_reused_changed = False
-    
-    for i, ds in enumerate(list(datasets)):
-        with st.expander(f"Dataset #{i + 1}: {ds.get('title') or 'Dataset'}", expanded=False):
+
+    for i, ds in enumerate(datasets):
+        # Look up the live title from the widget state (if it exists)
+        # edit_any(.., ns="deep") → edit_primitive(.., key=_key_for(*path, ns, "prim"))
+        title_key = _key_for("dmp", "dataset", i, "title", "deep", "prim")
+        live_title = st.session_state.get(title_key, ds.get("title"))
+        header_title = (live_title or ds.get("title") or "Dataset").strip() or "Dataset"
+
+        with st.expander(f"Dataset #{i + 1}: {header_title}", expanded=False):
             # Store previous is_reused state to detect changes
             prev_is_reused = _is_reused(ds)
-            
+
             is_reused = _is_reused(ds)
             has_unknown_privacy = _is_unknown(ds.get("personal_data")) or _is_unknown(
                 ds.get("sensitive_data")
@@ -870,7 +893,7 @@ def draw_datasets_section(dmp_root: dict) -> None:
                 changed |= _enforce_privacy_access(datasets[i])
                 changed |= _normalize_license_by_access(datasets[i])
                 changed |= _ensure_open_has_license(datasets[i])
-                
+
                 if changed and not privacy_changed:
                     privacy_changed = True
                     privacy_message = (
@@ -878,18 +901,18 @@ def draw_datasets_section(dmp_root: dict) -> None:
                         if _has_privacy_flags(datasets[i])
                         else "Adjusted license to match access."
                     )
-    
+
     # Perform deletion after iteration is complete (higher priority)
     if dataset_to_delete is not None:
         del datasets[dataset_to_delete]
         # Clean up any session state related to this dataset
         st.session_state.pop(f"allow_reused_{dataset_to_delete}", None)
         st.rerun()
-    
+
     # Rerun if is_reused changed to update button states
     if is_reused_changed:
         st.rerun()
-    
+
     # Show privacy validation message if changes occurred (no rerun needed - changes already applied)
     if privacy_changed:
         st.info(privacy_message)

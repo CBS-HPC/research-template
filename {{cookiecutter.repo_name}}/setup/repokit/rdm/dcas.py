@@ -10,14 +10,14 @@ import requests
 
 from ..common import PROJECT_ROOT, language_dirs, load_from_env
 from .dataset import get_data_files
-
+from .dmp import DEFAULT_DATASET_PATH
 
 # Download Readme template:
 def download_README_template(
     url: str = "https://raw.githubusercontent.com/social-science-data-editors/template_README/release-candidate/templates/README.md",
     readme_file: str = "./README_DCAS_template.md",
 ):
-    readme_file = str(Path(__file__).resolve().parent.parent.parent / Path(readme_file))
+    readme_file = str(PROJECT_ROOT / readme_file)
 
     # Check if the local file already exists
     if os.path.exists(readme_file):
@@ -332,6 +332,7 @@ def copy_items(
 
 def copy_data_items(
     items: Iterable[str | Path],
+    current_base: str | Path = DEFAULT_DATASET_PATH["parent_path"],
     dest_base: str | Path = "./DCAS template/data",
     overwrite: bool = True,
     create_missing_dirs: bool = True,
@@ -341,7 +342,7 @@ def copy_data_items(
       - If it's a directory: create the corresponding directory under `dest_base`
         (does NOT copy contents).
       - If it's a file: copy the file under `dest_base`, preserving its path
-        relative to the nearest 'data' segment if present.
+        relative to `current_base` if possible.
       - If the source path does not exist and `create_missing_dirs` is True AND
         the item looks like a directory (trailing slash or no extension),
         create the destination directory anyway.
@@ -349,20 +350,27 @@ def copy_data_items(
     Returns a list of {"src","dst","status",("error")} per item.
     """
 
-    def _rel_under_data(p: Path) -> Path:
-        # If the path contains a 'data' segment, keep the part after 'data/'
-        parts = p.parts
-        if "data" in parts:
-            i = parts.index("data")
-            remainder = parts[i + 1 :]
-            return Path(*remainder) if remainder else Path()
-        # If it's already relative, keep as-is; if absolute, fallback to basename
-        return p if not p.is_absolute() else Path(p.name)
+    cur_base = Path(current_base)
+
+    def _rel_under_base(p: Path) -> Path:
+        """
+        Path of `p` relative to `current_base`, if possible.
+
+        - If `p` is inside `current_base`, return p.relative_to(current_base).
+        - Otherwise:
+            * if p is relative, keep it as-is
+            * if p is absolute, fall back to basename only
+        """
+        try:
+            # Works for both relative ("data/x.csv") and absolute paths
+            return p.relative_to(cur_base)
+        except ValueError:
+            # Not under current_base
+            return p if not p.is_absolute() else Path(p.name)
 
     def _looks_like_dir(raw: str | Path) -> bool:
         s = str(raw)
         # Treat as directory if it ends with a path separator, or has no suffix
-        # (works for typical names like '00_raw', '01_interim/', etc.)
         return s.endswith(("/", "\\")) or (Path(s).suffix == "")
 
     base = Path(dest_base)
@@ -374,7 +382,7 @@ def copy_data_items(
         src = Path(item)
         rec: dict[str, str] = {"src": str(src), "status": "pending"}
 
-        rel = _rel_under_data(src)
+        rel = _rel_under_base(src)
         dst = base / rel
         rec["dst"] = str(dst)
 
@@ -437,9 +445,10 @@ def main():
     programming_language = load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter")
     code_path = language_dirs.get(programming_language.lower())
 
-    _, items = get_data_files()  # second value is the mixed list of dirs/files
+    items, _ = get_data_files()  # second value is the mixed list of dirs/files
 
-    copy_data_items(items, dest_base="./DCAS template/data", overwrite=True)
+    print(items)
+    copy_data_items(items = items, dest_base = "./DCAS template/data", overwrite=True)
 
     _ = copy_items(
         items=[
