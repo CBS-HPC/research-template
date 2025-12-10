@@ -16,7 +16,6 @@ from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct
 from .dmp import (
     DEFAULT_DMP_PATH,
     LICENSE_LINKS,
-    DEFAULT_DATASET_PATH,
     create_or_update_dmp_from_schema,
     data_type_from_path,
     dmp_default_templates,
@@ -29,10 +28,12 @@ from .dmp import (
     now_iso_minute,
     save_json,
     to_bytes_mb,
+    load_default_dataset_path,
 )
 
 
 from ..vcs import git_commit, git_log_to_file, set_datalad, datalad_cleaning, set_dvc, dvc_cleaning
+
 
 
 DEFAULT_UPDATE_FIELDS = []  # top-level fields
@@ -142,28 +143,14 @@ def get_all_files(destination, ignore=None):
     return all_files
 
 
-def get_data_files(ignore=None, recursive=False):
-    """
-    Collect data files under DEFAULT_DATASET_PATH["parent_path"].
-
-    Behavior:
-    - If DEFAULT_DATASET_PATH["sub_dir"] is False:
-        * Only list files directly under parent_path (no subdir traversal).
-    - If DEFAULT_DATASET_PATH["sub_dir"] is True:
-        * For each first-level subdir, collect files inside it.
-        * If recursive=True, walk nested subdirs via os.walk.
-    Returns:
-        (all_files, subdirs)
-        all_files: list of file paths
-        subdirs:   list of first-level subdirectory names
-    """
+def get_data_files(cfg = None , ignore=None, recursive=False):
     if ignore is None:
         ignore = set()
     else:
         ignore = set(ignore)
 
-    cfg = DEFAULT_DATASET_PATH
-
+    if cfg is None:
+        cfg, _ = load_default_dataset_path()
 
     parent = pathlib.Path(cfg["parent_path"])
     parent_str = os.fspath(parent)
@@ -223,6 +210,7 @@ def datasets_to_json(
     update_fields: list[str] | None = None,
     update_distribution_fields: list[str] | None = None,
     bump_modified_on_distribution_updates: bool = False,
+    do_print: bool = True,
 ):
     """
     Upsert a dataset entry into {"dmp": {"dataset": [...]}}.
@@ -337,18 +325,18 @@ def datasets_to_json(
 
 
         if changed_flag:
-            print(f"Updated DMP entry for {existing_x.get("destination", merged.get('title'))}.")
-            #print(f"Updated DMP entry for {merged.get('title')}.")
+            if do_print:
+                print(f"Updated DMP entry for {existing_x.get("title", merged.get('title'))}.")
             any_change_flag = True
         else:
-            print(f"No changes detected for DMP entry: {existing_x.get("destination", merged.get('title'))}.")
-            #print(f"No changes detected for DMP entry: {merged.get('title')}.")
+            if do_print:
+                print(f"No changes detected for DMP entry: {existing_x.get("title", merged.get('title'))}.")
 
     else:
         entry_x = get_extension_payload(entry or {}, "x_dcas") or {}
         datasets.append(entry)
-        print(f"Added DMP entry for {entry_x.get("destination", entry.get('title'))}.")
-       # print(f"Added DMP entry for {entry.get('title')}.")
+        if do_print:
+            print(f"Added DMP entry for {entry_x.get("destination", entry.get('title'))}.")
         any_change_flag = True
 
     # Sort by x_dcas.data_type then title
@@ -456,7 +444,7 @@ def remove_missing_datasets(json_path: str | os.PathLike = DEFAULT_DMP_PATH):
     return json_path
 
 
-def dataset(destination, json_path=DEFAULT_DMP_PATH):
+def dataset(destination, json_path=DEFAULT_DMP_PATH,do_print: bool = True):
     def make_dataset_entry(name, distribution, x_dcas_payload):
         templates = dmp_default_templates()
 
@@ -575,7 +563,7 @@ def dataset(destination, json_path=DEFAULT_DMP_PATH):
 
     entry = make_dataset_entry(name, distribution, x_dcas_payload)
 
-    change_flag, json_path = datasets_to_json(json_path=json_path, entry=entry)
+    change_flag, json_path = datasets_to_json(json_path=json_path, entry=entry,do_print=do_print)
 
     return change_flag, json_path
 
@@ -779,7 +767,7 @@ def generate_dataset_table(
     return "".join(summary_blocks), "".join(detail_blocks)
 
 
-def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
+def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md",do_print: bool = True):
     section_title = "**The following datasets are included in the project:**"
     readme_path = PROJECT_ROOT / pathlib.Path(readme_file)
     new_section = f"{section_title}\n\n{markdown_table.strip()}\n</details>"
@@ -802,11 +790,60 @@ def dataset_to_readme(markdown_table: str, readme_file: str = "./README.md"):
 
     readme_path.parent.mkdir(parents=True, exist_ok=True)
     readme_path.write_text(updated.strip(), encoding="utf-8")
-    print(f"{readme_path} successfully updated with dataset section.")
+    if do_print:
+        print(f"{readme_path} successfully updated with dataset section.")
+
+
+def dataset_path_update(data_files: list[str] | None = None, dmp_path: str = DEFAULT_DMP_PATH, git_msg: str=None):
+    
+    if isinstance(data_files, str):
+        data_files = [data_files]
+    
+    if not data_files:
+        return
+    if not git_msg:
+        git_msg = f"Setting dataset path for: {data_files[0]}"
+    
+    os.chdir(PROJECT_ROOT)
+
+    DEFAULT_DATASET_PATH, _ = load_default_dataset_path()
+    
+    file_descriptions = read_toml(
+        folder=PROJECT_ROOT,
+        json_filename="./file_descriptions.json",
+        tool_name="file_descriptions",
+        toml_path="pyproject.toml",
+    )
+
+    change_flag = False
+    for f in data_files:
+        flag, dmp_path = dataset(destination=f, json_path=dmp_path,do_print=False)
+        if not flag:
+            continue
+        change_flag = True
+        if os.path.exists(".datalad"):
+            set_datalad(f)
+        elif os.path.exists(".dvc"):
+            set_dvc(f)
+
+    try:
+        markdown_table, _ = generate_dataset_table(dmp_path, file_descriptions)
+        if markdown_table:
+            dataset_to_readme(markdown_table = markdown_table, do_print = False)
+    except Exception as e:
+        print(f"Error: {e}")
+
+    if change_flag and os.path.exists(".git") and not os.path.exists(".datalad") and not os.path.exists(".dvc"):
+        with change_dir(DEFAULT_DATASET_PATH["parent_path"]):
+            if os.path.exists(".git"):
+                _ = git_commit(msg=git_msg, path=os.getcwd())
+                git_log_to_file(os.path.join(".gitlog"))
+
 
 
 @ensure_correct_kernel
-def main():
+def main(dmp_path:str = DEFAULT_DMP_PATH, do_print:bool=True, git_msg:str="Running 'set-dataset'"):
+
     os.chdir(PROJECT_ROOT)
 
     if os.path.exists(".datalad"):
@@ -814,11 +851,13 @@ def main():
     elif os.path.exists(".dvc"):
         dvc_cleaning(PROJECT_ROOT)
 
+    DEFAULT_DATASET_PATH, _ = load_default_dataset_path()
+
     data_files, _ = get_data_files(ignore=IGNORE_DICT)
 
-    create_or_update_dmp_from_schema(dmp_path=DEFAULT_DMP_PATH)
+    create_or_update_dmp_from_schema(dmp_path=dmp_path)
 
-    json_path = remove_missing_datasets(json_path=DEFAULT_DMP_PATH)
+    json_path = remove_missing_datasets(json_path=dmp_path)
 
     if not data_files:
         return
@@ -832,7 +871,7 @@ def main():
 
     change_flag = False
     for f in data_files:
-        flag, json_path = dataset(destination=f, json_path=json_path)
+        flag, json_path = dataset(destination=f, json_path=json_path,do_print=do_print)
         if not flag:
             continue
         change_flag = True
@@ -844,14 +883,15 @@ def main():
     try:
         markdown_table, _ = generate_dataset_table(json_path, file_descriptions)
         if markdown_table:
-            dataset_to_readme(markdown_table)
+            dataset_to_readme(markdown_table,do_print=do_print)
     except Exception as e:
         print(f"Error: {e}")
 
     if change_flag and os.path.exists(".git") and not os.path.exists(".datalad") and not os.path.exists(".dvc"):
         with change_dir(DEFAULT_DATASET_PATH["parent_path"]):
-            _ = git_commit(msg="Running 'set-dataset'", path=os.getcwd())
-            git_log_to_file(os.path.join(".gitlog"))
+            if os.path.exists(".git"):
+                _ = git_commit(msg=git_msg, path=os.getcwd())
+                git_log_to_file(os.path.join(".gitlog"))
 
 
 if __name__ == "__main__":

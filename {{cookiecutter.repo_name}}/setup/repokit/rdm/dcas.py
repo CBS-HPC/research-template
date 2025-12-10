@@ -10,7 +10,10 @@ import requests
 
 from ..common import PROJECT_ROOT, language_dirs, load_from_env
 from .dataset import get_data_files
-from .dmp import DEFAULT_DATASET_PATH
+from .dmp import load_default_dataset_path
+
+
+DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 
 # Download Readme template:
 def download_README_template(

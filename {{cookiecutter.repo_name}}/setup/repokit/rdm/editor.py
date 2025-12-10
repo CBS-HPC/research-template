@@ -16,15 +16,18 @@ from datetime import date, datetime
 from hashlib import sha256  # <- for autosave hashing
 from pathlib import Path
 from typing import Any
+import wx 
 
 import requests
 import streamlit as st
 from streamlit.web.cli import main as st_main
 
+
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
-    from ..common import load_from_env, save_to_env
+    from ..common import load_from_env, save_to_env, PROJECT_ROOT, write_toml
     from .dataverse import PublishError, streamlit_publish_to_dataverse
+    from .dataset import dataset_path_update, main as dataset_main
     from .dmp import (
         DEFAULT_DMP_PATH,
         DK_UNI_MAP,
@@ -42,6 +45,11 @@ try:
         reorder_dmp_keys,
         repair_empty_enums,
         today_iso,
+        update_cookiecutter_from_dmp,
+        load_default_dataset_path,
+        JSON_FILENAME,
+        TOOL_NAME,
+        TOML_PATH,
     )
 
     # from .publish import *
@@ -49,8 +57,9 @@ try:
 except ImportError:
     pkg_root = Path(__file__).resolve().parent.parent.parent / "setup"
     sys.path.insert(0, str(pkg_root))
-    from repokit.common import load_from_env, save_to_env
+    from repokit.common import load_from_env, save_to_env, PROJECT_ROOT, write_toml
     from repokit.rdm.dataverse import PublishError, streamlit_publish_to_dataverse
+    from repokit.rdm.dataset import dataset_path_update, main as dataset_main
     from repokit.rdm.dmp import (
         DEFAULT_DMP_PATH,
         DK_UNI_MAP,
@@ -69,12 +78,16 @@ except ImportError:
         repair_empty_enums,
         today_iso,
         update_cookiecutter_from_dmp,
+        load_default_dataset_path,
+        JSON_FILENAME,
+        TOOL_NAME,
+        TOML_PATH,
     )
 
     # from repokit.rdm.publish import *
     from repokit.rdm.zenodo import streamlit_publish_to_zenodo
 
-
+_ , DATA_PARENT_PATH = load_default_dataset_path()
 # ---------------------------
 # Repository site choices (labels come from format_func)
 # ---------------------------
@@ -95,6 +108,42 @@ def _has_privacy_flags(ds: dict) -> bool:
         str(ds.get("personal_data", "")).lower() == "yes"
         or str(ds.get("sensitive_data", "")).lower() == "yes"
     )
+
+
+def _normalize_chosen_path(chosen: str) -> str:
+    """
+    If `chosen` is under PROJECT_ROOT, return a path relative to PROJECT_ROOT.
+    Otherwise, return an absolute POSIX-style path.
+
+    Examples:
+      PROJECT_ROOT = /home/user/project
+      chosen = /home/user/project/data/raw/file.csv  -> "data/raw/file.csv"
+      chosen = /other/place/file.csv                 -> "/other/place/file.csv"
+    """
+    s = (chosen or "").strip()
+    if not s:
+        return s
+
+    p = Path(s)
+
+    # If it's already relative, just normalise separators
+    if not p.is_absolute():
+        return p.as_posix()
+
+    # Try to relativate to PROJECT_ROOT if available
+    try:
+        root = PROJECT_ROOT.resolve()
+    except Exception:
+        # PROJECT_ROOT not defined / not resolvable: keep as absolute
+        return p.resolve().as_posix()
+
+    try:
+        rel = p.resolve().relative_to(root)
+        # Subpath of PROJECT_ROOT → keep relative
+        return rel.as_posix()
+    except ValueError:
+        # Not under PROJECT_ROOT → keep absolute
+        return p.resolve().as_posix()
 
 
 def _enforce_privacy_access(ds: dict) -> bool:
@@ -654,7 +703,6 @@ def find_default_dmp_path(start: Path | None = None) -> Path:
     return Path("./dmp.json") if not Path(DEFAULT_DMP_PATH).exists() else Path(DEFAULT_DMP_PATH)
 
 
-
 def draw_root_section(dmp_root: dict[str, Any]) -> None:
     st.subheader("Root")
     dmp_root.setdefault("schema", dmp_root.get("schema") or SCHEMA_URLS[SCHEMA_VERSION])
@@ -743,39 +791,256 @@ def draw_projects_section(dmp_root: dict[str, Any]) -> None:
     dmp_root["project"] = projects
 
 
+def _browse_for_directory(
+    start_path: str | Path | None = None,
+    title: str = "Select a folder",
+    dir_only: bool = True,
+) -> str | None:
+    """
+    Open a native chooser dialog using wxPython.
+
+    Args:
+        start_path: Initial folder or file path to start from.
+        title:      Dialog title.
+        dir_only:   If True → choose a directory.
+                    If False → choose a single file.
+
+    Returns:
+        Selected path as a string (directory or file, depending on dir_only),
+        or None if cancelled.
+    """
+    # Normalise starting path
+    if start_path:
+        start_str = os.fspath(start_path)
+    else:
+        start_str = os.getcwd()
+
+    # Create a minimal wx App just for the dialog
+    app = wx.App(False)
+
+    if dir_only:
+        # If a file was passed, start from its directory
+        default_dir = start_str
+        if os.path.isfile(default_dir):
+            default_dir = os.path.dirname(default_dir)
+
+        dlg = wx.DirDialog(
+            None,
+            message=title,
+            defaultPath=default_dir,
+            style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON,
+        )
+    else:
+        # File chooser: split into dir + file if a file path is given
+        if os.path.isfile(start_str):
+            default_dir, default_file = os.path.split(start_str)
+        else:
+            default_dir, default_file = (start_str, "")
+
+        dlg = wx.FileDialog(
+            None,
+            message=title,
+            defaultDir=default_dir,
+            defaultFile=default_file,
+            wildcard="*.*",
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+        )
+
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            selected_path = dlg.GetPath()
+        else:
+            selected_path = None
+    finally:
+        dlg.Destroy()
+        app.Destroy()
+
+    return selected_path
+
+
+def _reload_dmp_from_disk(
+    save_path: Path,
+    clear_widget_keys: bool = True,
+    reset_autosave_baseline: bool = True,
+    force_widget_refresh: bool = False,
+    rerun: bool = False,
+) -> None:
+    """
+    Reload the DMP JSON from disk into session_state["data"], optionally
+    clearing Streamlit widget keys and resetting the autosave baseline.
+    
+    If force_widget_refresh=True, increment a counter to force all widgets to recreate.
+    If rerun=True, calls st.rerun() at the end.
+    """
+    try:
+        with save_path.open("r", encoding="utf-8") as f:
+            reloaded = json.load(f)
+        st.session_state["data"] = ensure_dmp_shape(reloaded)
+    except Exception as e:
+        st.error(f"Failed to reload updated DMP: {e}")
+        # On a hard failure, don't try to clear keys or rerun
+        return
+    
+    if clear_widget_keys:
+        # Clear all DMP-related widget keys so they pick up reloaded values
+        keys_to_clear = [
+            k for k in list(st.session_state.keys())
+            if isinstance(k, str) and (k.startswith("dmp|") or k.startswith("deep|"))
+        ]
+        for k in keys_to_clear:
+            del st.session_state[k]
+    
+    if reset_autosave_baseline:
+        st.session_state.pop("__autosave_last_hash__", None)
+    
+    if force_widget_refresh:
+        # Increment counter to force all widgets to recreate with new keys
+        counter = st.session_state.get("__widget_refresh_counter__", 0)
+        st.session_state["__widget_refresh_counter__"] = counter + 1
+    
+    if rerun:
+        st.rerun()
+
+
 def draw_datasets_section(dmp_root: dict) -> None:
     st.subheader("Datasets")
+    
+    # Get widget refresh counter for forcing widget recreation
+    widget_version = st.session_state.get("__widget_refresh_counter__", 0)
+    
     datasets = dmp_root.get("dataset")
     if not isinstance(datasets, list):
         datasets = []
         dmp_root["dataset"] = datasets
 
-    top = st.columns([1, 3])
+    # --- Top row: Add dataset + Parent Data Path + Change Path ---
+    top = st.columns([1, 4, 1])
     templates = dmp_default_templates()
+
+    # Initialize parent data path in session (for later override)
+    if "__parent_data_path__" not in st.session_state:
+        st.session_state["__parent_data_path__"] = str(DATA_PARENT_PATH)
+
+    parent_data_path = st.session_state["__parent_data_path__"]
+
     with top[0]:
         if st.button("➕ Add dataset", key=_key_for("dataset", "add")):
-            datasets.append(templates["dataset"])
+            new_index = len(datasets) + 1
+            new_ds = deepcopy(templates["dataset"])
+            if isinstance(new_ds, dict):
+                title_val = str(new_ds.get("title") or "").strip()
+                if not title_val:
+                    new_ds["title"] = f"Dataset {new_index}"
+            
+            datasets.append(new_ds)
+            dmp_root["dataset"] = datasets
+            
+            if "data" in st.session_state and isinstance(st.session_state["data"], dict):
+                st.session_state["data"].setdefault("dmp", {})
+                st.session_state["data"]["dmp"] = dmp_root
+            
+            _autosave_if_changed(force_write=True)
             st.rerun()
+
+    with top[1]:
+        c_label, c_input = st.columns([0.4, 4])
+        with c_label:
+            st.caption("Parent Data Path")
+        with c_input:
+            st.text_input(
+                "Parent Data Path",
+                value=parent_data_path,
+                key=f"parent_data_path_display_v{widget_version}",
+                disabled=True,
+                label_visibility="collapsed",
+            )
+
+    with top[2]:
+        if st.button("Change Path", key="change_parent_data_path"):
+
+            # Start from current parent_data_path (or fallback)
+            start_path = parent_data_path or st.session_state.get(
+                "__parent_data_path__", str(DATA_PARENT_PATH)
+            )
+
+            chosen = _browse_for_directory(
+                start_path=start_path,
+                title="Select parent data folder for datasets",
+                dir_only=True,
+            )
+
+            if chosen:
+                chosen_norm = _normalize_chosen_path(chosen)
+
+                # 1) Update in-memory parent path used by the UI
+                st.session_state["__parent_data_path__"] = chosen_norm
+
+                try:
+                    # 2) Let the central autosave logic write the DMP to disk
+                    _autosave_if_changed(force_write=True)
+
+                    # Resolve the path that autosave wrote to
+                    save_path_str = st.session_state.get("save_path") or str(DEFAULT_DMP_PATH)
+                    save_path = Path(save_path_str).resolve()
+
+                    # 3) Persist to TOML
+                    write_toml(
+                        data={"patterns": chosen_norm},
+                        folder=str(PROJECT_ROOT),
+                        json_filename=JSON_FILENAME,
+                        tool_name="datasets",
+                        toml_path=TOML_PATH,
+                    )
+
+                    # 4) Rebuild dataset metadata
+                    try:
+                        dataset_main(
+                            dmp_path=save_path,
+                            do_print=False,
+                            git_msg=f"Setting parent dataset path to {chosen_norm}",
+                        )
+                    except Exception as e:
+                        st.warning(f"dataset_main failed: {e}")
+
+                    # 5) Reload DMP + force widget refresh + reset UI / autosave baseline, then rerun
+                    _reload_dmp_from_disk(
+                        save_path,
+                        clear_widget_keys=True,
+                        reset_autosave_baseline=True,
+                        force_widget_refresh=True,
+                        rerun=True,
+                    )
+                except Exception as e:
+                    st.error(f"Failed to save parent data path: {e}")
+                else:
+                    st.rerun()
 
     def _is_unknown(v: Any) -> bool:
         s = str(v or "").strip().lower()
         return s in {"unknown", "unkown", ""}
 
-    # Track deletion and privacy changes separately - don't modify list while iterating
-    dataset_to_delete = None
-    privacy_changed = False
-    privacy_message = ""
+    def _first_access_url(ds: dict) -> str:
+        """Return the first non-empty access_url from distribution, or ''."""
+        dists = ds.get("distribution") or []
+        if not isinstance(dists, list):
+            return ""
+        for dist in dists:
+            if isinstance(dist, dict):
+                url = (dist.get("access_url") or "").strip()
+                if url:
+                    return url
+        return ""
+
+    # Track only reuse changes – deletion is now inline
     is_reused_changed = False
 
     for i, ds in enumerate(datasets):
-        # Look up the live title from the widget state (if it exists)
-        # edit_any(.., ns="deep") → edit_primitive(.., key=_key_for(*path, ns, "prim"))
-        title_key = _key_for("dmp", "dataset", i, "title", "deep", "prim")
+        # Use versioned keys for widgets that need to refresh
+        title_key = f"dmp|dataset|{i}|title|deep|prim_v{widget_version}"
         live_title = st.session_state.get(title_key, ds.get("title"))
         header_title = (live_title or ds.get("title") or "Dataset").strip() or "Dataset"
 
         with st.expander(f"Dataset #{i + 1}: {header_title}", expanded=False):
-            # Store previous is_reused state to detect changes
             prev_is_reused = _is_reused(ds)
 
             is_reused = _is_reused(ds)
@@ -783,7 +1048,7 @@ def draw_datasets_section(dmp_root: dict) -> None:
                 ds.get("sensitive_data")
             )
 
-            override_key = f"allow_reused_{i}"
+            override_key = f"allow_reused_{i}_v{widget_version}"
             allow_override = st.session_state.get(override_key, False)
             if not is_reused and allow_override:
                 st.session_state[override_key] = False
@@ -791,7 +1056,6 @@ def draw_datasets_section(dmp_root: dict) -> None:
 
             zen_disabled = (is_reused and not allow_override) or has_unknown_privacy
 
-            # Determine alias availability for enabling the Dataverse button.
             site_choice = st.session_state.get("dataverse_site_choice", "")
             alias_effective = st.session_state.get("dataverse_alias", "") or _get_env_or_secret(
                 "DATAVERSE_ALIAS", ""
@@ -804,14 +1068,33 @@ def draw_datasets_section(dmp_root: dict) -> None:
             alias_missing = _is_empty_alias(alias_effective)
             dv_disabled = (is_reused and not allow_override) or has_unknown_privacy or alias_missing
 
-            cols = st.columns([1, 1, 1, 1, 6])
+            # Layout row
+            cols = st.columns([1, 1, 1, 2, 4])
 
+            # --- INLINE DELETE: remove immediately on click ---
             with cols[0]:
-                if st.button("🗑️ Remove this dataset", key=f"rm_ds_{i}"):
-                    dataset_to_delete = i
+                if st.button("🗑️ Remove this dataset", key=f"rm_ds_{i}_v{widget_version}"):
+                    # Delete the dataset at index i right away
+                    del datasets[i]
+                    dmp_root["dataset"] = datasets
+
+                    if "data" in st.session_state and isinstance(st.session_state["data"], dict):
+                        st.session_state["data"].setdefault("dmp", {})
+                        st.session_state["data"]["dmp"] = dmp_root
+
+                    # Clean up any reuse-override state for this index
+                    st.session_state.pop(override_key, None)
+
+                    # Persist changes and rerun
+                    _autosave_if_changed(force_write=True)
+                    st.rerun()
 
             with cols[1]:
-                if st.button("Publish to Zenodo", key=f"pub_zen_{i}", disabled=zen_disabled):
+                if st.button(
+                    "Publish to Zenodo",
+                    key=f"pub_zen_{i}_v{widget_version}",
+                    disabled=zen_disabled,
+                ):
                     token = get_token_from_state("zenodo")
                     if not token:
                         st.warning("Please set a Zenodo token in the sidebar and press Save.")
@@ -830,7 +1113,11 @@ def draw_datasets_section(dmp_root: dict) -> None:
                         st.error(str(e))
 
             with cols[2]:
-                if st.button("Publish to DeiC Dataverse", key=f"pub_dv_{i}", disabled=dv_disabled):
+                if st.button(
+                    "Publish to DeiC Dataverse",
+                    key=f"pub_dv_{i}_v{widget_version}",
+                    disabled=dv_disabled,
+                ):
                     token = get_token_from_state("dataverse")
                     if not token:
                         st.warning("Please set a Dataverse token in the sidebar and press Save.")
@@ -838,14 +1125,10 @@ def draw_datasets_section(dmp_root: dict) -> None:
                     try:
                         dv_base, dv_alias = get_dataverse_config()
                         if not dv_base:
-                            st.warning(
-                                "Please select a Dataverse base URL in the sidebar and press Save."
-                            )
+                            st.warning("Please select a Dataverse base URL in the sidebar and press Save.")
                             st.stop()
                         if _is_empty_alias(dv_alias):
-                            st.warning(
-                                "Please enter a Dataverse collection (alias) in the sidebar and press Save."
-                            )
+                            st.warning("Please enter a Dataverse collection (alias) in the sidebar and press Save.")
                             st.stop()
                         streamlit_publish_to_dataverse(
                             dataset=ds,
@@ -876,46 +1159,115 @@ def draw_datasets_section(dmp_root: dict) -> None:
                     key=override_key,
                     value=allow_override,
                     disabled=not is_reused,
-                    help="Enable publishing even when 'is_reused' is set to 'yes'. Only available when dataset is marked as reused.",
+                    help=(
+                        "Enable publishing even when 'is_reused' is set to 'yes'. "
+                        "Only available when dataset is marked as reused."
+                    ),
                 )
 
-            # Only edit if we're not deleting this dataset
-            if dataset_to_delete != i:
-                datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns="deep")
+            # Data path display + button
+            with cols[4]:
+                access_url = _first_access_url(ds)
+                btn_label = "Change Data Path" if access_url else "Add Data Path"
 
-                # Check if is_reused changed
-                new_is_reused = _is_reused(datasets[i])
-                if prev_is_reused != new_is_reused:
-                    is_reused_changed = True
+                subcol_path, subcol_btn = st.columns([3, 1])
 
-                # Check for privacy-related changes but DON'T rerun yet
-                changed = False
-                changed |= _enforce_privacy_access(datasets[i])
-                changed |= _normalize_license_by_access(datasets[i])
-                changed |= _ensure_open_has_license(datasets[i])
-
-                if changed and not privacy_changed:
-                    privacy_changed = True
-                    privacy_message = (
-                        "Privacy flags require closed access; adjusted access/license fields."
-                        if _has_privacy_flags(datasets[i])
-                        else "Adjusted license to match access."
+                with subcol_path:
+                    st.caption("Data path")
+                    # Use versioned key and always read from current data
+                    preview_key = f"dmp|dataset|{i}|data_path_preview_v{widget_version}"
+                    st.text_input(
+                        "Data path",
+                        value=access_url or "",
+                        key=preview_key,
+                        disabled=True,
+                        label_visibility="collapsed",
                     )
 
-    # Perform deletion after iteration is complete (higher priority)
-    if dataset_to_delete is not None:
-        del datasets[dataset_to_delete]
-        # Clean up any session state related to this dataset
-        st.session_state.pop(f"allow_reused_{dataset_to_delete}", None)
-        st.rerun()
+                with subcol_btn:
+                    if st.button(
+                        btn_label,
+                        key=f"dmp|dataset|{i}|data_path_action_v{widget_version}",
+                    ):
+                        # 1) Let user pick a folder or file(s)
+                        start_path = access_url or st.session_state.get(
+                            "__parent_data_path__", str(DATA_PARENT_PATH)
+                        )
+                        chosen = _browse_for_directory(
+                            start_path=start_path,
+                            title=f"Select data folder/files for dataset #{i + 1}",
+                            dir_only=False,
+                        )
+
+                        if chosen:
+                            chosen_norm = _normalize_chosen_path(chosen)
+
+                            # 2) Update in-memory DMP for this dataset
+                            dists = ds.setdefault("distribution", [])
+                            if not dists or not isinstance(dists[0], dict):
+                                if dists and not isinstance(dists[0], dict):
+                                    dists.clear()
+                                dists.append({})
+                            dists[0]["access_url"] = chosen_norm
+
+                            # Make sure the change is reflected in the datasets list
+                            datasets[i] = ds
+                            dmp_root["dataset"] = datasets
+
+                            # And in the top-level DMP object in session_state
+                            if "data" in st.session_state and isinstance(st.session_state["data"], dict):
+                                st.session_state["data"].setdefault("dmp", {})
+                                st.session_state["data"]["dmp"] = dmp_root
+
+                            try:
+                                # 3) Let the central autosave logic write the DMP to disk
+                                _autosave_if_changed(force_write=True)
+
+                                # Resolve the path that autosave wrote to
+                                save_path_str = (
+                                    st.session_state.get("save_path") or str(DEFAULT_DMP_PATH)
+                                )
+                                save_path = Path(save_path_str).resolve()
+
+                                # 4) Run dataset_path_update on the saved DMP
+                                try:
+                                    dataset_path_update(
+                                        data_files=chosen_norm,
+                                        dmp_path=save_path,
+                                        git_msg=(
+                                            f"Updating dataset #{i + 1} data path to {chosen_norm}"
+                                        ),
+                                    )
+                                except Exception as e:
+                                    st.warning(f"dataset_path_update failed: {e}")
+
+                                # 5) Reload DMP + force widget refresh + reset UI / autosave baseline, then rerun
+                                _reload_dmp_from_disk(
+                                    save_path,
+                                    clear_widget_keys=True,
+                                    reset_autosave_baseline=True,
+                                    force_widget_refresh=True,
+                                    rerun=True,
+                                )
+
+                            except Exception as e:
+                                st.error(f"Failed to save DMP after updating data path: {e}")
+
+            # If we reached here, the dataset wasn't deleted in this run
+            datasets[i] = edit_any(ds, path=("dmp", "dataset", i), ns=f"deep_v{widget_version}")
+
+            new_is_reused = _is_reused(datasets[i])
+            if prev_is_reused != new_is_reused:
+                is_reused_changed = True
+
+            changed = False
+            changed |= _enforce_privacy_access(datasets[i])
+            changed |= _normalize_license_by_access(datasets[i])
+            changed |= _ensure_open_has_license(datasets[i])
 
     # Rerun if is_reused changed to update button states
     if is_reused_changed:
         st.rerun()
-
-    # Show privacy validation message if changes occurred (no rerun needed - changes already applied)
-    if privacy_changed:
-        st.info(privacy_message)
 
 
 def _is_reused(ds: dict) -> bool:
@@ -980,11 +1332,6 @@ def _guess_dataverse_defaults_from_university(
         if info:
             return info.get("dataverse_default_base_url"), info.get("dataverse_alias")
     return None, None
-
-
-# ---------------------------
-# Connection tests
-# ---------------------------
 
 
 def _safe_get_json(
@@ -1412,10 +1759,13 @@ def _json_hash_for_autosave(obj: dict[str, Any]) -> str:
     return sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _autosave_if_changed() -> None:
+def _autosave_if_changed(force_write: bool = False) -> None:
     """
     If the DMP content changed since last snapshot, bump modified and write to disk.
     Also sync cookiecutter.json from the current DMP.
+    
+    If `force_write=True`, we always write once even if this is the first call
+    (i.e. no existing baseline hash yet).
     """
     if "save_path" not in st.session_state or not st.session_state["save_path"]:
         return
@@ -1426,18 +1776,22 @@ def _autosave_if_changed() -> None:
     current_snapshot = _ordered_output_without_touching_modified()
     current_hash = _json_hash_for_autosave(current_snapshot)
 
-    # First run: seed baseline, don't write yet
-    if "__autosave_last_hash__" not in st.session_state:
+    first_call = "__autosave_last_hash__" not in st.session_state
+
+    # First call: normally just seed baseline (no write),
+    # but if force_write=True we fall through and write immediately.
+    if first_call and not force_write:
         st.session_state["__autosave_last_hash__"] = current_hash
         st.session_state["__autosave_feedback__"] = (
-            f"Autosave ready — changes will be saved to {base_path.name}"
+            f"Autosave ready – changes will be saved to {base_path.name}"
         )
         return
 
-    if current_hash == st.session_state["__autosave_last_hash__"]:
-        return  # nothing changed
+    # If not first call and hash unchanged, nothing to do
+    if (not first_call) and current_hash == st.session_state["__autosave_last_hash__"]:
+        return
 
-    # Something changed → bump modified and save
+    # Something changed (or we explicitly forced a write) → bump modified and save
     to_save = deepcopy(current_snapshot)
     try:
         to_save["dmp"]["modified"] = now_iso_minute()
@@ -1454,15 +1808,15 @@ def _autosave_if_changed() -> None:
             f"💾 Autosaved {base_path.name} at {datetime.now().strftime('%H:%M:%S')}"
         )
 
-        # NEW: keep cookiecutter.json in sync with the autosaved DMP
+        # Keep cookiecutter.json in sync with the autosaved DMP
         try:
             update_cookiecutter_from_dmp(dmp_path=base_path)
         except Exception as e:
-            # Don't break the editor if cookie update fails; just surface a hint
             st.session_state["__autosave_feedback__"] += f" (cookiecutter sync failed: {e})"
 
     except Exception as e:
         st.session_state["__autosave_feedback__"] = f"⚠️ Autosave failed: {e}"
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # App

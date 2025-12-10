@@ -4,7 +4,7 @@ import urllib.request
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Union
 
 from ..common import PROJECT_ROOT, read_toml, write_toml, split_multi
 
@@ -47,17 +47,72 @@ def _parse_dataset_path(raw: str | Path) -> dict:
 
     return {"parent_path": parent_path, "sub_dir": sub_dir}
 
-def load_default_dataset_path() -> dict:
-    cfg = read_toml(
-        folder=str(PROJECT_ROOT),
-        json_filename=JSON_FILENAME,
-        tool_name="datasets",
-        toml_path=TOML_PATH,
-    ) or {}
 
-    patterns = cfg.get("patterns") or []
-    first_pattern = next((p for p in patterns if p), None)
-    return _parse_dataset_path(first_pattern or "./data/*")
+def load_default_dataset_path(
+    first_pattern: Optional[Union[str, Path]] = None,
+) -> dict:
+    """
+    Resolve the default dataset path configuration.
+
+    Priority:
+    1. Explicit `first_pattern` argument (if non-empty after stripping).
+    2. First non-empty entry from TOML `patterns` list (or string).
+    3. Fallback: "./data/*"
+
+    Returns:
+        dict with keys {"parent_path": Path, "sub_dir": bool}
+        as produced by `_parse_dataset_path`.
+    """
+    # 1) Normalise explicit argument if provided
+    if isinstance(first_pattern, (str, Path)):
+        s = str(first_pattern).strip()
+        if not s:
+            first_pattern = None
+        else:
+            first_pattern = s
+    else:
+        first_pattern = None
+
+    # 2) If no usable explicit pattern, try TOML config
+    if not first_pattern:
+        cfg = read_toml(
+            folder=str(PROJECT_ROOT),
+            json_filename=JSON_FILENAME,
+            tool_name="datasets",
+            toml_path=TOML_PATH,
+        ) or {}
+
+        patterns = cfg.get("patterns")
+
+        if isinstance(patterns, (list, tuple)):
+            for p in patterns:
+                if not p:
+                    continue
+                s = str(p).strip()
+                if s:
+                    first_pattern = s
+                    break
+        elif isinstance(patterns, (str, Path)):
+            s = str(patterns).strip()
+            if s:
+                first_pattern = s
+
+    if not first_pattern:
+        first_pattern = str(PROJECT_ROOT / "/data/*")
+
+       # Write back
+    write_toml(
+            data = {"patterns":first_pattern},
+            folder = str(PROJECT_ROOT),
+            json_filename = JSON_FILENAME,
+            tool_name = "datasets",
+            toml_path = TOML_PATH,
+        )
+
+    
+    # 3) Final fallback
+    return _parse_dataset_path(first_pattern), first_pattern
+
 
 def load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
@@ -125,7 +180,7 @@ SCHEMA_URLS: dict[str, str] = {
 DEFAULT_DMP_PATH = Path("./dmp.json")
 
 
-DEFAULT_DATASET_PATH = load_default_dataset_path()
+DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 
 
 def schema_version_from_url(url: str, default: str = "1.2") -> str:
@@ -874,16 +929,17 @@ def norm_rel_urlish(p: str | None) -> str | None:
 
 def data_type_from_path(p: str) -> str:
     """
-    Infer a data type from a path using DEFAULT_DATASET_PATH.
+    Infer a data type from a path using cfg.
 
-    - If DEFAULT_DATASET_PATH["sub_dir"] is True:
+    - If cfg["sub_dir"] is True:
         type = first component under parent_path
         e.g. ./data/raw/file.csv  -> "raw"
 
-    - If DEFAULT_DATASET_PATH["sub_dir"] is False:
+    - If cfg["sub_dir"] is False:
         always return "Uncategorised".
     """
-    cfg = DEFAULT_DATASET_PATH
+    cfg, _= load_default_dataset_path()
+  
     parent = Path(cfg["parent_path"])
     use_subdirs = bool(cfg.get("sub_dir", False))
 
@@ -1489,9 +1545,6 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
 
         shaped = reorder_dmp_keys(shaped)
 
-        # Validate after auto-repair
-        # validate_against_schema(shaped, schema=schema)
-
         save_json(dmp_path, shaped)
         return dmp_path
 
@@ -1513,12 +1566,8 @@ def create_or_update_dmp_from_schema(dmp_path: Path = DEFAULT_DMP_PATH) -> Path:
 
     data = reorder_dmp_keys(data)
 
-    # validate_against_schema(data, schema=schema)
-
     save_json(dmp_path, data)
-    print(
-        f"DMP ensured at {DEFAULT_DMP_PATH.resolve()} using maDMP {SCHEMA_VERSION} schema (ordered)."
-    )
+
     return dmp_path
 
 
