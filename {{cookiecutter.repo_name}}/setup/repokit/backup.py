@@ -422,6 +422,12 @@ def set_host_port(remote_name):
             #        print(f"Updated rclone remote 'ucloud' port to {port_final}.")
 
             return
+        
+        elif remote_name == "lumi-p":
+            save_to_env("lumi.csc.fi", "HOST")
+            save_to_env("", "PORT")
+            return
+        
         else:
             # --- generic SFTP/SSH or unknown name ---
             existing_host = load_from_env("HOST")
