@@ -869,13 +869,19 @@ def _add_remote(remote_name: str = None, login: str = None, pass_key: str = None
 
 
 def _add_folder(remote_name:str = None, base_folder:str = None):
-     
-    if "lumi" in remote_name.lower(): # S3
+
+    # Remove leading slash for cloud storage providers that don't use absolute paths
+    if remote_name.lower() in ["dropbox", "onedrive"]:
+        base_folder = base_folder.lstrip('/')
+        command = ["rclone","lsd", f"{remote_name}:{base_folder}"]  # NO leading /
+        mkdir_cmd = ["rclone","mkdir", f"{remote_name}:{base_folder}"]  # NO leading /
+
+    elif "lumi" in remote_name.lower():
         command = ["rclone","lsd", f"{remote_name}:/{base_folder}"]
+        mkdir_cmd = ["rclone","mkdir", f"{remote_name}:/{base_folder}"]
     else: # SFTP or Local
         command = ["rclone","lsf", f"{remote_name}:/{base_folder}"]
-        
-    mkdir_cmd = ["rclone","mkdir", f"{remote_name}:/{base_folder}"]
+        mkdir_cmd = ["rclone","mkdir", f"{remote_name}:/{base_folder}"]
 
     while True:
         result = subprocess.run(command, capture_output=True, text=True, timeout=DEFAULT_TIMEOUT)
@@ -891,6 +897,8 @@ def _add_folder(remote_name:str = None, base_folder:str = None):
                 break
             elif choice == "n":
                 base_folder = input("New folder name: ").strip()
+                if remote_name.lower() in ["dropbox", "onedrive"]:
+                    base_folder = base_folder.lstrip('/')
             else:
                 print("Cancelled.")
                 return
