@@ -374,40 +374,16 @@ def set_host_port(remote_name):
         print(f"Invalid port '{port_str}'. Using default '{default_val}'.")
         return default_val
     
-    def _rclone_remote_exists(name: str) -> bool:
-        try:
-            out = subprocess.run(
-                ["rclone", "listremotes"],
-                check=True, capture_output=True, text=True, timeout=DEFAULT_TIMEOUT
-            ).stdout.splitlines()
-            remotes = {line.rstrip(":") for line in out if line.strip()}
-            return name in remotes
-        except Exception:
-            return False
-
-    def _rclone_update_port(name: str, new_port: str) -> bool:
-        try:
-            subprocess.run(
-                ["rclone", "config", "update", name, "port", str(new_port)],
-                check=True, timeout=DEFAULT_TIMEOUT
-            )
-            return True
-        except Exception as e:
-            print(f"Failed to update rclone remote '{name}' port: {e}")
-            return False
-
     # --- specific remotes ---
     if remote_name in ["deic-storage", "erda", "ucloud"]:
         if remote_name == "deic-storage":
             save_to_env("sftp.storage.deic.dk", "HOST")
             save_to_env("2222", "PORT")
-            # no SSH key prompt for deic-storage
             return
 
         elif remote_name == "erda":
             save_to_env("io.erda.dk", "HOST")
             save_to_env("22", "PORT")
-            # no SSH key prompt for erda
             return
 
         elif remote_name == "ucloud":
@@ -416,11 +392,6 @@ def set_host_port(remote_name):
             port_input = _prompt_with_default("Port for ucloud", existing_port)
             port_final = _validate_port(port_input, existing_port)
             save_to_env(port_final, "PORT")
-
-            #if _rclone_remote_exists("ucloud"):
-            #    if _rclone_update_port("ucloud", port_final):
-            #        print(f"Updated rclone remote 'ucloud' port to {port_final}.")
-
             return
         
         elif remote_name == "lumi-p":
@@ -693,8 +664,8 @@ def _rclone_transfer(
         operation: 'sync' (mirror dest to source; deletes extras) or 'copy' (only upload/update).
     """
     operation = operation.lower().strip()
-    if operation not in {"sync", "copy"}:
-        print("Error: 'operation' must be either 'sync' or 'copy'.")
+    if operation not in {"sync", "copy","move"}:
+        print("Error: 'operation' must be either 'sync', 'copy', or 'move'")
         return
 
     rclone_repo = _load_rclone_json(remote_name)
@@ -748,6 +719,7 @@ def _rclone_transfer(
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         _update_last_sync(remote_short_name, success=False)
+
 
 
 def list_remotes():
@@ -1129,6 +1101,9 @@ def rclone_cli():
 
     copy = subparsers.add_parser("copy", help="Copy local folder to a remote (no deletes)")
     copy.add_argument("--remote", required=True)
+
+    move = subparsers.add_parser("move", help="Moves local folder to a remote (deletes from source)")
+    move.add_argument("--remote", required=True)
 
     add = subparsers.add_parser("add", help="Add a remote and folder mapping")
     add.add_argument("--remote", required=True)

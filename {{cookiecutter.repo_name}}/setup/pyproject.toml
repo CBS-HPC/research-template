@@ -30,8 +30,8 @@ dependencies = [
 # requires-python = ">=3.10"
 
 [project.scripts]
-backup = "repokit.backup:rclone_cli"
-copy = "repokit.backup:scp_cli"
+backup = "repokit.backup.cli:main"
+copy = "repokit.scp:main"
 set-dataset = "repokit.rdm.dataset:main"
 update-dependencies = "repokit.deps:main"
 update-readme = "repokit.readme.template:main"
