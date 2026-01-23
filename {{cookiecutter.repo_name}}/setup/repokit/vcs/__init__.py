@@ -6,8 +6,6 @@ import zipfile
 import glob
 import requests
 
-
-from ..backup import install_rclone
 from ..common import (
     PROJECT_ROOT,
     change_dir,
