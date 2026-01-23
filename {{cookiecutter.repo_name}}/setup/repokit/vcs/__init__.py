@@ -1,12 +1,19 @@
 # utils/__init__.py
 import os
 import pathlib
+import platform
+import zipfile
+import glob
+import requests
+
 
 from ..backup import install_rclone
 from ..common import (
     PROJECT_ROOT,
     change_dir,
     save_to_env,
+    exe_to_path,
+    is_installed,
 )
 from .git_w import (
     install_git,
@@ -128,6 +135,70 @@ def setup_datalad(version_control, remote_storage, code_repo, repo_name):
         datalad_deic_storage(repo_name)
 
 
+def install_rclone(install_path: str = "./bin") -> bool:
+    """Download and extract rclone to the specified bin folder."""
+
+    def download_rclone(install_path: str = "./bin"):
+        os_type = platform.system().lower()
+
+        # Set the URL and executable name based on the OS
+        if os_type == "windows":
+            url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
+            rclone_executable = "rclone.exe"
+        elif os_type in ["linux", "darwin"]:
+            url = (
+                "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
+                if os_type == "linux"
+                else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
+            )
+            rclone_executable = "rclone"
+        else:
+            print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
+            return None
+
+        # Create the bin folder if it doesn't exist
+        install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
+        os.makedirs(install_path, exist_ok=True)
+
+        # Download rclone
+        local_zip = os.path.join(install_path, "rclone.zip")
+        print(f"Downloading rclone for {os_type} to {local_zip}...")
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(local_zip, "wb") as file:
+                file.write(response.content)
+            print("Download complete.")
+        else:
+            print("Failed to download rclone. Please check the URL.")
+            return None
+
+        # Extract the rclone executable
+        print("Extracting rclone...")
+        with zipfile.ZipFile(local_zip, "r") as zip_ref:
+            zip_ref.extractall(install_path)
+
+        rclone_folder = glob.glob(os.path.join(install_path, "rclone-*"))
+
+        if not rclone_folder or len(rclone_folder) > 1:
+            print(f"More than one 'rclone-*' folder detected in {install_path}")
+            return None
+
+        # Clean up by deleting the zip file
+        os.remove(local_zip)
+
+        rclone_path = os.path.join(install_path, rclone_folder[0], rclone_executable)
+        print(f"rclone installed successfully at {rclone_path}.")
+
+        rclone_path = os.path.abspath(rclone_path)
+        os.chmod(rclone_path, 0o755)
+        return rclone_path
+
+    if not is_installed("rclone", "Rclone"):
+        rclone_path = download_rclone(install_path)
+        return exe_to_path("rclone", os.path.dirname(rclone_path))
+    return True
+
+
 # Public API
 __all__ = [
     # High-level setup functions
@@ -135,6 +206,7 @@ __all__ = [
     "setup_git",
     "setup_dvc",
     "setup_datalad",
+    "install_rclone",
 
     
     # Git functions

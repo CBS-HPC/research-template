@@ -11,7 +11,7 @@ Public API:
 """
 
 from .cli import main
-from .rclone import push_rclone, pull_rclone, install_rclone
+from .rclone import push_rclone, pull_rclone
 from .remotes import setup_rclone, list_remotes, delete_remote, list_supported_remote_types,set_host_port, _ensure_repo_suffix
 
 __all__ = [
@@ -21,7 +21,6 @@ __all__ = [
     "setup_rclone",
     "list_remotes",
     "delete_remote",
-    "install_rclone",
     "list_supported_remote_types",
     "set_host_port",
     "_ensure_repo_suffix",

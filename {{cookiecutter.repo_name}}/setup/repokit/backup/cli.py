@@ -5,8 +5,9 @@ CLI interface - Argument parsing and command dispatch.
 import sys
 import argparse
 
+from ..vcs import install_rclone
 from ..common import ensure_correct_kernel
-from .rclone import install_rclone, push_rclone, pull_rclone, generate_diff_report, transfer_between_remotes
+from .rclone import push_rclone, pull_rclone, generate_diff_report, transfer_between_remotes
 from .remotes import (
     setup_rclone,
     list_remotes,
