@@ -1,7 +1,3 @@
-"""
-Rclone operations - Installation, execution, and transfer logic.
-"""
-
 import os
 import pathlib
 import subprocess
@@ -39,6 +35,83 @@ def _rclone_commit(local_path: str, flag: bool = False, msg: str = "Rclone Backu
 
 
 def _rclone_transfer(
+    remote_name: str,
+    local_path: str,
+    remote_path: str,
+    action: str = "push",
+    operation: str = "sync",
+    exclude_patterns: list[str] = None,
+    dry_run: bool = False,
+    verbose: int = 0,
+):
+    """
+    Transfer files using rclone. Automatically uses ucloud config if remote is ucloud.
+
+    Args:
+        remote_name: Name of the configured remote
+        local_path: Local directory path
+        remote_path: Remote directory path
+        action: 'push' or 'pull'
+        operation: 'sync', 'copy', or 'move'
+        exclude_patterns: List of patterns to exclude
+        dry_run: If True, show what would be done
+        verbose: Verbosity level (0-3)
+    """
+    exclude_patterns = exclude_patterns or []
+    operation = operation.lower().strip()
+
+    if operation not in {"sync", "copy", "move"}:
+        print("Error: 'operation' must be either 'sync', 'copy', or 'move'")
+        return
+
+    # Build rclone command
+    exclude_args = []
+    for pattern in exclude_patterns:
+        exclude_args.extend(["--exclude", pattern])
+
+    if action == "push":
+        if not os.path.exists(local_path):
+            print(f"Error: The folder '{local_path}' does not exist.")
+            return
+        src, dst = local_path, remote_path
+    elif action == "pull":
+        src, dst = remote_path, local_path
+    else:
+        print(f"Error: Invalid action '{action}'")
+        return
+
+    command = ["rclone", operation, src, dst] + _rc_verbose_args(verbose) + exclude_args
+
+    # Use ucloud config if applicable
+    if remote_name.lower() == "ucloud":
+        rclone_conf = pathlib.Path("./bin/rclone_ucloud.conf").resolve()
+        if rclone_conf.exists():
+            command += ["--config", str(rclone_conf)]
+        else:
+            print("⚠️ ucloud rclone config not found in ./bin. Please run set_host_port first.")
+            return
+
+    if dry_run:
+        command.append("--dry-run")
+
+    try:
+        subprocess.run(command, check=True, timeout=DEFAULT_TIMEOUT)
+        verb = {
+            "sync": "synchronized",
+            "copy": "copied",
+            "move": "moved (deleted at origin)"
+        }.get(operation, operation)
+        print(f"Folder '{local_path}' successfully {verb} to '{remote_path}'.")
+        update_sync_status(remote_name, action=action, operation=operation, success=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to {operation} folder to remote: {e}")
+        update_sync_status(remote_name, action=action, operation=operation, success=False)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        update_sync_status(remote_name, action=action, operation=operation, success=False)
+
+
+def _rclone_transfer_old(
     remote_name: str,
     local_path: str,
     remote_path: str,

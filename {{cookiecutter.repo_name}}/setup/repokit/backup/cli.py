@@ -31,7 +31,7 @@ def main():
 
     # Global arguments
     parser.add_argument("--dry-run", action="store_true", help="Do not modify remote; show actions.")
-    parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity (-v, -vv, -vvv).")
+    parser.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v, -vv, -vvv).")
 
     # List command
     subparsers.add_parser("list", help="List rclone remotes and mapped folders")
