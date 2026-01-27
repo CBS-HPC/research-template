@@ -160,22 +160,6 @@ key_file = {ssh_key_path}
         print(f"Host: {host}, Port: {port_final}, SSH key: {ssh_key_path}")
 
 
-def set_host_port_old(remote_name: str):
-    """Set host and port for SFTP-based remotes."""
-    remote_type = _detect_remote_type(remote_name)
-    
-    if remote_type in ["erda", "ucloud"]:
-        if remote_type == "erda":
-            save_to_env("io.erda.dk", "HOST")
-            save_to_env("22", "PORT")
-        elif remote_type == "ucloud":
-            save_to_env("ssh.cloud.sdu.dk", "HOST")
-            existing_port = load_from_env("PORT")
-            port_input = _prompt_with_default("Port for ucloud", existing_port)
-            port_final = _validate_port(port_input, existing_port)
-            save_to_env(port_final, "PORT")
-
-
 def setup_ssh_agent_and_add_key(ssh_path: str):
     """Start/ensure an SSH agent and add the provided key."""
     
@@ -319,7 +303,7 @@ def _remote_user_info(remote_name: str, local_backup_path: str) -> tuple[str, st
 
 def _ucloud_remote_info(remote_name: str, repo_name: str) -> tuple[str, str, None, str]:
     """Get UCloud remote info."""
-    default_base = f"work/rclone-backup/{repo_name}"
+    default_base = f"/work/rclone-backup/{repo_name}"
     base_folder = input(
         f"Enter base folder for {remote_name} [{default_base}]: "
     ).strip() or default_base
@@ -410,7 +394,6 @@ def _add_erda_remote(remote_name: str, login: str, pass_key: str | None):
     print(f"Rclone remote '{remote_name}' (erda) created.")
 
 
-
 def _add_lumi_remote(remote_name: str, login: str, pass_key: str):
     acl = "public-read" if "public" in remote_name.lower() else "private"
 
@@ -429,13 +412,11 @@ def _add_lumi_remote(remote_name: str, login: str, pass_key: str):
     print(f"Rclone remote '{remote_name}' (lumi) created.")
 
 
-
 def _add_simple_remote(remote_name: str, base_type: str):
     print(f"You will need to authorize rclone with {base_type}")
     command = ["rclone", "config", "create", remote_name, base_type]
     subprocess.run(command, check=True, timeout=DEFAULT_TIMEOUT)
     print(f"Rclone remote '{remote_name}' created.")
-
 
 
 def _add_interactive_remote(remote_name: str, base_type: str):
@@ -455,7 +436,6 @@ def _add_interactive_remote(remote_name: str, base_type: str):
     print(f"Rclone remote '{remote_name}' created.")
 
 
-
 def _add_remote(remote_name: str, login: str = None, pass_key: str = None):
     """Add a new rclone remote or prepare runtime config."""
     remote_type = _detect_remote_type(remote_name)
@@ -465,8 +445,8 @@ def _add_remote(remote_name: str, login: str = None, pass_key: str = None):
         if remote_type == "erda":
             _add_erda_remote(remote_name, login, pass_key)
 
-        #elif remote_type == "ucloud":
-        #    _add_ucloud_remote()
+        elif remote_type == "ucloud":
+            return
 
         elif "lumi" in remote_type:
             _add_lumi_remote(remote_name, login, pass_key)
@@ -479,7 +459,6 @@ def _add_remote(remote_name: str, login: str = None, pass_key: str = None):
 
     except Exception as e:
         print(f"Failed to add remote '{remote_name}': {e}")
-
 
 
 def _add_folder(remote_name: str, base_folder: str, local_backup_path: str):
@@ -495,11 +474,12 @@ def _add_folder(remote_name: str, base_folder: str, local_backup_path: str):
         list_cmd = ["rclone", "lsd", f"{remote_name}:/{base_folder}"]
         mkdir_cmd = ["rclone", "mkdir", f"{remote_name}:/{base_folder}"]
     else:  # SFTP (ucloud, erda) or local
-        list_cmd = ["rclone", "lsf", f"{remote_name}:/{base_folder}"]
-        mkdir_cmd = ["rclone", "mkdir", f"{remote_name}:/{base_folder}"]
+        base_folder = f"/{base_folder.lstrip('/')}"
+        list_cmd = ["rclone", "lsf", f"{remote_name}:{base_folder}"]
+        mkdir_cmd = ["rclone", "mkdir", f"{remote_name}:{base_folder}"]
 
         # Use ucloud config if remote is ucloud
-        if remote_name.lower() == "ucloud":
+        if remote_name.lower().startswith("ucloud"):
             rclone_conf = pathlib.Path("./bin/rclone_ucloud.conf").resolve()
             if rclone_conf.exists():
                 list_cmd += ["--config", str(rclone_conf)]
@@ -566,163 +546,6 @@ def _add_folder(remote_name: str, base_folder: str, local_backup_path: str):
                          operation="copy")  # copy to avoid deleting
 
 
-
-def _add_remote_old(remote_name: str, login: str = None, pass_key: str = None):
-    """Add a new rclone remote."""
-    remote_type = _detect_remote_type(remote_name)
-    base_type = _get_base_remote_type(remote_name)
-    
-    if remote_type == "erda":
-        command = [
-            "rclone", "config", "create",
-            remote_name, "sftp",
-            "host", load_from_env("HOST"),
-            "port", load_from_env("PORT"),
-            "user", login,
-        ]
-
-        if pass_key:
-            command += ["pass", pass_key, "--obscure"]
-        else:
-            command += ["use_agent", "true"]
-
-    if remote_type == "ucloud":
-        
-        default_key = _detect_default_ssh_key()
-        ssh_path = _prompt_with_default("Path to SSH private key for ucloud", default_key).strip()
-        ssh_path = str(pathlib.Path(ssh_path).expanduser())
-
-        if ssh_path and os.path.isfile(ssh_path):
-            
-            setup_ssh_agent_and_add_key(ssh_path)
-
-            command += ["use_agent", "true"]
-        else:
-            return print(f"SSH key file not found: {ssh_path}")
-            
-    elif "lumi" in remote_type:
-        acl = "public-read" if "public" in remote_name.lower() else "private"
-        command = [
-            "rclone", "config", "create",
-            remote_name, "s3",
-            "provider", "Other",
-            "endpoint", "https://lumidata.eu",
-            "access_key_id", login,
-            "secret_access_key", pass_key,
-            "region", "other-v2-signature",
-            "acl", acl,
-        ]
-
-    elif remote_type in ["dropbox", "onedrive", "drive", "local"]:
-        if remote_type in ["dropbox", "onedrive", "drive"]:
-            print(f"You will need to authorize rclone with {remote_type}")
-        command = ["rclone", "config", "create", remote_name, base_type]
-
-    else:
-        output = list_supported_remote_types()
-        backend_types = [
-            line.split()[0]
-            for line in output.splitlines()
-            if line and not line.startswith(" ") and ":" in line
-        ]
-
-        if base_type in backend_types:
-            print(f"Running interactive config for backend '{base_type}'...")
-            command = ["rclone", "config", "create", remote_name, base_type]
-        else:
-            print(f"Unsupported remote type: {base_type}")
-            return
-
-    try:
-        subprocess.run(command, check=True, timeout=DEFAULT_TIMEOUT)
-        print(f"Rclone remote '{remote_name}' (type: {remote_type}) created successfully.")
-    except Exception as e:
-        print(f"Failed to create rclone remote: {e}")
-
-
-
-def _add_folder_old(remote_name: str, base_folder: str, local_backup_path: str):
-    """Add folder mapping for remote with overwrite/merge safeguard."""
-    remote_type = _detect_remote_type(remote_name)
-    
-    # Build remote command paths
-    if remote_type in ["dropbox", "onedrive", "drive"]:
-        base_folder = base_folder.lstrip('/')
-        list_cmd = ["rclone", "lsd", f"{remote_name}:{base_folder}"]
-        mkdir_cmd = ["rclone", "mkdir", f"{remote_name}:{base_folder}"]
-    elif "lumi" in remote_type:
-        list_cmd = ["rclone", "lsd", f"{remote_name}:/{base_folder}"]
-        mkdir_cmd = ["rclone", "mkdir", f"{remote_name}:/{base_folder}"]
-    else:  # SFTP or local
-        list_cmd = ["rclone", "lsf", f"{remote_name}:/{base_folder}"]
-        mkdir_cmd = ["rclone", "mkdir", f"{remote_name}:/{base_folder}"]
-
-    # Check if remote folder exists
-    result = subprocess.run(list_cmd, capture_output=True, text=True, timeout=DEFAULT_TIMEOUT)
-    if result.returncode == 0 and result.stdout.strip():
-        # Folder exists, ask user what to do
-        valid_choices = {"o": "overwrite", "s": "merge/sync", "n": "rename", "c": "cancel"}
-        while True:
-            choice = input(
-                f"'{base_folder}' exists on '{remote_name}'. Overwrite (o), Merge/Sync (s), Rename (n), Cancel (c)? [o/s/n/c]: "
-            ).strip().lower()
-
-            if choice not in valid_choices:
-                print(f"Invalid choice: {choice}. Please choose one of {', '.join(valid_choices.keys())}.")
-                continue
-
-            if choice == "o":
-                print("⚠️ Warning: You chose to overwrite the remote folder.")
-                # purge remote folder before creating
-                try:
-                    subprocess.run(["rclone", "purge", f"{remote_name}:{base_folder}"], check=True, timeout=DEFAULT_TIMEOUT)
-                    print(f"Remote folder '{base_folder}' purged.")
-                except subprocess.CalledProcessError as e:
-                    print(f"Failed to purge remote folder: {e}")
-                break
-
-            elif choice == "s":
-                print("ℹ️ Will merge/sync differences only.")
-                merge_only = True
-                break
-
-            elif choice == "n":
-                base_folder = input("New folder name: ").strip()
-                if remote_type in ["dropbox", "onedrive", "drive"]:
-                    base_folder = base_folder.lstrip('/')
-                # re-check if new folder exists
-                result = subprocess.run(list_cmd, capture_output=True, text=True, timeout=DEFAULT_TIMEOUT)
-                continue
-
-            elif choice == "c":
-                print("Cancelled.")
-                return
-    else:
-        merge_only = False  # folder does not exist, normal creation
-
-    # Ensure remote folder exists
-    try:
-        subprocess.run(mkdir_cmd, check=True, timeout=DEFAULT_TIMEOUT)
-    except Exception as e:
-        print(f"Error creating folder: {e}")
-        return
-
-    # Save mapping
-    save_registry(remote_name, base_folder, local_backup_path, remote_type)
-
-    # If merge_only is True, run a diff report and sync differences
-    if 'merge_only' in locals() and merge_only:
-        remote_path = f"{remote_name}:{base_folder}"
-        print("\nRunning diff report before syncing...")
-        rclone_diff_report(local_backup_path, remote_path)
-        print("\nSyncing differences to merge local and remote...")
-        _rclone_transfer(remote_name=remote_name, action="push",
-                         local_path=local_backup_path,
-                         remote_path=remote_path,
-                         operation="copy")  # use copy to avoid deletion
-
-
-
 def list_remotes():
     """List all configured remotes and their status."""
     print("\n🔌 Rclone Remotes:")
@@ -770,38 +593,50 @@ def setup_rclone(remote_name: str = None, local_backup_path: str = None):
 
 
 def delete_remote(remote_name: str, verbose: int = 0):
-    """Delete remote and all its data."""
+    """Delete remote and all its data, supporting ucloud custom config."""
     remote_path, _ = load_registry(remote_name)
-    if remote_path:
-        confirm = input(f"Really delete ALL data for '{remote_name}'? [y/N]: ")
-        if confirm.lower() != "y":
-            return
-        
-        try:
-            print(f"Attempting to purge remote folder at: {remote_path}")
-            subprocess.run(
-                ["rclone", "purge", remote_path] + _rc_verbose_args(verbose),
-                check=True,
-                timeout=DEFAULT_TIMEOUT
-            )
-            print(f"Successfully purged remote folder: {remote_path}")
-        except subprocess.CalledProcessError as e:
-            print(f"⚠️ Warning: Could not purge remote folder '{remote_path}': {e}")
-        except Exception as e:
-            print(f"Unexpected error during purge: {e}")
-    else:
+    if not remote_path:
         return
 
+    confirm = input(f"Really delete ALL data for '{remote_name}'? [y/N]: ")
+    if confirm.lower() != "y":
+        return
+
+    # Build rclone purge command
+    purge_cmd = ["rclone", "purge", remote_path] + _rc_verbose_args(verbose)
+
+    # Use custom ucloud config if applicable
+    if remote_name.lower().startswith("ucloud"):
+        rclone_conf = pathlib.Path("./bin/rclone_ucloud.conf").resolve()
+        if rclone_conf.exists():
+            purge_cmd += ["--config", str(rclone_conf)]
+        else:
+            print("⚠️ ucloud rclone config not found in ./bin. Cannot purge remote.")
+            return
+
+    # Attempt to purge remote folder
     try:
-        subprocess.run(
-            ["rclone", "config", "delete", remote_name] + _rc_verbose_args(verbose),
-            check=True,
-            timeout=DEFAULT_TIMEOUT
-        )
+        print(f"Attempting to purge remote folder at: {remote_path}")
+        subprocess.run(purge_cmd, check=True, timeout=DEFAULT_TIMEOUT)
+        print(f"Successfully purged remote folder: {remote_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️ Warning: Could not purge remote folder '{remote_path}': {e}")
+    except Exception as e:
+        print(f"Unexpected error during purge: {e}")
+
+    # Delete remote from rclone config
+    delete_cmd = ["rclone", "config", "delete", remote_name] + _rc_verbose_args(verbose)
+
+    if remote_name.lower().startswith("ucloud"):
+        delete_cmd += ["--config", str(rclone_conf)]
+
+    try:
+        subprocess.run(delete_cmd, check=True, timeout=DEFAULT_TIMEOUT)
         print(f"Rclone remote '{remote_name}' deleted from rclone configuration.")
     except subprocess.CalledProcessError as e:
         print(f"Error deleting remote from rclone: {e}")
 
+    # Remove from local registry
     delete_from_registry(remote_name)
 
 
@@ -816,7 +651,7 @@ def list_supported_remote_types() -> str:
             timeout=DEFAULT_TIMEOUT
         )
         print("\n📦 Supported Rclone Remote Types:")
-        print("\nRecommended: ['ERDA' ,'Dropbox', 'Onedrive', 'Local']\n")
+        print("\nRecommended: ['ERDA' ,'Ucloud', 'Lumi','Dropbox', 'Onedrive', 'Local']\n")
         print("\nSupported by Rclone:\n")
         print(result.stdout)
         return result.stdout
@@ -824,74 +659,3 @@ def list_supported_remote_types() -> str:
         print(f"Error fetching remote types: {e}")
         return ""
     
-
-
-def _add_remote_old_old(remote_name: str, login: str = None, pass_key: str = None):
-    """Add a new rclone remote."""
-    remote_type = _detect_remote_type(remote_name)
-    base_type = _get_base_remote_type(remote_name)
-    
-    if remote_type in ["erda", "ucloud"]:
-        command = [
-            "rclone", "config", "create",
-            remote_name, "sftp",
-            "host", load_from_env("HOST"),
-            "port", load_from_env("PORT"),
-            "user", login,
-        ]
-
-        if remote_type == "ucloud":
-            default_key = _detect_default_ssh_key()
-            ssh_path = _prompt_with_default("Path to SSH private key for ucloud", default_key).strip()
-            ssh_path = str(pathlib.Path(ssh_path).expanduser())
-
-            if ssh_path and os.path.isfile(ssh_path):
-                setup_ssh_agent_and_add_key(ssh_path)
-                command += ["use_agent", "true"]
-            else:
-                return print(f"SSH key file not found: {ssh_path}")
-
-        elif pass_key:
-            command += ["pass", pass_key, "--obscure"]
-        else:
-            command += ["use_agent", "true"]
-
-    elif "lumi" in remote_type:
-        acl = "public-read" if "public" in remote_name.lower() else "private"
-        command = [
-            "rclone", "config", "create",
-            remote_name, "s3",
-            "provider", "Other",
-            "endpoint", "https://lumidata.eu",
-            "access_key_id", login,
-            "secret_access_key", pass_key,
-            "region", "other-v2-signature",
-            "acl", acl,
-        ]
-
-    elif remote_type in ["dropbox", "onedrive", "drive", "local"]:
-        if remote_type in ["dropbox", "onedrive", "drive"]:
-            print(f"You will need to authorize rclone with {remote_type}")
-        command = ["rclone", "config", "create", remote_name, base_type]
-
-    else:
-        output = list_supported_remote_types()
-        backend_types = [
-            line.split()[0]
-            for line in output.splitlines()
-            if line and not line.startswith(" ") and ":" in line
-        ]
-
-        if base_type in backend_types:
-            print(f"Running interactive config for backend '{base_type}'...")
-            command = ["rclone", "config", "create", remote_name, base_type]
-        else:
-            print(f"Unsupported remote type: {base_type}")
-            return
-
-    try:
-        subprocess.run(command, check=True, timeout=DEFAULT_TIMEOUT)
-        print(f"Rclone remote '{remote_name}' (type: {remote_type}) created successfully.")
-    except Exception as e:
-        print(f"Failed to create rclone remote: {e}")
-

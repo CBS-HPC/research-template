@@ -83,7 +83,8 @@ def _rclone_transfer(
     command = ["rclone", operation, src, dst] + _rc_verbose_args(verbose) + exclude_args
 
     # Use ucloud config if applicable
-    if remote_name.lower() == "ucloud":
+    #if remote_path.startswith("ucloud:") or :
+    if remote_name.lower().startswith("ucloud"):    
         rclone_conf = pathlib.Path("./bin/rclone_ucloud.conf").resolve()
         if rclone_conf.exists():
             command += ["--config", str(rclone_conf)]
@@ -101,74 +102,6 @@ def _rclone_transfer(
             "copy": "copied",
             "move": "moved (deleted at origin)"
         }.get(operation, operation)
-        print(f"Folder '{local_path}' successfully {verb} to '{remote_path}'.")
-        update_sync_status(remote_name, action=action, operation=operation, success=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to {operation} folder to remote: {e}")
-        update_sync_status(remote_name, action=action, operation=operation, success=False)
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        update_sync_status(remote_name, action=action, operation=operation, success=False)
-
-
-def _rclone_transfer_old(
-    remote_name: str,
-    local_path: str,
-    remote_path: str,
-    action: str = "push",
-    operation: str = "sync",
-    exclude_patterns: list[str] = None,
-    dry_run: bool = False,
-    verbose: int = 0,
-):
-    """
-    Transfer files using rclone.
-
-    Args:
-        remote_name: Name of the configured remote
-        local_path: Local directory path
-        remote_path: Remote directory path
-        action: 'push' or 'pull'
-        operation: 'sync', 'copy', or 'move'
-        exclude_patterns: List of patterns to exclude
-        dry_run: If True, show what would be done
-        verbose: Verbosity level (0-3)
-    """
-    exclude_patterns = exclude_patterns or []
-    operation = operation.lower().strip()
-
-    if operation not in {"sync", "copy", "move"}:
-        print("Error: 'operation' must be either 'sync', 'copy', or 'move'")
-        return
-
-    exclude_args = []
-    for pattern in exclude_patterns:
-        exclude_args.extend(["--exclude", pattern])
-
-    if action == "push":
-        if not os.path.exists(local_path):
-            print(f"Error: The folder '{local_path}' does not exist.")
-            return
-        command = ["rclone", operation, local_path, remote_path]
-    elif action == "pull":
-        command = ["rclone", operation, remote_path, local_path]
-    else:
-        print(f"Error: Invalid action '{action}'")
-        return
-
-    command += _rc_verbose_args(verbose) + exclude_args
-    if dry_run:
-        command.append("--dry-run")
-
-    try:
-        subprocess.run(command, check=True, timeout=DEFAULT_TIMEOUT)
-
-        verb = {
-            "sync": "synchronized",
-            "copy": "copied",
-            "move": "moved (deleted at origin)"
-        }.get(operation, operation)
-
         print(f"Folder '{local_path}' successfully {verb} to '{remote_path}'.")
         update_sync_status(remote_name, action=action, operation=operation, success=True)
     except subprocess.CalledProcessError as e:
@@ -286,6 +219,44 @@ def pull_rclone(
 
 
 def rclone_diff_report(local_path: str, remote_path: str):
+    """Quick diff between local folder and remote path, handles ucloud remote."""
+    import tempfile
+    import pathlib
+
+    cmd = ["rclone", "diff"]
+
+    # Handle ucloud remote
+    if remote_path.startswith("ucloud:"):
+        rclone_conf = pathlib.Path("./bin/rclone_ucloud.conf").resolve()
+        if not rclone_conf.exists():
+            print("⚠️ ucloud rclone config not found in ./bin. Cannot run diff.")
+            return
+        # Strip "ucloud:" prefix and make path absolute
+        remote_path = "/" + remote_path[len("ucloud:"):].lstrip("/")
+        cmd += ["--config", str(rclone_conf)]
+
+    cmd += [
+        local_path,
+        remote_path,
+        "--no-traverse",
+        "--differ",
+        "--missing-on-dst",
+        "--missing-on-src",
+        "--dry-run",
+    ]
+
+    with tempfile.NamedTemporaryFile() as temp:
+        cmd += ["--output", temp.name]
+        try:
+            subprocess.run(cmd, check=True, timeout=DEFAULT_TIMEOUT)
+            with open(temp.name) as f:
+                diff_output = f.read()
+            print(diff_output or "[No differences]")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to generate diff report: {e}")
+
+
+def rclone_diff_report_old(local_path: str, remote_path: str):
     """Quick diff between local folder and remote path."""
     import tempfile
     with tempfile.NamedTemporaryFile() as temp:
@@ -310,6 +281,7 @@ def rclone_diff_report(local_path: str, remote_path: str):
         except subprocess.CalledProcessError as e:
             print(f"Failed to generate diff report: {e}")
 
+
 def generate_diff_report(remote_name: str):
     """Generate diff report between local and remote using the reusable diff function."""
 
@@ -320,42 +292,6 @@ def generate_diff_report(remote_name: str):
             return
         print(f"\n📊 Diff report for '{remote}':")
         rclone_diff_report(local_path, remote_path)
-
-    if remote_name.lower() == "all":
-        for remote in load_all_registry().keys():
-            run_diff(remote)
-    else:
-        run_diff(remote_name)
-
-
-def generate_diff_report_old(remote_name: str):
-    """Generate diff report between local and remote."""
-    def run_diff(remote: str):
-        remote_path, local_path = load_registry(remote)
-        if not remote_path:
-            print(f"No path found for remote '{remote}'.")
-            return
-        with tempfile.NamedTemporaryFile() as temp:
-            command = [
-                "rclone",
-                "diff",
-                local_path,
-                remote_path,
-                "--dry-run",
-                "--no-traverse",
-                "--differ",
-                "--missing-on-dst",
-                "--missing-on-src",
-                "--output",
-                temp.name,
-            ]
-            try:
-                subprocess.run(command, check=True, timeout=DEFAULT_TIMEOUT)
-                with open(temp.name) as f:
-                    diff_output = f.read()
-                print(f"\n📊 Diff report for '{remote}':\n{diff_output or '[No differences]'}")
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to generate diff report for '{remote}': {e}")
 
     if remote_name.lower() == "all":
         for remote in load_all_registry().keys():
