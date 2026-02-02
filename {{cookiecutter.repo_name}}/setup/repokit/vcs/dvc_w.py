@@ -7,6 +7,8 @@ import yaml
 
 from .git_w import git_commit
 from ..common import PROJECT_ROOT, is_installed, install_uv, _run
+from ..rdm.dmp import load_default_dataset_path
+DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 
 
 
@@ -86,7 +88,7 @@ def dvc_init(remote_storage, code_repo, repo_name):
         print("Not implemented yet")
 
 
-    #subprocess.run(["dvc", "add", "data"], check=True)
+    #subprocess.run(["dvc", "add", DEFAULT_DATASET_PATH], check=True)
     
   
     _ = git_commit("Initial commit - Initialize DVC.")

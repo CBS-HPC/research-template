@@ -99,18 +99,28 @@ from repokit.common import load_from_env, save_to_env, set_program_path,set_pack
 from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
 from repokit.repos import setup_repo, setup_version_control
 from repokit.rdm.dmp import main as dmp_update
+from repokit.rdm.dmp import load_default_dataset_path
 from repokit.readme.template import create_citation_file, creating_readme
 from repokit.templates.code import create_scripts
 from repokit.vcs import git_push
 
-
+DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 def intro():
     def create_folders():
+
+        print(DEFAULT_DATASET_PATH)
+        #folders = [
+        #    PROJECT_DIR / "data" / "00_raw",
+        #    PROJECT_DIR / "data" / "01_interim",
+        #    PROJECT_DIR / "data" / "02_processed",
+        #    PROJECT_DIR / "data" / "03_external",
+        #]
+
         folders = [
-            PROJECT_DIR / "data" / "00_raw",
-            PROJECT_DIR / "data" / "01_interim",
-            PROJECT_DIR / "data" / "02_processed",
-            PROJECT_DIR / "data" / "03_external",
+            DEFAULT_DATASET_PATH / "00_raw",
+            DEFAULT_DATASET_PATH / "01_interim",
+            DEFAULT_DATASET_PATH/ "02_processed",
+            DEFAULT_DATASET_PATH / "03_external",
         ]
 
         for folder in folders:

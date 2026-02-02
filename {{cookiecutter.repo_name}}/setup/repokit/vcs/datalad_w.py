@@ -7,7 +7,9 @@ import re
 
 
 from ..common import PROJECT_ROOT, exe_to_path, is_installed, install_uv, _run
+from ..rdm.dmp import load_default_dataset_path
 
+DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 
 def _uv_installer(package_name:str = None):
     
@@ -208,8 +210,8 @@ def datalad_create():
     write_gitattributes()
 
     # Save the state
-    subprocess.run(["datalad", "save", "-m", "Configure annex: unlock everything except ./data"], check=True)
-    print("DataLad dataset ready: unlocked all except ./data")
+    subprocess.run(["datalad", "save", "-m", f"Configure annex: unlock everything except {DEFAULT_DATASET_PATH}"], check=True)
+    print(f"DataLad dataset ready: unlocked all except {DEFAULT_DATASET_PATH}")
 
 
 def datalad_deic_storage(repo_name):

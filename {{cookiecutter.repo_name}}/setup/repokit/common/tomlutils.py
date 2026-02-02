@@ -176,3 +176,4 @@ def write_toml(
 
     with open(toml_file_path, WRITE_MODE[0], encoding=WRITE_MODE[1]) as f:
         dump_toml(toml_data, f)
+

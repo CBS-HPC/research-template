@@ -41,6 +41,9 @@ from .dvc_w import (
     dvc_cleaning
 )
 
+from ..rdm.dmp import load_default_dataset_path
+
+DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 
 # Setup functions
 def setup_version_control(version_control, remote_storage, code_repo, repo_name):
@@ -70,7 +73,8 @@ def setup_git(version_control, code_repo):
             flag = git_init(msg="Initial commit", branch_name=default_branch)
             # Creating its own git repo for "data"
             if version_control.lower() == "git" and flag:
-                with change_dir("./data"):
+                #with change_dir("./data"):
+                with change_dir(DEFAULT_DATASET_PATH):    
                     flag = git_init(msg="Initial commit - /data git repo", branch_name="data", path=os.getcwd())
                     git_log_to_file(os.path.join(".gitlog"))
         if flag:
