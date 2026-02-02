@@ -88,7 +88,7 @@ def dvc_init(remote_storage, code_repo, repo_name):
         print("Not implemented yet")
 
 
-    #subprocess.run(["dvc", "add", DEFAULT_DATASET_PATH], check=True)
+    #subprocess.run(["dvc", "add", str(DEFAULT_DATASET_PATH['parent_path'])], check=True)
     
   
     _ = git_commit("Initial commit - Initialize DVC.")

@@ -13,8 +13,8 @@ from ..common import (
 from ..vcs import git_commit, git_log_to_file, git_push, install_rclone
 from .registry import update_sync_status, load_registry, load_all_registry
 from ..rdm.dmp import load_default_dataset_path
-DEFAULT_TIMEOUT = 600  # seconds
 
+DEFAULT_TIMEOUT = 600  # seconds
 
 DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 
@@ -30,7 +30,7 @@ def _rclone_commit(local_path: str, flag: bool = False, msg: str = "Rclone Backu
         flag = True
         if os.path.exists(".git") and not os.path.exists(".datalad") and not os.path.exists(".dvc"):
             #with change_dir("./data"):
-            with change_dir(DEFAULT_DATASET_PATH):
+            with change_dir(str(DEFAULT_DATASET_PATH['parent_path'])):
                 _ = git_commit(msg=msg, path=os.getcwd())
                 git_log_to_file(os.path.join(".gitlog"))
             git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", msg)

@@ -210,8 +210,8 @@ def datalad_create():
     write_gitattributes()
 
     # Save the state
-    subprocess.run(["datalad", "save", "-m", f"Configure annex: unlock everything except {DEFAULT_DATASET_PATH}"], check=True)
-    print(f"DataLad dataset ready: unlocked all except {DEFAULT_DATASET_PATH}")
+    subprocess.run(["datalad", "save", "-m", f"Configure annex: unlock everything except {str(DEFAULT_DATASET_PATH['parent_path'])}"], check=True)
+    print(f"DataLad dataset ready: unlocked all except {str(DEFAULT_DATASET_PATH['parent_path'])}")
 
 
 def datalad_deic_storage(repo_name):

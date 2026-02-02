@@ -108,8 +108,8 @@ DEFAULT_DATASET_PATH, _= load_default_dataset_path()
 def intro():
     def create_folders():
 
-        print(DEFAULT_DATASET_PATH)
-        print(type(DEFAULT_DATASET_PATH))
+        print(DEFAULT_DATASET_PATH['parent_path'])
+        print(type(DEFAULT_DATASET_PATH['parent_path']))
         
         folders = [
             PROJECT_DIR / "data" / "00_raw",
@@ -119,10 +119,10 @@ def intro():
         ]
 
         #folders = [
-        #    DEFAULT_DATASET_PATH / "00_raw",
-        #    DEFAULT_DATASET_PATH / "01_interim",
-        #    DEFAULT_DATASET_PATH/ "02_processed",
-        #    DEFAULT_DATASET_PATH / "03_external",
+        #    DEFAULT_DATASET_PATH['parent_path'] / "00_raw",
+        #    DEFAULT_DATASET_PATH['parent_path'] / "01_interim",
+        #    DEFAULT_DATASET_PATH['parent_path'] / "02_processed",
+        #    DEFAULT_DATASET_PATH['parent_path'] / "03_external",
         #]
 
         for folder in folders:

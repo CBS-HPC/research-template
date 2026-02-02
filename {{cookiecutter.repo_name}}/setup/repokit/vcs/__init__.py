@@ -74,7 +74,7 @@ def setup_git(version_control, code_repo):
             # Creating its own git repo for "data"
             if version_control.lower() == "git" and flag:
                 #with change_dir("./data"):
-                with change_dir(DEFAULT_DATASET_PATH):    
+                with change_dir(str(DEFAULT_DATASET_PATH['parent_path'])):    
                     flag = git_init(msg="Initial commit - /data git repo", branch_name="data", path=os.getcwd())
                     git_log_to_file(os.path.join(".gitlog"))
         if flag:
