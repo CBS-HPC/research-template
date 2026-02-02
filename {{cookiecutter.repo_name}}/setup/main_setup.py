@@ -109,19 +109,21 @@ def intro():
     def create_folders():
 
         print(DEFAULT_DATASET_PATH)
-        #folders = [
-        #    PROJECT_DIR / "data" / "00_raw",
-        #    PROJECT_DIR / "data" / "01_interim",
-        #    PROJECT_DIR / "data" / "02_processed",
-        #    PROJECT_DIR / "data" / "03_external",
-        #]
-
+        print(type(DEFAULT_DATASET_PATH))
+        
         folders = [
-            DEFAULT_DATASET_PATH / "00_raw",
-            DEFAULT_DATASET_PATH / "01_interim",
-            DEFAULT_DATASET_PATH/ "02_processed",
-            DEFAULT_DATASET_PATH / "03_external",
+            PROJECT_DIR / "data" / "00_raw",
+            PROJECT_DIR / "data" / "01_interim",
+            PROJECT_DIR / "data" / "02_processed",
+            PROJECT_DIR / "data" / "03_external",
         ]
+
+        #folders = [
+        #    DEFAULT_DATASET_PATH / "00_raw",
+        #    DEFAULT_DATASET_PATH / "01_interim",
+        #    DEFAULT_DATASET_PATH/ "02_processed",
+        #    DEFAULT_DATASET_PATH / "03_external",
+        #]
 
         for folder in folders:
             folder.mkdir(parents=True, exist_ok=True)
