@@ -12,7 +12,7 @@ from typing import Any
 
 from dirhash import dirhash as _dirhash  # <-- import the function
 
-from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct_kernel, read_toml
+from ..common import PROJECT_ROOT, change_dir, check_path_format, ensure_correct_kernel, read_toml, toml_dataset_path
 from .dmp import (
     DEFAULT_DMP_PATH,
     LICENSE_LINKS,
@@ -28,7 +28,6 @@ from .dmp import (
     now_iso_minute,
     save_json,
     to_bytes_mb,
-    load_default_dataset_path,
 )
 
 
@@ -150,7 +149,7 @@ def get_data_files(cfg = None , ignore=None, recursive=False):
         ignore = set(ignore)
 
     if cfg is None:
-        cfg, _ = load_default_dataset_path()
+        cfg, _ = toml_dataset_path()
 
     parent = pathlib.Path(cfg["parent_path"])
     parent_str = os.fspath(parent)
@@ -806,7 +805,7 @@ def dataset_path_update(data_files: list[str] | None = None, dmp_path: str = DEF
     
     os.chdir(PROJECT_ROOT)
 
-    DEFAULT_DATASET_PATH, _ = load_default_dataset_path()
+    DEFAULT_DATASET_PATH, _ = toml_dataset_path()
     
     file_descriptions = read_toml(
         folder=PROJECT_ROOT,
@@ -851,7 +850,7 @@ def main(dmp_path:str = DEFAULT_DMP_PATH, do_print:bool=True, git_msg:str="Runni
     elif os.path.exists(".dvc"):
         dvc_cleaning(PROJECT_ROOT)
 
-    DEFAULT_DATASET_PATH, _ = load_default_dataset_path()
+    DEFAULT_DATASET_PATH, _ = toml_dataset_path()
 
     data_files, _ = get_data_files(ignore=IGNORE_DICT)
 

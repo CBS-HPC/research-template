@@ -4,114 +4,9 @@ import urllib.request
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
-from ..common import PROJECT_ROOT, read_toml, write_toml, split_multi
-
-
-def _parse_dataset_path(raw: str | Path) -> dict:
-    """
-    Normalize dataset path strings like:
-      "data", "data/", "./data", "./data/", "./data/*", "data/*"
-    into a dict:
-      {"parent_path": Path(...), "sub_dir": bool}
-
-    - parent_path is kept as a *relative* Path (no absolute/resolve).
-    - sub_dir is True if the pattern ends with '/*' or '\\*'.
-    """
-    # Start from a string, normalise slashes
-    s = str(raw).strip().replace("\\", "/")
-    sub_dir = False
-
-    # Handle trailing '/*'
-    if s.endswith("/*"):
-        sub_dir = True
-        s = s[:-2]  # strip the '/*'
-
-    # Strip leading './' so "./data" and "data" canonicalise the same
-    if s.startswith("./"):
-        s = s[2:]
-
-    # Strip trailing slashes so "data/" -> "data"
-    s = s.rstrip("/")
-
-    # If it ended up empty (e.g. "./", "/"), treat as current dir
-    if not s:
-        s = "."
-
-    # Use normpath to clean up things like "data/." → "data"
-    s = os.path.normpath(s)
-
-    # IMPORTANT: do NOT resolve; keep it relative if it was relative
-    parent_path = Path(s)
-
-    return {"parent_path": parent_path, "sub_dir": sub_dir}
-
-
-def load_default_dataset_path(
-    first_pattern: Optional[Union[str, Path]] = None,
-) -> dict:
-    """
-    Resolve the default dataset path configuration.
-
-    Priority:
-    1. Explicit `first_pattern` argument (if non-empty after stripping).
-    2. First non-empty entry from TOML `patterns` list (or string).
-    3. Fallback: "./data/*"
-
-    Returns:
-        dict with keys {"parent_path": Path, "sub_dir": bool}
-        as produced by `_parse_dataset_path`.
-    """
-    # 1) Normalise explicit argument if provided
-    if isinstance(first_pattern, (str, Path)):
-        s = str(first_pattern).strip()
-        if not s:
-            first_pattern = None
-        else:
-            first_pattern = s
-    else:
-        first_pattern = None
-
-    # 2) If no usable explicit pattern, try TOML config
-    if not first_pattern:
-        cfg = read_toml(
-            folder=str(PROJECT_ROOT),
-            json_filename=JSON_FILENAME,
-            tool_name="datasets",
-            toml_path=TOML_PATH,
-        ) or {}
-
-        patterns = cfg.get("patterns")
-
-        if isinstance(patterns, (list, tuple)):
-            for p in patterns:
-                if not p:
-                    continue
-                s = str(p).strip()
-                if s:
-                    first_pattern = s
-                    break
-        elif isinstance(patterns, (str, Path)):
-            s = str(patterns).strip()
-            if s:
-                first_pattern = s
-
-    if not first_pattern:
-        first_pattern = str(PROJECT_ROOT / "/data/*")
-
-       # Write back
-    write_toml(
-            data = {"patterns":first_pattern},
-            folder = str(PROJECT_ROOT),
-            json_filename = JSON_FILENAME,
-            tool_name = "datasets",
-            toml_path = TOML_PATH,
-        )
-
-    
-    # 3) Final fallback
-    return _parse_dataset_path(first_pattern), first_pattern
+from ..common import PROJECT_ROOT, read_toml, write_toml, split_multi, toml_dataset_path, JSON_FILENAME, TOML_PATH, TOOL_NAME
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -125,11 +20,6 @@ def save_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
-
-
-JSON_FILENAME = "cookiecutter.json"
-TOOL_NAME = "cookiecutter"
-TOML_PATH = "pyproject.toml"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -180,7 +70,7 @@ SCHEMA_URLS: dict[str, str] = {
 DEFAULT_DMP_PATH = Path("./dmp.json")
 
 
-DEFAULT_DATASET_PATH, _= load_default_dataset_path()
+DEFAULT_DATASET_PATH, _= toml_dataset_path()
 
 
 def schema_version_from_url(url: str, default: str = "1.2") -> str:
@@ -938,7 +828,7 @@ def data_type_from_path(p: str) -> str:
     - If cfg["sub_dir"] is False:
         always return "Uncategorised".
     """
-    cfg, _= load_default_dataset_path()
+    cfg, _= toml_dataset_path()
   
     parent = Path(cfg["parent_path"])
     use_subdirs = bool(cfg.get("sub_dir", False))

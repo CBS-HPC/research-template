@@ -25,7 +25,7 @@ from streamlit.web.cli import main as st_main
 
 # --- Robust imports whether run as a package (CLI) or directly via `streamlit run` ---
 try:
-    from ..common import load_from_env, save_to_env, PROJECT_ROOT, write_toml
+    from ..common import load_from_env, save_to_env, PROJECT_ROOT, write_toml, toml_dataset_path,JSON_FILENAME, TOOL_NAME, TOML_PATH
     from .dataverse import PublishError, streamlit_publish_to_dataverse
     from .dataset import dataset_path_update, main as dataset_main
     from .dmp import (
@@ -46,10 +46,6 @@ try:
         repair_empty_enums,
         today_iso,
         update_cookiecutter_from_dmp,
-        load_default_dataset_path,
-        JSON_FILENAME,
-        TOOL_NAME,
-        TOML_PATH,
     )
 
     # from .publish import *
@@ -57,7 +53,7 @@ try:
 except ImportError:
     pkg_root = Path(__file__).resolve().parent.parent.parent / "setup"
     sys.path.insert(0, str(pkg_root))
-    from repokit.common import load_from_env, save_to_env, PROJECT_ROOT, write_toml
+    from repokit.common import load_from_env, save_to_env, PROJECT_ROOT, write_toml,toml_dataset_path, JSON_FILENAME,  TOOL_NAME,TOML_PATH
     from repokit.rdm.dataverse import PublishError, streamlit_publish_to_dataverse
     from repokit.rdm.dataset import dataset_path_update, main as dataset_main
     from repokit.rdm.dmp import (
@@ -78,16 +74,12 @@ except ImportError:
         repair_empty_enums,
         today_iso,
         update_cookiecutter_from_dmp,
-        load_default_dataset_path,
-        JSON_FILENAME,
-        TOOL_NAME,
-        TOML_PATH,
     )
 
     # from repokit.rdm.publish import *
     from repokit.rdm.zenodo import streamlit_publish_to_zenodo
 
-_ , DATA_PARENT_PATH = load_default_dataset_path()
+_ , DATA_PARENT_PATH = toml_dataset_path()
 # ---------------------------
 # Repository site choices (labels come from format_func)
 # ---------------------------

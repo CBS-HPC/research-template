@@ -8,10 +8,10 @@ import subprocess
 import getpass
 import shutil
 import sys
-from ..vcs import install_rclone 
+
 from ..common import PROJECT_ROOT, load_from_env, save_to_env, check_path_format
 from .registry import save_registry, load_all_registry, delete_from_registry, load_registry
-from .rclone import _rc_verbose_args, rclone_diff_report, _rclone_transfer, DEFAULT_TIMEOUT
+from .rclone import _rc_verbose_args, rclone_diff_report, _rclone_transfer, DEFAULT_TIMEOUT, install_rclone
 
 
 def _detect_remote_type(remote_name: str) -> str:

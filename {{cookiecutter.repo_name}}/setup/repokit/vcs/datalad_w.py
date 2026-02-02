@@ -5,11 +5,9 @@ import subprocess
 import sys
 import re
 
+from ..common import PROJECT_ROOT, exe_to_path, is_installed, install_uv, _run, toml_dataset_path
 
-from ..common import PROJECT_ROOT, exe_to_path, is_installed, install_uv, _run
-from ..rdm.dmp import load_default_dataset_path
-
-DEFAULT_DATASET_PATH, _= load_default_dataset_path()
+DEFAULT_DATASET_PATH, _= toml_dataset_path()
 
 def _uv_installer(package_name:str = None):
     

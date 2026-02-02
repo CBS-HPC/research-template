@@ -1,9 +1,14 @@
 import json
 import os
 import sys
-
 import pathspec
+from  pathspec import Path
 from pathspec.patterns import GitWildMatchPattern
+from typing import Optional, Union
+
+JSON_FILENAME = "cookiecutter.json"
+TOOL_NAME = "cookiecutter"
+TOML_PATH = "pyproject.toml"
 
 if sys.version_info < (3, 11):
     import toml
@@ -177,3 +182,107 @@ def write_toml(
     with open(toml_file_path, WRITE_MODE[0], encoding=WRITE_MODE[1]) as f:
         dump_toml(toml_data, f)
 
+
+def _parse_dataset_path(raw: str | Path) -> dict:
+    """
+    Normalize dataset path strings like:
+      "data", "data/", "./data", "./data/", "./data/*", "data/*"
+    into a dict:
+      {"parent_path": Path(...), "sub_dir": bool}
+
+    - parent_path is kept as a *relative* Path (no absolute/resolve).
+    - sub_dir is True if the pattern ends with '/*' or '\\*'.
+    """
+    # Start from a string, normalise slashes
+    s = str(raw).strip().replace("\\", "/")
+    sub_dir = False
+
+    # Handle trailing '/*'
+    if s.endswith("/*"):
+        sub_dir = True
+        s = s[:-2]  # strip the '/*'
+
+    # Strip leading './' so "./data" and "data" canonicalise the same
+    if s.startswith("./"):
+        s = s[2:]
+
+    # Strip trailing slashes so "data/" -> "data"
+    s = s.rstrip("/")
+
+    # If it ended up empty (e.g. "./", "/"), treat as current dir
+    if not s:
+        s = "."
+
+    # Use normpath to clean up things like "data/." → "data"
+    s = os.path.normpath(s)
+
+    # IMPORTANT: do NOT resolve; keep it relative if it was relative
+    parent_path = Path(s)
+
+    return {"parent_path": parent_path, "sub_dir": sub_dir}
+
+
+def toml_dataset_path(
+    first_pattern: Optional[Union[str, Path]] = None,
+) -> dict:
+    """
+    Resolve the default dataset path configuration.
+
+    Priority:
+    1. Explicit `first_pattern` argument (if non-empty after stripping).
+    2. First non-empty entry from TOML `patterns` list (or string).
+    3. Fallback: "./data/*"
+
+    Returns:
+        dict with keys {"parent_path": Path, "sub_dir": bool}
+        as produced by `_parse_dataset_path`.
+    """
+    # 1) Normalise explicit argument if provided
+    if isinstance(first_pattern, (str, Path)):
+        s = str(first_pattern).strip()
+        if not s:
+            first_pattern = None
+        else:
+            first_pattern = s
+    else:
+        first_pattern = None
+
+    # 2) If no usable explicit pattern, try TOML config
+    if not first_pattern:
+        cfg = read_toml(
+            folder=str(PROJECT_ROOT),
+            json_filename=JSON_FILENAME,
+            tool_name="datasets",
+            toml_path=TOML_PATH,
+        ) or {}
+
+        patterns = cfg.get("patterns")
+
+        if isinstance(patterns, (list, tuple)):
+            for p in patterns:
+                if not p:
+                    continue
+                s = str(p).strip()
+                if s:
+                    first_pattern = s
+                    break
+        elif isinstance(patterns, (str, Path)):
+            s = str(patterns).strip()
+            if s:
+                first_pattern = s
+
+    if not first_pattern:
+        first_pattern = str(PROJECT_ROOT / "/data/*")
+
+       # Write back
+    write_toml(
+            data = {"patterns":first_pattern},
+            folder = str(PROJECT_ROOT),
+            json_filename = JSON_FILENAME,
+            tool_name = "datasets",
+            toml_path = TOML_PATH,
+        )
+
+    
+    # 3) Final fallback
+    return _parse_dataset_path(first_pattern), first_pattern

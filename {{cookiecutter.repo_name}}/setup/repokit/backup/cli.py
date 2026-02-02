@@ -5,9 +5,8 @@ CLI interface - Argument parsing and command dispatch.
 import sys
 import argparse
 
-from ..vcs import install_rclone
-from ..common import ensure_correct_kernel
-from .rclone import push_rclone, pull_rclone, generate_diff_report, transfer_between_remotes
+#from ..common import ensure_correct_kernel
+from .rclone import push_rclone, pull_rclone, generate_diff_report, transfer_between_remotes, install_rclone
 from .remotes import (
     setup_rclone,
     list_remotes,
@@ -19,7 +18,7 @@ from .remotes import (
 )
 
 
-@ensure_correct_kernel
+#@ensure_correct_kernel
 def main():
     """Main CLI entry point."""
     if not install_rclone("./bin"):

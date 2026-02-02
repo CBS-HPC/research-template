@@ -50,7 +50,7 @@ from .secretstore import (
     load_from_env,
     save_to_env,
 )
-from .tomlutils import read_toml, toml_ignore, write_toml
+from .tomlutils import read_toml, toml_ignore, write_toml, toml_dataset_path, JSON_FILENAME, TOML_PATH, TOOL_NAME
 
 __all__ = (
     # base
@@ -94,6 +94,10 @@ __all__ = (
     "toml_ignore",
     "read_toml",
     "write_toml",
+    "toml_dataset_path",
+    "JSON_FILENAME",
+    "TOML_PATH",
+    "TOOL_NAME",
     # constants
     "ext_map",
     "language_dirs",

@@ -1,22 +1,30 @@
 import os
 import pathlib
 import subprocess
-import tempfile
+import platform
+import zipfile
+import glob
+import requests
 
 
 from ..common import (
     PROJECT_ROOT,
-    change_dir,
     toml_ignore,
-    load_from_env,
+    exe_to_path,
+    is_installed,
+    toml_dataset_path,
 )
-from ..vcs import git_commit, git_log_to_file, git_push, install_rclone
+
+try:
+ from ..vcs import rclone_commit
+except Exception:
+    rclone_commit = None
+
 from .registry import update_sync_status, load_registry, load_all_registry
-from ..rdm.dmp import load_default_dataset_path
 
 DEFAULT_TIMEOUT = 600  # seconds
 
-DEFAULT_DATASET_PATH, _= load_default_dataset_path()
+DEFAULT_DATASET_PATH, _= toml_dataset_path()
 
 
 def _rc_verbose_args(level: int) -> list[str]:
@@ -24,17 +32,69 @@ def _rc_verbose_args(level: int) -> list[str]:
     return ["-" + "v" * min(max(level, 0), 3)] if level > 0 else []
 
 
-def _rclone_commit(local_path: str, flag: bool = False, msg: str = "Rclone Backup Commit") -> bool:
-    """Commit changes to git if applicable."""
-    if not flag and (pathlib.Path(local_path).resolve() == PROJECT_ROOT.resolve()):
-        flag = True
-        if os.path.exists(".git") and not os.path.exists(".datalad") and not os.path.exists(".dvc"):
-            #with change_dir("./data"):
-            with change_dir(str(DEFAULT_DATASET_PATH['parent_path'])):
-                _ = git_commit(msg=msg, path=os.getcwd())
-                git_log_to_file(os.path.join(".gitlog"))
-            git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", msg)
-    return flag
+def install_rclone(install_path: str = "./bin") -> bool:
+    """Download and extract rclone to the specified bin folder."""
+
+    def download_rclone(install_path: str = "./bin"):
+        os_type = platform.system().lower()
+
+        # Set the URL and executable name based on the OS
+        if os_type == "windows":
+            url = "https://downloads.rclone.org/rclone-current-windows-amd64.zip"
+            rclone_executable = "rclone.exe"
+        elif os_type in ["linux", "darwin"]:
+            url = (
+                "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
+                if os_type == "linux"
+                else "https://downloads.rclone.org/rclone-current-osx-amd64.zip"
+            )
+            rclone_executable = "rclone"
+        else:
+            print(f"Unsupported operating system: {os_type}. Please install rclone manually.")
+            return None
+
+        # Create the bin folder if it doesn't exist
+        install_path = str(PROJECT_ROOT / pathlib.Path(install_path))
+        os.makedirs(install_path, exist_ok=True)
+
+        # Download rclone
+        local_zip = os.path.join(install_path, "rclone.zip")
+        print(f"Downloading rclone for {os_type} to {local_zip}...")
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(local_zip, "wb") as file:
+                file.write(response.content)
+            print("Download complete.")
+        else:
+            print("Failed to download rclone. Please check the URL.")
+            return None
+
+        # Extract the rclone executable
+        print("Extracting rclone...")
+        with zipfile.ZipFile(local_zip, "r") as zip_ref:
+            zip_ref.extractall(install_path)
+
+        rclone_folder = glob.glob(os.path.join(install_path, "rclone-*"))
+
+        if not rclone_folder or len(rclone_folder) > 1:
+            print(f"More than one 'rclone-*' folder detected in {install_path}")
+            return None
+
+        # Clean up by deleting the zip file
+        os.remove(local_zip)
+
+        rclone_path = os.path.join(install_path, rclone_folder[0], rclone_executable)
+        print(f"rclone installed successfully at {rclone_path}.")
+
+        rclone_path = os.path.abspath(rclone_path)
+        os.chmod(rclone_path, 0o755)
+        return rclone_path
+
+    if not is_installed("rclone", "Rclone"):
+        rclone_path = download_rclone(install_path)
+        return exe_to_path("rclone", os.path.dirname(rclone_path))
+    return True
+
 
 
 def _rclone_transfer(
@@ -157,8 +217,8 @@ def push_rclone(
 
         if new_path is None:
             new_path = _remote_path
-
-        flag = _rclone_commit(_local_path, flag, msg=f"Rclone Push from {_local_path} to {new_path}")
+        if rclone_commit:
+            flag = rclone_commit(_local_path, flag, msg=f"Rclone Push from {_local_path} to {new_path}")
         exclude_patterns = _exclude_patterns(_local_path)
 
         _rclone_transfer(
@@ -205,8 +265,8 @@ def pull_rclone(
 
     if not os.path.exists(new_path):
         os.makedirs(new_path)
-
-    _ = _rclone_commit(new_path, False, msg=f"Rclone Pull from {_remote_path} to {new_path}")
+    if rclone_commit:
+        _ = rclone_commit(new_path, False, msg=f"Rclone Pull from {_remote_path} to {new_path}")
     exclude_patterns = _exclude_patterns(_local_path)
 
     _rclone_transfer(
