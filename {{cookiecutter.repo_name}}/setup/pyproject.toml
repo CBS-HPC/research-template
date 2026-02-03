@@ -21,6 +21,9 @@ dependencies = [
   "ruff>=0.6",
   "mypy>=1.10",
   "wxpython",
+  "repokit-common",
+  "repokit-backup",
+  "repokit-dmp",
 
   # TOML read/write split:
   'toml ; python_version < "3.11"',

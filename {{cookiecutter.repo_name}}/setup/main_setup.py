@@ -258,7 +258,6 @@ def outro():
     creating_readme(programming_language=load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
 
     # Pushing to Git
-    #git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", "README.md updated")
     git_push(load_from_env("CODE_REPO", ".cookiecutter") != "None", " Created `requirements.txt`, `environment.yml`,`dependencies.txt`, files deleted and updated in README.md")
 
 

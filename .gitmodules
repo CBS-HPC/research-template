@@ -1,0 +1,3 @@
+[submodule "{{cookiecutter.repo_name}}/setup/repokit"]
+	path = {{cookiecutter.repo_name}}/setup/repokit
+	url = https://github.com/CBS-HPC/repokit.git
