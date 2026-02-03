@@ -7,6 +7,15 @@ import shutil
 import stat
 
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
+SETUP_DIR = pathlib.Path(__file__).resolve().parent
+REPOKIT_DIR = SETUP_DIR / "repokit"
+REPOKIT_EXTERNAL = REPOKIT_DIR / "external"
+LOCAL_PACKAGES = [
+    REPOKIT_EXTERNAL / "repokit-common",
+    REPOKIT_EXTERNAL / "repokit-backup",
+    REPOKIT_EXTERNAL / "repokit-dmp",
+    REPOKIT_DIR,
+]
 
 
 def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tuple[bool, str]:
@@ -55,6 +64,16 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     finally:
         os.chdir(cwd)
 
+def install_local_packages(packages: list[pathlib.Path], editable: bool = True) -> None:
+    for package_path in packages:
+        if not package_path.exists():
+            raise FileNotFoundError(
+                f"Local package not found: {package_path}. Did you init submodules?"
+            )
+        ok, method = install_py_package(str(package_path), editable=editable)
+        if not ok:
+            raise RuntimeError(f"Failed to install {package_path} using {method}.")
+
 
 def _on_rm_error(func, path, exc_info):
     # Make read-only files writable (Windows) then retry
@@ -91,14 +110,21 @@ def delete_files(file_paths: list | None = None) -> dict:
     return results
 
 
-# Installing package:
-install_py_package("./setup")
+# Installing packages:
+install_local_packages(LOCAL_PACKAGES)
 
 from repokit.ci import ci_config
-from repokit.common import load_from_env, save_to_env, set_program_path, set_packages, package_installer, toml_dataset_path
+from repokit_common import (
+    load_from_env,
+    save_to_env,
+    set_program_path,
+    set_packages,
+    package_installer,
+    toml_dataset_path,
+)
 from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
 from repokit.repos import setup_repo, setup_version_control
-from repokit.rdm.dmp import main as dmp_update
+from repokit_dmp.dmp import main as dmp_update
 from repokit.readme.template import create_citation_file, creating_readme
 from repokit.templates.code import create_scripts
 from repokit.vcs import git_push

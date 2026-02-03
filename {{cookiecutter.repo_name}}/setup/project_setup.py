@@ -6,6 +6,14 @@ import subprocess
 import sys
 import shutil
 
+# Allow using repokit + repokit_common from submodules before installation.
+_SETUP_DIR = pathlib.Path(__file__).resolve().parent
+_REPOKIT_SRC = _SETUP_DIR / "repokit" / "src"
+_COMMON_SRC = _SETUP_DIR / "repokit" / "external" / "repokit-common" / "src"
+for _p in (_COMMON_SRC, _REPOKIT_SRC):
+    if _p.exists() and str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
 
 
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
@@ -276,7 +284,7 @@ programming_language, authors, orcids = correct_format(programming_language, aut
     conda_python_version,
 ) = set_options(programming_language, version_control)
 
-from repokit.common import (
+from repokit_common import (
     ask_yes_no,
     check_path_format,
     git_user_info,
