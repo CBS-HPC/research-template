@@ -14,7 +14,7 @@ for _p in (_COMMON_SRC, _REPOKIT_SRC):
     if _p.exists() and str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-
+PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
     script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
@@ -243,7 +243,7 @@ def delete_license(doc_license, data_license, code_license):
             and str(data_license).lower() == "none"
             and str(code_license).lower() == "none"
         ):
-        license_path = PROJECT_ROOT / "LICENSE.txt"
+        license_path = PROJECT_DIR / "LICENSE.txt"
         print(license_path)
         if license_path.exists():
             try:
@@ -290,7 +290,6 @@ from repokit_common import (
     git_user_info,
     repo_user_info,
     save_to_env,
-    PROJECT_ROOT
 )
 
 
