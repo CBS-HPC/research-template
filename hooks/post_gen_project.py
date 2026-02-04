@@ -128,16 +128,42 @@ def create_with_uv():
 
     ensure_repokit_sources(env=env)
 
+    # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
+    python_exe = (
+        os.path.join(".venv", "Scripts", "python.exe")
+        if os.name == "nt"
+        else os.path.join(".venv", "bin", "python")
+    )
+    if not os.path.exists(python_exe):
+        raise FileNotFoundError(
+            f"Python interpreter not found at {python_exe}. Did 'uv venv' succeed?"
+        )
+
+    # Ensure pip + uv are installed inside the created venv
+    subprocess.run(
+        [python_exe, "-m", "ensurepip", "--upgrade"],
+        check=False,
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        [python_exe, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
+        check=False,
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
     try:
         subprocess.run(
             [
-                "uv",
-                "add",
-                "--upgrade",
+                python_exe,
+                "-m",
                 "uv",
                 "pip",
-                "setuptools",
-                "wheel",
+                "install",
+                "--upgrade",
                 "python-dotenv",
                 "pathspec",
                 "pyyaml",
@@ -149,19 +175,8 @@ def create_with_uv():
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
-        print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
+        print("Failed to add packages with uv pip install (even with link-mode=copy).")
         raise
-
-    # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
-    python_exe = (
-        os.path.join(".venv", "Scripts", "python.exe")
-        if os.name == "nt"
-        else os.path.join(".venv", "bin", "python")
-    )
-    if not os.path.exists(python_exe):
-        raise FileNotFoundError(
-            f"Python interpreter not found at {python_exe}. Did 'uv venv' succeed?"
-        )
 
     # Run the setup script and show output so user sees progress/errors
     subprocess.run([python_exe, "setup/project_setup.py"], check=True, env=env)
