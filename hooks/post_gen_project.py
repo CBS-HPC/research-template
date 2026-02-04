@@ -115,16 +115,12 @@ def create_with_uv():
         ["uv", "venv"],
         check=True,
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
     )
     try:
         subprocess.run(
             ["uv", "lock"],
             check=True,
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         print("uv lock failed; continuing without lock.")
@@ -147,15 +143,11 @@ def create_with_uv():
         [python_exe, "-m", "ensurepip", "--upgrade"],
         check=False,
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
     )
     subprocess.run(
         [python_exe, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
         check=False,
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
     )
 
     try:
@@ -174,8 +166,6 @@ def create_with_uv():
             ],
             check=True,
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         print("Failed to add packages with uv pip install (even with link-mode=copy).")
