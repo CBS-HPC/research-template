@@ -60,19 +60,24 @@ def create_with_uv():
     """Create virtual environment using uv with UV_LINK_MODE=copy to avoid hardlink errors,
     then run setup with the interpreter from .venv (not `uv run`)."""
 
-    print("CWD:", os.getcwd())
-    
     env = os.environ.copy()
     env["UV_LINK_MODE"] = "copy"
 
+
+
+    print("CWD:", os.getcwd())
+    print("Listing:", os.listdir("."))
+    subprocess.run(["uv", "venv", "--verbose"], check=True, env=env)
+
+
     # Create venv and lock deps with uv
-    subprocess.run(
-        ["uv", "venv"],
-        check=True,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    #subprocess.run(
+    #   ["uv", "venv"],
+    #    check=True,
+    #    env=env,
+    #    stdout=subprocess.DEVNULL,
+    #    stderr=subprocess.DEVNULL,
+    #)
     subprocess.run(
         ["uv", "lock"],
         check=True,
