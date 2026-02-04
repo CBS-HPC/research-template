@@ -33,7 +33,11 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     # Build the args once
     editable_args = ["-e", "."] if editable else ["."]
     uv_exe = shutil.which("uv")
-    uv_exe_cmd = [uv_exe, "pip", "install", *editable_args] if uv_exe else None
+    uv_exe_cmd = (
+        [uv_exe, "pip", "install", "--python", sys.executable, *editable_args]
+        if uv_exe
+        else None
+    )
     uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install", *editable_args]
     pip_cmd = [sys.executable, "-m", "pip", "install", *editable_args]
 
@@ -41,30 +45,7 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     cwd = os.getcwd()
     os.chdir(setup_dir)
     try:
-        # 1) Try `uv pip install` (preferred, no module import required)
-        if uv_exe_cmd:
-            result = subprocess.run(uv_exe_cmd, capture_output=True, text=True)
-            if result.returncode == 0:
-                print("Installation successful with uv.")
-                return True, "uv"
-            else:
-                print(f"'uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
-
-        # 2) Try `python -m uv` (if uv is importable as a module)
-        try:
-            result = subprocess.run(uv_mod_cmd, capture_output=True, text=True)
-            if result.returncode == 0:
-                print("Installation successful with python -m uv.")
-                return True, "python -m uv"
-            else:
-                print(
-                    f"'python -m uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}"
-                )
-        except FileNotFoundError:
-            # Very old Python envs can raise this if python isn't found, but unlikely.
-            pass
-
-        # 3) Fallback to pip (ensure pip exists if needed)
+        # 1) Use pip in the *current* interpreter (ensures packages land in this venv)
         try:
             ensure = subprocess.run(
                 [sys.executable, "-m", "ensurepip", "--upgrade"],
@@ -83,7 +64,30 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
             return True, "pip"
         else:
             print(f"pip failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
-            return False, "pip"
+
+        # 2) Try uv with an explicit python target (if available)
+        if uv_exe_cmd:
+            result = subprocess.run(uv_exe_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("Installation successful with uv.")
+                return True, "uv"
+            else:
+                print(f"'uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
+
+        # 3) Try `python -m uv` (if uv is importable as a module)
+        try:
+            result = subprocess.run(uv_mod_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("Installation successful with python -m uv.")
+                return True, "python -m uv"
+            else:
+                print(
+                    f"'python -m uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}"
+                )
+        except FileNotFoundError:
+            pass
+
+        return False, "pip"
     finally:
         os.chdir(cwd)
 
