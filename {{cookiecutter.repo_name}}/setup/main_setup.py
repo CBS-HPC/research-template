@@ -11,18 +11,18 @@ SETUP_DIR = pathlib.Path(__file__).resolve().parent
 REPOKIT_DIR = SETUP_DIR / "repokit"
 REPOKIT_EXTERNAL = REPOKIT_DIR / "external"
 LOCAL_PACKAGES = [
+    REPOKIT_DIR,
     REPOKIT_EXTERNAL / "repokit-common",
     REPOKIT_EXTERNAL / "repokit-backup",
     REPOKIT_EXTERNAL / "repokit-dmp",
-    REPOKIT_DIR,
 ]
 
 # Add local package sources to sys.path so imports work without installing
 _LOCAL_SRC_PATHS = [
+    REPOKIT_DIR / "src",
     REPOKIT_EXTERNAL / "repokit-common" / "src",
     REPOKIT_EXTERNAL / "repokit-backup" / "src",
     REPOKIT_EXTERNAL / "repokit-dmp" / "src",
-    REPOKIT_DIR / "src",
 ]
 for _p in _LOCAL_SRC_PATHS:
     if _p.exists() and str(_p) not in sys.path:
