@@ -272,6 +272,8 @@ def create_with_pip():
 
 
 def main():
+    project_root = pathlib.Path(__file__).resolve().parent.parent
+    os.chdir(project_root)
     env_path = pathlib.Path(".venv")
     if not env_path.exists():
         if install_uv():
