@@ -153,7 +153,7 @@ def create_with_uv():
         print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
         raise
 
-    ensure_repokit_sources(env=env) 
+    ensure_repokit_sources() 
 
     # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
     python_exe = (
