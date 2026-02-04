@@ -60,6 +60,8 @@ def create_with_uv():
     """Create virtual environment using uv with UV_LINK_MODE=copy to avoid hardlink errors,
     then run setup with the interpreter from .venv (not `uv run`)."""
 
+    print("CWD:", os.getcwd())
+    
     env = os.environ.copy()
     env["UV_LINK_MODE"] = "copy"
 
