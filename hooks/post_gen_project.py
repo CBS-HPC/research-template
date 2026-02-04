@@ -125,7 +125,6 @@ def create_with_uv():
     except subprocess.CalledProcessError:
         print("uv lock failed; continuing without lock.")
 
-    ensure_repokit_sources()
 
     # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
     python_exe = (
@@ -177,7 +176,6 @@ def create_with_uv():
 
 def create_with_pip():
     # Always bootstrap uv and then use the uv-based path
-    ensure_repokit_sources()
     subprocess.run(
         [sys.executable, "-m", "ensurepip", "--upgrade"],
         check=False,
@@ -196,6 +194,8 @@ def create_with_pip():
 def main():
     project_root = pathlib.Path(__file__).resolve().parent.parent
     print(f"PROJECT_DIR: {project_root}")
+    os.chdir(project_root)
+    ensure_repokit_sources()
     os.chdir(project_root)
     env_path = pathlib.Path(".venv")
     if not env_path.exists():
