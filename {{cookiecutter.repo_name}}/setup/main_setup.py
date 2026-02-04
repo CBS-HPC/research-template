@@ -33,28 +33,29 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     # Build the args once
     editable_args = ["-e", "."] if editable else ["."]
     uv_exe = shutil.which("uv")
-    uv_exe_cmd = (
-        [uv_exe, "pip", "install", "--python", sys.executable, *editable_args]
-        if uv_exe
-        else None
-    )
-    uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install", *editable_args]
     pip_cmd = [sys.executable, "-m", "pip", "install", *editable_args]
 
     # Do work in the target directory, but restore CWD afterwards
     cwd = os.getcwd()
     os.chdir(setup_dir)
     try:
-        # 1) Use pip in the *current* interpreter (ensures packages land in this venv)
+        # 1) Try uv (targets current interpreter explicitly)
+        if uv_exe:
+            uv_exe_cmd = [uv_exe, "pip", "install", "--python", sys.executable, *editable_args]
+            result = subprocess.run(uv_exe_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("Installation successful with uv.")
+                return True, "uv"
+            else:
+                print(f"'uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
+
+        # 2) Fallback to pip in the current interpreter
         try:
-            ensure = subprocess.run(
+            subprocess.run(
                 [sys.executable, "-m", "ensurepip", "--upgrade"],
                 capture_output=True,
                 text=True,
             )
-            if ensure.returncode != 0:
-                # It's ok if ensurepip isn't available; we'll try pip anyway.
-                pass
         except Exception:
             pass
 
@@ -65,39 +66,37 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
         else:
             print(f"pip failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
 
-        # 2) Try uv with an explicit python target (if available)
-        if uv_exe_cmd:
-            result = subprocess.run(uv_exe_cmd, capture_output=True, text=True)
-            if result.returncode == 0:
-                print("Installation successful with uv.")
-                return True, "uv"
-            else:
-                print(f"'uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
-
-        # 3) Try `python -m uv` (if uv is importable as a module)
-        try:
-            result = subprocess.run(uv_mod_cmd, capture_output=True, text=True)
-            if result.returncode == 0:
-                print("Installation successful with python -m uv.")
-                return True, "python -m uv"
-            else:
-                print(
-                    f"'python -m uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}"
-                )
-        except FileNotFoundError:
-            pass
-
         return False, "pip"
     finally:
         os.chdir(cwd)
 
 
 def install_local_packages(packages: list[pathlib.Path], editable: bool = True) -> None:
+    missing = [p for p in packages if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"Local package not found: {missing[0]}. Did you init submodules?"
+        )
+
+    # Fast path: install all packages in one uv call
+    uv_exe = shutil.which("uv")
+    if uv_exe:
+        args = []
+        for package_path in packages:
+            args.extend(["-e", str(package_path.resolve())] if editable else [str(package_path.resolve())])
+        result = subprocess.run(
+            [uv_exe, "pip", "install", "--python", sys.executable, *args],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            print("Installation successful with uv.")
+            return
+        else:
+            print(f"'uv' bulk install failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
+
+    # Fallback: per-package install (pip fallback handled inside)
     for package_path in packages:
-        if not package_path.exists():
-            raise FileNotFoundError(
-                f"Local package not found: {package_path}. Did you init submodules?"
-            )
         ok, method = install_py_package(str(package_path), editable=editable)
         if not ok:
             raise RuntimeError(f"Failed to install {package_path} using {method}.")
