@@ -143,7 +143,16 @@ def delete_files(file_paths: list | None = None) -> dict:
 
     return results
 
+
+def remove_embedded_git_dirs(packages: list[pathlib.Path]) -> None:
+    """Remove nested .git folders so parent repo doesn't embed git repos."""
+    for package_path in packages:
+        git_dir = package_path / ".git"
+        if git_dir.exists() and git_dir.is_dir():
+            shutil.rmtree(git_dir, onerror=_on_rm_error)
+
 # Installing packages:
+remove_embedded_git_dirs(LOCAL_PACKAGES)
 install_local_packages(LOCAL_PACKAGES)
 
 from repokit.ci import ci_config
