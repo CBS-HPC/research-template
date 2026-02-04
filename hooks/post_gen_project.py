@@ -3,6 +3,7 @@ import pathlib
 import sys
 import platform
 import os
+import shutil
 
 if sys.version_info < (3, 11):
     TOML_VERSION = "toml"
@@ -63,21 +64,14 @@ def create_with_uv():
     env = os.environ.copy()
     env["UV_LINK_MODE"] = "copy"
 
-
-
-    print("CWD:", os.getcwd())
-    print("Listing:", os.listdir("."))
-    subprocess.run(["uv", "venv", "--verbose"], check=True, env=env)
-
-
     # Create venv and lock deps with uv
-    #subprocess.run(
-    #   ["uv", "venv"],
-    #    check=True,
-    #    env=env,
-    #    stdout=subprocess.DEVNULL,
-    #    stderr=subprocess.DEVNULL,
-    #)
+    subprocess.run(
+       ["uv", "venv"],
+        check=True,
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     subprocess.run(
         ["uv", "lock"],
         check=True,
@@ -85,6 +79,16 @@ def create_with_uv():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+    # Ensure nested submodules (repokit and its externals) are available
+    if os.path.isdir(".git") and shutil.which("git"):
+        subprocess.run(
+            ["git", "submodule", "update", "--init", "--recursive"],
+            check=False,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     try:
         subprocess.run(
@@ -126,6 +130,15 @@ def create_with_uv():
 
 
 def create_with_pip():
+    # Ensure nested submodules (repokit and its externals) are available
+    if os.path.isdir(".git") and shutil.which("git"):
+        subprocess.run(
+            ["git", "submodule", "update", "--init", "--recursive"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
     subprocess.run(
         [
             sys.executable,
