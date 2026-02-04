@@ -17,6 +17,17 @@ LOCAL_PACKAGES = [
     REPOKIT_DIR,
 ]
 
+# Add local package sources to sys.path so imports work without installing
+_LOCAL_SRC_PATHS = [
+    REPOKIT_EXTERNAL / "repokit-common" / "src",
+    REPOKIT_EXTERNAL / "repokit-backup" / "src",
+    REPOKIT_EXTERNAL / "repokit-dmp" / "src",
+    REPOKIT_DIR / "src",
+]
+for _p in _LOCAL_SRC_PATHS:
+    if _p.exists() and str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
 
 def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tuple[bool, str]:
     """
@@ -134,7 +145,7 @@ def delete_files(file_paths: list | None = None) -> dict:
 
 print(sys.executable)
 # Installing packages:
-install_local_packages(LOCAL_PACKAGES)
+# install_local_packages(LOCAL_PACKAGES)
 
 print(sys.executable)
 from repokit.ci import ci_config
