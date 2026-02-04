@@ -118,13 +118,16 @@ def create_with_uv():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    subprocess.run(
-        ["uv", "lock"],
-        check=True,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    try:
+        subprocess.run(
+            ["uv", "lock"],
+            check=True,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        print("uv lock failed; continuing without lock.")
 
     try:
         subprocess.run(
