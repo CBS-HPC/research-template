@@ -10,52 +10,6 @@ if sys.version_info < (3, 11):
 else:
     TOML_VERSION = "tomli-w"
 
-REPOKIT_DIR = pathlib.Path("setup") / "repokit"
-REPOKIT_COMMON_PATH = (
-    REPOKIT_DIR / "external" / "repokit-common" / "src" / "repokit_common"
-)
-REPOKIT_GIT_URL = "https://github.com/CBS-HPC/repokit.git"
-
-
-def ensure_repokit_sources(env: dict | None = None) -> None:
-    """
-    Ensure repokit + repokit-common sources exist for project_setup.py imports.
-    This handles cases where nested submodules were not initialized by cookiecutter.
-    """
-    if REPOKIT_COMMON_PATH.exists():
-        return
-
-    if not shutil.which("git"):
-        print("Git not found; cannot initialize repokit submodules.")
-        return
-
-    # If setup/repokit exists but is empty, replace with a fresh clone
-    if REPOKIT_DIR.exists():
-        try:
-            if not any(REPOKIT_DIR.iterdir()):
-                shutil.rmtree(REPOKIT_DIR, ignore_errors=True)
-        except OSError:
-            pass
-
-    if not REPOKIT_DIR.exists():
-        subprocess.run(
-            ["git", "clone", REPOKIT_GIT_URL, str(REPOKIT_DIR)],
-            check=False,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
-    # Ensure nested submodules (repokit-common/backup/dmp)
-    if REPOKIT_DIR.exists():
-        subprocess.run(
-            ["git", "-C", str(REPOKIT_DIR), "submodule", "update", "--init", "--recursive"],
-            check=False,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
 
 def run_in_venv():
     if platform.system() == "Windows":
@@ -115,12 +69,16 @@ def create_with_uv():
         ["uv", "venv"],
         check=True,
         env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     try:
         subprocess.run(
             ["uv", "lock"],
             check=True,
             env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         print("uv lock failed; continuing without lock.")
@@ -142,11 +100,15 @@ def create_with_uv():
         [python_exe, "-m", "ensurepip", "--upgrade"],
         check=False,
         env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     subprocess.run(
         [python_exe, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
         check=False,
         env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
 
     try:
@@ -165,6 +127,8 @@ def create_with_uv():
             ],
             check=True,
             env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         print("Failed to add packages with uv pip install (even with link-mode=copy).")
@@ -192,12 +156,6 @@ def create_with_pip():
 
 
 def main():
-    #project_root = pathlib.Path(__file__).resolve().parent.parent
-    #print(f"PROJECT_DIR: {project_root}")
-    #os.chdir(project_root)
-    #ensure_repokit_sources()
-    #os.chdir(project_root)
-    #ensure_repokit_sources()
     env_path = pathlib.Path(".venv")
     if not env_path.exists():
         if install_uv():
