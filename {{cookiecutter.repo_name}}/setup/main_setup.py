@@ -32,6 +32,8 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
 
     # Build the args once
     editable_args = ["-e", "."] if editable else ["."]
+    uv_exe = shutil.which("uv")
+    uv_exe_cmd = [uv_exe, "pip", "install", *editable_args] if uv_exe else None
     uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install", *editable_args]
     pip_cmd = [sys.executable, "-m", "pip", "install", *editable_args]
 
@@ -39,7 +41,16 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
     cwd = os.getcwd()
     os.chdir(setup_dir)
     try:
-        # 1) Try `python -m uv` (if uv is importable as a module)
+        # 1) Try `uv pip install` (preferred, no module import required)
+        if uv_exe_cmd:
+            result = subprocess.run(uv_exe_cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("Installation successful with uv.")
+                return True, "uv"
+            else:
+                print(f"'uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
+
+        # 2) Try `python -m uv` (if uv is importable as a module)
         try:
             result = subprocess.run(uv_mod_cmd, capture_output=True, text=True)
             if result.returncode == 0:
@@ -53,7 +64,19 @@ def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tu
             # Very old Python envs can raise this if python isn't found, but unlikely.
             pass
 
-        # 3) Fallback to pip
+        # 3) Fallback to pip (ensure pip exists if needed)
+        try:
+            ensure = subprocess.run(
+                [sys.executable, "-m", "ensurepip", "--upgrade"],
+                capture_output=True,
+                text=True,
+            )
+            if ensure.returncode != 0:
+                # It's ok if ensurepip isn't available; we'll try pip anyway.
+                pass
+        except Exception:
+            pass
+
         result = subprocess.run(pip_cmd, capture_output=True, text=True)
         if result.returncode == 0:
             print("Installation successful with pip.")
