@@ -132,10 +132,11 @@ def delete_files(file_paths: list | None = None) -> dict:
 
     return results
 
-
+print(sys.executable)
 # Installing packages:
 install_local_packages(LOCAL_PACKAGES)
 
+print(sys.executable)
 from repokit.ci import ci_config
 from repokit_common import (
     load_from_env,
