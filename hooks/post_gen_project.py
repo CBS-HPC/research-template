@@ -10,6 +10,52 @@ if sys.version_info < (3, 11):
 else:
     TOML_VERSION = "tomli-w"
 
+REPOKIT_DIR = pathlib.Path("setup") / "repokit"
+REPOKIT_COMMON_PATH = (
+    REPOKIT_DIR / "external" / "repokit-common" / "src" / "repokit_common"
+)
+REPOKIT_GIT_URL = "https://github.com/CBS-HPC/repokit.git"
+
+
+def ensure_repokit_sources(env: dict | None = None) -> None:
+    """
+    Ensure repokit + repokit-common sources exist for project_setup.py imports.
+    This handles cases where nested submodules were not initialized by cookiecutter.
+    """
+    if REPOKIT_COMMON_PATH.exists():
+        return
+
+    if not shutil.which("git"):
+        print("Git not found; cannot initialize repokit submodules.")
+        return
+
+    # If setup/repokit exists but is empty, replace with a fresh clone
+    if REPOKIT_DIR.exists():
+        try:
+            if not any(REPOKIT_DIR.iterdir()):
+                shutil.rmtree(REPOKIT_DIR, ignore_errors=True)
+        except OSError:
+            pass
+
+    if not REPOKIT_DIR.exists():
+        subprocess.run(
+            ["git", "clone", REPOKIT_GIT_URL, str(REPOKIT_DIR)],
+            check=False,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    # Ensure nested submodules (repokit-common/backup/dmp)
+    if REPOKIT_DIR.exists():
+        subprocess.run(
+            ["git", "-C", str(REPOKIT_DIR), "submodule", "update", "--init", "--recursive"],
+            check=False,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
 
 def run_in_venv():
     if platform.system() == "Windows":
@@ -80,15 +126,7 @@ def create_with_uv():
         stderr=subprocess.DEVNULL,
     )
 
-    # Ensure nested submodules (repokit and its externals) are available
-    if os.path.isdir(".git") and shutil.which("git"):
-        subprocess.run(
-            ["git", "submodule", "update", "--init", "--recursive"],
-            check=False,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+    ensure_repokit_sources(env=env)
 
     try:
         subprocess.run(
@@ -130,14 +168,7 @@ def create_with_uv():
 
 
 def create_with_pip():
-    # Ensure nested submodules (repokit and its externals) are available
-    if os.path.isdir(".git") and shutil.which("git"):
-        subprocess.run(
-            ["git", "submodule", "update", "--init", "--recursive"],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+    ensure_repokit_sources()
 
     subprocess.run(
         [
