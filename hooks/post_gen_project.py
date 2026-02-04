@@ -112,6 +112,70 @@ def create_with_uv():
 
     # Create venv and lock deps with uv
     subprocess.run(
+        ["uv", "venv"],
+        check=True,
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["uv", "lock"],
+        check=True,
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "add",
+                "--upgrade",
+                "uv",
+                "pip",
+                "setuptools",
+                "wheel",
+                "python-dotenv",
+                "pathspec",
+                "pyyaml",
+                TOML_VERSION,
+            ],
+            check=True,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
+        raise
+
+    ensure_repokit_sources(env=env) 
+
+    # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
+    python_exe = (
+        os.path.join(".venv", "Scripts", "python.exe")
+        if os.name == "nt"
+        else os.path.join(".venv", "bin", "python")
+    )
+    if not os.path.exists(python_exe):
+        raise FileNotFoundError(
+            f"Python interpreter not found at {python_exe}. Did 'uv venv' succeed?"
+        )
+
+    # Run the setup script and show output so user sees progress/errors
+    subprocess.run([python_exe, "setup/project_setup.py"], check=True, env=env)
+
+
+def create_with_uv_notworking():
+    """Create virtual environment using uv with UV_LINK_MODE=copy to avoid hardlink errors,
+    then run setup with the interpreter from .venv (not `uv run`)."""
+
+    env = os.environ.copy()
+    env["UV_LINK_MODE"] = "copy"
+
+    # Create venv and lock deps with uv
+    subprocess.run(
        ["uv", "venv"],
         check=True,
         env=env,
