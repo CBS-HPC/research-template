@@ -14,10 +14,6 @@ _COMMON_SRC = _REPOKIT_DIR / "external" / "repokit-common" / "src"
 _REPOKIT_COMMON_PATH = _COMMON_SRC / "repokit_common"
 _REPOKIT_GIT_URL = "https://github.com/CBS-HPC/repokit.git"
 
-# Allow using repokit + repokit_common from submodules before installation.
-for _p in (_COMMON_SRC, _REPOKIT_SRC):
-    if _p.exists() and str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
 
 
 def ensure_repokit_sources() -> None:
@@ -316,6 +312,11 @@ programming_language, authors, orcids = correct_format(programming_language, aut
 ) = set_options(programming_language, version_control)
 
 ensure_repokit_sources()
+
+# Allow using repokit + repokit_common from submodules before installation.
+for _p in (_COMMON_SRC, _REPOKIT_SRC):
+    if _p.exists() and str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 from repokit_common import (
     ask_yes_no,
