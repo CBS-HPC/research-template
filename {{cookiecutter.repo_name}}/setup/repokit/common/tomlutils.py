@@ -2,7 +2,7 @@ import json
 import os
 import sys
 import pathspec
-from  pathspec import Path
+from pathlib import Path
 from pathspec.patterns import GitWildMatchPattern
 from typing import Optional, Union
 
