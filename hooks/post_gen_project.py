@@ -192,11 +192,12 @@ def create_with_pip():
 
 
 def main():
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-    print(f"PROJECT_DIR: {project_root}")
-    os.chdir(project_root)
-    ensure_repokit_sources()
-    os.chdir(project_root)
+    #project_root = pathlib.Path(__file__).resolve().parent.parent
+    #print(f"PROJECT_DIR: {project_root}")
+    #os.chdir(project_root)
+    #ensure_repokit_sources()
+    #os.chdir(project_root)
+    #ensure_repokit_sources()
     env_path = pathlib.Path(".venv")
     if not env_path.exists():
         if install_uv():
