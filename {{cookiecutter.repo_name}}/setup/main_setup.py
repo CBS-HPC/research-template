@@ -153,7 +153,6 @@ from repokit_common import (
     set_program_path,
     set_packages,
     package_installer,
-    toml_dataset_path,
 )
 from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
 from repokit.repos import setup_repo, setup_version_control
@@ -162,28 +161,16 @@ from repokit.readme.template import create_citation_file, creating_readme
 from repokit.templates.code import create_scripts
 from repokit.vcs import git_push
 
-DEFAULT_DATASET_PATH, _= toml_dataset_path()
 
 
 def intro():
-    def create_folders():
-
-        print(DEFAULT_DATASET_PATH['parent_path'])
-        print(type(DEFAULT_DATASET_PATH['parent_path']))
-        
+    def create_folders():    
         folders = [
             PROJECT_DIR / "data" / "00_raw",
             PROJECT_DIR / "data" / "01_interim",
             PROJECT_DIR / "data" / "02_processed",
             PROJECT_DIR / "data" / "03_external",
         ]
-
-        #folders = [
-        #    DEFAULT_DATASET_PATH['parent_path'] / "00_raw",
-        #    DEFAULT_DATASET_PATH['parent_path'] / "01_interim",
-        #    DEFAULT_DATASET_PATH['parent_path'] / "02_processed",
-        #    DEFAULT_DATASET_PATH['parent_path'] / "03_external",
-        #]
 
         for folder in folders:
             folder.mkdir(parents=True, exist_ok=True)
@@ -328,7 +315,6 @@ def outro():
         print("The following files/folders need manual deletion:")
         for path, msg in failed.items():
             print(f"  - {path} -> {msg}")
-
 
 
 if __name__ == "__main__":
