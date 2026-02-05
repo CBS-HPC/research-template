@@ -45,6 +45,7 @@ def ensure_repokit_sources() -> None:
             stderr=subprocess.DEVNULL,
         )
 
+
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
     script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
     env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))
@@ -258,6 +259,15 @@ def set_options(programming_language: str, version_control: str):
         conda_python_version,   # None or str
     )
 
+def correct_format(programming_language, authors, orcids):
+    if "(Pre-installation required)" in programming_language:
+        programming_language = programming_language.replace(" (Pre-installation required)", "")
+    if "Your Name(s)" in authors:
+        authors = "Not Provided"
+    if "Your Name(s)" in orcids:
+        orcids = "Not Provided"
+    return programming_language, authors, orcids
+
 
 def delete_license(doc_license, data_license, code_license):
     # Remove LICENSE file if nocode license is selected
@@ -312,13 +322,7 @@ if _config:
     conda_r_version = _config.get("conda_r_version")
     conda_python_version = _config.get("conda_python_version")
 else:
-    # Minimal normalization (fallback to existing interactive flow)
-    if "(Pre-installation required)" in programming_language:
-        programming_language = programming_language.replace(" (Pre-installation required)", "")
-    if "Your Name(s)" in authors:
-        authors = "Not Provided"
-    if "Your Name(s)" in orcids:
-        orcids = "Not Provided"
+    programming_language, authors, orcids = correct_format(programming_language, authors, orcids)
     (
         programming_language,
         python_env_manager,

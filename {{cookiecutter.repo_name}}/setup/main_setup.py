@@ -18,15 +18,15 @@ LOCAL_PACKAGES = [
 ]
 
 # Add local package sources to sys.path so imports work without installing
-#_LOCAL_SRC_PATHS = [
-#    REPOKIT_DIR / "src",
-#    REPOKIT_EXTERNAL / "repokit-common" / "src",
-#    REPOKIT_EXTERNAL / "repokit-backup" / "src",
-#    REPOKIT_EXTERNAL / "repokit-dmp" / "src",
-#]
-#for _p in _LOCAL_SRC_PATHS:
-#    if _p.exists() and str(_p) not in sys.path:
-#        sys.path.insert(0, str(_p))
+_LOCAL_SRC_PATHS = [
+    REPOKIT_DIR / "src",
+    REPOKIT_EXTERNAL / "repokit-common" / "src",
+    REPOKIT_EXTERNAL / "repokit-backup" / "src",
+    REPOKIT_EXTERNAL / "repokit-dmp" / "src",
+]
+for _p in _LOCAL_SRC_PATHS:
+    if _p.exists() and str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 
 def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tuple[bool, str]:
@@ -298,6 +298,7 @@ def outro():
         "./run_setup.sh",
         "./run_setup.ps1",
         "./setup/main_setup.py",
+        "./.setup_config.json",
         activate_to_delete,
         deactivate_to_delete,
     ]

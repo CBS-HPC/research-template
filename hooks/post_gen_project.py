@@ -29,6 +29,7 @@ def run_in_venv():
             stderr=subprocess.DEVNULL,
         )
 
+
 def prompt_user(question, options):
     print(question)
     for i, option in enumerate(options, start=1):
@@ -165,6 +166,7 @@ def set_options(programming_language: str, version_control: str):
         conda_python_version,
     )
 
+
 def write_setup_config():
     project_root = pathlib.Path(__file__).resolve().parent.parent
     setup_dir = project_root / "setup"
@@ -197,6 +199,7 @@ def write_setup_config():
     config_path = setup_dir / ".setup_config.json"
     config_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return str(config_path)
+
 
 def install_uv():
     """Ensure 'uv' is installed and usable."""
