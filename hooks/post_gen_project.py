@@ -72,40 +72,9 @@ def create_with_uv():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    try:
-        subprocess.run(
-            ["uv", "lock"],
-            check=True,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except subprocess.CalledProcessError:
-        print("uv lock failed; continuing without lock.")
-
-
-    # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
-    python_exe = (
-        os.path.join(".venv", "Scripts", "python.exe")
-        if os.name == "nt"
-        else os.path.join(".venv", "bin", "python")
-    )
-    if not os.path.exists(python_exe):
-        raise FileNotFoundError(
-            f"Python interpreter not found at {python_exe}. Did 'uv venv' succeed?"
-        )
-
-    # Ensure uv is installed inside the created venv
     subprocess.run(
-        [python_exe, "-m", "ensurepip", "--upgrade"],
-        check=False,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    subprocess.run(
-        [python_exe, "-m", "pip", "install", "--upgrade", "uv", "pip", "setuptools", "wheel"],
-        check=False,
+        ["uv", "lock"],
+        check=True,
         env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -114,12 +83,13 @@ def create_with_uv():
     try:
         subprocess.run(
             [
-                python_exe,
-                "-m",
+                "uv",
+                "add",
+                "--upgrade",
                 "uv",
                 "pip",
-                "install",
-                "--upgrade",
+                "setuptools",
+                "wheel",
                 "python-dotenv",
                 "pathspec",
                 "pyyaml",
@@ -131,8 +101,19 @@ def create_with_uv():
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
-        print("Failed to add packages with uv pip install (even with link-mode=copy).")
+        print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
         raise
+
+    # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
+    python_exe = (
+        os.path.join(".venv", "Scripts", "python.exe")
+        if os.name == "nt"
+        else os.path.join(".venv", "bin", "python")
+    )
+    if not os.path.exists(python_exe):
+        raise FileNotFoundError(
+            f"Python interpreter not found at {python_exe}. Did 'uv venv' succeed?"
+        )
 
     # Run the setup script and show output so user sees progress/errors
     subprocess.run([python_exe, "setup/project_setup.py"], check=True, env=env)
