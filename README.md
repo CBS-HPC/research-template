@@ -366,11 +366,11 @@ source deactivate.sh
 <details>
 <summary><strong>🔧 CLI Tools</strong></summary><br>
 
-The Repokit toolchain in `./setup` provides command-line tools for core automation (`repokit`) plus standalone backup (`repokit-backup`) and DMP workflows (`repokit-dmp`).
+The Repokit toolchain provides command-line tools for core automation (`repokit`) plus standalone backup (`repokit-backup`) and DMP workflows (`repokit-dmp`).
 
 > ℹ️ **Note**: The CLI tools are automatically installed as part of the project environment.  
 > You can also manually install or reinstall them using:  
-> `uv pip install -e ./setup` or `pip install -e ./setup`
+> `uv pip install repokit` or `pip install repokit`
 
 Once installed, the following commands are available from the terminal:
 
@@ -431,7 +431,7 @@ repokit-dmp dataset
 <details>
 <summary><strong>📦 <code>repokit deps-update</code></strong></summary>
 
-The `repokit deps-update` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across both `./setup/` and `./src/` (or `./R/`, `./stata/do/`).
+The `repokit deps-update` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across `./src/` (or `./R/`, `./stata/do/`).
 
 This command is useful for keeping your project environment reproducible and ensuring that all scripts and notebooks reference installable dependencies.
 
@@ -445,8 +445,7 @@ repokit deps-update
 
 - 📄 Regenerates `requirements.txt` using `pip freeze`
 - 📦 Ensures missing packages are added to `uv.lock` (if used)
-- 🧪 Scans the `setup/` and `./src/` directories for imports and writes dependency lists:
-  - `./setup/dependencies.txt`
+- 🧪 Scans the `./src/` (or `./R/`, `./stata/do/`) directories for imports and writes dependency lists:
   - `./src/dependencies.txt` (or `R/`, `stata/`)
 - 📑 Updates and tags `environment.yml` and `requirements.txt` with platform-specific selectors (via `platform_rules`)
 - 🧠 Runs `renv` for R, or language-specific setup scripts for MATLAB and Stata
@@ -653,7 +652,7 @@ repokit ci-control --off    # Disable CI
 
 #### 📁 Notes
 
-- Will auto-install CI templates from `./setup/repokit/temples/j2/ci/`  
+- Will auto-install CI templates from `./repokit/temples/j2/ci/`  
 - Only runs if a valid `CODE_REPO` is set  
 - CI files can be removed manually using `remove_ci_configs()` in code
 

@@ -30,6 +30,28 @@ for _p in _LOCAL_SRC_PATHS:
         sys.path.insert(0, str(_p))
 
 
+def _pick_wheel(dist_dir: pathlib.Path) -> pathlib.Path:
+    wheels = sorted(dist_dir.glob("*.whl"))
+    if not wheels:
+        raise FileNotFoundError(f"No wheels found in {dist_dir}")
+    return wheels[-1]
+
+
+def _collect_wheels() -> list[pathlib.Path]:
+    dist_dirs = [
+        REPOKIT_DIR / "dist",
+        REPOKIT_EXTERNAL / "repokit-common" / "dist",
+        REPOKIT_EXTERNAL / "repokit-backup" / "dist",
+        REPOKIT_EXTERNAL / "repokit-dmp" / "dist",
+    ]
+    wheels: list[pathlib.Path] = []
+    for dist_dir in dist_dirs:
+        if not dist_dir.exists():
+            raise FileNotFoundError(f"Missing dist directory: {dist_dir}")
+        wheels.append(_pick_wheel(dist_dir))
+    return wheels
+
+
 def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tuple[bool, str]:
     """
     Install the local package at `setup_path`, preferring uv and falling back to pip.
@@ -103,6 +125,32 @@ def install_local_packages(packages: list[pathlib.Path], editable: bool = True) 
     except Exception:
         pass
 
+def install_local_wheels(wheels: list[pathlib.Path]) -> None:
+    if not wheels:
+        raise FileNotFoundError("No wheel files provided for installation.")
+
+    uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install"]
+    pip_cmd = [sys.executable, "-m", "pip", "install"]
+    wheel_args = [str(w.resolve()) for w in wheels]
+
+    result = subprocess.run(uv_mod_cmd + wheel_args, capture_output=True, text=True)
+    if result.returncode == 0:
+        print("Installation successful with uv.")
+        return
+    else:
+        print(f"'uv' wheel install failed (exit {result.returncode}). stderr:
+{result.stderr.strip()}")
+
+    result = subprocess.run(pip_cmd + wheel_args, capture_output=True, text=True)
+    if result.returncode == 0:
+        print("Installation successful with pip.")
+        return
+    else:
+        print(f"pip wheel install failed (exit {result.returncode}). stderr:
+{result.stderr.strip()}")
+        raise RuntimeError("Failed to install wheel packages with uv or pip.")
+
+
     # Fallback: per-package install (pip fallback handled inside)
     for package_path in packages:
         ok, method = install_py_package(str(package_path), editable=editable)
@@ -155,9 +203,8 @@ def remove_embedded_git_dirs(packages: list[pathlib.Path]) -> None:
 
 remove_embedded_git_dirs(LOCAL_PACKAGES)
 
-# Installing packages:
-INSTALL_EDITABLE = False
-install_local_packages(LOCAL_PACKAGES, editable=INSTALL_EDITABLE)
+# Installing packages from local wheels:
+install_local_wheels(_collect_wheels())
 
 from repokit_common import (
     load_from_env,
