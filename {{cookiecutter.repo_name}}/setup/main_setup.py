@@ -10,6 +10,7 @@ PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 SETUP_DIR = pathlib.Path(__file__).resolve().parent
 REPOKIT_DIR = SETUP_DIR / "repokit"
 REPOKIT_EXTERNAL = REPOKIT_DIR / "external"
+
 LOCAL_PACKAGES = [
     REPOKIT_DIR,
     REPOKIT_EXTERNAL / "repokit-common",
@@ -153,10 +154,15 @@ def remove_embedded_git_dirs(packages: list[pathlib.Path]) -> None:
 
 
 remove_embedded_git_dirs(LOCAL_PACKAGES)
-# Installing packages:
-install_local_packages(LOCAL_PACKAGES)
 
-from repokit.ci import ci_config
+# Installing packages:
+INSTALL_EDITABLE = False
+install_local_packages(LOCAL_PACKAGES, editable=INSTALL_EDITABLE)
+
+# If we installed non-editable, we can remove local package sources.
+if not INSTALL_EDITABLE:
+    delete_files(["./setup/repokit"])
+
 from repokit_common import (
     load_from_env,
     save_to_env,
@@ -164,6 +170,7 @@ from repokit_common import (
     set_packages,
     package_installer,
 )
+from repokit.ci import ci_config
 from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
 from repokit.repos import setup_repo, setup_version_control
 from repokit_dmp.dmp import main as dmp_update
