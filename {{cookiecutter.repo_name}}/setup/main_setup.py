@@ -167,7 +167,7 @@ from repokit_common import (
     package_installer,
 )
 from repokit.ci import ci_config
-from repokit.deps import update_code_dependency, update_env_files, update_setup_dependency
+from repokit.deps import update_code_dependency, update_env_files
 from repokit.repos import setup_repo, setup_version_control
 from repokit_dmp.dmp import main as dmp_update
 from repokit.readme.template import create_citation_file, creating_readme
@@ -273,7 +273,6 @@ def remote_repo_setup():
 
     print("Creating 'requirements.txt','environment.yml'")
     update_env_files()
-    update_setup_dependency()
     update_code_dependency()
 
     # Pushing to Git
@@ -296,22 +295,22 @@ def outro():
         activate_to_delete = "./activate.ps1"
         deactivate_to_delete = "./deactivate.ps1"
 
+
+        
     files_to_remove = [
-        "./setup/project_setup.py",
+        #"./setup/project_setup.py",
         "./run_setup.sh",
         "./run_setup.ps1",
-        "./setup/main_setup.py",
-        "./.setup_config.json",
+        #"./setup/main_setup.py",
+        #"./.setup_config.json",
         activate_to_delete,
         deactivate_to_delete,
-        "./setup/repokit",
+        #"./setup/repokit",
+        "./setup",
     ]
 
     if load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() == "conda":
-        print("hello")
-        print(load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() )
         files_to_remove.append("./.venv")
-        print(files_to_remove)
 
     # Deleting Setup scripts
     failed = delete_files(files_to_remove)
