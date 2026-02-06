@@ -259,6 +259,7 @@ def set_options(programming_language: str, version_control: str):
         conda_python_version,   # None or str
     )
 
+
 def correct_format(programming_language, authors, orcids):
     if "(Pre-installation required)" in programming_language:
         programming_language = programming_language.replace(" (Pre-installation required)", "")
@@ -530,7 +531,6 @@ git_user_info(version_control)
 
 # Set git repo info
 repo_user, _, _, _ = repo_user_info(version_control, repo_name, code_repo)
-
 
 
 # Create Virtual Environment
