@@ -159,10 +159,6 @@ remove_embedded_git_dirs(LOCAL_PACKAGES)
 INSTALL_EDITABLE = False
 install_local_packages(LOCAL_PACKAGES, editable=INSTALL_EDITABLE)
 
-# If we installed non-editable, we can remove local package sources.
-if not INSTALL_EDITABLE:
-    delete_files(["./setup/repokit"])
-
 from repokit_common import (
     load_from_env,
     save_to_env,
@@ -308,6 +304,7 @@ def outro():
         "./.setup_config.json",
         activate_to_delete,
         deactivate_to_delete,
+        "./setup/repokit",
     ]
 
     if load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() == "conda":
@@ -315,7 +312,6 @@ def outro():
         print(load_from_env("PYTHON_ENV_MANAGER", ".cookiecutter").lower() )
         files_to_remove.append("./.venv")
         print(files_to_remove)
-   
 
     # Deleting Setup scripts
     failed = delete_files(files_to_remove)
@@ -333,7 +329,6 @@ def outro():
         print("The following files/folders need manual deletion:")
         for path, msg in failed.items():
             print(f"  - {path} -> {msg}")
-
 
 if __name__ == "__main__":
 
