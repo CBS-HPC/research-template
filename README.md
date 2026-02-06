@@ -805,7 +805,7 @@ A **headless** command that (re)creates and normalizes your maDMP file **`dmp.js
 - **Adds required fields from the JSON Schema** using schema-aware defaults (no hardcoded key lists).
 - **Seeds/normalizes datasets**: ensures `dataset[]` exists and each dataset has at least one `distribution[]`.
 - **Sets default license** in `distribution.license[].license_ref` from Cookiecutter `DATA_LICENSE` (e.g., CC-BY-4.0) with today’s `start_date`.
-- **Moves custom payloads** under `extension` (e.g., legacy `x_dcas` → `extension[{ "x_dcas": {...} }]`) and seeds a minimal `x_dcas`.
+- **Moves custom payloads** under `extension` (e.g., legacy `x_dcas` -> `extension[{ "repokit_info": {...} }]`) and seeds a minimal `repokit_info`.
 - **Reorders keys** to a canonical layout (root, dataset, distribution, and common nested objects).
 - **Timestamps**: updates `dmp.modified` to current UTC (RFC3339 with trailing `Z`). New files also set `dmp.created`.
 
