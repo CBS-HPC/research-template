@@ -761,7 +761,7 @@ dcas-migration
 
 ### <a id="dmp-update"></a>
 <details>
-<summary><strong>🔄 <code>dmp-update</code></strong></summary><br>
+<summary><strong>🔄 <code>repokit-dmp update</code></strong></summary><br>
 
 A **headless** command that (re)creates and normalizes your maDMP file **`dmp.json`** in the project root. It pulls sensible defaults from the maDMP schema, your project’s Cookiecutter metadata, and built-in templates, then writes a clean, consistently ordered file.
 
@@ -782,7 +782,7 @@ A **headless** command that (re)creates and normalizes your maDMP file **`dmp.js
 #### 🖥️ Usage
 ```bash
 # Installed as a console script:
-dmp-update
+repokit-dmp update
 ```
 
 #### 📂 Reads (if present)
@@ -797,12 +797,12 @@ dmp-update
 
 ### <a id="dmp-editor"></a>
 <details>
-<summary><strong>✍️ <code>dmp-editor</code></strong></summary><br>
+<summary><strong>✍️ <code>repokit-dmp editor</code></strong></summary><br>
 
 Interactive **Streamlit** editor for maDMPs with **per-dataset publish** buttons for **Zenodo** and **DeiC Dataverse**.
 
 #### ✨ Features
-- **Schema-aware forms** for Root, Projects, and Datasets (same defaults as `dmp-update`).
+- **Schema-aware forms** for Root, Projects, and Datasets (same defaults as `repokit-dmp update`).
 - In each dataset:
   - `dataset_id` expanded inline for quick edits.
   - Single `distribution` expanded inline (multi-distribution falls back to list UI).
@@ -817,10 +817,10 @@ Interactive **Streamlit** editor for maDMPs with **per-dataset publish** buttons
 #### 🖥️ Usage
 ```bash
 # Default launch (Streamlit app)
-dmp-editor
+repokit-dmp editor
 
 # Headless helper for remote servers (prints SSH port-forward instructions)
-dmp-editor ssh
+repokit-dmp editor ssh
 ```
 
 #### 🔑 Tokens (for publishing)
