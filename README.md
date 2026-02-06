@@ -377,7 +377,7 @@ Once installed, the following commands are available from the terminal:
 |--------------------------|-----------------------------------------------------------------------------|
 | `repokit`                | Core project automation: deps, readme, templates, examples, git config, CI, lint. |
 | `repokit-backup`         | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
-| `repokit-dmp`            | DMP tools: create/update `dmp.json`, editor UI, publish to Zenodo/Dataverse. |
+| `repokit-dmp`            | DMP tools: dataset registry, DMP update, editor UI, publish to Zenodo/Dataverse. |
 
 #### 🛠️ Usage
 
@@ -444,11 +444,11 @@ repokit-backup types
 ---
 </details>
 
-### <a id="set-dataset"></a>
+### <a id="repokit-dmp-dataset"></a>
 <details>
-<summary><strong>🗃️ <code>set-dataset</code></strong></summary>
+<summary><strong>🗃️ <code>repokit-dmp dataset</code></strong></summary>
 
-The `set-dataset` command scans your `./data/` folder and registers each dataset into a structured metadata file (`dmp.json`). This helps track the location, structure, and reproducibility of datasets in your project.
+The `repokit-dmp dataset` command scans your `./data/` folder and registers each dataset into a structured metadata file (`dmp.json`). This helps track the location, structure, and reproducibility of datasets in your project.
 
 It also:
 - Removes entries from `dmp.json` if the target file or folder no longer exists.
@@ -460,7 +460,7 @@ It also:
 #### 🔧 Usage
 
 ```bash
-set-dataset
+repokit-dmp dataset
 ```
 
 #### ✅ What it does:
@@ -478,18 +478,18 @@ set-dataset
 ---
 </details>
 
-### <a id="update-dependencies"></a>
+### <a id="repokit-deps-update"></a>
 <details>
-<summary><strong>📦 <code>update-dependencies</code></strong></summary>
+<summary><strong>📦 <code>repokit deps-update</code></strong></summary>
 
-The `update-dependencies` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across both `./setup/` and `./src/` (or `./R/`, `./stata/do/`).
+The `repokit deps-update` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across both `./setup/` and `./src/` (or `./R/`, `./stata/do/`).
 
 This command is useful for keeping your project environment reproducible and ensuring that all scripts and notebooks reference installable dependencies.
 
 #### 🔧 Usage
 
 ```bash
-update-dependencies
+repokit deps-update
 ```
 
 #### ✅ What it does:
@@ -516,11 +516,11 @@ update-dependencies
 ---
 </details>
 
-### <a id="update-readme"></a>
+### <a id="repokit-readme-update"></a>
 <details>
-<summary><strong>📝 <code>update-readme</code></strong></summary>
+<summary><strong>📝 <code>repokit readme-update</code></strong></summary>
 
-The `update-readme` command regenerates your `README.md` with up-to-date project information, including:
+The `repokit readme-update` command regenerates your `README.md` with up-to-date project information, including:
 
 - ✅ Code metadata and environment details
 - 📁 Project folder structure as a tree diagram
@@ -532,7 +532,7 @@ This helps maintain a professional and standardized `README.md` that aligns with
 #### 🔧 Usage
 
 ```bash
-update-readme
+repokit readme-update
 ```
 
 #### ✅ What it does:
@@ -552,18 +552,18 @@ update-readme
 ---
 </details>
 
-### <a id="code-examples"></a>
+### <a id="repokit-examples-code"></a>
 <details>
-<summary><strong>💡 <code>code-examples</code></strong></summary>
+<summary><strong>💡 <code>repokit examples-code</code></strong></summary>
 
-The `code-examples` command generates realistic starter scripts and notebooks for your selected programming language using predefined Jinja2 templates.
+The `repokit examples-code` command generates realistic starter scripts and notebooks for your selected programming language using predefined Jinja2 templates.
 
 This is useful for quickly bootstrapping a project with well-structured, language-appropriate examples for each analysis stage.
 
 #### 🔧 Usage
 
 ```bash
-code-examples
+repokit examples-code
 ```
 
 #### ✅ What it does:
@@ -577,7 +577,7 @@ code-examples
 - Saves outputs in the appropriate `./src/`, `R/`, `stata/do/`, etc.
 - Calls:
   - `get_dependencies` to update `dependencies.txt`
-  - `update-readme` to regenerate project metadata
+  - `repokit readme-update` to regenerate project metadata
 
 > 🧠 Uses templates from: `./setup/repokit/temples/j2/example`  
 > 🗂️ Script locations depend on your selected programming language  
@@ -586,18 +586,18 @@ code-examples
 ---
 </details>
 
-### <a id="reset-templates"></a>
+### <a id="repokit-templates-reset"></a>
 <details>
-<summary><strong>🧱 <code>reset-templates</code></strong></summary>
+<summary><strong>🧱 <code>repokit templates-reset</code></strong></summary>
 
-The `reset-templates` command regenerates all core analysis and test scripts using predefined Jinja2 templates. It ensures a consistent structure and coding pattern across different scripting languages.
+The `repokit templates-reset` command regenerates all core analysis and test scripts using predefined Jinja2 templates. It ensures a consistent structure and coding pattern across different scripting languages.
 
 This command is useful for initializing or resetting project scripts to their default structure.
 
 #### 🔧 Usage
 
 ```bash
-reset-templates
+repokit templates-reset
 ```
 
 #### ✅ What it does:
@@ -626,18 +626,18 @@ reset-templates
 ---
 </details>
 
-### <a id="git-config"></a>
+### <a id="repokit-git-config"></a>
 <details>
-<summary><strong>🌐 <code>git-config</code></strong></summary>
+<summary><strong>🌐 <code>repokit git-config</code></strong></summary>
 
-The `git-config` command sets up your version control system and configures a remote Git repository on **GitHub**, **GitLab**, or **Codeberg** based on environment settings.
+The `repokit git-config` command sets up your version control system and configures a remote Git repository on **GitHub**, **GitLab**, or **Codeberg** based on environment settings.
 
 This command streamlines the process of remote repo creation, authentication, Git setup, and CI pipeline configuration.
 
 #### 🔧 Usage
 
 ```bash
-git-config
+repokit git-config
 ```
 
 #### ✅ What it does:
@@ -666,19 +666,19 @@ git-config
 ---
 </details>
 
-### <a id="ci-control"></a>
+### <a id="repokit-ci-control"></a>
 <details>
-<summary><strong>⚙️ <code>ci-control</code></strong></summary>
+<summary><strong>⚙️ <code>repokit ci-control</code></strong></summary>
 
-The `ci-control` command lets you enable or disable Continuous Integration (CI) for your project, and generates default CI configurations for your selected language and Git platform (GitHub, GitLab, or Codeberg).
+The `repokit ci-control` command lets you enable or disable Continuous Integration (CI) for your project, and generates default CI configurations for your selected language and Git platform (GitHub, GitLab, or Codeberg).
 
 This tool is helpful for bootstrapping or adjusting your CI setup without manually editing `.yml` files.
 
 #### 🔧 Usage
 
 ```bash
-ci-control --on     # Enable CI
-ci-control --off    # Disable CI
+repokit ci-control --on     # Enable CI
+repokit ci-control --off    # Disable CI
 ```
 
 > You must specify one flag: `--on` or `--off`.  
@@ -711,9 +711,9 @@ ci-control --off    # Disable CI
 ---
 </details>
 
-### <a id="dcas-migration"></a>
+### <a id="repokit-dmp-dcas-migration"></a>
 <details>
-<summary><strong>🚚 <code>dcas-migration</code></strong></summary>
+<summary><strong>🚚 <code>repokit-dmp dcas-migration</code></strong></summary>
 
 **Purpose**  
 Create a DCAS-ready replication package under `./DCAS template/` by:
@@ -750,7 +750,7 @@ Running the tool with defaults will:
 
 **CLI usage** (wrapper provided by this template)
 ```bash
-dcas-migration 
+repokit-dmp dcas-migration 
 ```
 
 **Notes**
@@ -759,7 +759,7 @@ dcas-migration
 
 </details>
 
-### <a id="dmp-update"></a>
+### <a id="repokit-dmp-update"></a>
 <details>
 <summary><strong>🔄 <code>repokit-dmp update</code></strong></summary><br>
 
@@ -795,7 +795,7 @@ repokit-dmp update
 
 </details>
 
-### <a id="dmp-editor"></a>
+### <a id="repokit-dmp-editor"></a>
 <details>
 <summary><strong>✍️ <code>repokit-dmp editor</code></strong></summary><br>
 
@@ -829,11 +829,11 @@ repokit-dmp editor ssh
 
 </details>
 
-### <a id="code-linting"></a>
+### <a id="repokit-lint"></a>
 <details>
-<summary><strong>🧹 <code>code-linting</code></strong></summary><br>
+<summary><strong>🧹 <code>repokit lint</code></strong></summary><br>
 
-`code-linting` runs project linting in a **language-aware** way. It looks for scaffolded scripts and executes them **if present**:
+`repokit lint` runs project linting in a **language-aware** way. It looks for scaffolded scripts and executes them **if present**:
 
 - **Python** → `src/linting.py` → **Ruff** (formatter + linter) and **Mypy** (type checker)
 - **R** → `R/linting.R` → **lintr::lint_dir()** (auto-activates `renv` if `R/renv/activate.R` exists)
@@ -843,7 +843,7 @@ repokit-dmp editor ssh
 
 ```bash
 # Run all present languages
-code-linting
+repokit lint
 ```
 
 ### Requirements
@@ -1044,8 +1044,8 @@ CI is **not enabled by default** on Codeberg. To enable:
 You can toggle CI setup on or off at any time using the built-in CLI:
 
 ```bash
-ci-control --on
-ci-control --off
+repokit ci-control --on
+repokit ci-control --off
 ```
 
 ##### 🧷 Skip CI for a Commit
