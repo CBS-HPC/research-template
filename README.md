@@ -861,6 +861,7 @@ repokit-dmp editor ssh
 
 ---
 </details>
+</details>
 
 ### <a id="config-files"></a>
 <details>
