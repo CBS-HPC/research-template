@@ -326,6 +326,7 @@ A Personal Access Token (PAT) is needed to:
 | **GitLab** | Create repos, push code, configure CI/CD        | `api`                    |
 | **Codeberg** | Create repo (CI enabled manually)  | `repo` *(if using API)*   |
 
+---
 </details>
 
 ## 🧾 How It Works: Structure & Scripts
@@ -391,58 +392,6 @@ repokit-dmp editor
 ```
 
 Below is a detailed description of each CLI command available in the project, including usage, behavior, and example output.
-
-### <a id="backup"></a>
-<details>
-<summary><strong>🧰 <code>repokit-backup</code></strong></summary>
-
-The backup CLI is exposed as the `repokit-backup` command via the Python package defined in `pyproject.toml`:
-
-```toml
-[project.scripts]
-repokit-backup = "repokit_backup.cli:main"
-```
-
-Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can run the following commands from the terminal:
-
-**📌 Setup a Remote**
-```
-repokit-backup add --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**🚀 Push to Remote**
-```
-repokit-backup push --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-This command performs the following:
-- Commits and pushes the root Git project (if version control is enabled)
-- Commits and pushes the data/ Git repository
-- Syncs the project, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
-
-**📥 Pull Backup from Remote**
-```
-repokit-backup pull --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**📊 View Differences Before Sync**
-```
-repokit-backup diff --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**🧹 Remove Remote**
-```
-repokit-backup delete --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**📋 List Configured Remotes and Sync Status**
-```
-repokit-backup list
-```
-**📦 View Supported Remote Types**
-```
-repokit-backup types
-```
-
-📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
-
----
-</details>
 
 ### <a id="repokit-dmp-dataset"></a>
 <details>
@@ -711,6 +660,87 @@ repokit ci-control --off    # Disable CI
 ---
 </details>
 
+### <a id="repokit-lint"></a>
+<details>
+<summary><strong>🧹 <code>repokit lint</code></strong></summary><br>
+
+`repokit lint` runs project linting in a **language-aware** way. It looks for scaffolded scripts and executes them **if present**:
+
+- **Python** → `src/linting.py` → **Ruff** (formatter + linter) and **Mypy** (type checker)
+- **R** → `R/linting.R` → **lintr::lint_dir()** (auto-activates `renv` if `R/renv/activate.R` exists)
+- **MATLAB** → `src/linting.m` → **checkcode** (static analysis)
+
+### Usage
+
+```bash
+# Run all present languages
+repokit lint
+```
+
+### Requirements
+- Python: `ruff`, `mypy`
+- R: `lintr` in your project’s `renv` (if used)
+- MATLAB: `matlab` CLI on `PATH`
+
+> The Python and MATLAB scripts live under `src/`, the R script under `R/`.
+
+> CI YAML: implement a dedicated lint job/stage
+
+---
+</details>
+
+### <a id="repokit-backup"></a>
+<details>
+<summary><strong>🧰 <code>repokit-backup</code></strong></summary>
+
+The backup CLI is exposed as the `repokit-backup` command via the Python package defined in `pyproject.toml`:
+
+```toml
+[project.scripts]
+repokit-backup = "repokit_backup.cli:main"
+```
+
+Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can run the following commands from the terminal:
+
+**📌 Setup a Remote**
+```
+repokit-backup add --remote erda  # (other options: erda, dropbox, onedrive, local or all)
+```
+**🚀 Push to Remote**
+```
+repokit-backup push --remote erda  # (other options: erda, dropbox, onedrive, local or all)
+```
+This command performs the following:
+- Commits and pushes the root Git project (if version control is enabled)
+- Commits and pushes the data/ Git repository
+- Syncs the project, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
+
+**📥 Pull Backup from Remote**
+```
+repokit-backup pull --remote erda  # (other options: erda, dropbox, onedrive, local or all)
+```
+**📊 View Differences Before Sync**
+```
+repokit-backup diff --remote erda  # (other options: erda, dropbox, onedrive, local or all)
+```
+**🧹 Remove Remote**
+```
+repokit-backup delete --remote erda  # (other options: erda, dropbox, onedrive, local or all)
+```
+**📋 List Configured Remotes and Sync Status**
+```
+repokit-backup list
+```
+**📦 View Supported Remote Types**
+```
+repokit-backup types
+```
+
+📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
+
+---
+</details>
+
 ### <a id="repokit-dmp-dcas-migration"></a>
 <details>
 <summary><strong>🚚 <code>repokit-dmp dcas-migration</code></strong></summary>
@@ -757,6 +787,7 @@ repokit-dmp dcas-migration
 - The tool also mirrors key project artifacts to the DCAS package, including your language-specific source tree (Python `./src/`, R `./R/`, Stata `./stata/do/`, MATLAB `./src/`), depending on the project’s configured primary language.
 - The README template is pulled from the Social Science Data Editors repository and saved as `README_template.md` so you can incorporate or adapt it when finalizing your DCAS package.
 
+---
 </details>
 
 ### <a id="repokit-dmp-update"></a>
@@ -793,6 +824,7 @@ repokit-dmp update
 - Writes an ordered, normalized **`./dmp.json`**  
 - Prints: `DMP ensured at <abs path>/dmp.json using maDMP <version> schema (ordered).`
 
+---
 </details>
 
 ### <a id="repokit-dmp-editor"></a>
@@ -827,35 +859,7 @@ repokit-dmp editor ssh
 - **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
 - **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
 
-</details>
 
-### <a id="repokit-lint"></a>
-<details>
-<summary><strong>🧹 <code>repokit lint</code></strong></summary><br>
-
-`repokit lint` runs project linting in a **language-aware** way. It looks for scaffolded scripts and executes them **if present**:
-
-- **Python** → `src/linting.py` → **Ruff** (formatter + linter) and **Mypy** (type checker)
-- **R** → `R/linting.R` → **lintr::lint_dir()** (auto-activates `renv` if `R/renv/activate.R` exists)
-- **MATLAB** → `src/linting.m` → **checkcode** (static analysis)
-
-### Usage
-
-```bash
-# Run all present languages
-repokit lint
-```
-
-### Requirements
-- Python: `ruff`, `mypy`
-- R: `lintr` in your project’s `renv` (if used)
-- MATLAB: `matlab` CLI on `PATH`
-
-> The Python and MATLAB scripts live under `src/`, the R script under `R/`.
-
-> CI YAML: implement a dedicated lint job/stage
-
-</details>
 ---
 </details>
 
@@ -1238,6 +1242,7 @@ For a full list of supporting journals, visit the [DCAS website](https://datacod
 
 > 📝 Journal-specific requirements may vary—always consult their latest submission guidelines to ensure full compliance.
 
+---
 </details>
 
 ---
