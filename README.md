@@ -368,6 +368,8 @@ source deactivate.sh
 
 The Repokit toolchain provides command-line tools for core automation (`repokit`) plus standalone backup (`repokit-backup`) and DMP workflows (`repokit-dmp`).
 
+GitHub repositories: [`repokit`](https://github.com/CBS-HPC/repokit), [`repokit-common`](https://github.com/CBS-HPC/repokit-common), [`repokit-backup`](https://github.com/CBS-HPC/repokit-backup), [`repokit-dmp`](https://github.com/CBS-HPC/repokit-dmp).
+
 > ℹ️ **Note**: The CLI tools are automatically installed as part of the project environment.  
 > You can also manually install or reinstall them using:  
 > `uv pip install repokit` or `pip install repokit`
@@ -692,7 +694,7 @@ repokit lint
 <details>
 <summary><strong>🧰 <code>repokit-backup</code></strong></summary>
 
-The backup CLI is exposed as the `repokit-backup` command via the Python package defined in `pyproject.toml`:
+The backup CLI is exposed as the [`repokit-backup`](https://github.com/CBS-HPC/repokit-backup) command via the Python package defined in `pyproject.toml`:
 
 ```toml
 [project.scripts]
@@ -1265,3 +1267,5 @@ For questions, suggestions, or bug reports:
 - Or contact: [kgp.lib@cbs.dk](mailto:kgp.lib@cbs.dk)
 
 ---
+
+
