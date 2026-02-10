@@ -374,11 +374,30 @@ The `repokit` Python package located in the `./setup` directory provides a colle
 
 Once installed, the following commands are available from the terminal:
 
-| Command                  | Description                                                                 |
-|--------------------------|-----------------------------------------------------------------------------|
-| `repokit`                | Core project automation: deps, readme, templates, examples, git config, CI, lint. |
-| `repokit-backup`         | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
-| `repokit-dmp`            | DMP tools: dataset registry, DMP update, editor UI, publish to Zenodo/Dataverse. |
+| Command | Description |
+|---------|-------------|
+| `repokit copy` | Copy/sync files based on project rules. |
+| `repokit deps` | Update dependency metadata and lockfiles. |
+| `repokit readme` | Regenerate `README.md`. |
+| `repokit templates` | Regenerate script templates. |
+| `repokit ex-code` | Generate code example scripts. |
+| `repokit tests` | Generate test examples. |
+| `repokit git` | Apply Git configuration helpers. |
+| `repokit ci` | Enable/disable CI configuration. |
+| `repokit lint` | Run language-aware linting. |
+| `repokit agent` | Scaffold agent files/skills. |
+| `repokit-backup add` | Configure a backup remote and mapping. |
+| `repokit-backup push` | Push/sync project data to remote storage. |
+| `repokit-backup pull` | Restore/sync from remote to local project. |
+| `repokit-backup diff` | Show remote/local diff report. |
+| `repokit-backup list` | List configured remotes/mappings. |
+| `repokit-backup delete` | Remove a configured remote mapping. |
+| `repokit-backup transfer` | Transfer data between two remotes. |
+| `repokit-backup types` | List supported remote types. |
+| `repokit-dmp dataset` | Initialize/update dataset metadata and structure links. |
+| `repokit-dmp update` | Create/update `dmp.json` from project metadata. |
+| `repokit-dmp editor` | Launch Streamlit editor for DMP + publishing helpers. |
+| `repokit-dmp dcas-migration` | Run DCAS migration/validation workflow. |
 
 
 #### 🛠️ Usage
