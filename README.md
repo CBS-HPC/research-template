@@ -597,7 +597,7 @@ repokit git
 repokit lint
 ```
 
-### Requirements
+### ??? Requirements
 - Python: `ruff`, `mypy`
 - R: `lintr` in your projectâ€™s `renv` (if used)
 - MATLAB: `matlab` CLI on `PATH`
