@@ -1,9 +1,0 @@
-[submodule "external/repokit-common"]
-	path = external/repokit-common
-	url = https://github.com/CBS-HPC/repokit-common.git
-[submodule "external/repokit-backup"]
-	path = external/repokit-backup
-	url = https://github.com/CBS-HPC/repokit-backup.git
-[submodule "external/repokit-dmp"]
-	path = external/repokit-dmp
-	url = https://github.com/CBS-HPC/repokit-dmp.git

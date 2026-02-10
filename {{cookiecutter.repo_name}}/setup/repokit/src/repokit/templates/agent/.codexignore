@@ -1,5 +1,0 @@
-# Exclude large and generated artifacts
-outputs/
-results/
-logs/
-.venv/
