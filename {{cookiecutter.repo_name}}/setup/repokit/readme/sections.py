@@ -79,24 +79,21 @@ def main_text(json_file, code_path):
     unit_tests_block = ""
     if _has_tests(PROJECT_ROOT) and unit_tests.strip():
         unit_tests_block = (
-            "<details>
-"
-            "<summary><strong>?? Unit Testing</strong></summary><br>
-
-"
+            "<details>\n\n"
+            "<summary><strong>?? Unit Testing</strong></summary><br>\n\n"
             + unit_tests
-            + "
-
-</details>
-"
+            + "\n\n</details>\n"
         )
 
     ci_block = ""
     if _has_ci(PROJECT_ROOT) and ci_section.strip():
         ci_block = (
-            "<details>
-"
-            "<summary><strong>?? Continuous Integration (CI)</strong></summary><br>
+            "<details>\n\n"
+            "<summary><strong>?? Continuous Integration (CI)</strong></summary><br>\n\n"
+            + ci_section
+            + "\n\n</details>\n"
+        )
+
 
 "
             + ci_section
