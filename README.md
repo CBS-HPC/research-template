@@ -1,4 +1,4 @@
-﻿?# 🧪 Research Template: Reproducible Workflows and Replication Packages
+# 🧪 Research Template: Reproducible Workflows and Replication Packages
 
 ![Repo size](https://img.shields.io/github/repo-size/CBS-HPC/research-template)
 ![Last commit](https://img.shields.io/github/last-commit/CBS-HPC/research-template)
@@ -6,8 +6,8 @@
 [![License: CC BY 4.0](https://img.shields.io/badge/license-CC--BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 ![Open issues](https://img.shields.io/github/issues/CBS-HPC/research-template)
 ![Pull requests](https://img.shields.io/github/issues-pr/CBS-HPC/research-template)
-![Windows](https://img.shields.io/badge/tested%20on-Windows-bluelogo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-bluelogo=linux&logoColor=white)
+![Windows](https://img.shields.io/badge/tested%20on-Windows-blue?logo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-blue?logo=linux&logoColor=white)
 
 Welcome! This project template is built to help **researchers** create well-organized, automated, and publication-ready workflows that align with **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
@@ -366,9 +366,7 @@ source deactivate.sh
 <details>
 <summary><strong>🔧 CLI Tools</strong></summary><br>
 
-The Repokit toolchain provides command-line tools for core automation (`repokit`) plus standalone backup (`repokit-backup`) and DMP workflows (`repokit-dmp`).
-
-GitHub repositories: [`repokit`](https://github.com/CBS-HPC/repokit), [`repokit-common`](https://github.com/CBS-HPC/repokit-common), [`repokit-backup`](https://github.com/CBS-HPC/repokit-backup), [`repokit-dmp`](https://github.com/CBS-HPC/repokit-dmp).
+The `repokit` Python package located in the `./setup` directory provides a collection of command-line tools to support project setup, dependency management, documentation, version control, and backup automation.
 
 > ℹ️ **Note**: The CLI tools are automatically installed as part of the project environment.  
 > You can also manually install or reinstall them using:  
@@ -382,6 +380,7 @@ Once installed, the following commands are available from the terminal:
 | `repokit-backup`         | Manages remote backup via `rclone` (add, push, pull, list, diff, delete).   |
 | `repokit-dmp`            | DMP tools: dataset registry, DMP update, editor UI, publish to Zenodo/Dataverse. |
 
+
 #### 🛠️ Usage
 
 After activating your environment (see [🚀 Project Activation](#-project-activation)), run any command directly:
@@ -392,429 +391,8 @@ repokit readme
 repokit-backup push --remote erda
 repokit-dmp editor
 ```
+For more detailed CLI documentation, see the README files in the repokit, repokit-backup, and repokit-dmp repositories.
 
-Below is a detailed description of each CLI command available in the project, including usage, behavior, and example output.
-
-### <a id="repokit-deps-update"></a>
-<details>
-<summary><strong>📦 <code>repokit deps-update</code></strong></summary>
-
-The `repokit deps-update` command scans your project for imported packages and updates your dependency files (`requirements.txt`, `environment.yml`, and `uv.lock`) accordingly. It supports **Python**, **R**, **MATLAB**, and **Stata**, using language-specific tooling to track packages across `./src/` (or `./R/`, `./stata/do/`).
-
-This command is useful for keeping your project environment reproducible and ensuring that all scripts and notebooks reference installable dependencies.
-
-#### 🔧 Usage
-
-```bash
-repokit deps-update
-```
-
-#### ✅ What it does:
-
-- 📄 Regenerates `requirements.txt` using `pip freeze`
-- 📦 Ensures missing packages are added to `uv.lock` (if used)
-- 🧪 Scans the `./src/` (or `./R/`, `./stata/do/`) directories for imports and writes dependency lists:
-  - `./src/dependencies.txt` (or `R/`, `stata/`)
-- 📑 Updates and tags `environment.yml` and `requirements.txt` with platform-specific selectors (via `platform_rules`)
-- 🧠 Runs `renv` for R, or language-specific setup scripts for MATLAB and Stata
-
-> 🛠 The command adapts to your selected programming language as defined in `.cookiecutter`  
-> 🔍 Paths and rules are derived from the `pyproject.toml` and `platform_rules.json` config
-
-#### Example output:
-
-```bash
-📄 requirements.txt has been created successfully.
-✅ Conda environment file created: environment.yml
-✅ requirements.txt updated with platform tags
-✅ Updated environment.yml with Conda-style platform tags
-```
----
-</details>
-
-### <a id="repokit-readme-update"></a>
-<details>
-<summary><strong>📝 <code>repokit readme-update</code></strong></summary>
-
-The `repokit readme-update` command regenerates your `README.md` with up-to-date project information, including:
-
-- ✅ Code metadata and environment details
-- 📁 Project folder structure as a tree diagram
-- 📦 Software dependencies (from `dependencies.txt`)
-- 📑 Auto-generated descriptions for core files and scripts
-
-This helps maintain a professional and standardized `README.md` that aligns with reproducibility and publication requirements (e.g., DCAS).
-
-#### 🔧 Usage
-
-```bash
-repokit readme-update
-```
-
-#### ✅ What it does:
-
-- Reads the selected programming language from `.cookiecutter`
-- Parses existing files and structure to infer documentation
-- Updates or inserts:
-  - Code dependency section (`code_dependencies` fenced block)
-  - File descriptions from `file_descriptions.json`
-  - Directory structure (`tree` block in README)
-- Regenerates the `README.md` with consistent formatting
-- Automatically creates `README.md` if it doesn’t exist
-
-> 🧠 File and folder annotations are pulled from `file_descriptions.json`  
-> 🗂️ Files ignored by `.treeignore` or `pyproject.toml → treeignore.patterns` are excluded from the directory tree
-
----
-</details>
-
-### <a id="repokit-examples-code"></a>
-<details>
-<summary><strong>💡 <code>repokit examples-code</code></strong></summary>
-
-The `repokit examples-code` command generates realistic starter scripts and notebooks for your selected programming language using predefined Jinja2 templates.
-
-This is useful for quickly bootstrapping a project with well-structured, language-appropriate examples for each analysis stage.
-
-#### 🔧 Usage
-
-```bash
-repokit examples-code
-```
-
-#### ✅ What it does:
-
-- Detects your project language from `.cookiecutter`
-- Renders realistic example scripts for:
-  - `s00_main.*` – pipeline entry point
-  - `s01_install_dependencies.*` – dependency setup
-  - `s02_utils.*` – helper functions
-  - `s03_data_collection.*` to `s06_visualization.*` – typical data workflow stages
-- Saves outputs in the appropriate `./src/`, `R/`, `stata/do/`, etc.
-- Calls:
-  - `get_dependencies` to update `dependencies.txt`
-  - `repokit readme-update` to regenerate project metadata
-
-> 🗂️ Script locations depend on your selected programming language  
-> ⚠️ Existing files will be **overwritten** if they share the same name
-
----
-</details>
-
-### <a id="repokit-templates-reset"></a>
-<details>
-<summary><strong>🧱 <code>repokit templates-reset</code></strong></summary>
-
-The `repokit templates-reset` command regenerates all core analysis and test scripts using predefined Jinja2 templates. It ensures a consistent structure and coding pattern across different scripting languages.
-
-This command is useful for initializing or resetting project scripts to their default structure.
-
-#### 🔧 Usage
-
-```bash
-repokit templates-reset
-```
-
-#### ✅ What it does:
-
-- Automatically detects your selected programming language from `.cookiecutter`
-- Regenerates standard source scripts:
-  - `s00_main.*` – orchestrates the pipeline
-  - `s01_install_dependencies.*` – handles package installation
-  - `s02_utils.*` – shared utilities
-  - `s03_data_collection.*` to `s06_visualization.*` – core analysis stages
-  - `get_dependencies.*` – collects project dependencies
-- Generates:
-  - `s00_workflow.*` – interactive notebook (.ipynb or .Rmd)
-  - `test_*.*` – unit test scaffolds for each script
-
-#### 📁 Output Paths
-
-- Scripts are placed in:
-  - `./src/`, `./R/`, `./stata/do/`, or equivalent source directory
-- Test templates are placed in:
-  - `./tests/`, `./tests/testthat/`, etc., depending on language
-
-> 🔄 Existing scripts with the same name may be overwritten!
-
----
-</details>
-
-### <a id="repokit-git"></a>
-<details>
-<summary><strong>🌐 <code>repokit git</code></strong></summary>
-
-The `repokit git` command sets up your version control system and configures a remote Git repository on **GitHub**, **GitLab**, or **Codeberg** based on environment settings.
-
-This command streamlines the process of remote repo creation, authentication, Git setup, and CI pipeline configuration.
-
-#### 🔧 Usage
-
-```bash
-repokit git
-```
-
-#### ✅ What it does:
-
-- Reads repository settings from `.cookiecutter` and environment variables:
-  - `REPO_NAME`, `CODE_REPO`, `VERSION_CONTROL`, `PROJECT_DESCRIPTION`
-- Configures Git remotes using platform APIs:
-  - [GitHub REST API](https://docs.github.com/en/rest)
-  - [GitLab API](https://docs.gitlab.com/ee/api/)
-  - [Codeberg API](https://docs.gitea.io/en-us/)
-- Authenticates using personal access tokens (`GITHUB_TOKEN`, `GITLAB_TOKEN`, etc.)
-- Initializes remote repositories and sets the correct `origin` URL
-- Pushes the local repo to the remote and sets the tracking branch
-- Automatically sets up CI configuration via `ci_config()`
-
-#### 🔐 Supports:
-
-- `GitHub` (requires `gh` CLI or PAT)
-- `GitLab` (installs and uses `glab` CLI or token)
-- `Codeberg` (via Gitea API + token)
-
-> 🧪 Remote login and repo creation are tested via platform-specific APIs  
-> 📁 Pushes both root repo and data repo (if applicable)  
-> 🧰 Can auto-install `gh` or `glab` if not found locally
-
----
-</details>
-
-### <a id="repokit-lint"></a>
-<details>
-<summary><strong>🧹 <code>repokit lint</code></strong></summary><br>
-
-`repokit lint` runs project linting in a **language-aware** way. It looks for scaffolded scripts and executes them **if present**:
-
-- **Python** → `src/linting.py` → **Ruff** (formatter + linter) and **Mypy** (type checker)
-- **R** → `R/linting.R` → **lintr::lint_dir()** (auto-activates `renv` if `R/renv/activate.R` exists)
-- **MATLAB** → `src/linting.m` → **checkcode** (static analysis)
-
-### Usage
-
-```bash
-# Run all present languages
-repokit lint
-```
-
-### ??? Requirements
-- Python: `ruff`, `mypy`
-- R: `lintr` in your project’s `renv` (if used)
-- MATLAB: `matlab` CLI on `PATH`
-
-> The Python and MATLAB scripts live under `src/`, the R script under `R/`.
-
-> CI YAML: implement a dedicated lint job/stage
-
----
-</details>
-
-### <a id="repokit-backup"></a>
-<details>
-<summary><strong>🧰 <code>repokit-backup</code></strong></summary>
-
-The backup CLI is exposed as the [`repokit-backup`](https://github.com/CBS-HPC/repokit-backup) command via the Python package defined in `pyproject.toml`:
-
-```toml
-[project.scripts]
-repokit-backup = "repokit_backup.cli:main"
-```
-
-Once your environment is activated (see [🚀 Project Activation](#-project-activation)), you can run the following commands from the terminal:
-
-**📌 Setup a Remote**
-```
-repokit-backup add --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**🚀 Push to Remote**
-```
-repokit-backup push --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-This command performs the following:
-- Commits and pushes the root Git project (if version control is enabled)
-- Commits and pushes the data/ Git repository
-- Syncs the project, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
-
-**📥 Pull Backup from Remote**
-```
-repokit-backup pull --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**📊 View Differences Before Sync**
-```
-repokit-backup diff --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**🧹 Remove Remote**
-```
-repokit-backup delete --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**📋 List Configured Remotes and Sync Status**
-```
-repokit-backup list
-```
-**📦 View Supported Remote Types**
-```
-repokit-backup types
-```
-
-📁 All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
-
----
-</details>
-
-### <a id="repokit-dmp-dataset"></a>
-<details>
-<summary><strong>🗃️ <code>repokit-dmp dataset</code></strong></summary>
-
-The `repokit-dmp dataset` command scans your `./data/` folder and registers each dataset into a structured metadata file (`dmp.json`). This helps track the location, structure, and reproducibility of datasets in your project.
-
-It also:
-- Removes entries from `dmp.json` if the target file or folder no longer exists.
-- Captures metadata such as file size, number of files, formats, and optional provenance info.
-- Updates the `README.md` and `DCAS template/dataset_list.md` with dataset tables.
-
-> 📁 This command is automatically run as part of the setup process but can be rerun manually to resync metadata.
-
-#### 🔧 Usage
-
-```bash
-repokit-dmp dataset
-```
-
-#### ✅ What it does:
-
-- Walks through subfolders in `./data/`
-- Registers or updates metadata for each dataset folder or file
-- Runs any defined data-generation commands (if present)
-- Extracts Git commit hashes for version tracking
-- Updates the dataset table in your `README.md`
-- Regenerates a DCAS-compatible dataset list (`dataset_list.md`)
-
-> 💡 Dataset metadata is stored in `dmp.json` using a normalized schema.  
-> 🔍 All dataset remapping logic happens inside the `repokit.rdm.dataset` module.
-
----
-</details>
-
-### <a id="repokit-dmp-update"></a>
-<details>
-<summary><strong>🔄 <code>repokit-dmp update</code></strong></summary><br>
-
-A **headless** command that (re)creates and normalizes your maDMP file **`dmp.json`** in the project root. It pulls sensible defaults from the maDMP schema, your project’s Cookiecutter metadata, and built-in templates, then writes a clean, consistently ordered file.
-
-#### 🧠 What it does
-- **Creates** `dmp.json` if missing, or **loads & updates** it if present.
-- **Sets/keeps the schema URL** (`dmp.schema`) to the exact GitHub “tree” URL for the detected version (1.0/1.1/1.2).  
-  If an existing value matches a known URL, that version is honored; otherwise defaults to **1.2**.
-- **Populates core fields** from Cookiecutter (`pyproject.toml` / `cookiecutter.json`) when available:  
-  `dmp.title`, `dmp.description`, `dmp.contact` (name, email, ORCID), and `project[0]` title/description.
-- **Affiliation inference** from Danish university email domains (CBS, KU, SDU, AU, DTU, AAU, RUC, ITU) with ROR IDs.
-- **Adds required fields from the JSON Schema** using schema-aware defaults (no hardcoded key lists).
-- **Seeds/normalizes datasets**: ensures `dataset[]` exists and each dataset has at least one `distribution[]`.
-- **Sets default license** in `distribution.license[].license_ref` from Cookiecutter `DATA_LICENSE` (e.g., CC-BY-4.0) with today’s `start_date`.
-- **Moves custom payloads** under `extension` (e.g., legacy `x_dcas` -> `extension[{ "repokit_info": {...} }]`) and seeds a minimal `repokit_info`.
-- **Reorders keys** to a canonical layout (root, dataset, distribution, and common nested objects).
-- **Timestamps**: updates `dmp.modified` to current UTC (RFC3339 with trailing `Z`). New files also set `dmp.created`.
-
-#### 🖥️ Usage
-```bash
-# Installed as a console script:
-repokit-dmp update
-```
-
-#### 📂 Reads (if present)
-- `./dmp.json` (existing DMP to update)
-- `pyproject.toml` and/or `cookiecutter.json` (project metadata & `DATA_LICENSE`)
-
-#### 📄 Output
-- Writes an ordered, normalized **`./dmp.json`**  
-- Prints: `DMP ensured at <abs path>/dmp.json using maDMP <version> schema (ordered).`
-
----
-</details>
-
-### <a id="repokit-dmp-editor"></a>
-<details>
-<summary><strong>✍️ <code>repokit-dmp editor</code></strong></summary><br>
-
-Interactive **Streamlit** editor for maDMPs with **per-dataset publish** buttons for **Zenodo** and **DeiC Dataverse**.
-
-#### ✨ Features
-- **Schema-aware forms** for Root, Projects, and Datasets (same defaults as `repokit-dmp update`).
-- In each dataset:
-  - `dataset_id` expanded inline for quick edits.
-  - Single `distribution` expanded inline (multi-distribution falls back to list UI).
-  - **Guardrails**:
-    - If `personal_data` or `sensitive_data` is **"yes"**, all `distribution[].data_access` are forced to **"closed"`.
-    - If access is **shared/closed**, CC license URLs are removed.
-    - If access is **open** and license is empty, **CC-BY-4.0** is added by default.
-- **Publish actions**: “Publish to Zenodo” / “Publish to DeiC Dataverse” per dataset.
-- **Tokens sidebar**: capture and persist `ZENODO_TOKEN` and `DATAVERSE_TOKEN` into `.env`.
-- **Load / Save / Download** with optional schema validation.
-
-#### 🖥️ Usage
-```bash
-# Default launch (Streamlit app)
-repokit-dmp editor
-
-# Headless helper for remote servers (prints SSH port-forward instructions)
-repokit-dmp editor ssh
-```
-
-#### 🔑 Tokens (for publishing)
-- **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
-- **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
-
----
-</details>
-
-### <a id="repokit-dmp-dcas-migration"></a>
-<details>
-<summary><strong>🚚 <code>repokit-dmp dcas-migration</code></strong></summary>
-
-**Purpose**  
-Create a DCAS-ready replication package under `./DCAS template/` by:
-- Downloading the Social Science Data Editors’ recommended README template.
-- Migrating datasets from your project into the DCAS folder (copying or zipping heavy datasets).
-- Mirroring key project artifacts (code, docs, results, locks, `dmp.json`) into the package.
-- Updating `dmp.json` (or compatible dataset spec) with a `zip_file` path when a dataset is zipped.
-
-**What it operates on**  
-- A dataset specification JSON (default: `./dmp.json`) that contains a top-level array `datasets` with entries like:
-  ```json
-  {
-    "datasets": [
-      {
-        "data_name": "Example dataset",
-        "destination": "./data/02_processed/example_dataset",   // path (relative to project root) to copy/migrate
-        "number_of_files": 245                                   // used to decide zip vs. copy
-      }
-    ]
-  }
-  ```
-  - `destination` → source-relative path of the dataset to migrate (file or folder).  
-  - `number_of_files` → if greater than `--zip-threshold`, the folder is zipped and stored in the destination’s parent.
-
-**Default behavior**  
-Running the tool with defaults will:
-1) Fetch the DCAS README template to `./DCAS template/README_template.md` (if not already present).  
-2) For each dataset in `datasets`:
-   - If `number_of_files` > `zip-threshold` (default 1000) and source is a **directory**: create `<name>.zip` in the destination’s parent and set `zip_file` in the JSON to the zip’s relative path.
-   - Otherwise, copy the file/folder “as is” into `./DCAS template/…`.
-3) Copy typical project artifacts into `./DCAS template/`:
-   - `README.md`, code folder (based on selected programming language), `docs/`, `results/`, `uv.lock`, `environment.yml`, `requirements.txt`, and `dmp.json`.
-4) Update and write back the dataset specification JSON with any new `zip_file` fields.
-
-**CLI usage** (wrapper provided by this template)
-```bash
-repokit-dmp dcas-migration 
-```
-
-**Notes**
-- The tool also mirrors key project artifacts to the DCAS package, including your language-specific source tree (Python `./src/`, R `./R/`, Stata `./stata/do/`, MATLAB `./src/`), depending on the project’s configured primary language.
-- The README template is pulled from the Social Science Data Editors repository and saved as `README_template.md` so you can incorporate or adapt it when finalizing your DCAS package.
-
----
-</details>
 </details>
 
 ### <a id="config-files"></a>
@@ -861,6 +439,7 @@ Script generation is **language-agnostic**: based on your selected language, the
 - `.R` (scripts) and `.Rmd` (notebooks) for R
 - `.m`(scripts) and `.mlx` (notebooks) for Matlab 
 - `.do` (scripts) and `.ipynb` (notebooks) for Stata
+
 
 These starter scripts are placed in the `./src/` directory and include:
 
@@ -933,6 +512,15 @@ This template uses a modular folder layout that promotes transparency, reproduci
 ├── docs/                    # Documentation, reports, or rendered output
 ├── results/
 │   └── figures/             # Visual outputs (charts, plots, etc.)
+```
+
+#### 🔧 Setup & Configuration
+
+```
+├── setup/
+│   ├── pyproject.toml       # CLI tool registration and config
+│   ├── dependencies.txt     # Setup-specific Python dependencies
+│   └── repokit/               # Utility scripts for setup and automation
 ```
 
 #### 🧬 Source Code
@@ -1023,4 +611,3 @@ For questions, suggestions, or bug reports:
 - Or contact: [kgp.lib@cbs.dk](mailto:kgp.lib@cbs.dk)
 
 ---
-
