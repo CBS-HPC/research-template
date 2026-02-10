@@ -1,0 +1,13 @@
+source("s02_utils.R")
+
+paths <- get_paths()
+
+s05_modeling <- function() {
+  ensure_dir(paths$processed)
+  data <- load_rds(file.path(paths$interim, "penguins_clean.rds"))
+
+  model <- lm(body_mass_g ~ flipper_length_mm + bill_length_mm, data = data)
+  save_rds(model, file.path(paths$processed, "penguins_model.rds"))
+
+  cat("Model training complete.\n")
+}

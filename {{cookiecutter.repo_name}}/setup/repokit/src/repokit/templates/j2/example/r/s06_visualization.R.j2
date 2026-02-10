@@ -1,0 +1,20 @@
+library(ggplot2)
+source("s02_utils.R")
+
+paths <- get_paths()
+
+s06_visualization <- function() {
+  ensure_dir(paths$figures)
+  data <- load_rds(file.path(paths$interim, "penguins_clean.rds"))
+  model <- load_rds(file.path(paths$processed, "penguins_model.rds"))
+
+  predictions <- predict(model, newdata = data)
+
+  ggplot(data, aes(x = flipper_length_mm, y = body_mass_g)) +
+    geom_point() +
+    geom_line(aes(y = predictions), color = "blue") +
+    ggtitle("Predicted vs Actual Body Mass") +
+    ggsave(file.path(paths$figures, "penguins_regression.png"))
+
+  cat("Visualization complete.\n")
+}

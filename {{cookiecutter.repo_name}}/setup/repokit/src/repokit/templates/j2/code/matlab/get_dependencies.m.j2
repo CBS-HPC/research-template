@@ -1,0 +1,115 @@
+{% raw %}
+function requiredToolboxes = get_dependencies(folder_path, file_name)
+% GET_DEPENDENCIES
+% Scans a MATLAB project directory for .m and .mlx files, determines toolbox dependencies,
+% and writes them to a file (default: "dependencies.txt").
+% Also converts s00_main.m to s00_workflow.mlx if needed and desktop is available.
+%
+% Usage:
+%   get_dependencies()
+%   get_dependencies(folder_path)
+%   get_dependencies(folder_path, file_name)
+
+    % -------- Default inputs --------
+    if nargin < 1
+        folder_path = mfilename('fullpath');
+    end
+    if nargin < 2
+        file_name = "dependencies.txt";
+    end
+
+    folder_path = fileparts(folder_path);
+
+    % -------- Convert s00_main.m to s00_workflow.mlx if needed --------
+    mainScriptM = char(fullfile(folder_path, "s00_main.m"));
+    workflowMlx = char(fullfile(folder_path, "s00_workflow.mlx"));
+
+    fprintf("Checking workflow conversion:\n");
+    fprintf("  s00_main.m exists: %d\n", isfile(mainScriptM));
+    fprintf("  s00_workflow.mlx exists: %d\n", isfile(workflowMlx));
+
+    if ~isfile(workflowMlx) && isfile(mainScriptM)
+        if usejava('desktop')
+            fprintf("Creating s00_workflow.mlx from s00_main.m ...\n");
+            try
+                doc = matlab.desktop.editor.openDocument(mainScriptM);
+                doc.saveAs(workflowMlx);
+                doc.close;
+                fprintf("s00_workflow.mlx successfully created.\n");
+            catch ME
+                warning("Failed to convert s00_main.m to .mlx: %s", ME.message);
+            end
+        else
+            warning("MATLAB desktop is not available. Skipping .mlx conversion.");
+        end
+    else
+        fprintf("Skipping conversion.\n");
+    end
+
+    % -------- Scan for .m and .mlx files --------
+    depFile = fullfile(folder_path, file_name);
+
+    mFiles = dir(fullfile(folder_path, '**', '*.m'));
+    mlxFiles = dir(fullfile(folder_path, '**', '*.mlx'));
+    allCodeFiles = [mFiles; mlxFiles];
+
+    allFiles = {};
+    allProducts = [];
+    fileReports = cell(size(allCodeFiles));
+
+    for i = 1:length(allCodeFiles)
+        filePath = fullfile(allCodeFiles(i).folder, allCodeFiles(i).name);
+        try
+            fprintf("Analyzing dependencies for: %s\n", filePath);
+            [files, products] = matlab.codetools.requiredFilesAndProducts(filePath);
+
+            allFiles = [allFiles, files];
+            allProducts = [allProducts, products];
+            fileReports{i} = struct('path', filePath, 'status', 'OK', 'message', '');
+        catch ME
+            fprintf("Skipping due to syntax error: %s\n", filePath);
+            fprintf("%s\n", ME.message);
+            fileReports{i} = struct('path', filePath, 'status', 'ERROR', 'message', ME.message);
+        end
+    end
+
+    % -------- Collect unique products --------
+    productNames = string({allProducts.Name});
+    productVersions = string({allProducts.Version});
+    [~, ia] = unique(productNames);
+    uniqueProducts = containers.Map(productNames(ia), productVersions(ia));
+    requiredToolboxes = cellstr(productNames(ia));  % returned value
+
+    % -------- Write to dependencies.txt --------
+    fid = fopen(depFile, 'w');
+    if fid == -1
+        error("Unable to create %s in the specified folder.", file_name);
+    end
+
+    fprintf(fid, "Software version:\n");
+    fprintf(fid, "MATLAB version: %s\n\n", version);
+    fprintf(fid, "Timestamp: %s\n\n", datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+
+    fprintf(fid, "Files checked:\n");
+    for i = 1:length(fileReports)
+        relPath = erase(fileReports{i}.path, folder_path);
+        relPath = strrep(relPath, filesep, '/');
+        relPath = regexprep(relPath, '^/', '');
+        if strcmp(fileReports{i}.status, 'OK')
+            fprintf(fid, "%s\n", relPath);
+        else
+            fprintf(fid, "%s ERROR:\n %s\n", relPath, fileReports{i}.message);
+        end
+    end
+    fprintf(fid, "\n");
+
+    fprintf(fid, "Dependencies:\n");
+    productKeys = keys(uniqueProducts);
+    for i = 1:length(productKeys)
+        fprintf(fid, "%s==%s\n", productKeys{i}, uniqueProducts(productKeys{i}));
+    end
+
+    fclose(fid);
+    fprintf("%s successfully written in %s\n", file_name, depFile);
+end
+{% endraw %}

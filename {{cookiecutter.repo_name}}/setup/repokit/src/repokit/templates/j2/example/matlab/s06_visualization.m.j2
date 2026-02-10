@@ -1,0 +1,20 @@
+function s06_visualization()
+    paths = get_paths();
+    ensureDir(paths.figures);
+
+    data = loadData(fullfile(paths.interim, 'iris_clean.mat'));
+    load(fullfile(paths.processed, 'model.mat'))
+
+    X = data{:,1:4};
+    y = strcmp(data.Species, 'versicolor');
+    prob = predict(model, X);
+
+    figure;
+    scatter(prob, y, 'filled');
+    xlabel('Predicted Probability');
+    ylabel('True Label');
+    title('Logistic Regression Output');
+    saveas(gcf, fullfile(paths.figures, 'classification_results.png'));
+
+    disp('Visualization complete.');
+end

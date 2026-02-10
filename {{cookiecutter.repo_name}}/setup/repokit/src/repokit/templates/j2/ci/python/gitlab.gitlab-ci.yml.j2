@@ -1,0 +1,10 @@
+{% raw %}
+image: python:{{ version }}
+stages:
+  - test
+run-tests:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - pytest
+{% endraw %}

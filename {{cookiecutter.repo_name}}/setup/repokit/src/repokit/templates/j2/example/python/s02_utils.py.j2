@@ -1,0 +1,37 @@
+import os
+import pickle
+
+def get_paths():
+    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return {
+        "base": base_path,
+        "raw": os.path.join(base_path, "data", "00_raw"),
+        "interim": os.path.join(base_path, "data", "01_interim"),
+        "processed": os.path.join(base_path, "data", "02_processed"),
+        "figures": os.path.join(base_path, "results", "figures")
+    }
+
+def ensure_dir_exists(path):
+    """Create directory if it doesn't exist."""
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+def save_pickle(obj, path):
+    """Save Python object to a .pkl file."""
+    with open(path, 'wb') as f:
+        pickle.dump(obj, f)
+
+def load_pickle(path):
+    """Load Python object from a .pkl file."""
+    with open(path, 'rb') as f:
+        return pickle.load(f)
+
+def compute_mean(values):
+    """Compute mean of a list of numeric values."""
+    return sum(values) / len(values) if values else 0
+
+def z_score(values):
+    """Compute z-scores for a list of values."""
+    mean = compute_mean(values)
+    std = (sum([(x - mean) ** 2 for x in values]) / len(values)) ** 0.5
+    return [(x - mean) / std for x in values] if std != 0 else [0 for _ in values]

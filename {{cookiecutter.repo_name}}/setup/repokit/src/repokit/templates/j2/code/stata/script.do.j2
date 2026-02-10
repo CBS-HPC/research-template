@@ -1,0 +1,12 @@
+{% raw %}
+* {{ purpose }} code
+
+do s02_utils.do
+get_paths
+
+program define {{ script_name }}
+    display "Running {{ script_name }}..."
+end
+
+main
+{% endraw %}

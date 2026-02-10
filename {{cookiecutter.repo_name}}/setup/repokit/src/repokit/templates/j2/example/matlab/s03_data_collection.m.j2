@@ -1,0 +1,12 @@
+function s03_data_collection()
+    paths = get_paths();
+    ensureDir(paths.raw);
+
+    load fisheriris
+    data = array2table(meas, 'VariableNames', ...
+        {'SepalLength','SepalWidth','PetalLength','PetalWidth'});
+    data.Species = species;
+
+    saveData(fullfile(paths.raw, 'iris_raw.mat'), data);
+    disp('Data collection complete.');
+end

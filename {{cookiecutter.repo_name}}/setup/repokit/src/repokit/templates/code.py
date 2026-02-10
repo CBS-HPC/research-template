@@ -1,0 +1,131 @@
+import os
+
+from repokit_common import (
+    PROJECT_ROOT,
+    ensure_correct_kernel,
+    ext_map,
+    language_dirs,
+    load_from_env,
+)
+from .jinja import set_jinja_templates, write_script
+
+template_env = set_jinja_templates("j2/code")
+
+
+def create_script_from_template(
+    programming_language, folder_path, template_name, script_name, context, subdir=None
+):
+    template = template_env.get_template(f"{programming_language}/{template_name}")
+    rendered = template.render(**context)
+    extension = template_name.split(".")[-2]
+    if subdir:
+        folder_path = os.path.join(folder_path, subdir)
+    write_script(folder_path, script_name, extension, rendered)
+
+
+def create_scripts(programming_language):
+    programming_language = programming_language.lower()
+    folder_path = language_dirs.get(programming_language)
+    ext = ext_map.get(programming_language)
+
+    if ext is None:
+        raise ValueError(f"Unsupported language: {programming_language}")
+
+    scripts = {
+        "s00_main": "",
+        "s01_install_dependencies": "Helper to install dependencies",
+        "s02_utils": "Helper functions or utilities",
+        "s03_data_collection": "Data extraction/scraping",
+        "s04_preprocessing": "Data cleaning, transformation, feature engineering",
+        "s05_modeling": "Training and evaluation of models",
+        "s06_visualization": "Functions for plots and visualizations",
+        "get_dependencies": "",
+    }
+
+    if programming_language in ("python", "r", "matlab"):
+        scripts["linting"] = ("Linting script to check code quality",)
+
+    for script_name, purpose in scripts.items():
+        if script_name == "s00_main":
+            create_script_from_template(
+                programming_language,
+                folder_path,
+                f"main.{ext}.j2",
+                script_name,
+                {"script_name": script_name},
+            )
+
+        elif script_name == "get_dependencies":
+            create_script_from_template(
+                programming_language,
+                folder_path,
+                f"get_dependencies.{ext}.j2",
+                script_name,
+                {"script_name": script_name},
+            )
+
+        elif script_name == "linting":
+            create_script_from_template(
+                programming_language,
+                folder_path,
+                f"linting.{ext}.j2",
+                script_name,
+                {"script_name": script_name},
+            )
+        elif script_name == "s01_install_dependencies":
+            create_script_from_template(
+                programming_language,
+                folder_path,
+                f"s01_install_dependencies.{ext}.j2",
+                script_name,
+                {"script_name": script_name},
+            )
+        elif script_name == "s02_utils":
+            create_script_from_template(
+                programming_language,
+                folder_path,
+                f"s02_utils.{ext}.j2",
+                script_name,
+                {"script_name": script_name},
+            )
+        else:
+            create_script_from_template(
+                programming_language,
+                folder_path,
+                f"script.{ext}.j2",
+                script_name,
+                {"script_name": script_name, "purpose": purpose},
+            )
+
+    notebook_templates = {
+        "python": "s00_workflow.ipynb.j2",
+        "r": "s00_workflow.Rmd.j2",
+        "matlab": "s00_workflow.ipynb.j2",
+        # "matlab": "s00_workflow.mlx.j2",
+        "stata": "s00_workflow.ipynb.j2",
+        "sas": "s00_workflow.ipynb.j2",
+    }
+
+    # Note books
+    nb_template = notebook_templates.get(programming_language)
+    if nb_template:
+        create_script_from_template(
+            programming_language,
+            folder_path,
+            nb_template,
+            "s00_workflow",
+            {"script_name": "s00_workflow"},
+        )
+
+
+@ensure_correct_kernel
+def main():
+    # Ensure the working directory is the project root
+    os.chdir(PROJECT_ROOT)
+
+    # Create scripts and notebook
+    create_scripts(load_from_env("PROGRAMMING_LANGUAGE", ".cookiecutter"))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,21 @@
+{% raw %}
+# {{ purpose }} code
+
+import os
+import sys
+
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+setup_path = os.path.join(base_path, "setup")
+sys.path.append(setup_path)
+
+from s02_utils import get_paths  # includes
+
+paths = get_paths()
+
+def main():
+    # {{ purpose }} code
+    print("Running {{ script_name }}...")
+
+if __name__ == "__main__":
+    main()
+{% endraw %}

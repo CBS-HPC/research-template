@@ -1,0 +1,27 @@
+{% raw %}
+* Main: Running all steps in order
+
+* Install dependencies
+do "s01_install_dependencies.do"
+
+* Load utility functions (not executed directly)
+do "s02_utils.do"
+
+* Load Scripts
+do "s03_data_collection.do"
+do "s04_preprocessing.do"
+do "s05_modeling.do"
+do "s06_visualization.do"
+
+* Run data collection
+s03_data_collection
+
+* Run preprocessing
+s04_preprocessing
+
+* Run modeling
+s05_modeling
+
+* Run visualization
+s06_visualization
+{% endraw %}

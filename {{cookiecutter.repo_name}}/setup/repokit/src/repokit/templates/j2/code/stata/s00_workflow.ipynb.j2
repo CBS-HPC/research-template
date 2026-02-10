@@ -1,0 +1,81 @@
+{% raw %}
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "source": ["# Workflow: Running All Steps in Order (Stata)"]
+  },
+  {
+   "cell_type": "markdown",
+   "source": ["### Stata Setup"]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import stata_setup\n",
+    "stata_setup.config('/work/stata17', 'se')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "source": ["### Run Data Collection"]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "%%stata\n",
+    "do s03_data_collection.do\n",
+    "data_collection"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "source": ["### Run Preprocessing"]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "%%stata\n",
+    "do s04_preprocessing.do\n",
+    "preprocessing"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "source": ["### Run Modeling"]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "%%stata\n",
+    "do s05_modeling.do\n",
+    "modeling"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "source": ["### Run Visualization"]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "%%stata\n",
+    "do s06_visualization.do\n",
+    "visualization"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Stata",
+   "language": "stata",
+   "name": "stata"
+  },
+  "language_info": {
+   "name": "stata"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+{% endraw %}

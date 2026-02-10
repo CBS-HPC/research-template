@@ -1,0 +1,12 @@
+function s05_modeling()
+    paths = get_paths();
+    ensureDir(paths.processed);
+
+    data = loadData(fullfile(paths.interim, 'iris_clean.mat'));
+    X = data{:,1:4};
+    y = strcmp(data.Species, 'versicolor');
+
+    model = fitglm(X, y, 'Distribution', 'binomial');
+    save(fullfile(paths.processed, 'model.mat'), 'model');
+    disp('Modeling complete.');
+end

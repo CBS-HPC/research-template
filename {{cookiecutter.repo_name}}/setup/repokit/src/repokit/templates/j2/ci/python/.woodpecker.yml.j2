@@ -1,0 +1,8 @@
+{% raw %}
+pipeline:
+  test:
+    image: python:{{ version }}
+    commands:
+      - pip install -r requirements.txt
+      - pytest
+{% endraw %}

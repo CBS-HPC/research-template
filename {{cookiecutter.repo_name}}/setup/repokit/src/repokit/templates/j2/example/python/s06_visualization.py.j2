@@ -1,0 +1,28 @@
+from s02_utils import load_pickle, ensure_dir_exists, get_paths
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import os
+
+def visualize():
+    paths = get_paths()
+    ensure_dir_exists(paths["figures"])
+
+    data = load_pickle(os.path.join(paths["interim"], "iris_interim.pkl"))
+    model = load_pickle(os.path.join(paths["processed"], "iris_model.pkl"))
+
+    X_pca = PCA(n_components=2).fit_transform(data['X'])
+    y = data['y']
+
+    plt.figure()
+    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap='viridis')
+    plt.legend(*scatter.legend_elements(), title="Classes")
+    plt.title("Iris dataset PCA Projection")
+    plt.savefig(os.path.join(paths["figures"], "iris_pca_projection.png"))
+    plt.close()
+
+def main():
+    print("Visualizing Iris data...")
+    visualize()
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,25 @@
+base_path <- normalizePath(file.path(dirname(sys.frame(1)$ofile), ".."))
+interim_data <- file.path(base_path, "data", "01_interim")
+processed_data <- file.path(base_path, "data", "02_processed")
+figures_path <- file.path(base_path, "results", "figures")
+
+library(ggplot2)
+
+visualize_model <- function(data, model) {
+data <- data %>% mutate(predicted = predict(model, newdata = data))
+plot <- ggplot(data, aes(x = mpg, y = predicted)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    labs(title = "Actual vs Predicted MPG")
+if (!dir.exists(figures_path)) dir.create(figures_path, recursive = TRUE)
+ggsave(file.path(figures_path, "actual_vs_predicted_mpg.png"), plot)
+}
+
+main <- function() {
+print("Running visualization...")
+data <- readRDS(file.path(interim_data, "mtcars_interim.rds"))
+model <- readRDS(file.path(processed_data, "mtcars_model.rds"))
+visualize_model(data, model)
+}
+
+main()  

@@ -1,0 +1,39 @@
+{% raw %}
+# Main: Running all steps in order
+
+import os
+import sys
+
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+code_path = os.path.join(base_path, "src")
+sys.path.append(code_path)
+
+def main():
+    # Install dependencies
+    import s01_install_dependencies
+    s01_install_dependencies.main()
+
+    # Load utility functions (not executed directly)
+    import s02_utils  # <- provides helper functions
+
+    # Load main workflow scripts
+    import s03_data_collection
+    import s04_preprocessing
+    import s05_modeling
+    import s06_visualization
+
+    # Run data collection
+    s03_data_collection.main()
+
+    # Run preprocessing
+    s04_preprocessing.main()
+
+    # Run modeling
+    s05_modeling.main()
+
+    # Run visualization
+    s06_visualization.main()
+
+if __name__ == "__main__":
+    main()
+{% endraw %}

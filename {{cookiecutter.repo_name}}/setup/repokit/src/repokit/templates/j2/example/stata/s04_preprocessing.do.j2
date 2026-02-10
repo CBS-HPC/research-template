@@ -1,0 +1,13 @@
+* s04_preprocessing.do
+
+program define s04_preprocessing
+    ensure_dir "$interim_data"
+
+    use "$raw_data/mtcars_raw.dta", clear
+
+    summarize mpg
+    gen mpg_z = (mpg - r(mean)) / r(sd)
+
+    save "$interim_data/mtcars_interim.dta", replace
+    display "Preprocessing complete."
+end

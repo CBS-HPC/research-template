@@ -1,0 +1,24 @@
+from s02_utils import load_pickle, save_pickle, ensure_dir_exists, get_paths
+from sklearn.preprocessing import StandardScaler
+import os
+
+def preprocess_data():
+    paths = get_paths()
+    ensure_dir_exists(paths["interim"])
+
+    iris = load_pickle(os.path.join(paths["raw"], "iris_raw.pkl"))
+    df = iris['frame']
+    X = df[iris['feature_names']]
+    y = df["target"]
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    save_pickle({'X': X_scaled, 'y': y, 'scaler': scaler},
+                os.path.join(paths["interim"], "iris_interim.pkl"))
+
+def main():
+    print("Preprocessing Iris data...")
+    preprocess_data()
+
+if __name__ == "__main__":
+    main()

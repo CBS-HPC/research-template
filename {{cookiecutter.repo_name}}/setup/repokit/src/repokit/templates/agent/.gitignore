@@ -1,0 +1,17 @@
+# Environments
+.venv/
+.env
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Data and outputs
+outputs/
+results/
+logs/
+
+# Local scratch
+SCRATCHPAD.local.md

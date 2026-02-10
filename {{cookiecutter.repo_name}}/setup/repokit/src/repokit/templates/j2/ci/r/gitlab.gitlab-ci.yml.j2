@@ -1,0 +1,18 @@
+{% raw %}\
+image: rocker/r-ver:{{ version }}
+
+stages:
+  - test
+
+run-tests:
+  stage: test
+  script:
+    - Rscript -e 'install.packages("renv")'
+    - |
+      if [ -f "R/renv.lock" ]; then
+        Rscript -e 'renv::restore(project = "R")'
+      else
+        Rscript -e 'install.packages("testthat")'
+      fi
+    - Rscript -e 'testthat::test_dir("tests/testthat")'
+{% endraw %}
