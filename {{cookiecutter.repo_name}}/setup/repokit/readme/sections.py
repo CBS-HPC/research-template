@@ -76,6 +76,36 @@ def main_text(json_file, code_path):
     ci_section = _set_ci(programming_language, code_repo)
     unit_tests = set_unit_tests(programming_language)
 
+    unit_tests_block = ""
+    if _has_tests(PROJECT_ROOT) and unit_tests.strip():
+        unit_tests_block = (
+            "<details>
+"
+            "<summary><strong>?? Unit Testing</strong></summary><br>
+
+"
+            + unit_tests
+            + "
+
+</details>
+"
+        )
+
+    ci_block = ""
+    if _has_ci(PROJECT_ROOT) and ci_section.strip():
+        ci_block = (
+            "<details>
+"
+            "<summary><strong>?? Continuous Integration (CI)</strong></summary><br>
+
+"
+            + ci_section
+            + "
+
+</details>
+"
+        )
+
     dataset_section = set_dataset()
 
     if programming_language.lower() != "python":
@@ -136,19 +166,9 @@ To execute the full workflow pipeline, run the main orchestration script from th
 </details>
 </details>
 
-<details>
-<summary><strong>🧪 Unit Testing</strong></summary><br>
+{unit_tests_block}
 
-{unit_tests}
-
-</details>
-
-<details>
-<summary><strong>⚙️ Continuous Integration (CI)</strong></summary><br>
-
-{ci_section}
-
-</details>
+{ci_block}
 
 <details>
 <summary><strong>🗂️ Configuration Files (Root-Level)</strong></summary><br>
@@ -567,6 +587,20 @@ def set_config_table(programming_language, project_root="."):
 
     return base_config
 
+
+
+
+def _has_tests(root):
+    return (root / "tests").exists() or (root / "test").exists()
+
+
+def _has_ci(root):
+    return (
+        (root / ".github" / "workflows").exists()
+        or (root / ".gitlab-ci.yml").exists()
+        or (root / ".woodpecker.yml").exists()
+        or (root / ".woodpecker").exists()
+    )
 
 def _set_cli():
     cli_section = """
