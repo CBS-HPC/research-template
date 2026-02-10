@@ -1,4 +1,4 @@
-﻿# ðŸ§ª Research Template: Reproducible Workflows and Replication Packages
+# ðŸ§ª Research Template: Reproducible Workflows and Replication Packages
 
 ![Repo size](https://img.shields.io/github/repo-size/CBS-HPC/research-template)
 ![Last commit](https://img.shields.io/github/last-commit/CBS-HPC/research-template)
@@ -6,8 +6,8 @@
 [![License: CC BY 4.0](https://img.shields.io/badge/license-CC--BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 ![Open issues](https://img.shields.io/github/issues/CBS-HPC/research-template)
 ![Pull requests](https://img.shields.io/github/issues-pr/CBS-HPC/research-template)
-![Windows](https://img.shields.io/badge/tested%20on-Windows-blue?logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-blue?logo=linux&logoColor=white)
+![Windows](https://img.shields.io/badge/tested%20on-Windows-bluelogo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/tested%20on-Bash%20(Ubuntu)-bluelogo=linux&logoColor=white)
 
 Welcome! This project template is built to help **researchers** create well-organized, automated, and publication-ready workflows that align with **Open Science** and **FAIR** data practices (Findable, Accessible, Interoperable, and Reusable).
 
@@ -580,51 +580,6 @@ repokit git
 ---
 </details>
 
-### <a id="repokit-ci"></a>
-<details>
-<summary><strong>âš™ï¸ <code>repokit ci</code></strong></summary>
-
-The `repokit ci` command lets you enable or disable Continuous Integration (CI) for your project, and generates default CI configurations for your selected language and Git platform (GitHub, GitLab, or Codeberg).
-
-This tool is helpful for bootstrapping or adjusting your CI setup without manually editing `.yml` files.
-
-#### ðŸ”§ Usage
-
-```bash
-repokit ci --on     # Enable CI
-repokit ci --off    # Disable CI
-```
-
-> You must specify one flag: `--on` or `--off`.  
-> This command is safe to run multiple times and won't overwrite existing CI files.
-
-#### âœ… What it does:
-
-- Automatically generates CI config based on:
-  - Programming language (from `.cookiecutter`)
-  - Git hosting service (`CODE_REPO`)
-- Supports:
-  - `.github/workflows/ci.yml` for GitHub
-  - `.gitlab-ci.yml` for GitLab
-  - `.woodpecker.yml` for Codeberg
-- Adds a `git commit-skip` alias for bypassing CI on minor commits:
-  ```bash
-  git commit-skip "Update docs"
-  ```
-- Enables/disables CI by renaming files:
-  - `ci.yml.disabled â†” ci.yml`  
-  - `.gitlab-ci.yml.disabled â†” .gitlab-ci.yml`  
-  - `.woodpecker.yml.disabled â†” .woodpecker.yml`
-
-#### ðŸ“ Notes
-
-- Will auto-install CI templates from `./repokit/temples/j2/ci/`  
-- Only runs if a valid `CODE_REPO` is set  
-- CI files can be removed manually using `remove_ci_configs()` in code
-
----
-</details>
-
 ### <a id="repokit-lint"></a>
 <details>
 <summary><strong>ðŸ§¹ <code>repokit lint</code></strong></summary><br>
@@ -740,8 +695,6 @@ repokit-dmp dataset
 ---
 </details>
 
-
-
 ### <a id="repokit-dmp-update"></a>
 <details>
 <summary><strong>ðŸ”„ <code>repokit-dmp update</code></strong></summary><br>
@@ -810,7 +763,6 @@ repokit-dmp editor ssh
 #### ðŸ”‘ Tokens (for publishing)
 - **Zenodo** (Sandbox): set `ZENODO_TOKEN`.
 - **DeiC Dataverse**: set `DATAVERSE_TOKEN`.
-
 
 ---
 </details>
@@ -910,7 +862,6 @@ Script generation is **language-agnostic**: based on your selected language, the
 - `.m`(scripts) and `.mlx` (notebooks) for Matlab 
 - `.do` (scripts) and `.ipynb` (notebooks) for Stata
 
-
 These starter scripts are placed in the `./src/` directory and include:
 
 ```
@@ -934,192 +885,6 @@ Each script is structured to:
 - Support reproducible workflows by default
 
 > ðŸ§© Scripts are designed to be flexible and modular: you can run them individually, chain them in `main.*`, or explore them interactively using Jupyter or RMarkdown.
-
----
-</details>
-
-### <a id="unit-testing"></a>
-<details>
-<summary><strong>ðŸ§ª Unit Testing</strong></summary><br>
-
-Unit tests play a critical role in **ensuring the reliability and reproducibility** of your research code. This template provides built-in testing support for **Python**, **R**, **MATLAB**, and **Stata** to help you catch errors early and build trust in your results.
-
-It supports both:
-
-- **Traditional unit testing** â€“ write tests to validate existing code
-- **Test-Driven Development (TDD)** â€“ write tests before code to guide design
-
-> ðŸ§ª Test scaffolding is automatically generated for each core analysis script (e.g., `s00_main`, `s04_preprocessing`), making it easy to integrate testing from day one.
-
----
-
-### ðŸ“ File Structure & Test Execution
-
-During setup, a dedicated `tests/` folder is created. Matching test files are generated for each language and script:
-
-| Language | Test Framework     | Code Folder     | Test Folder         | File Format     | Run Command                                                   |
-|----------|--------------------|------------------|----------------------|------------------|----------------------------------------------------------------|
-| Python   | `pytest`           | `src/`           | `tests/`             | `test_*.py`      | `pytest`                                                       |
-| R        | `testthat`         | `R/`             | `tests/testthat/`    | `test-*.R`       | `testthat::test_dir("tests/testthat")`<br>`Rscript -e '...'`   |
-| MATLAB   | `matlab.unittest`  | `src/`           | `tests/`             | `test_*.m`       | `runtests('tests')`<br>`matlab -batch "..."`                   |
-| Stata    | `.do` script-based | `stata/do/`      | `tests/`             | `test_*.do`      | `do tests/test_s00_main.do`<br>`stata -b do tests/...`         |
-
-ðŸ“„ Example (Python):
-
-```
-# Matching tests
-src/s00_main.py
-tests/test_s00_main.py
-
-# Run Tests
-pytest
-```
-
-ðŸ’¡ See the [CI section](#-continuous-integration-ci) for more on automated test execution.
-
----
-
-### âœ… Best Practices
-
-- **Test core logic and workflows** â€“ e.g., cleaning, transformation, modeling functions  
-- **Cover edge cases** â€“ missing data, invalid inputs, unexpected file formats  
-- **Write independent tests** â€“ avoid shared state between tests  
-- **Use language-specific assertions:**
-  - Python: `assert`
-  - R: `expect_equal()`, `expect_error()`
-  - MATLAB: `verifyEqual()`, `verifyTrue()`
-  - Stata: `assert`
-
-ðŸ§© Match test names to your scripts for clarity:  
-Example: `s05_modeling.R` â†’ `test-s05_modeling.R`
-
-> âœ… Your tests donâ€™t have to be exhaustive. Focus on **critical functions** and **key workflow branches**.
-
----
-</details>
-
-### <a id="ci"></a>
-<details>
-<summary><strong>âš™ï¸ Continuous Integration (CI)</strong></summary><br>
-
-Continuous Integration (CI) helps ensure your research project is **reproducible, portable, and robust** across different systems. This template includes built-in CI support for **Python**, **R**, and **MATLAB** using:
-
-- **GitHub Actions**
-- **GitLab CI/CD**
-- **Codeberg CI** (Woodpecker)
-
-âœ… Even without writing **unit tests**, the default CI configuration will still verify that your project environment installs correctly across platforms (e.g., Linux, Windows, macOS).This provides early detection of broken dependencies, incompatible packages, or missing setup steps â€” critical for collaboration and long-term reproducibility.
-
-#### ðŸ” What the CI Pipeline Does
-
-Each auto-generated CI pipeline:
-
-1. Installs the appropriate language runtime (e.g., Python, R, MATLAB)
-2. Installs project dependencies:
-   - Python: via `requirements.txt`
-   - R: via `renv::restore()` using `R/renv.lock`
-3. Executes tests in the `tests/` directory (if present)
-4. Outputs logs and results for debugging or documentation
-
-#### âœ… Supported CI Platforms
-
-| Platform     | Supported Languages     | OS Support              | Config File                |
-|--------------|--------------------------|--------------------------|----------------------------|
-| **GitHub**   | Python, R, MATLAB        | Linux, Windows, macOS    | `.github/workflows/ci.yml` |
-| **GitLab**   | Python, R, MATLAB        | Linux only               | `.gitlab-ci.yml`           |
-| **Codeberg** | Python, R *(no MATLAB)*  | Linux only               | `.woodpecker.yml`          |
-
-> âš ï¸ **Stata is not supported** on any CI platform due to licensing limitations and lack of headless automation.
-
-#### âš ï¸ MATLAB CI Caveats
-
-MATLAB CI support is included as a **starter configuration**. It may require manual setup, including licensing and tokens.
-
-- **GitHub Actions**: Uses [`setup-matlab`](https://github.com/matlab-actions/setup-matlab) and requires a `MATLAB_TOKEN`.
-- **GitLab CI/CD**: Uses [MathWorks' CI template](https://github.com/mathworks/matlab-gitlab-ci-template) and requires a license server or `MLM_LICENSE_FILE`.
-
-#### ðŸ“ Codeberg CI Requires Activation
-
-CI is **not enabled by default** on Codeberg. To enable:
-
-- Submit a request via [Codeberg CI Activation Form](https://codeberg.org/Codeberg-e.V./requests/issues/new?template=ISSUE_TEMPLATE%2fWoodpecker-CI.yaml)
-- Learn more in the [Codeberg CI documentation](https://docs.codeberg.org/ci/)
-
-#### ðŸ› ï¸ CI Control via CLI
-
-You can toggle CI setup on or off at any time using the built-in CLI:
-
-```bash
-repokit ci --on
-repokit ci --off
-```
-
-##### ðŸ§· Skip CI for a Commit
-
-Use this Git alias to skip CI on minor commits:
-
-```
-git commit-skip "Updated documentation"
-```
-
----
-</details>
-
-### <a id="backup-rclone"></a>
-<details>
-<summary><strong>â˜ï¸ Backup with Rclone</strong></summary><br>
-
-Data loss can compromise months or years of research. To support **reproducible**, **secure**, and **policy-compliant** workflows, this template offers automated backup to CBS-approved storage providers using [`rclone`](https://rclone.org).
-
-Supported backup targets include:
-
-- [**ERDA**](https://erda.dk/) â€“ configured via **SFTP with password and MFA**  
-- [**Dropbox**](https://www.dropbox.com/)  
-- [**OneDrive**](https://onedrive.live.com/)  
-- **Local** storage â€“ backup to a folder on your own system  
-- **Multiple** â€“ select any combination of the above
-
-> â˜ï¸ `rclone` is automatically downloaded and installed if not already available on your system.  
-> ðŸ§ª Other [Rclone-supported remotes](https://rclone.org/overview/#supported-storage-systems) **should work**, but have not yet been tested with this template's workflow.
-> ðŸ“ All configured remotes and folder mappings are logged in `./bin/rclone_remote.json`.
-
-#### ðŸ§° CLI Backup Commands
-
-Once your environment is activated (see [ðŸš€ Project Activation](#-project-activation)), you can use the `repokit-backup` CLI tool:
-
-**ðŸ“Œ Setup a Remote**
-```
-repokit-backup add --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**ðŸš€ Push to Remote**
-```
-repokit-backup push --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-This command performs the following:
-- Commits and pushes the root Git project (if version control is enabled)
-- Commits and pushes the data/ Git repository
-- Syncs the project, excluding any ignored files (e.g., .rcloneignore or pyproject.toml patterns)
-
-**ðŸ“¥ Pull Backup from Remote**
-```
-repokit-backup pull --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**ðŸ“Š View Differences Before Sync**
-```
-repokit-backup diff --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**ðŸ§¹ Remove Remote**
-```
-repokit-backup delete --remote erda  # (other options: erda, dropbox, onedrive, local or all)
-```
-**ðŸ“‹ List Configured Remotes and Sync Status**
-```
-repokit-backup list
-```
-**ðŸ“¦ View Supported Remote Types**
-```
-repokit-backup types
-```
 
 ---
 </details>
@@ -1258,7 +1023,4 @@ For questions, suggestions, or bug reports:
 - Or contact: [kgp.lib@cbs.dk](mailto:kgp.lib@cbs.dk)
 
 ---
-
-
-
 
