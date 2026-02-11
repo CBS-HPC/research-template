@@ -242,15 +242,11 @@ def create_with_uv():
         ["uv", "venv"],
         check=True,
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    ) 
+    )
     subprocess.run(
         ["uv", "lock"],
         check=True,
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
     )
 
     try:
@@ -270,11 +266,11 @@ def create_with_uv():
             ],
             check=True,
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
         )
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as exc:
         print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
+        print(f"Command: {exc.cmd}")
+        print(f"Exit code: {exc.returncode}")
         raise
 
     # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
