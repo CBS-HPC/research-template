@@ -13,8 +13,8 @@ requires-python = ">=3.9"
 # Used for documentation, reproducibility, and scaffolding
 # ============================================================
 [tool.cookiecutter]
-PROJECT_NAME = "jfsegsersr"
-REPO_NAME = "jfsegsersr"
+PROJECT_NAME = ""
+REPO_NAME = ""
 PROJECT_DESCRIPTION = "Insert project description here"
 VERSION = "0.0.1"
 AUTHORS = "Your Name"
@@ -57,19 +57,34 @@ patterns = [
 # ============================================================
 [tool.treeignore]
 patterns = [
-    "bin/",
-    "utils/",
-    ".conda/",
-    ".venv/",
-    "renv/",
-    ".git/",
-    ".github/",
-    ".datalad/",
-    ".gitkeep",
-    ".env",
-    "__pycache__",
-    "repokit/",
-    "repokit.egg-info/",
+  "bin/",
+  "utils/",
+  ".conda/",
+  ".venv/",
+  "renv/",
+  ".git/",
+  ".github/",
+  ".datalad/",
+  ".gitkeep",
+  ".env",
+  "__pycache__",
+  "repokit/",
+  "repokit.egg-info/",
+]
+
+# FIXME Add patterns for files to move during dcas migration instead of hardcoding in dcas.py:main()
+# ============================================================
+# Files to move performing dcas migration
+# ============================================================
+[tool.dcas]
+patterns = [
+  "README.md",
+  "docs",
+  "results",
+  "uv.lock",
+  "environment.yml",
+  "requirements.txt",
+  "dmp.json",
 ]
 
 # ============================================================
