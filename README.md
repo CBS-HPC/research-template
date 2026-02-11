@@ -376,7 +376,6 @@ Once installed, the following commands are available from the terminal:
 
 | Command | Description |
 |---------|-------------|
-| `repokit copy` | Copy/sync files based on project rules. |
 | `repokit deps` | Update dependency metadata and lockfiles. |
 | `repokit readme` | Regenerate `README.md`. |
 | `repokit templates` | Regenerate script templates. |
@@ -399,6 +398,7 @@ Once installed, the following commands are available from the terminal:
 | `repokit-dmp editor` | Launch Streamlit editor for DMP + publishing helpers. |
 | `repokit-dmp dcas-migration` | Run DCAS migration/validation workflow. |
 
+For more detailed CLI documentation, see the README files in the [`repokit`](https://github.com/CBS-HPC/repokit), [`repokit-backup`](https://github.com/CBS-HPC/repokit-backup), and [`repokit-dmp`](https://github.com/CBS-HPC/repokit-dmp)  repositories.
 
 #### 🛠️ Usage
 
@@ -410,7 +410,7 @@ repokit readme
 repokit-backup push --remote erda
 repokit-dmp editor
 ```
-For more detailed CLI documentation, see the README files in the repokit, repokit-backup, and repokit-dmp repositories.
+
 
 </details>
 
