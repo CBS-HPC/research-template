@@ -13,23 +13,6 @@ else:
     TOML_VERSION = "tomli-w"
 
 
-def run_in_venv():
-    if platform.system() == "Windows":
-        cmd = r".venv\Scripts\activate.bat && python setup\project_setup.py"
-        subprocess.run(
-            cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-    else:
-        cmd = "source .venv/bin/activate && python setup/project_setup.py"
-        subprocess.run(
-            cmd,
-            shell=True,
-            executable="/bin/bash",
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
-
 def prompt_user(question, options):
     print(question)
     for i, option in enumerate(options, start=1):
@@ -212,7 +195,14 @@ def install_uv():
         )
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
+        
         try:
+            subprocess.run(
+                [sys.executable, "-m", "ensurepip", "--upgrade"],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             subprocess.run(
                 [sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
                 check=True,
@@ -237,19 +227,22 @@ def create_with_uv():
     env = os.environ.copy()
     env["UV_LINK_MODE"] = "copy"
 
-    # Create venv and lock deps with uv
-    subprocess.run(
-        ["uv", "venv"],
-        check=True,
-        env=env,
-    )
-    subprocess.run(
-        ["uv", "lock"],
-        check=True,
-        env=env,
-    )
-
     try:
+        # Create venv and lock deps with uv
+        subprocess.run(
+            ["uv", "venv"],
+            check=True,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        subprocess.run(
+            ["uv", "lock"],
+            check=True,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         subprocess.run(
             [
                 "uv",
@@ -266,11 +259,16 @@ def create_with_uv():
             ],
             check=True,
             env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
-    except subprocess.CalledProcessError as exc:
-        print("Failed to add packages with uv add --upgrade (even with link-mode=copy).")
-        print(f"Command: {exc.cmd}")
-        print(f"Exit code: {exc.returncode}")
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        print("UV environment setup failed. Falling back to pip.")
+        failed_cmd = getattr(exc, "cmd", None)
+        if failed_cmd:
+            print(f"Command: {failed_cmd}")
+        if isinstance(exc, subprocess.CalledProcessError):
+            print(f"Exit code: {exc.returncode}")
         raise
 
     # Use the venv's python instead of `uv run` as it corrupts runn_setup.ps1/.sh
@@ -289,7 +287,8 @@ def create_with_uv():
 
 
 def create_with_pip():
-    # Always bootstrap uv and then use the uv-based path
+    env = os.environ.copy()
+
     subprocess.run(
         [sys.executable, "-m", "ensurepip", "--upgrade"],
         check=False,
@@ -297,23 +296,60 @@ def create_with_pip():
         stderr=subprocess.DEVNULL,
     )
     subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--upgrade", "uv"],
+        [sys.executable, "-m", "venv", ".venv"],
         check=True,
+        env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    create_with_uv()
+
+    python_exe = (
+        os.path.join(".venv", "Scripts", "python.exe")
+        if os.name == "nt"
+        else os.path.join(".venv", "bin", "python")
+    )
+    if not os.path.exists(python_exe):
+        raise FileNotFoundError(
+            f"Python interpreter not found at {python_exe}. Did 'python -m venv .venv' succeed?"
+        )
+
+    subprocess.run(
+        [
+            python_exe,
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            "uv",
+            "pip",
+            "setuptools",
+            "wheel",
+            "python-dotenv",
+            "pathspec",
+            "pyyaml",
+            TOML_VERSION,
+        ],
+        check=True,
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    config_path = write_setup_config()
+    subprocess.run([python_exe, "setup/project_setup.py", "--config", config_path], check=True, env=env)
 
 
 def main():
     env_path = pathlib.Path(".venv")
     if not env_path.exists():
         if install_uv():
-            create_with_uv()
-            return
-
-    create_with_pip()
-    return
+            try:
+                create_with_uv()
+                return
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
+        create_with_pip()
+        return
 
 
 if __name__ == "__main__":
