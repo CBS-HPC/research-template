@@ -46,27 +46,6 @@ def ensure_repokit_sources() -> None:
         )
 
 
-def copy_pyproject(overwrite: bool = True) -> bool:
-    """
-    Copy pyproject.toml from local repokit package templates into the project root.
-    Returns True if copied, False if skipped or source missing.
-    """
-    source = _REPOKIT_SRC / "repokit" / "templates" / "pyproject.toml"
-    destination = PROJECT_DIR / "pyproject.toml"
-
-    if not source.exists():
-        print(f"Template not found, skipping copy: {source}")
-        return False
-
-    if destination.exists() and not overwrite:
-        print(f"Destination already exists, skipping copy: {destination}")
-        return False
-
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, destination)
-    print(f"Copied template: {source} -> {destination}")
-    return True
-
 
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
     script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
@@ -357,7 +336,6 @@ else:
     ) = set_options(programming_language, version_control)
 
 ensure_repokit_sources()
-copy_pyproject(overwrite=True)
 
 # Allow using repokit + repokit_common from submodules before installation.
 for _p in (_COMMON_SRC, _REPOKIT_SRC):
