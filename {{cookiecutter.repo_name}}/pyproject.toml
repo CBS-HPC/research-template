@@ -6,13 +6,11 @@ dependencies = []
 requires-python = ">=3.9"
 
 [tool.uv]
+tool_description = "Configuration for uv package manager behavior."
 
-# ============================================================
-# Project template metadata
-# Replaces: .cookiecutter
-# Used for documentation, reproducibility, and scaffolding
-# ============================================================
 [tool.cookiecutter]
+tool_description = "Project template metadata for setup, reproducibility, and scaffolding."
+tool_replaces = ".cookiecutter"
 PROJECT_NAME = ""
 REPO_NAME = ""
 PROJECT_DESCRIPTION = "Insert project description here"
@@ -32,30 +30,24 @@ CODE_REPO = "None"
 PYTHON_VERSION = "None"
 
 
-# ============================================================
-# Defines the dataset folders to be included in data management
-# ============================================================
 [tool.datasets]
+tool_description = "Dataset path patterns used by data-management workflows."
 patterns = [
   "data/*"
 ]
 
-# ============================================================
-# Ignore patterns for remote sync tools like Rclone
-# Replaces: .rcloneignore
-# ============================================================
 [tool.rcloneignore]
+tool_description = "Ignore patterns for backup and remote synchronization."
+tool_replaces = ".rcloneignore"
 patterns = [
   "bin/",
   ".venv/",
   ".conda/"
 ]
 
-# ============================================================
-# Ignore patterns for file tree visualizations
-# Replaces: .treeignore
-# ============================================================
 [tool.treeignore]
+tool_description = "Ignore patterns for project tree visualizations."
+tool_replaces = ".treeignore"
 patterns = [
   "bin/",
   "utils/",
@@ -72,11 +64,8 @@ patterns = [
   "repokit.egg-info/",
 ]
 
-# FIXME Add patterns for files to move during dcas migration instead of hardcoding in dcas.py:main()
-# ============================================================
-# Files to move performing dcas migration
-# ============================================================
 [tool.dcas]
+tool_description = "Files and folders used in DCAS migration."
 patterns = [
   "README.md",
   "docs",
@@ -87,11 +76,9 @@ patterns = [
   "dmp.json",
 ]
 
-# ============================================================
-# Maps Python packages to OS platforms for conditional installs
-# Replaces: platform_rules.json
-# ============================================================
 [tool.platform_rules]
+tool_description = "Platform-specific package compatibility rules."
+tool_replaces = "platform_rules.json"
 pywin32 = "win32"
 pypiwin32 = "win32"
 pywinpty = "win32"
@@ -102,9 +89,6 @@ dbus-python = "linux"
 pygobject = "linux"
 pyudev = "linux"
 
-# ============================================================
-# Descriptions for key project files and directories
-# Replaces: file_descriptions.json
-# Used for UI, automation, and documentation
-# ============================================================
 [tool.file_descriptions]
+tool_description = "Descriptions of project files and folders for docs and automation."
+tool_replaces = "file_descriptions.json"
