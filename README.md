@@ -41,7 +41,7 @@ Whether you're preparing a replication package, submitting code and data for pee
 
 Before using the template, ensure the following tools are available:
 
-- [**Python 3.9+**](https://www.python.org/downloads/) – Required to run the setup scripts.  
+- [**Python 3.12+**](https://www.python.org/downloads/) – Required to run the setup scripts.  
 - [**Cookiecutter**](https://cookiecutter.readthedocs.io/en/latest/) – Generates the project structure. Install with: `pip install cookiecutter`  
 - [**Git**](https://git-scm.com/downloads) *(Recommended)* – Required for version control and remote repository setup.  
 - [**Personal Access Token**](#-personal-access-tokens-and-permissions) *(Recommended)* – Needed to push to **GitHub**, **GitLab**, or **Codeberg**.
