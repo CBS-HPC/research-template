@@ -46,7 +46,6 @@ def ensure_repokit_sources() -> None:
         )
 
 
-
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
     script_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(script_path))
     env_path = str(pathlib.Path(__file__).resolve().parent.parent / pathlib.Path(env_path))

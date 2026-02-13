@@ -6,11 +6,11 @@ dependencies = []
 requires-python = ">=3.9"
 
 [tool.uv]
-tool_description = "Configuration for uv package manager behavior."
+tool-description = "Configuration for uv package manager behavior."
 
 [tool.cookiecutter]
-tool_description = "Project template metadata for setup, reproducibility, and scaffolding."
-tool_replaces = ".cookiecutter"
+tool-description = "Project template metadata for setup, reproducibility, and scaffolding."
+tool-replaces = ".cookiecutter"
 PROJECT_NAME = ""
 REPO_NAME = ""
 PROJECT_DESCRIPTION = "Insert project description here"
@@ -31,14 +31,14 @@ PYTHON_VERSION = "None"
 
 
 [tool.datasets]
-tool_description = "Dataset path patterns used by data-management workflows."
+tool-description = "Dataset path patterns used by data-management workflows."
 patterns = [
   "data/*"
 ]
 
 [tool.rcloneignore]
-tool_description = "Ignore patterns for backup and remote synchronization."
-tool_replaces = ".rcloneignore"
+tool-description = "Ignore patterns for backup and remote synchronization."
+tool-replaces = ".rcloneignore"
 patterns = [
   "bin/",
   ".venv/",
@@ -46,8 +46,8 @@ patterns = [
 ]
 
 [tool.treeignore]
-tool_description = "Ignore patterns for project tree visualizations."
-tool_replaces = ".treeignore"
+tool-description = "Ignore patterns for project tree visualizations."
+tool-replaces = ".treeignore"
 patterns = [
   "bin/",
   "utils/",
@@ -65,7 +65,7 @@ patterns = [
 ]
 
 [tool.dcas]
-tool_description = "Files and folders used in DCAS migration."
+tool-description = "Files and folders used in DCAS migration."
 patterns = [
   "README.md",
   "docs",
@@ -77,8 +77,8 @@ patterns = [
 ]
 
 [tool.platform_rules]
-tool_description = "Platform-specific package compatibility rules."
-tool_replaces = "platform_rules.json"
+tool-description = "Platform-specific package compatibility rules."
+tool-replaces = "platform_rules.json"
 pywin32 = "win32"
 pypiwin32 = "win32"
 pywinpty = "win32"
@@ -90,5 +90,5 @@ pygobject = "linux"
 pyudev = "linux"
 
 [tool.file_descriptions]
-tool_description = "Descriptions of project files and folders for docs and automation."
-tool_replaces = "file_descriptions.json"
+tool-description = "Descriptions of project files and folders for docs and automation."
+tool-replaces = "file_descriptions.json"
