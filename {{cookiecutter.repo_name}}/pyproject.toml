@@ -6,7 +6,6 @@ dependencies = []
 requires-python = ">=3.9"
 
 [tool.uv]
-tool-description = "Configuration for uv package manager behavior."
 
 [tool.cookiecutter]
 tool-description = "Project template metadata for setup, reproducibility, and scaffolding."
