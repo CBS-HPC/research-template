@@ -195,7 +195,7 @@ from repokit_dmp.dmp import main as dmp_update
 from repokit.readme.template import create_citation_file, creating_readme
 from repokit.templates.code import create_scripts
 from repokit.vcs import git_push
-
+from repokit_backup.rclone import install_rclone
 
 
 def intro():
@@ -271,6 +271,9 @@ For dataset-specific license and access terms, see the project root `dmp.json`.
 
     # Init dmp.json
     dmp_update()
+
+    # Ensure rclone is installed for backup module
+    install_rclone(install_path = "./bin")
 
 
 def version_setup():
