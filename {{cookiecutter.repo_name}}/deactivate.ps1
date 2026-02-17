@@ -25,19 +25,12 @@ function Get-EnvValueFromDotEnv {
 $condaEnvPath   = Get-EnvValueFromDotEnv -varName "CONDA_ENV_PATH"
 $venvEnvPath    = Get-EnvValueFromDotEnv -varName "VENV_ENV_PATH"
 
-# Restore original PATH if saved
-if ($env:ORIGINAL_PATH) {
-    $env:PATH = $env:ORIGINAL_PATH
-    Remove-Item Env:ORIGINAL_PATH -ErrorAction SilentlyContinue
-    Write-Host "Restored original PATH."
-} else {
-    Write-Warning "Original PATH was not saved. PATH not restored."
-}
-
 # Informational messages
 if ($condaEnvPath) {
     Write-Output "Deactivating Conda environment"
-    conda deactivate
+    if (Get-Command conda -ErrorAction SilentlyContinue) {
+        conda deactivate
+    }
 }
 
 # venv deactivate call safety
@@ -50,32 +43,20 @@ if ($venvEnvPath) {
     }
 }
 
-# Helper function to clean a value from PATH
-function Remove-FromPath {
-    param (
-        [string]$target
-    )
-    $cleaned = ($env:PATH -split ";" | Where-Object { $_ -and ($_ -ne $target) }) -join ";"
-    $env:PATH = $cleaned
+# Restore original PATH if saved
+if ($env:ORIGINAL_PATH) {
+    $env:PATH = $env:ORIGINAL_PATH
+    Remove-Item Env:ORIGINAL_PATH -ErrorAction SilentlyContinue
+    Write-Host "Restored original PATH."
+} else {
+    Write-Warning "Original PATH was not saved. PATH not restored."
 }
 
-# Remove the environment variables set during activation
+# Remove environment variables loaded from .env
 if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
         if ($_ -match "^\s*([^#][^=]+?)\s*=\s*(.+)$") {
             $key = $matches[1].Trim()
-            $value = $matches[2].Trim().Trim('"').Trim("'")
-
-            try {
-                $resolved = Resolve-Path -Path $value -ErrorAction Stop
-                $resolvedPath = $resolved.Path
-                if ($env:PATH -split ";" | Where-Object { $_ -eq $resolvedPath }) {
-                    Remove-FromPath -target $resolvedPath
-                    Write-Host "Removed $resolvedPath from PATH"
-                }
-            } catch {
-                # Skip if path resolution fails (non-path value)
-            }
 
             # Always unset the environment variable
             if (Test-Path "Env:$key") {

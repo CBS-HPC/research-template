@@ -56,31 +56,47 @@ activate_env() {
 }
 
 load_env() {
+    prepend_path_first() {
+        local target="$1"
+        [ -z "$target" ] && return 1
+        local cleaned=""
+        local oldIFS="$IFS"
+        IFS=':'
+        for p in $PATH; do
+            [ -z "$p" ] && continue
+            if [ "$p" != "$target" ]; then
+                if [ -z "$cleaned" ]; then
+                    cleaned="$p"
+                else
+                    cleaned="$cleaned:$p"
+                fi
+            fi
+        done
+        IFS="$oldIFS"
+        if [ -n "$cleaned" ]; then
+            export PATH="$target:$cleaned"
+        else
+            export PATH="$target"
+        fi
+        return 0
+    }
+
     if [ -f "$envFile" ]; then
         while IFS='=' read -r key value; do
             if [[ ! "$key" =~ ^[[:space:]]*# && -n "$key" ]]; then
                 key=$(echo "$key" | xargs)
                 value=$(echo "$value" | xargs | sed 's/^"\(.*\)"$/\1/')
 
-                if [[ "$key" != "VENV_ENV_PATH" && "$key" != "CONDA_ENV_PATH" && "$key" != "CONDA" && "$key" != "PYTHON" ]]; then
+                if [[ "$key" != "VENV_ENV_PATH" && "$key" != "CONDA_ENV_PATH" && "$key" != "CONDA" ]]; then
                     if [ -d "$value" ]; then
                         abs_path=$(realpath "$value")
-                        # Check if path is already in $PATH
-                        if [[ ":$PATH:" != *":$abs_path:"* ]]; then
-                            export PATH="$abs_path:$PATH"
-                            echo "Added $key to PATH ($abs_path)"
-                        else
-                            echo "Skipped $key, already in PATH ($abs_path)"
-                        fi
+                        prepend_path_first "$abs_path"
+                        echo "Prioritized $key in PATH ($abs_path)"
                     elif [ -x "$value" ]; then
                         abs_path=$(realpath "$value")
                         bin_dir=$(dirname "$abs_path")
-                        if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
-                            export PATH="$bin_dir:$PATH"
-                            echo "Added $key (executable) to PATH ($bin_dir)"
-                        else
-                            echo "Skipped $key, already in PATH ($bin_dir)"
-                        fi
+                        prepend_path_first "$bin_dir"
+                        echo "Prioritized $key (executable) in PATH ($bin_dir)"
                     fi
                 fi
             fi

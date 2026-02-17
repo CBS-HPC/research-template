@@ -27,6 +27,29 @@ function Get-EnvValueFromDotEnv {
     return $null
 }
 
+function Set-PathFirst {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$PathEntry
+    )
+
+    $resolvedEntry = (Resolve-Path -Path $PathEntry -ErrorAction SilentlyContinue)
+    if (-not $resolvedEntry) {
+        return $false
+    }
+    $entry = $resolvedEntry.Path
+
+    $parts = @()
+    if ($env:PATH) {
+        $parts = $env:PATH -split ';' | Where-Object { $_ -and $_.Trim() -ne "" }
+    }
+
+    # Remove existing occurrences (case-insensitive), then prepend.
+    $filtered = @($parts | Where-Object { $_.TrimEnd('\') -ine $entry.TrimEnd('\') })
+    $env:PATH = (@($entry) + $filtered) -join ';'
+    return $true
+}
+
 function Verify-EnvPaths {
     param (
         [string]$envFile = ".\.env"
@@ -102,13 +125,16 @@ if (Test-Path $envFile) {
             $value = $matches[2].Trim('"')
 
             # Skip variables already handled
-            if (Test-Path $value) {
-                $resolved = (Resolve-Path -Path $value).Path
-                if ($env:PATH -notlike "*$resolved*") {
-                    $env:PATH = "$resolved;$env:PATH"
-                    Write-Host "Added $key to PATH: $resolved"
-                } else {
-                    Write-Host "Skipped $key, already in PATH: $resolved"
+            if ($key -notin @("VENV_ENV_PATH", "CONDA_ENV_PATH", "CONDA")) {
+                if (Test-Path $value) {
+                    $resolved = (Resolve-Path -Path $value).Path
+                    $pathToAdd = $resolved
+                    if (-not (Get-Item -Path $resolved).PSIsContainer) {
+                        $pathToAdd = Split-Path -Path $resolved -Parent
+                    }
+                    if (Set-PathFirst -PathEntry $pathToAdd) {
+                        Write-Host "Prioritized $key in PATH: $pathToAdd"
+                    }
                 }
             }
         }
