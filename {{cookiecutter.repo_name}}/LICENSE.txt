@@ -1,10 +1,13 @@
 # LICENSE
 
-This project is dual-licensed to distinguish between the licensing of code, documentation, and data.
+This project is multi-licensed to distinguish between the licensing of code, documentation, and data.
 
 ---
 
 ## 💻 Code License
+
+This code license applies to source code and project scripts in this repository, and executable workflow scripts).
+It does not automatically apply to datasets, documentation content, or third-party dependencies/artifacts that may carry their own licenses.
 
 {% if cookiecutter.code_license == 'MIT' %}
 The MIT License (MIT)  
@@ -74,6 +77,9 @@ You may obtain a copy of the License at
 
 ## 📄 Documentation License
 
+This documentation license applies to project documentation materials, including `README` files, content in the `docs/` folder, and human-readable reports in `results/` (for example `.md`, `.pdf`, `.html`).
+Data-like outputs in `results/` (for example datasets, model artifacts, or machine-readable tables) follow dataset-specific terms in the project root `dmp.json`.
+
 {% if cookiecutter.documentation_license == 'CC-BY-4.0' %}
 This project's documentation is licensed under the Creative Commons Attribution 4.0 International License (CC-BY 4.0).  
 You are free to share and adapt the materials for any purpose, including commercial use, with proper attribution.
@@ -90,14 +96,16 @@ License: https://creativecommons.org/publicdomain/zero/1.0/
 
 ## 📊 Data License
 
-{% if cookiecutter.data_license == 'CC0-1.0' %}
-The data included in this project is released into the public domain under Creative Commons Zero (CC0 1.0).  
-You may use it without restriction or attribution.
+This project may contain multiple datasets with different legal and access terms.
 
+- For dataset-specific license and access details, see the `dmp.json` (maDMP metadata).
+- Data in `data/sensitive/` may contain confidential or personal information and must not be shared without explicit authorization.
+- Data in `data/proprietary/` may be subject to contractual, licensing, or IP restrictions and must not be redistributed without permission
+
+{% if cookiecutter.data_license == 'CC0-1.0' %}
+Default data license for unrestricted datasets: CC0 1.0  
 License: https://creativecommons.org/publicdomain/zero/1.0/
 {% elif cookiecutter.data_license == 'CC-BY-4.0' %}
-The data included in this project is licensed under the Creative Commons Attribution 4.0 International License (CC-BY 4.0).  
-You may use and adapt the data freely, including for commercial use, provided you give appropriate credit.
-
+Default data license for unrestricted datasets: CC-BY 4.0  
 License: https://creativecommons.org/licenses/by/4.0/
 {% endif %}

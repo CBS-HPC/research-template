@@ -186,7 +186,7 @@ from repokit_common import (
     save_to_env,
     set_program_path,
     set_packages,
-    package_installer,
+    package_installer
 )
 from repokit.ci import ci_config
 from repokit.deps import update_code_dependency, update_env_files
@@ -200,16 +200,38 @@ from repokit.vcs import git_push
 
 def intro():
     def create_folders():    
+        data_root = PROJECT_DIR / "data"
         folders = [
-            PROJECT_DIR / "data" / "00_raw",
-            PROJECT_DIR / "data" / "01_interim",
-            PROJECT_DIR / "data" / "02_processed",
-            PROJECT_DIR / "data" / "03_external",
+            data_root / "raw",
+            data_root / "interim",
+            data_root / "processed",
+            data_root / "external",
+            data_root / "proprietary",
+            data_root / "sensitive",
         ]
 
         for folder in folders:
             folder.mkdir(parents=True, exist_ok=True)
             (folder / ".gitkeep").touch(exist_ok=True)
+
+        data_readme = """# Data Folder Structure
+
+This folder contains project datasets and dataset-related metadata.
+
+- `raw/`: Original, immutable input data.
+- `interim/`: Intermediate data created during cleaning/transformation.
+- `processed/`: Final analysis-ready datasets.
+- `external/`: Third-party or externally sourced data.
+- `proprietary/`: Data with legal/licensing/NDA/IP restrictions.
+- `sensitive/`: Data with confidentiality/privacy restrictions.
+
+For dataset-specific license and access terms, see the project root `dmp.json`.
+"""
+
+
+        readme_path = data_root / "README.md"
+        if not readme_path.exists():
+            readme_path.write_text(data_readme, encoding="utf-8")
 
     # Ensure the working directory is the project root
 
@@ -360,3 +382,4 @@ if __name__ == "__main__":
     remote_repo_setup()
 
     outro()
+
