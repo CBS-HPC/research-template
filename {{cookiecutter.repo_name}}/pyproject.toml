@@ -1,4 +1,4 @@
-[project]
+﻿[project]
 name = "{{cookiecutter.project_name}}"
 version = "{{cookiecutter.version}}"
 description = "Insert project description here"
@@ -29,10 +29,18 @@ CODE_REPO = "None"
 PYTHON_VERSION = "None"
 
 
+
 [tool.datasets]
 tool-description = "Dataset path patterns used by data-management workflows."
 patterns = [
   "data/*"
+]
+
+[tool.data_policy]
+tool-description = "Agent data-access policy: paths with sensitive/proprietary data that must be handled with restricted access and synced to agent ignore files."
+patterns = [
+  "data/sensitive/*",
+  "data/proprietary/*",
 ]
 
 [tool.rcloneignore]
@@ -91,3 +99,4 @@ pyudev = "linux"
 [tool.file_descriptions]
 tool-description = "Descriptions of project files and folders for docs and automation."
 tool-replaces = "file_descriptions.json"
+
