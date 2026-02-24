@@ -16,6 +16,10 @@ env/
 # Exclude data from source control by default
 data/
 
+# Sensitve data folders 
+data/sensitive/
+data/proprietary/
+
 # Python bytecode and extension artifacts
 __pycache__/
 *.py[cod]
