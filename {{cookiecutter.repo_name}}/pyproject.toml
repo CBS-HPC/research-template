@@ -29,6 +29,15 @@ CODE_REPO = "None"
 PYTHON_VERSION = "None"
 
 
+[tool.repokit_install]
+tool-description = "Repokit package installation policy used by setup scripts."
+source = "local"
+github_base = "https://github.com/CBS-HPC"
+repokit_common_version = "0.1"
+repokit_backup_version = "0.1"
+repokit_dmp_version = "0.1"
+repokit_version = "0.1"
+
 
 [tool.datasets]
 tool-description = "Dataset path patterns used by data-management workflows."

@@ -8,42 +8,10 @@ import shutil
 import json
 import argparse
 
+from repokit_install import install_repokit_packages
+
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
-_SETUP_DIR = pathlib.Path(__file__).resolve().parent
-_REPOKIT_DIR = _SETUP_DIR / "repokit"
-_REPOKIT_SRC = _REPOKIT_DIR / "src"
-_COMMON_SRC = _REPOKIT_DIR / "external" / "repokit-common" / "src"
-_REPOKIT_COMMON_PATH = _COMMON_SRC / "repokit_common"
-_REPOKIT_GIT_URL = "https://github.com/CBS-HPC/repokit.git"
-
-
-
-def ensure_repokit_sources() -> None:
-    if _REPOKIT_COMMON_PATH.exists():
-        return
-    if not shutil.which("git"):
-        print("Git not found; cannot initialize repokit submodules.")
-        return
-    if _REPOKIT_DIR.exists():
-        try:
-            if not any(_REPOKIT_DIR.iterdir()):
-                shutil.rmtree(_REPOKIT_DIR, ignore_errors=True)
-        except OSError:
-            pass
-    if not _REPOKIT_DIR.exists():
-        subprocess.run(
-            ["git", "clone", _REPOKIT_GIT_URL, str(_REPOKIT_DIR)],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    if _REPOKIT_DIR.exists():
-        subprocess.run(
-            ["git", "-C", str(_REPOKIT_DIR), "submodule", "update", "--init", "--recursive"],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+SETUP_DIR = pathlib.Path(__file__).resolve().parent
 
 
 def run_bash(script_path, env_path=None, python_env_manager=None, main_setup=None):
@@ -334,12 +302,8 @@ else:
         conda_python_version,
     ) = set_options(programming_language, version_control)
 
-ensure_repokit_sources()
-
-# Allow using repokit + repokit_common from submodules before installation.
-for _p in (_COMMON_SRC, _REPOKIT_SRC):
-    if _p.exists() and str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+if not install_repokit_packages(["repokit-common"], PROJECT_DIR, SETUP_DIR, verbose=False):
+    raise RuntimeError("Unable to install repokit-common with configured install policy.")
 
 from repokit_common import (
     ask_yes_no,

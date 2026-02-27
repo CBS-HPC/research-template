@@ -1,136 +1,13 @@
 import os
 import pathlib
 import platform
-import subprocess
-import sys
 import shutil
 import stat
 
+from repokit_install import install_repokit_packages
+
 PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 SETUP_DIR = pathlib.Path(__file__).resolve().parent
-REPOKIT_DIR = SETUP_DIR / "repokit"
-REPOKIT_EXTERNAL = REPOKIT_DIR / "external"
-
-LOCAL_PACKAGES = [
-    REPOKIT_DIR,
-    REPOKIT_EXTERNAL / "repokit-common",
-    REPOKIT_EXTERNAL / "repokit-backup",
-    REPOKIT_EXTERNAL / "repokit-dmp",
-]
-
-# Add local package sources to sys.path so imports work without installing
-_LOCAL_SRC_PATHS = [
-    REPOKIT_DIR / "src",
-    REPOKIT_EXTERNAL / "repokit-common" / "src",
-    REPOKIT_EXTERNAL / "repokit-backup" / "src",
-    REPOKIT_EXTERNAL / "repokit-dmp" / "src",
-]
-for _p in _LOCAL_SRC_PATHS:
-    if _p.exists() and str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-
-def _pick_wheel(dist_dir: pathlib.Path) -> pathlib.Path:
-    wheels = sorted(dist_dir.glob("*.whl"))
-    if not wheels:
-        raise FileNotFoundError(f"No wheels found in {dist_dir}")
-    return wheels[-1]
-
-
-def _collect_wheels() -> list[pathlib.Path]:
-    dist_dirs = [
-        REPOKIT_DIR / "dist",
-        REPOKIT_EXTERNAL / "repokit-common" / "dist",
-        REPOKIT_EXTERNAL / "repokit-backup" / "dist",
-        REPOKIT_EXTERNAL / "repokit-dmp" / "dist",
-    ]
-    wheels: list[pathlib.Path] = []
-    for dist_dir in dist_dirs:
-        if not dist_dir.exists():
-            raise FileNotFoundError(f"Missing dist directory: {dist_dir}")
-        wheels.append(_pick_wheel(dist_dir))
-    return wheels
-
-
-def install_py_package(setup_path: str = "./setup", editable: bool = True) -> tuple[bool, str]:
-    """
-    Install the local package at `setup_path`, preferring uv and falling back to pip.
-
-    Returns
-    -------
-        (ok: bool, method: str) where method is one of {"uv", "python -m uv", "pip"}.
-    """
-    setup_dir = pathlib.Path(setup_path).resolve()
-    if not setup_dir.exists():
-        raise FileNotFoundError(f"setup_path does not exist: {setup_dir}")
-
-    # Build the args once
-    editable_args = ["-e", "."] if editable else ["."]
-    uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install", *editable_args]
-    pip_cmd = [sys.executable, "-m", "pip", "install", *editable_args]
-
-    # Do work in the target directory, but restore CWD afterwards
-    cwd = os.getcwd()
-    os.chdir(setup_dir)
-    try:
-        # 1) Try uv via current interpreter
-        result = subprocess.run(uv_mod_cmd, capture_output=True, text=True)
-        if result.returncode == 0:
-            print("Installation successful with uv.")
-            return True, "uv"
-        else:
-            print(f"'uv' failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
-
-        # 2) Fallback to pip in the current interpreter
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "ensurepip", "--upgrade"],
-                capture_output=True,
-                text=True,
-            )
-        except Exception:
-            pass
-
-        result = subprocess.run(pip_cmd, capture_output=True, text=True)
-        if result.returncode == 0:
-            print("Installation successful with pip.")
-            return True, "pip"
-        else:
-            print(f"pip failed (exit {result.returncode}). stderr:\n{result.stderr.strip()}")
-
-        return False, "pip"
-    finally:
-        os.chdir(cwd)
-
-
-def install_local_wheels(wheels: list[pathlib.Path],packages: list[pathlib.Path], editable: bool = True) -> None:
-    if not wheels:
-        raise FileNotFoundError("No wheel files provided for installation.")
-
-    uv_mod_cmd = [sys.executable, "-m", "uv", "pip", "install"]
-    pip_cmd = [sys.executable, "-m", "pip", "install"]
-    wheel_args = [str(w.resolve()) for w in wheels]
-
-    result = subprocess.run(uv_mod_cmd + wheel_args, capture_output=True, text=True)
-    if result.returncode == 0:
-        print("Installation successful with uv.")
-        return
-    else:
-        print(f"'uv' wheel install failed (exit {result.returncode}). stderr:{result.stderr.strip()}")
-
-    result = subprocess.run(pip_cmd + wheel_args, capture_output=True, text=True)
-    if result.returncode == 0:
-        print("Installation successful with pip.")
-        return
-   
-    
-    print(f"pip wheel install failed (exit {result.returncode}). stderr:{result.stderr.strip()}")
-       
-    # Fallback: per-package install (pip fallback handled inside)
-    for package_path in packages:
-        ok, method = install_py_package(str(package_path), editable=editable)
-        if not ok:
-            raise RuntimeError(f"Failed to install {package_path} using {method}.")
 
 
 def _on_rm_error(func, path, exc_info):
@@ -167,19 +44,13 @@ def delete_files(file_paths: list | None = None) -> dict:
 
     return results
 
-
-def remove_embedded_git_dirs(packages: list[pathlib.Path]) -> None:
-    """Remove nested .git folders so parent repo doesn't embed git repos."""
-    for package_path in packages:
-        git_dir = package_path / ".git"
-        if git_dir.exists() and git_dir.is_dir():
-            shutil.rmtree(git_dir, onerror=_on_rm_error)
-
-
-remove_embedded_git_dirs(LOCAL_PACKAGES)
-
-# Installing packages from local wheels:
-install_local_wheels(_collect_wheels(), LOCAL_PACKAGES, editable=False)
+# Install repokit packages according to [tool.repokit_install] policy.
+if not install_repokit_packages(
+    ["repokit-common", "repokit-backup", "repokit-dmp", "repokit"],
+    PROJECT_DIR,
+    SETUP_DIR,
+):
+    raise RuntimeError("Failed to install repokit packages from configured install sources.")
 
 from repokit_common import (
     load_from_env,
