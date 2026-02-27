@@ -302,8 +302,10 @@ else:
         conda_python_version,
     ) = set_options(programming_language, version_control)
 
+
 if not install_repokit_packages(["repokit-common"], PROJECT_DIR, SETUP_DIR, verbose=False):
     raise RuntimeError("Unable to install repokit-common with configured install policy.")
+
 
 from repokit_common import (
     ask_yes_no,
@@ -494,6 +496,15 @@ git_user_info(version_control)
 
 # Set git repo info
 repo_user, _, _, _ = repo_user_info(version_control, repo_name, code_repo)
+
+
+if not install_repokit_packages(
+    ["repokit-backup", "repokit-dmp", "repokit"],
+    PROJECT_DIR,
+    SETUP_DIR,
+    verbose=False,
+):
+    raise RuntimeError("Unable to install repokit packages with configured install policy.")
 
 
 # Create Virtual Environment

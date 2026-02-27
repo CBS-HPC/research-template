@@ -31,7 +31,7 @@ PYTHON_VERSION = "None"
 
 [tool.repokit_install]
 tool-description = "Repokit package installation policy used by setup scripts."
-source = "local"
+source = "auto"
 github_base = "https://github.com/CBS-HPC"
 repokit_common_version = "0.1"
 repokit_backup_version = "0.1"

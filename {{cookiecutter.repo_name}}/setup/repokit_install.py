@@ -164,10 +164,13 @@ def install_repokit_packages(
     policy = load_install_policy(project_dir)
     order = source_order(policy["source"])
     local_prepared = False
+    local_source_available = True
     for package_name in package_names:
         installed = False
         for source in order:
             if source == "local":
+                if not local_source_available:
+                    continue
                 if not local_prepared:
                     remove_embedded_git_dirs(setup_dir)
                     local_prepared = True
@@ -199,6 +202,10 @@ def install_repokit_packages(
                             )
                         installed = True
                         break
+                elif verbose:
+                    print("Local source bootstrap failed (git clone/submodule unavailable).")
+                    # Avoid mixing local/non-local installs when local source tree is incomplete.
+                    local_source_available = False
             elif source == "github":
                 url = github_wheel_url(policy, package_name)
                 if _run_install(url, editable=False):
@@ -206,6 +213,8 @@ def install_repokit_packages(
                         print(f"Installed {package_name} from GitHub wheel URL.")
                     installed = True
                     break
+                elif verbose:
+                    print(f"GitHub wheel install failed for {package_name}: {url}")
             elif source == "pypi":
                 spec = pypi_spec(policy, package_name)
                 if _run_install(spec, editable=False):
@@ -213,7 +222,12 @@ def install_repokit_packages(
                         print(f"Installed {package_name} from PyPI.")
                     installed = True
                     break
+                elif verbose:
+                    print(f"PyPI install failed for {package_name}: {spec}")
         if not installed:
-            print(f"Failed to install {package_name} using source policy: {policy['source']}")
+            print(
+                f"Failed to install {package_name} using source policy: {policy['source']} "
+                f"(tried: {', '.join(order)})."
+            )
             return False
     return True
