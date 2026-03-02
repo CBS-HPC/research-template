@@ -143,20 +143,39 @@ def pypi_spec(policy: dict[str, Any], package_name: str) -> str:
 
 def _run_install(target: str, editable: bool = False, refresh: bool = False) -> bool:
     if editable:
+        uv_cmd = [
+            sys.executable,
+            "-m",
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            sys.executable,
+            "-e",
+            target,
+        ]
         pip_cmd = [sys.executable, "-m", "pip", "install", "-e", target]
-        uv_cmd = [sys.executable, "-m", "uv", "pip", "install", "-e", target]
     else:
+        uv_cmd = [
+            sys.executable,
+            "-m",
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            sys.executable,
+            target,
+        ]
         pip_cmd = [sys.executable, "-m", "pip", "install", target]
-        uv_cmd = [sys.executable, "-m", "uv", "pip", "install", target]
     if refresh:
-        pip_cmd.insert(-1, "--no-cache-dir")
         uv_cmd.insert(-1, "--refresh")
-    # Prefer pip to ensure we install into the current interpreter.
-    pip_res = subprocess.run(pip_cmd, capture_output=True, text=True)
-    if pip_res.returncode == 0:
-        return True
+        pip_cmd.insert(-1, "--no-cache-dir")
+    # Default to uv, but pin to current interpreter via --python.
     uv_res = subprocess.run(uv_cmd, capture_output=True, text=True)
-    return uv_res.returncode == 0
+    if uv_res.returncode == 0:
+        return True
+    pip_res = subprocess.run(pip_cmd, capture_output=True, text=True)
+    return pip_res.returncode == 0
 
 
 def install_repokit_packages(
