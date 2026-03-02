@@ -141,13 +141,16 @@ def pypi_spec(policy: dict[str, Any], package_name: str) -> str:
     return f"{package_name}=={version}"
 
 
-def _run_install(target: str, editable: bool = False) -> bool:
+def _run_install(target: str, editable: bool = False, refresh: bool = False) -> bool:
     if editable:
         uv_cmd = [sys.executable, "-m", "uv", "pip", "install", "-e", target]
         pip_cmd = [sys.executable, "-m", "pip", "install", "-e", target]
     else:
         uv_cmd = [sys.executable, "-m", "uv", "pip", "install", target]
         pip_cmd = [sys.executable, "-m", "pip", "install", target]
+    if refresh:
+        uv_cmd.insert(-1, "--refresh")
+        pip_cmd.insert(-1, "--no-cache-dir")
     uv_res = subprocess.run(uv_cmd, capture_output=True, text=True)
     if uv_res.returncode == 0:
         return True
@@ -208,7 +211,7 @@ def install_repokit_packages(
                     local_source_available = False
             elif source == "github":
                 url = github_wheel_url(policy, package_name)
-                if _run_install(url, editable=False):
+                if _run_install(url, editable=False, refresh=True):
                     if verbose:
                         print(f"Installed {package_name} from GitHub wheel URL.")
                     installed = True
@@ -217,7 +220,7 @@ def install_repokit_packages(
                     print(f"GitHub wheel install failed for {package_name}: {url}")
             elif source == "pypi":
                 spec = pypi_spec(policy, package_name)
-                if _run_install(spec, editable=False):
+                if _run_install(spec, editable=False, refresh=True):
                     if verbose:
                         print(f"Installed {package_name} from PyPI.")
                     installed = True
