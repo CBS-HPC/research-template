@@ -1,4 +1,8 @@
 {
+  "_copy_without_render": [
+    "setup/repokit/.github/workflows/*",
+    "setup/repokit/external/*/.github/workflows/*"
+  ],
   "project_name": "Data_science_template",
   "repo_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
   "author_name": "Your Name",
