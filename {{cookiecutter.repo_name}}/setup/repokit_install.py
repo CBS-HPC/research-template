@@ -74,6 +74,14 @@ def local_wheel_path(setup_dir: pathlib.Path, package_name: str) -> pathlib.Path
     return wheels[-1] if wheels else None
 
 
+def local_find_links(setup_dir: pathlib.Path) -> list[str]:
+    repokit_dir = setup_dir / "repokit"
+    dist_dirs = [repokit_dir / "dist"]
+    for meta in _PKG_META.values():
+        dist_dirs.append(repokit_dir / "external" / meta["repo"] / "dist")
+    return [str(dist.resolve()) for dist in dist_dirs if dist.exists()]
+
+
 def ensure_local_repokit_sources(setup_dir: pathlib.Path) -> bool:
     repokit_dir = setup_dir / "repokit"
     repokit_common_path = repokit_dir / "external" / "repokit-common" / "src" / "repokit_common"
@@ -141,7 +149,38 @@ def pypi_spec(policy: dict[str, Any], package_name: str) -> str:
     return f"{package_name}=={version}"
 
 
-def _run_install(target: str, editable: bool = False, refresh: bool = False) -> bool:
+def _ensure_pip_available() -> bool:
+    pip_check = subprocess.run(
+        [sys.executable, "-m", "pip", "--version"],
+        capture_output=True,
+        text=True,
+    )
+    if pip_check.returncode == 0:
+        return True
+
+    ensure = subprocess.run(
+        [sys.executable, "-m", "ensurepip", "--upgrade"],
+        capture_output=True,
+        text=True,
+    )
+    if ensure.returncode != 0:
+        return False
+
+    pip_recheck = subprocess.run(
+        [sys.executable, "-m", "pip", "--version"],
+        capture_output=True,
+        text=True,
+    )
+    return pip_recheck.returncode == 0
+
+
+def _run_install(
+    target: str,
+    editable: bool = False,
+    refresh: bool = False,
+    force_reinstall: bool = False,
+    find_links: list[str] | None = None,
+) -> bool:
     if editable:
         uv_cmd = [
             sys.executable,
@@ -167,13 +206,22 @@ def _run_install(target: str, editable: bool = False, refresh: bool = False) -> 
             target,
         ]
         pip_cmd = [sys.executable, "-m", "pip", "install", target]
+    if force_reinstall:
+        pip_cmd.insert(-1, "--force-reinstall")
+        pip_cmd.insert(-1, "--no-cache-dir")
     if refresh:
         uv_cmd.insert(-1, "--refresh")
         pip_cmd.insert(-1, "--no-cache-dir")
+    if find_links:
+        for link in find_links:
+            pip_cmd[-1:-1] = ["--find-links", link]
     # Default to uv, but pin to current interpreter via --python.
-    uv_res = subprocess.run(uv_cmd, capture_output=True, text=True)
-    if uv_res.returncode == 0:
-        return True
+    if not force_reinstall:
+        uv_res = subprocess.run(uv_cmd, capture_output=True, text=True)
+        if uv_res.returncode == 0:
+            return True
+    if not _ensure_pip_available():
+        return False
     pip_res = subprocess.run(pip_cmd, capture_output=True, text=True)
     return pip_res.returncode == 0
 
@@ -188,6 +236,7 @@ def install_repokit_packages(
     order = source_order(policy["source"])
     local_prepared = False
     local_source_available = True
+    local_links = local_find_links(setup_dir)
     for package_name in package_names:
         installed = False
         for source in order:
@@ -198,13 +247,23 @@ def install_repokit_packages(
                     remove_embedded_git_dirs(setup_dir)
                     local_prepared = True
                 wheel = local_wheel_path(setup_dir, package_name)
-                if wheel and _run_install(str(wheel.resolve()), editable=False):
+                if wheel and _run_install(
+                    str(wheel.resolve()),
+                    editable=False,
+                    force_reinstall=True,
+                    find_links=local_links,
+                ):
                     if verbose:
                         print(f"Installed {package_name} from local wheel: {wheel}")
                     installed = True
                     break
                 editable = local_editable_path(setup_dir, package_name)
-                if editable.exists() and _run_install(str(editable.resolve()), editable=True):
+                if editable.exists() and _run_install(
+                    str(editable.resolve()),
+                    editable=True,
+                    force_reinstall=True,
+                    find_links=local_links,
+                ):
                     if verbose:
                         print(f"Installed {package_name} from local editable path: {editable}")
                     installed = True
@@ -212,13 +271,23 @@ def install_repokit_packages(
                 # Local fallback: bootstrap repokit sources if missing, then retry.
                 if ensure_local_repokit_sources(setup_dir):
                     wheel = local_wheel_path(setup_dir, package_name)
-                    if wheel and _run_install(str(wheel.resolve()), editable=False):
+                    if wheel and _run_install(
+                        str(wheel.resolve()),
+                        editable=False,
+                        force_reinstall=True,
+                        find_links=local_links,
+                    ):
                         if verbose:
                             print(f"Installed {package_name} from bootstrapped local wheel: {wheel}")
                         installed = True
                         break
                     editable = local_editable_path(setup_dir, package_name)
-                    if editable.exists() and _run_install(str(editable.resolve()), editable=True):
+                    if editable.exists() and _run_install(
+                        str(editable.resolve()),
+                        editable=True,
+                        force_reinstall=True,
+                        find_links=local_links,
+                    ):
                         if verbose:
                             print(
                                 f"Installed {package_name} from bootstrapped local editable path: {editable}"
