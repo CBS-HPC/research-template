@@ -1,4 +1,5 @@
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -11,10 +12,16 @@ try:
 except Exception:  # pragma: no cover
     tomllib = None
 
+try:
+    import toml as toml_legacy  # py310 fallback when available
+except Exception:  # pragma: no cover
+    toml_legacy = None
+
 
 _DEFAULT_POLICY: dict[str, Any] = {
-    "source": "local",
+    "source": "github",
     "github_base": "https://github.com/CBS-HPC",
+    "github_ref": "main",
     "repokit_common_version": "0.1",
     "repokit_backup_version": "0.1",
     "repokit_dmp_version": "0.1",
@@ -31,19 +38,44 @@ _PKG_META: dict[str, dict[str, str]] = {
 _REPOKIT_GIT_URL = "https://github.com/CBS-HPC/repokit.git"
 
 
+def _load_policy_from_text(pyproject_text: str) -> dict[str, Any]:
+    if tomllib is not None:
+        data = tomllib.loads(pyproject_text)
+        return ((data.get("tool", {}) or {}).get("repokit_install", {}) or {})
+    if toml_legacy is not None:
+        data = toml_legacy.loads(pyproject_text)
+        return ((data.get("tool", {}) or {}).get("repokit_install", {}) or {})
+
+    in_policy = False
+    parsed: dict[str, Any] = {}
+    for raw_line in pyproject_text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            in_policy = line == "[tool.repokit_install]"
+            continue
+        if not in_policy:
+            continue
+        match = re.match(r'^([A-Za-z0-9_]+)\s*=\s*"(.*)"\s*$', line)
+        if match:
+            parsed[match.group(1)] = match.group(2)
+    return parsed
+
+
 def load_install_policy(project_dir: pathlib.Path) -> dict[str, Any]:
     policy = dict(_DEFAULT_POLICY)
     pyproject = project_dir / "pyproject.toml"
-    if not pyproject.exists() or tomllib is None:
+    if not pyproject.exists():
         return policy
     try:
-        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-        policy.update(((data.get("tool", {}) or {}).get("repokit_install", {}) or {}))
+        pyproject_text = pyproject.read_text(encoding="utf-8-sig")
+        policy.update(_load_policy_from_text(pyproject_text))
     except Exception:
         pass
-    source = str(policy.get("source", "local")).strip().lower()
+    source = str(policy.get("source", "github")).strip().lower()
     if source not in {"local", "github", "pypi", "auto"}:
-        source = "local"
+        source = "github"
     policy["source"] = source
     return policy
 
@@ -139,7 +171,8 @@ def github_wheel_url(policy: dict[str, Any], package_name: str) -> str:
     version_key = meta["wheel"] + "_version"
     version = str(policy.get(version_key, _DEFAULT_POLICY.get(version_key, "0.1"))).strip()
     base = str(policy.get("github_base", _DEFAULT_POLICY["github_base"])).rstrip("/")
-    return f"{base}/{meta['repo']}/raw/main/dist/{meta['wheel']}-{version}-py3-none-any.whl"
+    ref = str(policy.get("github_ref", _DEFAULT_POLICY["github_ref"])).strip()
+    return f"{base}/{meta['repo']}/raw/{ref}/dist/{meta['wheel']}-{version}-py3-none-any.whl"
 
 
 def pypi_spec(policy: dict[str, Any], package_name: str) -> str:

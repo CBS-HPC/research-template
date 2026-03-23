@@ -31,8 +31,9 @@ PYTHON_VERSION = "None"
 
 [tool.repokit_install]
 tool-description = "Repokit package installation policy used by setup scripts."
-source = "auto"
+source = "github"
 github_base = "https://github.com/CBS-HPC"
+github_ref = "codex/py310-support"
 repokit_common_version = "0.1"
 repokit_backup_version = "0.1"
 repokit_dmp_version = "0.1"
